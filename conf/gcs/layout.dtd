@@ -1,36 +1,187 @@
-<!ELEMENT layout (rows|columns|widget)>
-<!ELEMENT rows (columns|widget)*>
-<!ELEMENT columns (rows|widget)*>
-<!ELEMENT widget (papget)*>
-<!ELEMENT papget (property)*>
-<!ELEMENT property EMPTY>
+<!-- ======================================================================= -->
+<!-- Paparazzi GCS layout DTD (unified reference)                            -->
+<!--                                                                         -->
+<!-- One reference DTD describing BOTH layout formats:                       -->
+<!--   * Modern PprzGCS layouts, rooted at <gcsconf>, which wrap the window  -->
+<!--     <layout> together with optional <menus> and <speech> sections.      -->
+<!--   * Legacy GCS layouts (and the partial column/panel snippets that the  -->
+<!--     old ground station includes), rooted directly at <layout> with no   -->
+<!--     <gcsconf> wrapper.                                                   -->
+<!--                                                                         -->
+<!-- A DTD never fixes the document root by itself: every file selects its   -->
+<!-- own root through its DOCTYPE (<!DOCTYPE layout ...> for legacy files,    -->
+<!-- <!DOCTYPE gcsconf ...> for modern ones). Declaring both roots here lets -->
+<!-- this single DTD validate either kind of file, so old layouts keep       -->
+<!-- working unchanged. At run time the loader (cockpit configurator.cpp)    -->
+<!-- additionally synthesises the <gcsconf> wrapper in memory for            -->
+<!-- <layout>-rooted files, but that is transparent to validation.           -->
+<!--                                                                         -->
+<!-- Compatibility notes:                                                    -->
+<!--   * Some legacy files spell structural attribute KEYS in upper case     -->
+<!--     (NAME=, SIZE=, VALUE=); the loader lower-cases the keys at run time. -->
+<!--     The upper-case aliases are declared below so those files validate.   -->
+<!--   * <configure> is an open, widget-specific extension point: its        -->
+<!--     children and attributes are interpreted by each widget's            -->
+<!--     Configurable::configure() at run time. It is therefore declared     -->
+<!--     ANY, and only its commonly used attributes are listed (for          -->
+<!--     documentation); a widget may accept further options that a DTD       -->
+<!--     cannot enumerate.                                                    -->
+<!-- ======================================================================= -->
 
+
+<!-- ===== Document roots ================================================== -->
+
+<!-- Modern root: the window layout plus optional menu and speech settings. -->
+<!-- <menus> and <speech> are read by name and order-independent at run      -->
+<!-- time; the canonical order is given here.                                -->
+<!ELEMENT gcsconf (layout, menus?, speech?)>
+
+<!-- The window layout. It holds exactly one geometry child: a splitter      -->
+<!-- (<rows>/<columns>) or a single <widget>.                                -->
+<!ELEMENT layout (rows | columns | widget)>
 <!ATTLIST layout
-width CDATA #IMPLIED
-height CDATA #IMPLIED
+    width          CDATA #IMPLIED
+    height         CDATA #IMPLIED
+    show_statusbar CDATA #IMPLIED
+    show_toolbar   CDATA #IMPLIED
 >
 
+
+<!-- ===== Splitters ====================================================== -->
+<!-- <rows> stacks its children vertically, <columns> places them side by    -->
+<!-- side. Either may contain any mix of nested splitters and widgets.       -->
+<!ELEMENT rows (rows | columns | widget)*>
 <!ATTLIST rows
-size CDATA #IMPLIED
+    size CDATA #IMPLIED
+    SIZE CDATA #IMPLIED
+    id   CDATA #IMPLIED
 >
 
+<!ELEMENT columns (rows | columns | widget)*>
 <!ATTLIST columns
-size CDATA #IMPLIED
+    size CDATA #IMPLIED
+    SIZE CDATA #IMPLIED
+    id   CDATA #IMPLIED
 >
 
+
+<!-- ===== Widgets ======================================================== -->
+<!-- A panel in the layout. It may carry a <configure> block (widget-        -->
+<!-- specific options), legacy <papget> map overlays, and <property>         -->
+<!-- entries (e.g. floating map indicators).                                 -->
+<!ELEMENT widget (papget | configure | property)*>
 <!ATTLIST widget
-name CDATA #REQUIRED
-size CDATA #IMPLIED
+    name          CDATA #IMPLIED
+    NAME          CDATA #IMPLIED
+    size          CDATA #IMPLIED
+    SIZE          CDATA #IMPLIED
+    id            CDATA #IMPLIED
+    container     CDATA #IMPLIED
+    title         CDATA #IMPLIED
+    alt           CDATA #IMPLIED
+    icon          CDATA #IMPLIED
+    show_header   CDATA #IMPLIED
+    aircraft_tabs CDATA #IMPLIED
+    x             CDATA #IMPLIED
+    y             CDATA #IMPLIED
 >
 
+
+<!-- ===== Configure: widget-specific extension block ===================== -->
+<!-- Open content on purpose: each widget interprets its own children and    -->
+<!-- attributes at run time, so this is declared ANY. The elements below are -->
+<!-- the structural containers used by the bundled widgets inside a          -->
+<!-- <configure>; the listed attributes are the common ones, given for       -->
+<!-- documentation only (a widget may accept others).                        -->
+<!ELEMENT configure ANY>
+<!ATTLIST configure
+    border            CDATA #IMPLIED
+    background_color  CDATA #IMPLIED
+    max_history       CDATA #IMPLIED
+    select_whole_line CDATA #IMPLIED
+    show_details      CDATA #IMPLIED
+    show_missions     CDATA #IMPLIED
+>
+
+<!-- Map "config" side columns and floating-overlay container, used as       -->
+<!-- children of a map widget's <configure>.                                 -->
+<!ELEMENT columnLeft  (widget)*>
+<!ELEMENT columnRight (widget)*>
+<!ELEMENT floating    (widget)*>
+
+<!-- A single curve declared inside the mini-plotter's <configure>.          -->
+<!ELEMENT plot EMPTY>
+<!ATTLIST plot
+    name CDATA #IMPLIED
+    min  CDATA #IMPLIED
+    max  CDATA #IMPLIED
+>
+
+
+<!-- ===== Papget map overlays ============================================ -->
+<!-- Real-time value overlay on the map. Used by legacy layouts directly     -->
+<!-- under the map <widget>, and by the map's <configure>.                   -->
+<!ELEMENT papget (property)*>
 <!ATTLIST papget
-type CDATA #REQUIRED
-x CDATA #REQUIRED
-y CDATA #REQUIRED
-display CDATA #REQUIRED
+    type    CDATA #REQUIRED
+    x       CDATA #REQUIRED
+    y       CDATA #REQUIRED
+    display CDATA #REQUIRED
 >
 
+<!-- Generic name/value property (papget settings, floating widgets, ...).   -->
+<!-- name/value are required in practice; the upper-case aliases cover the    -->
+<!-- legacy files and are normalised by the loader.                          -->
+<!ELEMENT property EMPTY>
 <!ATTLIST property
-name CDATA #REQUIRED
-value CDATA #REQUIRED
+    name  CDATA #IMPLIED
+    NAME  CDATA #IMPLIED
+    value CDATA #IMPLIED
+    VALUE CDATA #IMPLIED
+>
+
+
+<!-- ===== Menus (modern <gcsconf> only) ================================== -->
+<!-- Enable/disable and show/hide entries of the application menu.           -->
+<!ELEMENT menus (menubar | menu | item)*>
+
+<!ELEMENT menubar EMPTY>
+<!ATTLIST menubar
+    visible        CDATA #IMPLIED
+    keep_shortcuts CDATA #IMPLIED
+>
+
+<!ELEMENT menu (menu | item)*>
+<!ATTLIST menu
+    name    CDATA #REQUIRED
+    enabled CDATA #IMPLIED
+    visible CDATA #IMPLIED
+>
+
+<!ELEMENT item EMPTY>
+<!ATTLIST item
+    name    CDATA #REQUIRED
+    enabled CDATA #IMPLIED
+    visible CDATA #IMPLIED
+>
+
+
+<!-- ===== Speech (modern <gcsconf> only) ================================= -->
+<!-- Spoken telemetry messages. Note: the mixed-case "onChange" attribute is -->
+<!-- intentional and preserved as-is (the loader does not lower-case keys in -->
+<!-- the speech block).                                                      -->
+<!ELEMENT speech (message)*>
+<!ATTLIST speech
+    locale CDATA #IMPLIED
+>
+
+<!ELEMENT message EMPTY>
+<!ATTLIST message
+    name           CDATA #REQUIRED
+    text           CDATA #IMPLIED
+    timeout        CDATA #IMPLIED
+    priority       CDATA #IMPLIED
+    expire         CDATA #IMPLIED
+    onChange       CDATA #IMPLIED
+    postprocessing CDATA #IMPLIED
 >

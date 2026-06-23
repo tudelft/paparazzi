@@ -1,3 +1,5 @@
+<!DOCTYPE layout SYSTEM "layout.dtd">
+
 <layout width="1024" height="693">
   <rows>
     <widget NAME="map2d" SIZE="462">
