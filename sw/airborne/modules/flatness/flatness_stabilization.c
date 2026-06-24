@@ -57,33 +57,17 @@
 // #define REF_TRAJ_FILENAME "straight_vhigh6_cx1.11_267.csv"
 // #define NB_CSV_ROWS 267
 
-
 // ------------------------------------- level circle ------------------------------------- //
 // static const float DOWN_OFFSET = -2.0f;
-// static const float NORTH_OFFSET = 0.0f;
+// static const float NORTH_OFFSET = -0.8f;
 // static const float EAST_OFFSET = 0.0f;
 
-// #define REF_TRAJ_FILENAME "circle_vs2_cx1.00_2001.csv"
-// #define REF_TRAJ_FILENAME "circle_vs3_cx1.00_2001.csv"
 // #define REF_TRAJ_FILENAME "circle_vs4_cx1.11_2001.csv"
 // #define NB_CSV_ROWS 2001
 
-
-// ------------------------------------- immelmann ------------------------------------- //
-static const float DOWN_OFFSET = -1.0f;
-static const float NORTH_OFFSET = -5.0f + 5.0f;
-static const float EAST_OFFSET = -5.0f + 1.5f;
-
-#define REF_TRAJ_FILENAME "immelmann.csv"
-#define NB_CSV_ROWS 1029
-
-// ------------------------------------- immelmann + lateral --------------------------- //
-// static const float DOWN_OFFSET = -1.0f;
-// static const float NORTH_OFFSET = -5.0f + 0.8f;
-// static const float EAST_OFFSET = -5.0f + 3.0f;
-
-// #define REF_TRAJ_FILENAME "immelmann_lateral.csv"
-// #define NB_CSV_ROWS 821
+// #define REF_TRAJ_FILENAME "circle_vs4_right_1282.csv"
+// #define REF_TRAJ_FILENAME "circle_vs4_back_1282.csv"
+// #define NB_CSV_ROWS 1282
 
 // ------------------------------------- clothoid ------------------------------------- //
 // static const float DOWN_OFFSET = -1.5f;
@@ -92,6 +76,39 @@ static const float EAST_OFFSET = -5.0f + 1.5f;
 
 // #define REF_TRAJ_FILENAME "clothoid.csv"
 // #define NB_CSV_ROWS 817
+
+// ------------------------------------- immelmann ------------------------------------- //
+// static const float DOWN_OFFSET = -1.0f;
+// static const float NORTH_OFFSET = -5.0f + 5.0f;
+// static const float EAST_OFFSET = -5.0f + 2.0f;
+
+// #define REF_TRAJ_FILENAME "immelmann_3.2_840.csv"
+// #define NB_CSV_ROWS 840
+
+// #define REF_TRAJ_FILENAME "immelmann_3_862.csv"
+// #define NB_CSV_ROWS 862
+
+// ------------------------------------- immelmann + lateral --------------------------- //
+// static const float DOWN_OFFSET = -1.0f;
+// static const float NORTH_OFFSET = -5.0f + 0.8f;
+// static const float EAST_OFFSET = -5.0f + 2.5f;
+
+// #define REF_TRAJ_FILENAME "immelmann_lateral.csv"
+// #define NB_CSV_ROWS 821
+
+// ------------------------------------- lissajous ------------------------------------- //
+static const float DOWN_OFFSET = -2.0f;
+static const float NORTH_OFFSET = 0.0f;
+static const float EAST_OFFSET = 0.0f;
+
+// #define REF_TRAJ_FILENAME "lissajous_3.5_vs3_1444.csv"
+// #define NB_CSV_ROWS 1444
+
+// #define REF_TRAJ_FILENAME "lissajous_4318.csv"
+// #define NB_CSV_ROWS 4318
+
+#define REF_TRAJ_FILENAME "lissajous_2591.csv"
+#define NB_CSV_ROWS 2591
 
 #define NB_CSV_COLS 21
 
@@ -117,8 +134,8 @@ typedef struct {
 } Traj_row_t;
 
 // constants
-static const float C_X = -1.11f;  // -0.300 
-static const float C_Z = -0.154f; // -0.050
+static const float C_X = -1.11f;
+static const float C_Z = -0.154f;
 
 // KK props
 static const float MU_X_v = 3.86f  / 100000000.0f;
@@ -138,8 +155,6 @@ static const Gain_t Kq = {2.5f, 2.5f, 2.5f};
 static const Gain_t Komega = {10.0f, 10.0f, 10.0f};
 static const Gain_t Kp = {1.0f, 1.0f, 1.0f};
 static const Gain_t Kv = {3.5f, 3.5f, 3.5f};
-
-static const float VEL_NORM_THRESHOLD = 1.0f;
 
 // global vars declared as extern in header file
 dbg_t dbg;
@@ -188,8 +203,9 @@ float sign_test;
 static struct FloatVect3 pos_start_buf;
 static struct FloatVect3 vel_start_buf;
 static struct FloatVect3 accel_start_buf;
-float vf_angle_cos;
+float vf_angle_cos; // should this be static? todo
 // struct FloatVect3 ey_hat_prev;
+static float VEL_NORM_THRESHOLD;
 
 // helper functions
 static void rc_cb(uint8_t sender_id UNUSED, struct RadioControl *rc);
@@ -502,7 +518,7 @@ void flatness_guidance_run(bool UNUSED in_flight, int32_t *cmd) {
                 vf_angle_cos = 1.0f;
             else 
                 vf_angle_cos = -1.0f;
-                
+
             // guard against v // f
             // VECT3_COPY(ey_hat, ey_hat_prev);
             VECT3_COPY(ey_hat, ey_hat_cur);
@@ -748,7 +764,6 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
                 compute_quintic_ref(P2P_DT, pos_start, &pos_end);
             }
 
-            // todo bound yaw rate
             psi_ref = traj[0].psi;
 
             rates_ref.p = 0.0f;
@@ -775,6 +790,8 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
             // ey_hat_prev.x = R_i2b->m[3];
             // ey_hat_prev.y = R_i2b->m[4];
             // ey_hat_prev.z = R_i2b->m[5];
+
+            VEL_NORM_THRESHOLD = 1.0f;
 
             fsm_state = FSM_TRAJECTORY;
             /* fall through */
@@ -829,6 +846,7 @@ void flatness_guidance_fsm(bool UNUSED in_flight, int32_t *cmd)
             break;
 
         case FSM_END:
+            VEL_NORM_THRESHOLD = 100.0f; // arbitrarily large
             flatness_guidance_run(in_flight, cmd); // wait in the last pos
             break;
 
