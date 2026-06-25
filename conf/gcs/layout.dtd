@@ -16,16 +16,32 @@
 <!-- additionally synthesises the <gcsconf> wrapper in memory for            -->
 <!-- <layout>-rooted files, but that is transparent to validation.           -->
 <!--                                                                         -->
-<!-- Compatibility notes:                                                    -->
+<!-- Flat schema (canonical):                                                -->
+<!--   A <widget> fully describes one panel.                                 -->
+<!--   * Identity & placement come from the reserved STRUCTURAL attributes   -->
+<!--     (name, size, id, container, alt, title, icon, show_header,          -->
+<!--     aircraft_tabs, region, x, y), consumed by the layout builder.       -->
+<!--   * Every OTHER attribute is a free-form widget OPTION, forwarded to    -->
+<!--     the widget as a Qt property (e.g. max_history, background_color,    -->
+<!--     select_whole_line, show_background). This is an OPEN extension      -->
+<!--     point: a widget may accept further options a DTD cannot enumerate,  -->
+<!--     so only the common ones are listed below, for documentation.        -->
+<!--   * CHILDREN are sub-widgets: a map's docked / floating panels and an   -->
+<!--     aircraft panel's tabs are direct child <widget> elements (a map     -->
+<!--     panel selects its slot with region="left|right|floating"); a        -->
+<!--     mini-plotter's curves are <plot> children; map value overlays are   -->
+<!--     <papget> children.                                                  -->
+<!--                                                                         -->
+<!-- Backward compatibility:                                                 -->
+<!--   * The legacy NESTED forms - a <configure> block, the                  -->
+<!--     <floating>/<columnLeft>/<columnRight> panel wrappers, and per-widget-->
+<!--     <property name= value=> entries - are still declared so old layout  -->
+<!--     files keep validating. The loader rewrites them into the flat       -->
+<!--     schema in memory before building, so the widgets only ever see the  -->
+<!--     flat form.                                                          -->
 <!--   * Some legacy files spell structural attribute KEYS in upper case     -->
 <!--     (NAME=, SIZE=, VALUE=); the loader lower-cases the keys at run time. -->
 <!--     The upper-case aliases are declared below so those files validate.   -->
-<!--   * <configure> is an open, widget-specific extension point: its        -->
-<!--     children and attributes are interpreted by each widget's            -->
-<!--     Configurable::configure() at run time. It is therefore declared     -->
-<!--     ANY, and only its commonly used attributes are listed (for          -->
-<!--     documentation); a widget may accept further options that a DTD       -->
-<!--     cannot enumerate.                                                    -->
 <!-- ======================================================================= -->
 
 
@@ -66,10 +82,13 @@
 
 
 <!-- ===== Widgets ======================================================== -->
-<!-- A panel in the layout. It may carry a <configure> block (widget-        -->
-<!-- specific options), legacy <papget> map overlays, and <property>         -->
-<!-- entries (e.g. floating map indicators).                                 -->
-<!ELEMENT widget (papget | configure | property)*>
+<!-- A panel in the layout. In the flat schema its CHILDREN are sub-widgets   -->
+<!-- (map dock/floating panels, aircraft tabs), <plot> curves, or <papget>    -->
+<!-- overlays. The legacy <configure>/<property> children are also accepted   -->
+<!-- (and flattened by the loader) so old files keep validating.             -->
+<!ELEMENT widget (widget | plot | papget | configure | property)*>
+<!-- Reserved STRUCTURAL attributes come first; the rest are the common       -->
+<!-- widget OPTIONS, listed for documentation only (the option set is open).  -->
 <!ATTLIST widget
     name          CDATA #IMPLIED
     NAME          CDATA #IMPLIED
@@ -82,17 +101,54 @@
     icon          CDATA #IMPLIED
     show_header   CDATA #IMPLIED
     aircraft_tabs CDATA #IMPLIED
+    region        CDATA #IMPLIED
     x             CDATA #IMPLIED
     y             CDATA #IMPLIED
+    border            CDATA #IMPLIED
+    background_color  CDATA #IMPLIED
+    max_history       CDATA #IMPLIED
+    select_whole_line CDATA #IMPLIED
+    show_blocks       CDATA #IMPLIED
+    show_details      CDATA #IMPLIED
+    show_missions     CDATA #IMPLIED
+    show_background   CDATA #IMPLIED
+    show_filter       CDATA #IMPLIED
+    colorize          CDATA #IMPLIED
+    silence_filtered  CDATA #IMPLIED
+    style_sheet       CDATA #IMPLIED
+    filter            CDATA #IMPLIED
 >
 
 
-<!-- ===== Configure: widget-specific extension block ===================== -->
-<!-- Open content on purpose: each widget interprets its own children and    -->
-<!-- attributes at run time, so this is declared ANY. The elements below are -->
-<!-- the structural containers used by the bundled widgets inside a          -->
-<!-- <configure>; the listed attributes are the common ones, given for       -->
-<!-- documentation only (a widget may accept others).                        -->
+<!-- ===== Plotter curves ================================================= -->
+<!-- A single curve, declared as a child of a mini-plotter <widget>.         -->
+<!ELEMENT plot EMPTY>
+<!ATTLIST plot
+    name CDATA #IMPLIED
+    min  CDATA #IMPLIED
+    max  CDATA #IMPLIED
+>
+
+
+<!-- ===== Papget map overlays ============================================ -->
+<!-- Real-time value overlay, a direct child of the map <widget>. Its         -->
+<!-- name/value <property> children are part of the overlay API              -->
+<!-- (field/scale/format/...), not widget options, and are kept as-is.       -->
+<!ELEMENT papget (property)*>
+<!ATTLIST papget
+    type    CDATA #REQUIRED
+    x       CDATA #REQUIRED
+    y       CDATA #REQUIRED
+    display CDATA #IMPLIED
+>
+
+
+<!-- ===== Legacy nested forms (flattened by the loader) ================== -->
+<!-- Kept so pre-existing layout files keep validating. New layouts should    -->
+<!-- use the flat schema (options as <widget> attributes, panels as direct    -->
+<!-- <widget> children carrying region=).                                     -->
+
+<!-- Legacy widget-options / containers block. Open content on purpose.       -->
 <!ELEMENT configure ANY>
 <!ATTLIST configure
     border            CDATA #IMPLIED
@@ -103,35 +159,15 @@
     show_missions     CDATA #IMPLIED
 >
 
-<!-- Map "config" side columns and floating-overlay container, used as       -->
-<!-- children of a map widget's <configure>.                                 -->
+<!-- Legacy map side-column and floating-overlay panel wrappers.             -->
 <!ELEMENT columnLeft  (widget)*>
 <!ELEMENT columnRight (widget)*>
 <!ELEMENT floating    (widget)*>
 
-<!-- A single curve declared inside the mini-plotter's <configure>.          -->
-<!ELEMENT plot EMPTY>
-<!ATTLIST plot
-    name CDATA #IMPLIED
-    min  CDATA #IMPLIED
-    max  CDATA #IMPLIED
->
-
-
-<!-- ===== Papget map overlays ============================================ -->
-<!-- Real-time value overlay on the map. Used by legacy layouts directly     -->
-<!-- under the map <widget>, and by the map's <configure>.                   -->
-<!ELEMENT papget (property)*>
-<!ATTLIST papget
-    type    CDATA #REQUIRED
-    x       CDATA #REQUIRED
-    y       CDATA #REQUIRED
-    display CDATA #REQUIRED
->
-
-<!-- Generic name/value property (papget settings, floating widgets, ...).   -->
-<!-- name/value are required in practice; the upper-case aliases cover the    -->
-<!-- legacy files and are normalised by the loader.                          -->
+<!-- Generic name/value property: kept for <papget> children and for legacy   -->
+<!-- per-widget option entries (the loader turns the latter into attributes). -->
+<!-- name/value are required in practice; the upper-case aliases cover the     -->
+<!-- legacy files and are normalised by the loader.                           -->
 <!ELEMENT property EMPTY>
 <!ATTLIST property
     name  CDATA #IMPLIED

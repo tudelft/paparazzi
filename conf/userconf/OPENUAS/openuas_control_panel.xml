@@ -17,7 +17,7 @@
     <program name="GCS" command="sw/ground_segment/cockpit/pprzgcs">
       <arg flag="-speech"/>
     </program>
-    <program name="Flight Plan Editor" command="sw/ground_segment/cockpit/gcs">
+    <program name="Flight Plan Editor" command="sw/ground_segment/cockpit/pprzgcs">
       <arg flag="-edit"/>
     </program>
     <program name="Messages" command="sw/ground_segment/tmtc/messages"/>
@@ -54,10 +54,10 @@
       <arg flag="-fbw" variable="fbw_serial_port"/>
       <arg flag="-ap" variable="ap_serial_port"/>
     </program>
-    <program name="GCS Classic" command="sw/ground_segment/cockpit/pprzgcs --layout classic_layout.xml">
+    <program name="GCS Classic" command="sw/ground_segment/cockpit/pprzgcs">
       <arg flag="--speech"/>
+      <arg flag="--layout" constant="classic_layout.xml"/>
     </program>
-    <program name="Messages QT" command="sw/ground_segment/tmtc/messages"/>
   </section>
   <section name="sessions">
     <session name="Accelo only Debug Graphs">
