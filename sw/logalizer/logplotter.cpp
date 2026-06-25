@@ -138,7 +138,7 @@ public:
         : QMainWindow(parent)
     {
         setAttribute(Qt::WA_DeleteOnClose);
-        setWindowTitle("Log Plotter");
+        setWindowTitle(QStringLiteral("Log Plotter"));
         resize(900, 300);
         setupUI();
     }
@@ -160,10 +160,12 @@ private slots:
         if (picsLocation.isEmpty()) {
             picsLocation = QDir::currentPath();
         }
-        QString defaultPath = QDir(picsLocation).filePath("screenshot.png");
+        QString defaultPath = QDir(picsLocation).filePath(QStringLiteral("screenshot.png"));
         if (!m_currentLogFile.isEmpty()) {
             QFileInfo fi(m_currentLogFile);
-            defaultPath = QDir(picsLocation).filePath("pprz_log-" + fi.completeBaseName() + ".png");
+            defaultPath = QDir(picsLocation)
+                                  .filePath(QStringLiteral("pprz_log-") + fi.completeBaseName()
+                                            + QStringLiteral(".png"));
         }
 
         QString fileName;
@@ -175,21 +177,21 @@ private slots:
                                    tr("JPEG Image (*.jpg)"),
                                    tr("WebP Image (*.webp)"),
                                    tr("BMP Image (*.bmp)")});
-            dialog.setDefaultSuffix("png");
+            dialog.setDefaultSuffix(QStringLiteral("png"));
 
             // Updates the default suffix whenever a new filter is selected from the combobox
             connect(&dialog,
                     &QFileDialog::filterSelected,
                     &dialog,
                     [&dialog](const QString &filter) {
-                        if (filter.contains("*.png"))
-                            dialog.setDefaultSuffix("png");
-                        else if (filter.contains("*.jpg"))
-                            dialog.setDefaultSuffix("jpg");
-                        else if (filter.contains("*.webp"))
-                            dialog.setDefaultSuffix("webp");
-                        else if (filter.contains("*.bmp"))
-                            dialog.setDefaultSuffix("bmp");
+                        if (filter.contains(QLatin1String("*.png")))
+                            dialog.setDefaultSuffix(QStringLiteral("png"));
+                        else if (filter.contains(QLatin1String("*.jpg")))
+                            dialog.setDefaultSuffix(QStringLiteral("jpg"));
+                        else if (filter.contains(QLatin1String("*.webp")))
+                            dialog.setDefaultSuffix(QStringLiteral("webp"));
+                        else if (filter.contains(QLatin1String("*.bmp")))
+                            dialog.setDefaultSuffix(QStringLiteral("bmp"));
                     });
 
             if (dialog.exec() == QDialog::Accepted) {
@@ -243,14 +245,14 @@ private slots:
         QString text = m_edtConstant->text();
         QStringList parts = text.split(';');
 
-        for (const QString &part : parts) {
+        for (const QString &part : std::as_const(parts)) {
             bool ok = false;
             double val = part.trimmed().toDouble(&ok);
             if (!ok || !std::isfinite(val))
                 continue;
 
             QLineSeries *series = new QLineSeries();
-            series->setName(QString("C=%1").arg(val));
+            series->setName(QStringLiteral("C=%1").arg(val));
 
             QPen pen = series->pen();
             pen.setColor(Qt::black);
@@ -289,7 +291,7 @@ private slots:
                 QPixmap pixmap(16, 16);
                 pixmap.fill(pen.color());
                 QIcon icon(pixmap);
-                QString title = QString("C=%1").arg(val);
+                QString title = QStringLiteral("C=%1").arg(val);
                 QAction *deleteAction = m_curvesMenu->addAction(icon, title);
                 deleteAction->setToolTip(tr("Delete constant curve"));
                 deleteAction->setStatusTip(tr("Delete constant curve"));
@@ -322,11 +324,11 @@ private slots:
         QString docsLocation = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
         if (docsLocation.isEmpty())
             docsLocation = QDir::currentPath();
-        QString defaultName
-                = QDir(docsLocation)
-                          .filePath("pprz_log-"
-                                    + QDateTime::currentDateTime().toString("yy_MM_dd__HH_mm_ss")
-                                    + ".fig");
+        QString defaultName = QDir(docsLocation)
+                                      .filePath(QStringLiteral("pprz_log-")
+                                                + QDateTime::currentDateTime().toString(
+                                                        QStringLiteral("yy_MM_dd__HH_mm_ss"))
+                                                + QStringLiteral(".fig"));
         QString fileName;
         {
             StderrBlocker blocker;
@@ -364,10 +366,11 @@ private slots:
         double maxY = std::numeric_limits<double>::lowest();
 
         QList<QAbstractSeries *> seriesList = m_chart->series();
-        for (auto *series : seriesList) {
+        for (auto *series : std::as_const(seriesList)) {
             QLineSeries *lineSeries = qobject_cast<QLineSeries *>(series);
             if (lineSeries) {
-                for (const QPointF &pt : lineSeries->points()) {
+                const auto &pts = lineSeries->points();
+                for (const QPointF &pt : pts) {
                     minX = std::min(pt.x(), minX);
                     maxX = std::max(pt.x(), maxX);
                     minY = std::min(pt.y(), minY);
@@ -397,14 +400,15 @@ private slots:
             << " " << (int) figOffsetY << "\n";
 
         int colorIndex = 1;
-        for (auto *series : seriesList) {
+        for (auto *series : std::as_const(seriesList)) {
             QLineSeries *lineSeries = qobject_cast<QLineSeries *>(series);
             if (lineSeries && lineSeries->count() > 0) {
                 int npoints = lineSeries->count();
                 out << "2 1 0 1 " << (colorIndex % 32) << " 0 50 -1 -1 0.000 0 0 -1 0 0 " << npoints
                     << "\n\t";
                 int count = 0;
-                for (const QPointF &pt : lineSeries->points()) {
+                const auto &pts = lineSeries->points();
+                for (const QPointF &pt : pts) {
                     int fx = static_cast<int>(figOffsetX + ((pt.x() - minX) * scaleX));
                     int fy = static_cast<int>(figOffsetY + figHeight - ((pt.y() - minY) * scaleY));
                     out << " " << fx << " " << fy;
@@ -427,7 +431,7 @@ private slots:
         if (m_curvesMenu) {
             m_curvesMenu->clear();
         }
-        for (QMenu *menu : m_logMenus) {
+        for (QMenu *menu : std::as_const(m_logMenus)) {
             delete menu;
         }
         m_logMenus.clear();
@@ -486,11 +490,14 @@ private slots:
                 if (!found) {
                     QString dataLoc
                             = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-                    logDir = QDir(dataLoc).filePath("logs");
+                    logDir = QDir(dataLoc).filePath(QStringLiteral("logs"));
                 }
             }
             fileName = QFileDialog::getOpenFileName(
-                    this, "Open Paparazzi Log", logDir, "Log Files (*.log);;All Files (*)");
+                    this,
+                    QStringLiteral("Open Paparazzi Log"),
+                    logDir,
+                    QStringLiteral("Log Files (*.log);;All Files (*)"));
         }
         if (!fileName.isEmpty()) {
             loadLogFile(fileName);
@@ -530,11 +537,11 @@ private:
         QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
 
         QAction *openAction = fileMenu->addAction(tr("Open Log"));
-        openAction->setShortcut(QKeySequence("Ctrl+O"));
+        openAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+O")));
         connect(openAction, &QAction::triggered, this, &LogPlotterWindow::openLogFile);
 
         QAction *newAction = fileMenu->addAction(tr("New"));
-        newAction->setShortcut(QKeySequence("Ctrl+N"));
+        newAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+N")));
         connect(newAction, &QAction::triggered, this, [this]() {
             QStringList args;
             if (!m_originallyLoadedFile.isEmpty()) {
@@ -559,21 +566,21 @@ private:
         });
 
         QAction *exportFigAction = fileMenu->addAction(tr("Export Fig"));
-        exportFigAction->setShortcut(QKeySequence("Ctrl+E"));
+        exportFigAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+E")));
         connect(exportFigAction, &QAction::triggered, this, &LogPlotterWindow::exportFig);
 
         QAction *saveAction = fileMenu->addAction(tr("Save screenshot"));
-        saveAction->setShortcut(QKeySequence("Ctrl+S"));
+        saveAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+S")));
         connect(saveAction, &QAction::triggered, this, &LogPlotterWindow::saveScreenshot);
 
         QAction *closeAction = fileMenu->addAction(tr("Close"));
-        closeAction->setShortcut(QKeySequence("Ctrl+W"));
+        closeAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+W")));
         connect(closeAction, &QAction::triggered, this, &LogPlotterWindow::closeLogFile);
 
         fileMenu->addSeparator();
 
         QAction *quitAction = fileMenu->addAction(tr("Quit"));
-        quitAction->setShortcut(QKeySequence("Ctrl+Q"));
+        quitAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+Q")));
         connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
 
         m_curvesMenu = menuBar()->addMenu(tr("&Curves"));
@@ -594,7 +601,7 @@ private:
         QHBoxLayout *toolbarLayout = new QHBoxLayout(toolbarWidget);
         toolbarLayout->setContentsMargins(2, 2, 2, 2);
 
-        m_cbAutoScale = new QCheckBox("Auto Scale");
+        m_cbAutoScale = new QCheckBox(QStringLiteral("Auto Scale"));
         m_cbAutoScale->setChecked(true);
 
         m_edtMinY = new QLineEdit();
@@ -604,18 +611,18 @@ private:
         m_edtMinY->setEnabled(false);
         m_edtMaxY->setEnabled(false);
 
-        QLabel *lblConst = new QLabel("Constant");
+        QLabel *lblConst = new QLabel(QStringLiteral("Constant"));
         m_edtConstant = new QLineEdit();
         m_edtConstant->setMaximumWidth(75);
 
-        QLabel *lblScaleNext = new QLabel("Scale next by");
-        m_edtScaleNext = new QLineEdit("1.0+0");
+        QLabel *lblScaleNext = new QLabel(QStringLiteral("Scale next by"));
+        m_edtScaleNext = new QLineEdit(QStringLiteral("1.0+0"));
         m_edtScaleNext->setToolTip(
                 tr("Format: scale+transpose or scale-transpose (e.g. 2.0+10.5)"));
         m_edtScaleNext->setMaximumWidth(75);
 
         m_spnLineThickness = new QSpinBox();
-        m_spnLineThickness->setToolTip("Line Thickness (px)");
+        m_spnLineThickness->setToolTip(QStringLiteral("Line Thickness (px)"));
         m_spnLineThickness->setRange(1, 10);
         m_spnLineThickness->setValue(1);
         m_spnLineThickness->hide();
@@ -632,9 +639,9 @@ private:
                 &QLineEdit::editingFinished,
                 this,
                 &LogPlotterWindow::onManualScaleChanged);
-        toolbarLayout->addWidget(new QLabel("Min"));
+        toolbarLayout->addWidget(new QLabel(QStringLiteral("Min")));
         toolbarLayout->addWidget(m_edtMinY);
-        toolbarLayout->addWidget(new QLabel("Max"));
+        toolbarLayout->addWidget(new QLabel(QStringLiteral("Max")));
         toolbarLayout->addWidget(m_edtMaxY);
 
         toolbarLayout->addWidget(lblConst);
@@ -645,7 +652,7 @@ private:
                 &LogPlotterWindow::onAddConstantClicked);
         toolbarLayout->addWidget(lblScaleNext);
         toolbarLayout->addWidget(m_edtScaleNext);
-        QLabel *lblLineThickness = new QLabel("Line:");
+        QLabel *lblLineThickness = new QLabel(QStringLiteral("Line:"));
         lblLineThickness->hide();
         toolbarLayout->addWidget(lblLineThickness);
         toolbarLayout->addWidget(m_spnLineThickness);
@@ -717,7 +724,7 @@ private:
                 m_chart, [this]() { m_cbAutoScale->setChecked(false); }, m_chartView));
 
         m_axisX = new QValueAxis();
-        m_axisX->setLabelFormat("%gs");
+        m_axisX->setLabelFormat(QStringLiteral("%gs"));
         m_axisY = new QValueAxis();
 
         m_axisX->hide();
@@ -740,7 +747,8 @@ private:
         double calcMaxY = -std::numeric_limits<double>::infinity();
         bool hasData = false;
 
-        for (auto *s : m_chart->series()) {
+        const auto &seriesList = m_chart->series();
+        for (auto *s : seriesList) {
             QLineSeries *ls = qobject_cast<QLineSeries *>(s);
             if (ls && ls->count() > 0) {
                 hasData = true;
@@ -798,7 +806,7 @@ private:
             return;
 
         QString txt = m_edtScaleNext->text().trimmed();
-        txt.replace(" ", "");
+        txt.replace(QLatin1String(" "), QLatin1String(""));
         double scale = 1.0;
         double transpose = 0.0;
 
@@ -815,10 +823,10 @@ private:
         if (splitIdx != -1) {
             bool ok1 = false;
             bool ok2 = false;
-            double s = txt.left(splitIdx).toDouble(&ok1);
+            double s = QStringView(txt).left(splitIdx).toDouble(&ok1);
             if (ok1)
                 scale = s;
-            double t = txt.mid(splitIdx).toDouble(&ok2);
+            double t = QStringView(txt).mid(splitIdx).toDouble(&ok2);
             if (ok2)
                 transpose = t;
         } else {
@@ -836,14 +844,17 @@ private:
         QFileInfo fi(m_currentLogFile);
         QString logName = fi.baseName();
         QString logNameCondensed = logName;
-        logNameCondensed.replace("__", "#TEMP#");
-        logNameCondensed.replace("_", "");
-        logNameCondensed.replace("#TEMP#", "_");
+        logNameCondensed.replace(QLatin1String("__"), QLatin1String("#TEMP#"));
+        logNameCondensed.replace(QLatin1String("_"), QLatin1String(""));
+        logNameCondensed.replace(QLatin1String("#TEMP#"), QLatin1String("_"));
 
-        QString curveTitle = logName + ":" + acId + ":" + msgName + ":" + fieldName + ":"
-                + QString::number(scale) + "+" + QString::number(transpose);
-        QString curveTitleCondensed = logNameCondensed + ":" + acId + ":" + msgName + ":"
-                + fieldName + ":" + QString::number(scale) + "+" + QString::number(transpose);
+        QString curveTitle = logName + QStringLiteral(":") + acId + QStringLiteral(":") + msgName
+                + QStringLiteral(":") + fieldName + QStringLiteral(":") + QString::number(scale)
+                + QStringLiteral("+") + QString::number(transpose);
+        QString curveTitleCondensed = logNameCondensed + QStringLiteral(":") + acId
+                + QStringLiteral(":") + msgName + QStringLiteral(":") + fieldName
+                + QStringLiteral(":") + QString::number(scale) + QStringLiteral("+")
+                + QString::number(transpose);
 
         QLineSeries *series = new QLineSeries();
         series->setName(curveTitle);
@@ -954,7 +965,7 @@ public:
 
         const int CHUNK_SIZE = 1048576;
         QByteArray buffer;
-        QRegularExpression spaceRe("\\s+");
+        QRegularExpression spaceRe(QStringLiteral("\\s+"));
 
         while (!file.atEnd()) {
             buffer.append(file.read(CHUNK_SIZE));
@@ -1043,7 +1054,9 @@ public:
     {
         QFile outFile(outFileName);
         if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-            QMessageBox::warning(this, "Export CSV", "Cannot write to CSV file.");
+            QMessageBox::warning(this,
+                                 QStringLiteral("Export CSV"),
+                                 QStringLiteral("Cannot write to CSV file."));
             return;
         }
 
@@ -1068,20 +1081,20 @@ public:
 
                                 for (int i = 1; i < headerCols.size(); ++i) {
                                     const QString &col = headerCols[i];
-                                    if (col.startsWith(msgName + ".")) {
+                                    if (col.startsWith(msgName + QStringLiteral("."))) {
                                         int fIdx = selectedFieldNames[msgName].indexOf(col);
                                         if (fIdx != -1 && fIdx < selectedFields[msgName].size()) {
                                             int paramIdx = selectedFields[msgName][fIdx];
                                             if (paramIdx < values.size()) {
                                                 row << values[paramIdx].trimmed();
                                             } else {
-                                                row << "";
+                                                row << QLatin1String("");
                                             }
                                         } else {
-                                            row << "";
+                                            row << QLatin1String("");
                                         }
                                     } else {
-                                        row << "";
+                                        row << QLatin1String("");
                                     }
                                 }
                                 out << row.join(delimiter) << "\n";
@@ -1100,12 +1113,13 @@ public:
         QString dataFileName = fileName;
         QMap<QString, QStringList> dictFields;
 
-        if (fileName.endsWith(".log", Qt::CaseInsensitive)) {
+        if (fileName.endsWith(QLatin1String(".log"), Qt::CaseInsensitive)) {
             QFile logFile(fileName);
             if (logFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
                 QString content = logFile.readAll();
 
-                QRegularExpression reDataFile("<configuration[^>]*data_file=\"([^\"]+)\"");
+                QRegularExpression reDataFile(
+                        QStringLiteral("<configuration[^>]*data_file=\"([^\"]+)\""));
                 QRegularExpressionMatch matchDataFile = reDataFile.match(content);
                 if (matchDataFile.hasMatch()) {
                     QString dFile = matchDataFile.captured(1);
@@ -1113,8 +1127,8 @@ public:
                     dataFileName = fi.absoluteDir().filePath(dFile);
                 }
 
-                int protoStart = content.indexOf("<protocol>");
-                int protoEnd = content.indexOf("</protocol>", protoStart);
+                int protoStart = content.indexOf(QLatin1String("<protocol>"));
+                int protoEnd = content.indexOf(QLatin1String("</protocol>"), protoStart);
                 if (protoStart != -1 && protoEnd != -1) {
                     // printf("Found protocol from %d to %d\n", protoStart, protoEnd);
                     // fflush(stdout);//Enable for Debug only
@@ -1123,16 +1137,16 @@ public:
                     while (!xml.atEnd() && !xml.hasError()) {
                         QXmlStreamReader::TokenType token = xml.readNext();
                         if (token == QXmlStreamReader::StartElement) {
-                            if (xml.name().toString() == "message"
+                            if (xml.name().toString() == QLatin1String("message")
                                 && xml.attributes().hasAttribute("NAME")) {
                                 QString msgName = xml.attributes().value("NAME").toString();
                                 QStringList fields;
                                 while ((xml.tokenType() != QXmlStreamReader::EndElement
-                                        || xml.name().toString() != "message")
+                                        || xml.name().toString() != QLatin1String("message"))
                                        && !xml.atEnd()) {
                                     xml.readNext();
                                     if (xml.tokenType() == QXmlStreamReader::StartElement
-                                        && xml.name().toString() == "field") {
+                                        && xml.name().toString() == QLatin1String("field")) {
                                         if (xml.attributes().hasAttribute("NAME")) {
                                             QString fName
                                                     = xml.attributes().value("NAME").toString();
@@ -1172,7 +1186,9 @@ public:
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
             while (QApplication::overrideCursor())
                 QApplication::restoreOverrideCursor();
-            QMessageBox::warning(this, "Error", "Cannot open file " + dataFileName);
+            QMessageBox::warning(this,
+                                 QStringLiteral("Error"),
+                                 QStringLiteral("Cannot open file ") + dataFileName);
             return;
         }
 
@@ -1260,14 +1276,14 @@ public:
         for (auto it = acToMsgs.begin(); it != acToMsgs.end(); ++it) {
             const QString &acId = it.key();
 
-            QString menuTitle = logName + ":" + acId;
+            QString menuTitle = logName + QStringLiteral(":") + acId;
             QMenu *acMenu = menuBar()->addMenu(menuTitle);
             m_logMenus.append(acMenu);
 
             QStringList msgs = it.value().values();
             msgs.sort(); // Sorting messages alphabetically
 
-            for (const QString &msgName : msgs) {
+            for (const QString &msgName : std::as_const(msgs)) {
                 if (dictFields.contains(msgName)) {
                     // printf("Found MSG in dict: %s\n", msgName.toStdString().c_str());
                     // fflush(stdout);//Enable for Debug only
@@ -1290,7 +1306,7 @@ public:
 
             acMenu->addSeparator();
 
-            QAction *exportKmlAction = acMenu->addAction("Export KML");
+            QAction *exportKmlAction = acMenu->addAction(QStringLiteral("Export KML"));
             connect(exportKmlAction,
                     &QAction::triggered,
                     this,
@@ -1301,11 +1317,13 @@ public:
                             docsLocation = QFileInfo(m_currentLogFile).path();
                         QString defaultName
                                 = QDir(docsLocation)
-                                          .filePath(logName + ":" + acId
-                                                    + ".kml"); // Well maybe a - is better than :
-                                                               // for Windowsfile systems, but we
-                                                               // keep it consistent with the
-                                                               // previous OCAML code
+                                          .filePath(
+                                                  logName + QStringLiteral(":") + acId
+                                                  + QStringLiteral(
+                                                          ".kml")); // Well maybe a - is better than
+                                                                    // : for Windowsfile systems,
+                                                                    // but we keep it consistent
+                                                                    // with the previous OCAML code
 
                         QString fileName;
                         {
@@ -1318,7 +1336,9 @@ public:
 
                         QFile file(m_currentLogFile);
                         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-                            QMessageBox::warning(this, "Export KML", "Cannot open data file.");
+                            QMessageBox::warning(this,
+                                                 QStringLiteral("Export KML"),
+                                                 QStringLiteral("Cannot open data file."));
                             return;
                         }
 
@@ -1334,60 +1354,62 @@ public:
                         double lonScale = 1.0;
                         double altScale = 1.0;
 
-                        if (dictFields.contains("GPS")) {
-                            targetMsg = "GPS";
-                            utmEastIdx = dictFields["GPS"].indexOf("utm_east");
-                            utmNorthIdx = dictFields["GPS"].indexOf("utm_north");
-                            utmZoneIdx = dictFields["GPS"].indexOf("utm_zone");
-                            altIdx = dictFields["GPS"].indexOf("alt");
+                        if (dictFields.contains(QStringLiteral("GPS"))) {
+                            targetMsg = QStringLiteral("GPS");
+                            utmEastIdx = dictFields[QStringLiteral("GPS")].indexOf("utm_east");
+                            utmNorthIdx = dictFields[QStringLiteral("GPS")].indexOf("utm_north");
+                            utmZoneIdx = dictFields[QStringLiteral("GPS")].indexOf("utm_zone");
+                            altIdx = dictFields[QStringLiteral("GPS")].indexOf("alt");
                             altScale = 1e-3;
                             isUtm = true;
-                        } else if (dictFields.contains("GPS_INT")) {
-                            targetMsg = "GPS_INT";
-                            latIdx = dictFields["GPS_INT"].indexOf("lat");
-                            lonIdx = dictFields["GPS_INT"].indexOf("lon");
-                            altIdx = dictFields["GPS_INT"].indexOf("hmsl");
+                        } else if (dictFields.contains(QStringLiteral("GPS_INT"))) {
+                            targetMsg = QStringLiteral("GPS_INT");
+                            latIdx = dictFields[QStringLiteral("GPS_INT")].indexOf("lat");
+                            lonIdx = dictFields[QStringLiteral("GPS_INT")].indexOf("lon");
+                            altIdx = dictFields[QStringLiteral("GPS_INT")].indexOf("hmsl");
                             if (altIdx == -1)
-                                altIdx = dictFields["GPS_INT"].indexOf("alt");
+                                altIdx = dictFields[QStringLiteral("GPS_INT")].indexOf("alt");
                             latScale = 1e-7;
                             lonScale = 1e-7;
                             altScale = 1e-3;
-                        } else if (dictFields.contains("MINIMAL_COM")) {
-                            targetMsg = "MINIMAL_COM";
-                            latIdx = dictFields["MINIMAL_COM"].indexOf("lat");
-                            lonIdx = dictFields["MINIMAL_COM"].indexOf("lon");
-                            altIdx = dictFields["MINIMAL_COM"].indexOf("hmsl");
+                        } else if (dictFields.contains(QStringLiteral("MINIMAL_COM"))) {
+                            targetMsg = QStringLiteral("MINIMAL_COM");
+                            latIdx = dictFields[QStringLiteral("MINIMAL_COM")].indexOf("lat");
+                            lonIdx = dictFields[QStringLiteral("MINIMAL_COM")].indexOf("lon");
+                            altIdx = dictFields[QStringLiteral("MINIMAL_COM")].indexOf("hmsl");
                             if (altIdx == -1)
-                                altIdx = dictFields["MINIMAL_COM"].indexOf("alt");
+                                altIdx = dictFields[QStringLiteral("MINIMAL_COM")].indexOf("alt");
                         } else {
                             // Try to dynamically figure it out from file scanning if not correctly
                             // in dict
                             QFile checkFile(m_currentLogFile);
                             if (checkFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
                                 QTextStream checkIn(&checkFile);
-                                QRegularExpression checkRe("\\s+");
+                                QRegularExpression checkRe(QStringLiteral("\\s+"));
                                 while (!checkIn.atEnd()) {
                                     QString line = checkIn.readLine();
                                     QStringList parts = line.split(checkRe, Qt::SkipEmptyParts);
                                     if (parts.size() > 3 && parts[1] == acId) {
-                                        if (parts[2] == "GPS") {
-                                            targetMsg = "GPS";
+                                        if (parts[2] == QLatin1String("GPS")) {
+                                            targetMsg = QStringLiteral("GPS");
                                             break;
-                                        } else if (parts[2] == "GPS_INT") {
-                                            targetMsg = "GPS_INT";
+                                        } else if (parts[2] == QLatin1String("GPS_INT")) {
+                                            targetMsg = QStringLiteral("GPS_INT");
                                             break;
-                                        } else if (parts[2] == "MINIMAL_COM") {
-                                            targetMsg = "MINIMAL_COM";
+                                        } else if (parts[2] == QLatin1String("MINIMAL_COM")) {
+                                            targetMsg = QStringLiteral("MINIMAL_COM");
                                             break;
                                         }
                                     }
                                 }
                             }
-                            if (targetMsg == "GPS" && dictFields.contains("GPS")) {
-                                utmEastIdx = dictFields["GPS"].indexOf("utm_east");
-                                utmNorthIdx = dictFields["GPS"].indexOf("utm_north");
-                                utmZoneIdx = dictFields["GPS"].indexOf("utm_zone");
-                                altIdx = dictFields["GPS"].indexOf("alt");
+                            if (targetMsg == QLatin1String("GPS")
+                                && dictFields.contains(QStringLiteral("GPS"))) {
+                                utmEastIdx = dictFields[QStringLiteral("GPS")].indexOf("utm_east");
+                                utmNorthIdx
+                                        = dictFields[QStringLiteral("GPS")].indexOf("utm_north");
+                                utmZoneIdx = dictFields[QStringLiteral("GPS")].indexOf("utm_zone");
+                                altIdx = dictFields[QStringLiteral("GPS")].indexOf("alt");
                                 altScale = 1e-3;
                                 isUtm = true;
                             }
@@ -1398,8 +1420,9 @@ public:
                                 && (utmEastIdx == -1 || utmNorthIdx == -1 || utmZoneIdx == -1))) {
                             QMessageBox::warning(
                                     this,
-                                    "Export KML",
-                                    "Could not find valid GPS coordinates in the log for this AC.");
+                                    QStringLiteral("Export KML"),
+                                    QStringLiteral("Could not find valid GPS coordinates in the "
+                                                   "log for this AC."));
                             return;
                         }
 
@@ -1471,9 +1494,12 @@ public:
                                             double alt = altIdx != -1
                                                     ? values[altIdx].toDouble() * altScale
                                                     : 0.0;
-                                            kmlCoords += QString::number(lon, 'f', 6) + ","
-                                                    + QString::number(lat, 'f', 6) + ","
-                                                    + QString::number(alt, 'f', 6) + " ";
+                                            kmlCoords += QString::number(lon, 'f', 6)
+                                                    + QStringLiteral(",")
+                                                    + QString::number(lat, 'f', 6)
+                                                    + QStringLiteral(",")
+                                                    + QString::number(alt, 'f', 6)
+                                                    + QStringLiteral(" ");
                                         } else if (isUtm
                                                    && values.size() > std::max({utmEastIdx,
                                                                                 utmNorthIdx,
@@ -1491,9 +1517,12 @@ public:
                                                 double lat;
                                                 double lon;
                                                 utm2deg(utmEast, utmNorth, utmZone, lat, lon);
-                                                kmlCoords += QString::number(lon, 'f', 6) + ","
-                                                        + QString::number(lat, 'f', 6) + ","
-                                                        + QString::number(alt, 'f', 6) + " ";
+                                                kmlCoords += QString::number(lon, 'f', 6)
+                                                        + QStringLiteral(",")
+                                                        + QString::number(lat, 'f', 6)
+                                                        + QStringLiteral(",")
+                                                        + QString::number(alt, 'f', 6)
+                                                        + QStringLiteral(" ");
                                             }
                                         }
                                     }
@@ -1535,7 +1564,7 @@ public:
                         }
                     });
 
-            QAction *exportCsvAction = acMenu->addAction("Export CSV");
+            QAction *exportCsvAction = acMenu->addAction(QStringLiteral("Export CSV"));
             connect(exportCsvAction,
                     &QAction::triggered,
                     this,
@@ -1546,7 +1575,7 @@ public:
                         QVBoxLayout *layout = new QVBoxLayout(&dialog);
 
                         QTreeWidget *tree = new QTreeWidget(&dialog);
-                        tree->setHeaderLabel("Messages and Fields");
+                        tree->setHeaderLabel(QStringLiteral("Messages and Fields"));
                         layout->addWidget(tree);
 
                         for (const QString &msgName : msgs) {
@@ -1570,15 +1599,15 @@ public:
 
                         QDialogButtonBox *buttonBox = new QDialogButtonBox(
                                 QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
-                        buttonBox->button(QDialogButtonBox::Ok)->setText("Export");
+                        buttonBox->button(QDialogButtonBox::Ok)->setText(QStringLiteral("Export"));
 
                         QHBoxLayout *delimLayout = new QHBoxLayout();
-                        QLabel *delimLabel = new QLabel("Delimiter:");
+                        QLabel *delimLabel = new QLabel(QStringLiteral("Delimiter:"));
                         QComboBox *delimCombo = new QComboBox();
-                        delimCombo->addItem("Comma (,)", ",");
-                        delimCombo->addItem("TAB", "\t");
-                        delimCombo->addItem("SPACE", " ");
-                        delimCombo->addItem("Semicolon (;)", ";");
+                        delimCombo->addItem(QStringLiteral("Comma (,)"), ",");
+                        delimCombo->addItem(QStringLiteral("TAB"), "\t");
+                        delimCombo->addItem(QStringLiteral("SPACE"), " ");
+                        delimCombo->addItem(QStringLiteral("Semicolon (;)"), ";");
                         delimLayout->addWidget(delimLabel);
                         delimLayout->addWidget(delimCombo);
                         delimLayout->addStretch();
@@ -1596,7 +1625,8 @@ public:
                                 docsLocation = QFileInfo(m_currentLogFile).path();
                             QString defaultName
                                     = QDir(docsLocation)
-                                              .filePath(logName + "_" + acId + "_export.csv");
+                                              .filePath(logName + QStringLiteral("_") + acId
+                                                        + QStringLiteral("_export.csv"));
                             QString outFileName;
                             {
                                 StderrBlocker blocker;
@@ -1611,7 +1641,7 @@ public:
 
                             int totalCols = 0;
                             QStringList headerCols;
-                            headerCols << "Time";
+                            headerCols << QStringLiteral("Time");
 
                             for (int i = 0; i < tree->topLevelItemCount(); ++i) {
                                 QTreeWidgetItem *msgItem = tree->topLevelItem(i);
@@ -1620,7 +1650,8 @@ public:
                                     QTreeWidgetItem *fieldItem = msgItem->child(j);
                                     if (fieldItem->checkState(0) == Qt::Checked) {
                                         selectedFields[msgName].append(j);
-                                        QString cName = msgName + "." + fieldItem->text(0);
+                                        QString cName = msgName + QStringLiteral(".")
+                                                + fieldItem->text(0);
                                         selectedFieldNames[msgName].append(cName);
                                         headerCols << cName;
                                         totalCols++;
@@ -1661,20 +1692,21 @@ public:
                         = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
                 if (docsLocation.isEmpty())
                     docsLocation = QFileInfo(m_currentLogFile).path();
-                QString outFileName
-                        = QDir(docsLocation).filePath(logName + "_" + acId + "_export.csv");
+                QString outFileName = QDir(docsLocation)
+                                              .filePath(logName + QStringLiteral("_") + acId
+                                                        + QStringLiteral("_export.csv"));
                 QMap<QString, QList<int>> selectedFields;
                 QMap<QString, QStringList> selectedFieldNames;
                 int totalCols = 0;
                 QStringList headerCols;
-                headerCols << "Time";
+                headerCols << QStringLiteral("Time");
 
-                for (const QString &msgName : msgs) {
+                for (const QString &msgName : std::as_const(msgs)) {
                     if (dictFields.contains(msgName)) {
                         const QStringList &fields = dictFields.value(msgName);
                         for (int j = 0; j < fields.size(); ++j) {
                             selectedFields[msgName].append(j);
-                            QString cName = msgName + "." + fields[j];
+                            QString cName = msgName + QStringLiteral(".") + fields[j];
                             selectedFieldNames[msgName].append(cName);
                             headerCols << cName;
                             totalCols++;
@@ -1689,7 +1721,7 @@ public:
                                 selectedFields,
                                 selectedFieldNames,
                                 headerCols,
-                                ",");
+                                QStringLiteral(","));
                 }
             }
         }
@@ -1710,7 +1742,7 @@ int main(int argc, char *argv[])
 {
     // Set metadata BEFORE application instantiation to prevent XDG portal double-registration
     // root cause ("Connection already associated with an application ID").
-    QCoreApplication::setApplicationVersion("1.0");
+    QCoreApplication::setApplicationVersion(QStringLiteral("1.0"));
     // QCoreApplication::setOrganizationName("paparazzi"); // only for settings, not really relevant
     // here
     //  Follow XDG spec for desktop integration and use a fixed name to ensure the .desktop file is
@@ -1727,13 +1759,13 @@ int main(int argc, char *argv[])
 
     // app.setApplicationDisplayName(QStringLiteral("Log Plotter"));
 
-    QString iconPath = ":/penguin_icon_log.png";
+    QString iconPath = QStringLiteral(":/penguin_icon_log.png");
     QIcon icon(iconPath);
     installLinuxDesktopIntegration(QApplication::desktopFileName(),
-                                   "Paparazzi log plotter",
-                                   "Log plotter for telemetry messages",
+                                   QStringLiteral("Paparazzi log plotter"),
+                                   QStringLiteral("Log plotter for telemetry messages"),
                                    iconPath,
-                                   "paparazzi-logplotter");
+                                   QStringLiteral("paparazzi-logplotter"));
 
     // Apply the custom proxy style to the application.
     // We pass app.style() so it inherits all the default OS/Wayland drawing
@@ -1743,21 +1775,26 @@ int main(int argc, char *argv[])
     QApplication::setWindowIcon(icon);
 
     QCommandLineParser parser;
-    parser.setApplicationDescription("Paparazzi Log Plotter");
+    parser.setApplicationDescription(QStringLiteral("Paparazzi Log Plotter"));
     parser.addHelpOption();
     // Use manual version option to avoid "-v" conflict with verbose
-    QCommandLineOption versionOption(QStringList() << "version", "Displays version information.");
+    QCommandLineOption versionOption(QStringList() << QStringLiteral("version"),
+                                     QStringLiteral("Displays version information."));
     parser.addOption(versionOption);
 
     QCommandLineOption exportCsvOption(
-            QStringList() << "export_csv",
-            "Export in CSV in batch mode according to saved preferences.");
+            QStringList() << QStringLiteral("export_csv"),
+            QStringLiteral("Export in CSV in batch mode according to saved preferences."));
     parser.addOption(exportCsvOption);
 
-    QCommandLineOption verboseOption(QStringList() << "v" << "verbose", "Verbose mode.");
+    QCommandLineOption verboseOption(QStringList()
+                                             << QStringLiteral("v") << QStringLiteral("verbose"),
+                                     QStringLiteral("Verbose mode."));
     parser.addOption(verboseOption);
 
-    parser.addPositionalArgument("logs", "Log files to open.", "[log files...]");
+    parser.addPositionalArgument(QStringLiteral("logs"),
+                                 QStringLiteral("Log files to open."),
+                                 QStringLiteral("[log files...]"));
 
     // Parse the command line arguments
     QStringList args = QApplication::arguments();
@@ -1771,7 +1808,7 @@ int main(int argc, char *argv[])
             int j = i + 1;
             bool foundClosed = false;
             while (j < args.size()) {
-                merged += " " + args[j];
+                merged += QStringLiteral(" ") + args[j];
                 if (args[j].endsWith(quoteType)) {
                     foundClosed = true;
                     break;
@@ -1814,10 +1851,10 @@ int main(int argc, char *argv[])
         window->setAttribute(Qt::WA_DeleteOnClose);
         window->show();
     } else {
-        for (const QString &argFile : logFiles) {
+        for (const QString &argFile : std::as_const(logFiles)) {
             // Ignore arguments that sneak through Qt arg parsing like wayland parameters just in
             // case
-            if (argFile == "--platform")
+            if (argFile == QLatin1String("--platform"))
                 continue;
 
             LogPlotterWindow *window = new LogPlotterWindow();
