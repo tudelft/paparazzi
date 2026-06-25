@@ -54,6 +54,7 @@
 #include <utility>
 
 #include "../include/os_desktop_utils.h"
+#include "../include/pprz_version.h"
 #include "plotter_common.h"
 
 #include "pprzlinkQt/IvyQtLink.h"
@@ -1387,7 +1388,7 @@ void PlotterWindow::onLineThicknessChanged(int val)
  */
 int main(int argc, char *argv[])
 {
-    QCoreApplication::setApplicationVersion(QStringLiteral("1.0"));
+    QCoreApplication::setApplicationVersion(QStringLiteral(PPRZ_VERSION_DESC));
     QGuiApplication::setDesktopFileName(QStringLiteral("paparazzi_plotter"));
     QCoreApplication::setApplicationName(QStringLiteral("Paparazzi Real-time Plotter"));
 
@@ -1397,6 +1398,7 @@ int main(int argc, char *argv[])
     QCommandLineParser parser;
     parser.setApplicationDescription(QStringLiteral("Paparazzi Real-time Plotter"));
     parser.addHelpOption();
+    parser.addVersionOption();
     // Add same options as Logalizer/Plotter for the help display
     QCommandLineOption busOpt(QStringLiteral("b"),
                               QStringLiteral("ivy bus (Default is 127.255.255.255:2010)"),

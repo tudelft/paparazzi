@@ -74,6 +74,7 @@
 #include <utility>
 
 #include "../include/os_desktop_utils.h"
+#include "../include/pprz_version.h"
 #include "plotter_common.h"
 
 /**
@@ -1742,7 +1743,7 @@ int main(int argc, char *argv[])
 {
     // Set metadata BEFORE application instantiation to prevent XDG portal double-registration
     // root cause ("Connection already associated with an application ID").
-    QCoreApplication::setApplicationVersion(QStringLiteral("1.0"));
+    QCoreApplication::setApplicationVersion(QStringLiteral(PPRZ_VERSION_DESC));
     // QCoreApplication::setOrganizationName("paparazzi"); // only for settings, not really relevant
     // here
     //  Follow XDG spec for desktop integration and use a fixed name to ensure the .desktop file is

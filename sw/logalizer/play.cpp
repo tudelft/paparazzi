@@ -77,6 +77,7 @@
 // here for the conf/protocol parsing). See initDictionary() / buildIntChecks().
 
 #include "../include/os_desktop_utils.h"
+#include "../include/pprz_version.h"
 
 // ---------------------------------------------------------------------------
 // Fast-forward / fast-backward seek step, in seconds. Since fixed at compile-time,
@@ -1926,7 +1927,7 @@ private:
  */
 int main(int argc, char *argv[])
 {
-    QCoreApplication::setApplicationVersion(QStringLiteral("1.0"));
+    QCoreApplication::setApplicationVersion(QStringLiteral(PPRZ_VERSION_DESC));
     QGuiApplication::setDesktopFileName(QStringLiteral("paparazzi_play"));
     QCoreApplication::setApplicationName(QStringLiteral("Paparazzi replay"));
     qputenv("QT_LOGGING_RULES", "qt.qpa.wayland.textinput=false");
@@ -1944,8 +1945,9 @@ int main(int argc, char *argv[])
     QCommandLineParser parser;
     parser.setApplicationDescription(QStringLiteral("Paparazzi Replay"));
     parser.addHelpOption();
-    parser.addOption(QCommandLineOption(QStringList() << QStringLiteral("version"),
-                                        QStringLiteral("Displays version information.")));
+    parser.addOption(
+            QCommandLineOption(QStringList() << QStringLiteral("v") << QStringLiteral("version"),
+                               QStringLiteral("Displays version information.")));
     parser.addOption(QCommandLineOption(QStringList() << QStringLiteral("b"),
                                         QStringLiteral("Ivy Bus. Default is 127.255.255.255:2010"),
                                         QStringLiteral("bus"),

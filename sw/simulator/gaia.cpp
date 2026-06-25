@@ -49,6 +49,7 @@
 #include <vector>
 
 #include "../include/os_desktop_utils.h"
+#include "../include/pprz_version.h"
 #include "pprzlinkQt/IvyQtLink.h"
 
 #ifndef M_PI
@@ -500,7 +501,7 @@ int main(int argc, char *argv[])
 {
     // Set metadata BEFORE application instantiation to prevent XDG portal double-registration
     // root cause ("Connection already associated with an application ID").
-    QCoreApplication::setApplicationVersion(QStringLiteral("1.0"));
+    QCoreApplication::setApplicationVersion(QStringLiteral(PPRZ_VERSION_DESC));
     QGuiApplication::setDesktopFileName(QStringLiteral("paparazzi_gaia"));
     QCoreApplication::setApplicationName(QStringLiteral("Gaia"));
 

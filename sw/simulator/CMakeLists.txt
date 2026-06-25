@@ -43,6 +43,7 @@ endif()
 target_link_libraries(gaia PRIVATE 
     Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Xml Qt6::Network
     pprzlinkQt
+    pprz_version
 )
 
 # Copy the final executable to the simulator directory

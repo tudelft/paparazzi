@@ -50,6 +50,7 @@
 #include <QXmlStreamReader>
 
 #include "../../include/os_desktop_utils.h"
+#include "../../include/pprz_version.h"
 #include "pprzlinkQt/IvyQtLink.h"
 
 /**
@@ -1218,7 +1219,7 @@ int main(int argc, char *argv[])
 {
     // Set metadata BEFORE application instantiation to prevent XDG portal double-registration
     // root cause ("Connection already associated with an application ID").
-    QCoreApplication::setApplicationVersion(QStringLiteral("1.0"));
+    QCoreApplication::setApplicationVersion(QStringLiteral(PPRZ_VERSION_DESC));
     // Set internal names in lowercase with underscores for safe XDG folder paths
     // QCoreApplication::setOrganizationName("paparazzi"); // only for settings, not really relevant
     // here

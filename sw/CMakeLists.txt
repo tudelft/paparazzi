@@ -86,6 +86,68 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/ext/pprz_qt_link_libraries.cmake)
 pprz_provide_qt_link_libraries()
 
 # ---------------------------------------------------------------------------
+# Paparazzi version stamp (sw/include/pprz_version.h)
+#
+# pprz_version.h turns the build-time token defines GIT_SHA1 / GIT_DESC /
+# PPRZ_VER[_MAJOR|_MINOR|_PATCH] into the string macros GIT_VERSION,
+# PPRZ_VERSION_DESC and PPRZ_VERSION that the apps print via "-v"/"--version".
+# The firmware Makefile (Makefile.ac) derives those values from git; we mirror
+# that here -- once, at configure time -- and hand them to every Qt app through
+# one INTERFACE target. Non-git (release tarball) builds fall back to UNKNOWN/0
+# so the macros are always well-formed. Re-run CMake to refresh the stamp.
+# ---------------------------------------------------------------------------
+find_package(Git QUIET)
+set(PPRZ_GIT_SHA1 "UNKNOWN")
+set(PPRZ_GIT_DESC "UNKNOWN")
+if(GIT_FOUND)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} log -1 --pretty=format:%H
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+        OUTPUT_VARIABLE _pprz_sha1
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET)
+    if(_pprz_sha1)
+        set(PPRZ_GIT_SHA1 "${_pprz_sha1}")
+    endif()
+endif()
+# paparazzi_version emits the exact "git describe" string the firmware uses.
+execute_process(
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../paparazzi_version
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+    OUTPUT_VARIABLE _pprz_desc
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET)
+if(_pprz_desc)
+    set(PPRZ_GIT_DESC "${_pprz_desc}")
+endif()
+# Derive <major>.<minor>.<patch> from the describe string (e.g. "v6.4.0-..." or
+# "v7.0_unstable-..."), defaulting any missing numeric part to 0 so the integer
+# PPRZ_VERSION_INT macro stays valid.
+set(PPRZ_VER_MAJOR 0)
+set(PPRZ_VER_MINOR 0)
+set(PPRZ_VER_PATCH 0)
+if(PPRZ_GIT_DESC MATCHES "^v?([0-9]+)\\.([0-9]+)\\.([0-9]+)")
+    set(PPRZ_VER_MAJOR "${CMAKE_MATCH_1}")
+    set(PPRZ_VER_MINOR "${CMAKE_MATCH_2}")
+    set(PPRZ_VER_PATCH "${CMAKE_MATCH_3}")
+elseif(PPRZ_GIT_DESC MATCHES "^v?([0-9]+)\\.([0-9]+)")
+    set(PPRZ_VER_MAJOR "${CMAKE_MATCH_1}")
+    set(PPRZ_VER_MINOR "${CMAKE_MATCH_2}")
+endif()
+set(PPRZ_VER "${PPRZ_VER_MAJOR}.${PPRZ_VER_MINOR}.${PPRZ_VER_PATCH}")
+message(STATUS "Paparazzi version: ${PPRZ_GIT_DESC} (${PPRZ_VER}, sha ${PPRZ_GIT_SHA1})")
+
+add_library(pprz_version INTERFACE)
+target_compile_definitions(pprz_version INTERFACE
+    GIT_SHA1=${PPRZ_GIT_SHA1}
+    GIT_DESC=${PPRZ_GIT_DESC}
+    PPRZ_VER=${PPRZ_VER}
+    PPRZ_VER_MAJOR=${PPRZ_VER_MAJOR}
+    PPRZ_VER_MINOR=${PPRZ_VER_MINOR}
+    PPRZ_VER_PATCH=${PPRZ_VER_PATCH}
+)
+
+# ---------------------------------------------------------------------------
 # logalizer tools: plotter, logplotter, play
 #
 # These are single-translation-unit Qt6 apps that share one optimized build
@@ -117,12 +179,12 @@ foreach(app plotter logplotter play)
 endforeach()
 
 # plotter and logplotter render with Qt Charts and decode telemetry via pprzlinkQt.
-target_link_libraries(plotter    PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Xml Qt6::Network Qt6::Charts pprzlinkQt)
-target_link_libraries(logplotter PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Xml Qt6::Network Qt6::Charts pprzlinkQt)
+target_link_libraries(plotter    PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Xml Qt6::Network Qt6::Charts pprzlinkQt pprz_version)
+target_link_libraries(logplotter PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Xml Qt6::Network Qt6::Charts pprzlinkQt pprz_version)
 # play only re-broadcasts already-formatted log lines on the Ivy bus (no Charts,
 # no pprzlink): it reads the few message facts it needs straight from
 # messages.xml via Qt6::Xml, so it links just IvyQt.
-target_link_libraries(play       PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Xml Qt6::Network IvyQt)
+target_link_libraries(play       PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Xml Qt6::Network IvyQt pprz_version)
 
 # ---------------------------------------------------------------------------
 # Remaining Qt applications. Explicit (short) binary directory names keep the
