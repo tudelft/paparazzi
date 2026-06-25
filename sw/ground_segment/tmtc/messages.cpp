@@ -6,26 +6,48 @@
  * It dynamically parses the unit and coefficient geometries to reflect real-time telemetry variables.
  */
 
+#include <QAbstractItemView>
 #include <QApplication>
-#include <QCommandLineParser>
 #include <QCommandLineOption>
-#include <QMimeData>
+#include <QCommandLineParser>
+#include <QCoreApplication>
+#include <QDateTime>
+#include <QDebug>
+#include <QDialog>
 #include <QDrag>
-#include <QLabel>
-#include <QListWidgetItem>
-#include <QMainWindow>
-#include <QScrollBar>
-#include <QMouseEvent>
-#include <QPushButton>
-#include <QStackedWidget>
-#include <QVBoxLayout>
-#include <QInputDialog>
-#include <QRegularExpression>
-#include <QTimer>
 #include <QFile>
 #include <QFileInfo>
+#include <QFrame>
+#include <QGuiApplication>
+#include <QHBoxLayout>
+#include <QHash>
+#include <QIcon>
+#include <QInputDialog>
+#include <QIODevice>
+#include <QLabel>
+#include <QList>
+#include <QListWidget>
+#include <QListWidgetItem>
+#include <QMainWindow>
+#include <QMimeData>
+#include <QMouseEvent>
+#include <QPoint>
+#include <QPushButton>
+#include <QRegularExpression>
+#include <QScrollBar>
+#include <QSizePolicy>
+#include <QStackedWidget>
+#include <QString>
+#include <QStringList>
+#include <QStyle>
+#include <QTabWidget>
+#include <QTextStream>
+#include <QTimer>
+#include <QVBoxLayout>
+#include <QVector>
+#include <QWidget>
 #include <QXmlStreamReader>
-#include <QDebug>
+
 #include "pprzlinkQt/IvyQtLink.h"
 #include "../../include/os_desktop_utils.h"
 
@@ -1023,6 +1045,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName(QStringLiteral("paparazzi-messages"));
 
     QApplication app(argc, argv);
+    app.setStyle(new EditorLighteningStyle(app.style()));
 
     QCommandLineParser parser;
     parser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);

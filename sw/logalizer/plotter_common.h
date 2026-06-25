@@ -9,20 +9,21 @@
  * restrictive layout clipping behaviors in dense UI contexts.
  */
 #pragma once
-#include <QColor>
+#include <algorithm>
 #include <cmath>
-#include <QLineSeries>
-#include <QLabel>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QAction>
-#include <QMenu>
+
 #include <QChart>
-#include <QChartView>
-#include <QTimer>
-#include <QWidget>
+#include <QColor>
 #include <QEvent>
-#include <QCoreApplication>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QLineSeries>
+#include <QObject>
+#include <QSizePolicy>
+#include <QString>
+#include <QTimer>
+#include <QVBoxLayout>
+#include <QWidget>
 
 static inline int g_colorIndex = 0;
 

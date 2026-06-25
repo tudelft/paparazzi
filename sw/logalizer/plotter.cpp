@@ -6,19 +6,49 @@
  *          It is designed to be highly robust and memory-safe for long-running operations.
  */
 
+#include <QAction>
 #include <QApplication>
+#include <QChart>
+#include <QChartView>
 #include <QCheckBox>
+#include <QCommandLineOption>
+#include <QCommandLineParser>
+#include <QCoreApplication>
+#include <QDateTime>
+#include <QDragEnterEvent>
+#include <QDropEvent>
 #include <QFile>
+#include <QFrame>
 #include <QGraphicsLayout>
+#include <QGuiApplication>
+#include <QHBoxLayout>
+#include <QIcon>
+#include <QIODevice>
+#include <QKeySequence>
+#include <QLabel>
 #include <QLineEdit>
+#include <QLineSeries>
+#include <QList>
 #include <QMainWindow>
+#include <QMargins>
+#include <QMenu>
 #include <QMenuBar>
+#include <QObject>
+#include <QPainter>
+#include <QPen>
+#include <QPixmap>
+#include <QPointF>
+#include <QRegularExpression>
+#include <QResizeEvent>
 #include <QSlider>
 #include <QSpinBox>
+#include <QString>
+#include <QStringList>
+#include <QTimer>
 #include <QValueAxis>
-#include <QProxyStyle>
-#include <QPlainTextEdit>
-#include <QRegularExpression>
+#include <QVBoxLayout>
+#include <QWidget>
+
 #include <mutex>
 
 #include "plotter_common.h"
@@ -1150,41 +1180,6 @@ void PlotterWindow::onLineThicknessChanged(int val) {
         plot.series->setPen(p);
     }
 }
-
-/**
- * @class EditorLighteningStyle
- * @brief Enhances text input legibility specifically for deep dark GTK environments trivially.
- * @details Instead of manipulating deeply entrenched CSS strings and hard-breaking system logic, 
- *          we exploit dynamic `QProxyStyle` interception resolving color mismatches automatically.
- */
-class EditorLighteningStyle : public QProxyStyle {
-public:
-    // Inherit constructors from QProxyStyle
-    using QProxyStyle::QProxyStyle; 
-
-    // The polish function is called automatically for every widget 
-    // right before it is displayed.
-    void polish(QWidget *widget) override {
-        // Always call the base class implementation first
-        QProxyStyle::polish(widget); 
-
-        // Check if the current widget is an edit field or a spinbox
-        if (qobject_cast<QLineEdit*>(widget) ||
-            qobject_cast<QTextEdit*>(widget) ||
-            qobject_cast<QPlainTextEdit*>(widget) ||
-            qobject_cast<QAbstractSpinBox*>(widget)) {
-            
-            // It's a match! Grab this specific widget's palette
-            QPalette customPalette = widget->palette();
-            
-            // Change the Base color to a lighter dark-mode gray
-            customPalette.setColor(QPalette::Base, QColor("#3a3a3a"));
-            
-            // Apply it ONLY to this specific widget
-            widget->setPalette(customPalette);
-        }
-    }
-};
 
 /**
  * @brief Formal execution entry point instantiating process rules and UI execution contexts.

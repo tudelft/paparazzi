@@ -12,28 +12,40 @@
  * cross-process Ivy communication.
  */
 #include <QApplication>
-#include <QMainWindow>
-#include <QCommandLineParser>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QDoubleSpinBox>
-#include <QTimer>
-#include <QFrame>
-#include <QIcon>
-#include <QFile>
-#include <QDir>
-#include <QDebug>
-#include <QPolygon>
-#include <cmath>
-#include <QLabel>
-#include <QSlider>
 #include <QCheckBox>
+#include <QColor>
+#include <QCommandLineOption>
+#include <QCommandLineParser>
+#include <QCoreApplication>
+#include <QDebug>
 #include <QDial>
-#include <QPainter>
-#include <QSpinBox>
+#include <QDir>
+#include <QDoubleSpinBox>
+#include <QFile>
+#include <QFrame>
 #include <QGridLayout>
-#include <memory>
+#include <QGuiApplication>
+#include <QHBoxLayout>
+#include <QIcon>
+#include <QLabel>
+#include <QMainWindow>
+#include <QPaintEvent>
+#include <QPainter>
+#include <QPen>
+#include <QPoint>
+#include <QPolygon>
+#include <QSizePolicy>
+#include <QSlider>
+#include <QSpinBox>
+#include <QString>
+#include <QStringList>
+#include <QTimer>
+#include <QVBoxLayout>
+#include <QWidget>
+
 #include <algorithm>
+#include <cmath>
+#include <memory>
 #include <vector>
 
 #include "../include/os_desktop_utils.h"
@@ -450,6 +462,7 @@ int main(int argc, char *argv[])
     QIcon icon(iconPath);
     installLinuxDesktopIntegration(app.desktopFileName(), "Paparazzi Gaia", "World environment simulator", iconPath, "paparazzi-gaia");
     app.setWindowIcon(icon);
+    app.setStyle(new EditorLighteningStyle(app.style()));
 
     QCommandLineParser parser;
     parser.setApplicationDescription("Paparazzi Gaia simulator component");

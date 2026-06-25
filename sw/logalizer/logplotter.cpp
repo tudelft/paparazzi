@@ -6,29 +6,70 @@
  * dynamic data visualization scaling, and heavy multi-megabyte I/O log loading 
  * optimized natively via Qt's C++ toolings.
  */
-#include <QMessageBox>
-#include <QProgressDialog>
+#include <QAbstractSeries>
+#include <QAction>
 #include <QApplication>
-#include <QMainWindow>
-#include <QGraphicsLayout>
-#include <QValueAxis>
-#include <QPushButton>
-#include <QFileDialog>
-#include <QShortcut>
-#include <QMenuBar>
-#include <QComboBox>
-#include <QTreeWidget>
+#include <QByteArray>
+#include <QChart>
+#include <QChartView>
 #include <QCheckBox>
-#include <QLineEdit>
-#include <QSpinBox>
-#include <QXmlStreamReader>
-#include <QProxyStyle>
+#include <QComboBox>
+#include <QCommandLineOption>
 #include <QCommandLineParser>
-
-// Include the widgets you want to target for color changes
-#include <QPlainTextEdit>
-#include <QTextEdit>  //  <-- Uncomment if you also want to target QTextEdit
-// #include <QAbstractSpinBox> <-- Uncomment if you also want to target SpinBoxes
+#include <QCoreApplication>
+#include <QDateTime>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QDir>
+#include <QEvent>
+#include <QFile>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QFrame>
+#include <QGraphicsLayout>
+#include <QGuiApplication>
+#include <QHBoxLayout>
+#include <QIcon>
+#include <QIODevice>
+#include <QKeySequence>
+#include <QLabel>
+#include <QLineEdit>
+#include <QLineSeries>
+#include <QList>
+#include <QMainWindow>
+#include <QMap>
+#include <QMargins>
+#include <QMenu>
+#include <QMenuBar>
+#include <QMessageBox>
+#include <QMouseEvent>
+#include <QObject>
+#include <QPainter>
+#include <QPair>
+#include <QPen>
+#include <QPixmap>
+#include <QPointF>
+#include <QProcess>
+#include <QProgressDialog>
+#include <QPushButton>
+#include <QRectF>
+#include <QRegularExpression>
+#include <QResizeEvent>
+#include <QSet>
+#include <QShortcut>
+#include <QSpinBox>
+#include <QStandardPaths>
+#include <QString>
+#include <QStringList>
+#include <QTextStream>
+#include <QTimer>
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
+#include <QValueAxis>
+#include <QVBoxLayout>
+#include <QWheelEvent>
+#include <QWidget>
+#include <QXmlStreamReader>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -70,50 +111,6 @@ public:
             close(devNull);
         }
         close(oldStderr);
-    }
-};
-
-/**
- * @class EditorLighteningStyle
- * @brief Tames aggressively dark input widgets natively assigned by dark system themes.
- * 
- * @details Default dark mode palettes often render QLineEdits so dark that the input 
- * borders or contrasts fail visibility checks. By proxying the widget polish phase, 
- * we precisely elevate the `QPalette::Base` without touching Qt's global stylesheet mechanism, 
- * which is notorious for stripping native OS-render configurations.
- */
-class EditorLighteningStyle : public QProxyStyle { //TODO: Move to common header os_desktop_utils.h since we like this elsewhere also
-public:
-    // Inherit constructors from QProxyStyle
-    using QProxyStyle::QProxyStyle; 
-
-        /**
-     * @brief The polish function is invoked automatically right before a widget renders.
-     * @param widget The Qt widget being prepped.
-     * 
-     * @details Hooks specifically into input-based widgets (LineEdits, SpinBoxes) 
-     * to forcefully override their base background color to a readable `#3a3a3a`.
-     */ 
-    // right before it is displayed.
-    void polish(QWidget *widget) override {
-        // Always call the base class implementation first
-        QProxyStyle::polish(widget); 
-
-        // Check if the current widget is an edit field or a spinbox
-        if (qobject_cast<QLineEdit*>(widget) ||
-            qobject_cast<QTextEdit*>(widget) ||
-            qobject_cast<QPlainTextEdit*>(widget) ||
-            qobject_cast<QAbstractSpinBox*>(widget)) {
-            
-            // It's a match! Grab this specific widget's palette
-            QPalette customPalette = widget->palette();
-            
-            // Change the Base color to your lighter dark-mode gray
-            customPalette.setColor(QPalette::Base, QColor("#3a3a3a"));
-            
-            // Apply it ONLY to this specific widget
-            widget->setPalette(customPalette);
-        }
     }
 };
 

@@ -10,13 +10,23 @@
 #define OS_DESKTOP_UTILS_H
 
 #include <QCoreApplication>
-#include <QStandardPaths>
 #include <QDir>
 #include <QFile>
-#include <QTextStream>
+#include <QIODevice>
 #include <QProcess>
+#include <QStandardPaths>
 #include <QString>
 #include <QStringList>
+#include <QTextStream>
+// Widget/styling headers required by EditorLighteningStyle (defined below).
+#include <QAbstractSpinBox>
+#include <QColor>
+#include <QLineEdit>
+#include <QPalette>
+#include <QPlainTextEdit>
+#include <QProxyStyle>
+#include <QTextEdit>
+#include <QWidget>
 
 /**
  * @brief Bootstraps a Linux `.desktop` file dynamically so the desktop manager recognizes the app.
@@ -99,5 +109,48 @@ inline void installLinuxDesktopIntegration(const QString& appDesktopFileName, co
     }
 #endif
 }
+
+/**
+ * @class EditorLighteningStyle
+ * @brief Lightens aggressively dark text-input widgets imposed by dark system themes.
+ *
+ * @details Many dark GTK/Qt palettes render @c QLineEdit / @c QTextEdit /
+ * @c QPlainTextEdit / @c QAbstractSpinBox backgrounds so dark that their borders
+ * and contents fail visibility checks. Rather than fighting Qt's global
+ * stylesheet (which tends to strip native OS rendering), this proxy style hooks
+ * the per-widget @c polish phase and raises only @c QPalette::Base to a readable
+ * @c #3a3a3a on input widgets, leaving every other widget untouched. All members
+ * are inline, so the class can be shared by including this header from multiple
+ * translation units without violating the One Definition Rule.
+ *
+ * Usage: @code app.setStyle(new EditorLighteningStyle(app.style())); @endcode
+ */
+class EditorLighteningStyle : public QProxyStyle {
+public:
+    // Inherit QProxyStyle's constructors (notably the one taking a base QStyle*).
+    using QProxyStyle::QProxyStyle;
+
+    /**
+     * @brief Invoked automatically just before each widget is shown.
+     * @param widget The widget being prepared for display.
+     * @details Forces a lighter @c QPalette::Base on text-input widgets only.
+     */
+    void polish(QWidget *widget) override {
+        // Always run the base class polish first.
+        QProxyStyle::polish(widget);
+
+        // Only adjust editable text/number input widgets.
+        if (qobject_cast<QLineEdit*>(widget) ||
+            qobject_cast<QTextEdit*>(widget) ||
+            qobject_cast<QPlainTextEdit*>(widget) ||
+            qobject_cast<QAbstractSpinBox*>(widget)) {
+
+            QPalette customPalette = widget->palette();
+            customPalette.setColor(QPalette::Base, QColor("#3a3a3a"));
+            // Apply only to this specific widget, not globally.
+            widget->setPalette(customPalette);
+        }
+    }
+};
 
 #endif // OS_DESKTOP_UTILS_H
