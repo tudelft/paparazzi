@@ -77,49 +77,12 @@
 
 #include "../include/os_desktop_utils.h"
 
-// Includes strictly mapped to allow file-descriptor interactions driving the StderrBlocker
-#include <unistd.h>
-#include <fcntl.h>
-
 // ---------------------------------------------------------------------------
 // Fast-forward / fast-backward seek step, in seconds. Since fixed at compile-time,
 // change this one value to tune how far the  <<  /  >>  transport buttons jump. 
 // No runtime / dynamic setting involved, keeping the UI clean and focused on core playback controls.
 // ---------------------------------------------------------------------------
 #define PLAY_SEEK_STEP_SECONDS 10.0
-
-/**
- * @class StderrBlocker
- * @brief An RAII utility to safely redirect active un-handled system error pipes seamlessly.
- * 
- * @details 
- * **Why is this necessary?** 
- * When deploying Qt6 under modern strict Wayland compositors (like GNOME/Mutter), opening 
- * native OS file selection structures (`QFileDialog`) frequently executes backend GTK system wrappers. 
- * Because GTK internally misunderstands Qt's localized Wayland window identifiers, it floods the terminal 
- * logs with extremely verbose, albeit benign, `Gdk-CRITICAL` assertion streams. By instantiating this class 
- * prior to a dialog call, we temporarily pipe standard error (2) into `/dev/null`, keeping our operational 
- * debug streams clean and uncompromised.
- */
-class StderrBlocker {
-    int oldStderr;  ///< Cached file-descriptor holding original system standard error tracking lines.
-    int devNull;    ///< Target file-descriptor dumping writes natively out bounds.
-public:
-    StderrBlocker() {
-        fflush(stderr);
-        oldStderr = dup(STDERR_FILENO);
-        devNull = open("/dev/null", O_WRONLY);
-        if (devNull >= 0) dup2(devNull, STDERR_FILENO);
-    }
-    ~StderrBlocker() {
-        fflush(stderr);
-        if (devNull >= 0) {
-            dup2(oldStderr, STDERR_FILENO);
-            close(devNull);
-        }
-        close(oldStderr);
-    }
-};
 
 /**
  * @brief Resolves the Paparazzi home directory

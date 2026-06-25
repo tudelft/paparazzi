@@ -408,3 +408,24 @@ messages:
 .PHONY: gaia
 gaia:
 	$(MAKE) -C sw/simulator gaia
+
+# Build the PprzGCS Ground Control Station (a native Qt6/C++ app), mirroring the
+# lightweight `make play` / `make gaia` convenience targets above. Unlike the
+# in-tree tools, PprzGCS lives in its own repository and is wired into the tree
+# through the OPTIONAL sw/ground_segment/cockpit symlink ($(COCKPIT)). When that
+# logical location is present we build it exactly like `make cockpit` does
+# (out-of-tree into var/build_qt/cockpit, reusing the shared sw/ext Qt libs);
+# when it is absent we print how to add it instead of failing, so `make gcs` is
+# always safe to run. (`make cockpit` additionally rebuilds the OCaml libpprz the
+# legacy GCS needed; the C++ PprzGCS does not, so `gcs` skips it for a fast build.)
+.PHONY: gcs
+gcs:
+	$(Q)if [ -d $(COCKPIT) ]; then \
+		$(MAKE) -C $(COCKPIT) ISCOCKPIT=1 COCKPIT_SRC=$(abspath $(COCKPIT)); \
+	else \
+		$(COCKPIT_MISSING_MSG); \
+	fi
+
+# 'pprzgcs' is an alias for 'gcs' -- both build the PprzGCS Ground Control Station.
+.PHONY: pprzgcs
+pprzgcs: gcs

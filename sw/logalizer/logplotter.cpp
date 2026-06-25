@@ -71,48 +71,8 @@
 #include <QWidget>
 #include <QXmlStreamReader>
 
-#include <unistd.h>
-#include <fcntl.h>
-
 #include "plotter_common.h"
 #include "../include/os_desktop_utils.h"
-
-/**
- * @class StderrBlocker
- * @brief An RAII helper to temporarily suppress stderr warnings (like GTK Wayland criticals) during native dialogs.
- * 
- * @details 
- * WHY WE NEED THIS: 
- * When Qt runs natively on Wayland and attempts to open native file dialogs (`QFileDialog`), 
- * the underlying GTK portals often throw verbose `Gdk-CRITICAL` assertion errors into the 
- * console. This occurs because GTK misunderstands the Wayland window handles provided by Qt, 
- * filling logs with phantom errors during otherwise benign file picking.
- * 
- * WHY THIS APPROACH:
- * Instead of compromising global environment variables (e.g., forcing `GDK_BACKEND=x11`), 
- * which could aggressively break Wayland integrations downstream, we use this RAII lock 
- * to temporarily route `stderr` blackholes (`/dev/null`) directly matching the lifespan 
- * of the dialog scope. This effectively suppresses GTK spam cleanly.
- */
-class StderrBlocker {
-    int oldStderr;
-    int devNull;
-public:
-    StderrBlocker() {
-        fflush(stderr);
-        oldStderr = dup(STDERR_FILENO);
-        devNull = open("/dev/null", O_WRONLY);
-        if (devNull >= 0) dup2(devNull, STDERR_FILENO);
-    }
-    ~StderrBlocker() {
-        fflush(stderr);
-        if (devNull >= 0) {
-            dup2(oldStderr, STDERR_FILENO);
-            close(devNull);
-        }
-        close(oldStderr);
-    }
-};
 
 /**
  * @class ChartViewFilter

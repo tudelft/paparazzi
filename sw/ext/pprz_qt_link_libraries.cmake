@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-# pprzlinkqt.cmake -- shared Paparazzi Qt6 link libraries (IvyQt + pprzlinkQt)
+# pprz_qt_link_libraries.cmake -- shared Paparazzi Qt6 link libraries (IvyQt + pprzlinkQt)
 #
 # Provides a single CMake function, pprz_provide_qt_link_libraries(), that
 # creates the two shared Qt link libraries used by every native Qt6 application
@@ -48,12 +48,12 @@ function(pprz_provide_qt_link_libraries)
 
     if(NOT EXISTS "${_ivy_dir}/CMakeLists.txt")
         message(FATAL_ERROR
-            "pprzlinkqt.cmake: IvyQt sources were not found at \"${_ivy_dir}\". "
+            "pprz_qt_link_libraries.cmake: IvyQt sources were not found at \"${_ivy_dir}\". "
             "Run `git submodule update --init` under sw/ext to fetch ivy-qt.")
     endif()
     if(NOT EXISTS "${_pprz_dir}/src/Message.cpp")
         message(FATAL_ERROR
-            "pprzlinkqt.cmake: pprzlinkQt sources were not found at "
+            "pprz_qt_link_libraries.cmake: pprzlinkQt sources were not found at "
             "\"${_pprz_dir}\". Run `git submodule update --init` under sw/ext "
             "to fetch pprzlink-qt.")
     endif()

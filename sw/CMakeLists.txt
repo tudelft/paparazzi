@@ -82,7 +82,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Xml Network Svg Charts)
 # CMakeLists (which hard-codes an add_subdirectory() of its bundled, soon-to-be
 # removed nested IvyQt submodule). Both targets are created once and silenced of
 # upstream warnings inside the helper; every consumer below links them.
-include(${CMAKE_CURRENT_SOURCE_DIR}/ext/pprzlinkqt.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/ext/pprz_qt_link_libraries.cmake)
 pprz_provide_qt_link_libraries()
 
 # ---------------------------------------------------------------------------
