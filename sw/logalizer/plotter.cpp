@@ -1,8 +1,8 @@
 /**
  * @file plotter.cpp
  * @brief Real-time telemetry plotter application for Paparazzi UAV.
- * @details This application connects to the Paparazzi Ivy bus, parses telemetry 
- *          messages dynamically, and visualizes the data via Qt Charts in real-time. 
+ * @details This application connects to the Paparazzi Ivy bus, parses telemetry
+ *          messages dynamically, and visualizes the data via Qt Charts in real-time.
  *          It is designed to be highly robust and memory-safe for long-running operations.
  */
 
@@ -49,22 +49,25 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+#include <algorithm>
 #include <mutex>
+#include <utility>
 
-#include "plotter_common.h"
 #include "../include/os_desktop_utils.h"
+#include "plotter_common.h"
 
 #include "pprzlinkQt/IvyQtLink.h"
 
 /**
  * @struct PlotConfig
  * @brief Configuration and runtime state for an actively plotted curve.
- * @details This structure bundles the telemetry metadata (sender, message name, field) 
- *          with the Qt rendering components (QLineSeries, action menus) and an internal 
- *          buffer. Buffering points incoming rapidly prevents excessive redraw calls 
+ * @details This structure bundles the telemetry metadata (sender, message name, field)
+ *          with the Qt rendering components (QLineSeries, action menus) and an internal
+ *          buffer. Buffering points incoming rapidly prevents excessive redraw calls
  *          on the QChart side, allowing high update rates gracefully.
  */
-struct PlotConfig {
+struct PlotConfig
+{
     QString senderName;
     QRegularExpression senderNameRegex;
     bool hasWildcard = false;
@@ -72,24 +75,25 @@ struct PlotConfig {
     QString msgName;
     QString fieldName;
     double coef;
-    QLineSeries* series;
+    QLineSeries *series;
     QList<QPointF> history; // Master absolute timestamps tracking points
     QList<QPointF> buffer;
     int fieldIndex = -1;
     bool discrete = false;
-    QAction* avgAction = nullptr;
-    QAction* stdevAction = nullptr;
+    QAction *avgAction = nullptr;
+    QAction *stdevAction = nullptr;
     int arrayIndex = -1;
 };
 
 /**
  * @class PlotterWindow
  * @brief The main GUI manager encompassing the plotting canvas, tools, and Ivy messaging.
- * @details This class is responsible for spawning the main window layout, registering 
- *          drag-and-drop operations for curve associations, processing parsed variables 
+ * @details This class is responsible for spawning the main window layout, registering
+ *          drag-and-drop operations for curve associations, processing parsed variables
  *          into chart instances, and maintaining boundary rules (auto-scaling, min/max limits).
  */
-struct PlotterWindowConfig {
+struct PlotterWindowConfig
+{
     QString title;
     QString geometry;
     int memorySize = 500;
@@ -99,21 +103,26 @@ struct PlotterWindowConfig {
 
 /**
  * @brief Represents the PlotterWindow class.
- * @details This class encapsulates the primary logic and UI structures required 
- * for PlotterWindow operations, ensuring robust and memory-safe management within the telemetry pipeline.
+ * @details This class encapsulates the primary logic and UI structures required
+ * for PlotterWindow operations, ensuring robust and memory-safe management within the telemetry
+ * pipeline.
  */
-class PlotterWindow : public QMainWindow {
+class PlotterWindow : public QMainWindow
+{
     Q_OBJECT
 public:
-    explicit PlotterWindow(const PlotterWindowConfig& config, pprzlink::MessageDictionary* dict, pprzlink::IvyQtLink* link, QWidget *parent = nullptr);
-    ~PlotterWindow();
+    explicit PlotterWindow(const PlotterWindowConfig &config,
+                           pprzlink::MessageDictionary *dict,
+                           pprzlink::IvyQtLink *link,
+                           QWidget *parent = nullptr);
+    ~PlotterWindow() override;
 
 protected:
-    void resizeEvent(QResizeEvent* event) override;
+    void resizeEvent(QResizeEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
 
-private slots:
+private:
     void onClearClicked();
     void onPauseToggled(bool checked);
     void onAutoScaleToggled(bool checked);
@@ -124,55 +133,55 @@ private slots:
     void updatePlots();
     void onLegendRefreshTimeout();
 
-private:
-    ChartLegendManager* m_legendManager;
+    ChartLegendManager *m_legendManager;
 
     void setupUI();
     void setupMenu();
-    void addPlotFromPayload(const QString& payload);
-    void handleMessage(QString sender, const pprzlink::Message& msg);
-    
-    void addCurveToMenu(PlotConfig& config);
-    void removeCurve(QLineSeries* series);
+    void addPlotFromPayload(const QString &payload);
+    void handleMessage(QString sender, const pprzlink::Message &msg);
+
+    void addCurveToMenu(PlotConfig &cfg);
+    void removeCurve(QLineSeries *series);
     void recalculateYBounds();
-    
+
     QChart *m_chart;
     QValueAxis *m_axisX;
     QValueAxis *m_axisY;
     qint64 m_startTime;
-    
-    pprzlink::MessageDictionary* m_dict;
-    pprzlink::IvyQtLink* m_link;
-    
+
+    pprzlink::MessageDictionary *m_dict;
+    pprzlink::IvyQtLink *m_link;
+
     QList<PlotConfig> m_activePlots;
-    
+
     double m_minY;
     double m_maxY;
-    bool m_paused;
-    bool m_autoScale;
-    
-    QCheckBox* m_cbAutoScale;
-    QLineEdit* m_edtMinY;
-    QLineEdit* m_edtMaxY;
-    QSlider* m_slTimeWindow;
-    QLineEdit* m_edtConstant;
-    QSlider* m_slUpdateRate;
-    QLineEdit* m_edtScaleNext;
-    QSpinBox* m_spnLineThickness;
-    QTimer* m_updateTimer;
-    QMenu* m_curvesMenu;
-    QTimer* m_statsTimer;
-    bool m_statsNeedsRefresh;
+    bool m_paused {false};
+    bool m_autoScale {true};
+
+    QCheckBox *m_cbAutoScale;
+    QLineEdit *m_edtMinY;
+    QLineEdit *m_edtMaxY;
+    QSlider *m_slTimeWindow;
+    QLineEdit *m_edtConstant;
+    QSlider *m_slUpdateRate;
+    QLineEdit *m_edtScaleNext;
+    QSpinBox *m_spnLineThickness;
+    QTimer *m_updateTimer;
+    QMenu *m_curvesMenu;
+    QTimer *m_statsTimer;
+    bool m_statsNeedsRefresh {false};
     std::recursive_mutex m_plotMutex;
 };
 
 /**
  * @brief Safely extracts a native double value from a generic pprzlink FieldValue.
  * @param value The strongly-typed variant value transmitted over the Ivy bus.
- * @return The converted 64-bit float, or a quiet NaN if the layout is an array or unparseable string.
- * @details Ivy telemetry packages data in multiple raw binary types. This helper cleanly cascades 
- *          downward through the supported type taxonomy to normalize inputs onto a plotting-friendly 
- *          1D numerical axis.
+ * @return The converted 64-bit float, or a quiet NaN if the layout is an array or unparseable
+ * string.
+ * @details Ivy telemetry packages data in multiple raw binary types. This helper cleanly cascades
+ *          downward through the supported type taxonomy to normalize inputs onto a
+ * plotting-friendly 1D numerical axis.
  */
 static double fieldValueAsDouble(const pprzlink::FieldValue &value, int arrayIndex = -1)
 {
@@ -181,18 +190,66 @@ static double fieldValueAsDouble(const pprzlink::FieldValue &value, int arrayInd
         if (arrayIndex >= 0) {
             try {
                 switch (type.getBaseType()) {
-                    case pprzlink::BaseType::CHAR: { std::vector<char> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
-                    case pprzlink::BaseType::INT8: { std::vector<int8_t> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
-                    case pprzlink::BaseType::INT16: { std::vector<int16_t> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
-                    case pprzlink::BaseType::INT32: { std::vector<int32_t> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
-                    case pprzlink::BaseType::UINT8: { std::vector<uint8_t> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
-                    case pprzlink::BaseType::UINT16: { std::vector<uint16_t> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
-                    case pprzlink::BaseType::UINT32: { std::vector<uint32_t> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
-                    case pprzlink::BaseType::FLOAT: { std::vector<float> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
-                    case pprzlink::BaseType::DOUBLE: { std::vector<double> v; value.getValue(v); if (static_cast<size_t>(arrayIndex) < v.size()) return static_cast<double>(v[arrayIndex]); } break;
-                    default: return std::numeric_limits<double>::quiet_NaN();
+                case pprzlink::BaseType::CHAR: {
+                    std::vector<char> v;
+                    value.getValue(v);
+                    if (static_cast<size_t>(arrayIndex) < v.size())
+                        return static_cast<double>(v[arrayIndex]);
+                } break;
+                case pprzlink::BaseType::INT8: {
+                    std::vector<int8_t> v;
+                    value.getValue(v);
+                    if (static_cast<size_t>(arrayIndex) < v.size())
+                        return static_cast<double>(v[arrayIndex]);
+                } break;
+                case pprzlink::BaseType::INT16: {
+                    std::vector<int16_t> v;
+                    value.getValue(v);
+                    if (static_cast<size_t>(arrayIndex) < v.size())
+                        return static_cast<double>(v[arrayIndex]);
+                } break;
+                case pprzlink::BaseType::INT32: {
+                    std::vector<int32_t> v;
+                    value.getValue(v);
+                    if (static_cast<size_t>(arrayIndex) < v.size())
+                        return static_cast<double>(v[arrayIndex]);
+                } break;
+                case pprzlink::BaseType::UINT8: {
+                    std::vector<uint8_t> v;
+                    value.getValue(v);
+                    if (static_cast<size_t>(arrayIndex) < v.size())
+                        return static_cast<double>(v[arrayIndex]);
+                } break;
+                case pprzlink::BaseType::UINT16: {
+                    std::vector<uint16_t> v;
+                    value.getValue(v);
+                    if (static_cast<size_t>(arrayIndex) < v.size())
+                        return static_cast<double>(v[arrayIndex]);
+                } break;
+                case pprzlink::BaseType::UINT32: {
+                    std::vector<uint32_t> v;
+                    value.getValue(v);
+                    if (static_cast<size_t>(arrayIndex) < v.size())
+                        return static_cast<double>(v[arrayIndex]);
+                } break;
+                case pprzlink::BaseType::FLOAT: {
+                    std::vector<float> v;
+                    value.getValue(v);
+                    if (static_cast<size_t>(arrayIndex) < v.size())
+                        return static_cast<double>(v[arrayIndex]);
+                } break;
+                case pprzlink::BaseType::DOUBLE: {
+                    std::vector<double> v;
+                    value.getValue(v);
+                    if (static_cast<size_t>(arrayIndex) < v.size())
+                        return static_cast<double>(v[arrayIndex]);
+                } break;
+                default:
+                    return std::numeric_limits<double>::quiet_NaN();
                 }
             } catch (...) {
+                // Malformed array element; report the value as unavailable.
+                return std::numeric_limits<double>::quiet_NaN();
             }
         }
         return std::numeric_limits<double>::quiet_NaN();
@@ -258,18 +315,27 @@ static double fieldValueAsDouble(const pprzlink::FieldValue &value, int arrayInd
 /**
  * @brief Constructs the Plotter Window and instantiates all visual layouts.
  * @param parent Optional parent widget (usually null for root windows).
- * @details Establishes zero-margin frameless QChart setups, registers memory 
- *          handling attributes like `WA_DeleteOnClose` to prevent leaks upon 
+ * @details Establishes zero-margin frameless QChart setups, registers memory
+ *          handling attributes like `WA_DeleteOnClose` to prevent leaks upon
  *          user dismissal, and wires up the UI actions.
  */
-PlotterWindow::PlotterWindow(const PlotterWindowConfig& config, pprzlink::MessageDictionary* dict, pprzlink::IvyQtLink* link, QWidget *parent) : QMainWindow(parent), m_dict(dict), m_link(link), m_minY(std::numeric_limits<double>::infinity()), m_maxY(-std::numeric_limits<double>::infinity()), m_paused(false), m_autoScale(true), m_statsNeedsRefresh(false) {
+PlotterWindow::PlotterWindow(const PlotterWindowConfig &config,
+                             pprzlink::MessageDictionary *dict,
+                             pprzlink::IvyQtLink *link,
+                             QWidget *parent)
+    : QMainWindow(parent)
+    , m_dict(dict)
+    , m_link(link)
+    , m_minY(std::numeric_limits<double>::infinity())
+    , m_maxY(-std::numeric_limits<double>::infinity())
+{
     m_legendManager = nullptr;
     setAcceptDrops(true);
     setAttribute(Qt::WA_DeleteOnClose);
-    setWindowTitle(config.title.isEmpty() ? "Plotter" : config.title);
+    setWindowTitle(config.title.isEmpty() ? QStringLiteral("Plotter") : config.title);
 
     if (!config.geometry.isEmpty()) {
-        QRegularExpression re("^(\\d+)x(\\d+)(?:\\+[-]?(\\d+)\\+[-]?(\\d+))?$");
+        QRegularExpression re(QStringLiteral(R"(^(\d+)x(\d+)(?:\+[-]?(\d+)\+[-]?(\d+))?$)"));
         QRegularExpressionMatch match = re.match(config.geometry);
         if (match.hasMatch()) {
             int w = match.captured(1).toInt();
@@ -288,7 +354,7 @@ PlotterWindow::PlotterWindow(const PlotterWindowConfig& config, pprzlink::Messag
     }
 
     m_chart = new QChart();
-    m_chart->setTitle("Drag & Drop messages here");
+    m_chart->setTitle(QStringLiteral("Drag & Drop messages here"));
     m_chart->setAnimationOptions(QChart::NoAnimation);
     m_chart->setBackgroundRoundness(0);
     m_chart->setMargins(QMargins(0, 0, 0, 0));
@@ -296,14 +362,14 @@ PlotterWindow::PlotterWindow(const PlotterWindowConfig& config, pprzlink::Messag
     m_chart->setBackgroundPen(QPen(Qt::NoPen));
 
     m_axisX = new QValueAxis();
-    m_axisX->setTitleText("Time (s)");
+    m_axisX->setTitleText(QStringLiteral("Time (s)"));
     m_axisX->setTitleVisible(false); // Hidden by default
     // m_axisX->setLabelFormat("%gs"); previous if you want to
-    m_axisX->setLabelFormat("%.1fs");
+    m_axisX->setLabelFormat(QStringLiteral("%.1fs"));
     m_chart->addAxis(m_axisX, Qt::AlignBottom);
 
     m_axisY = new QValueAxis();
-    m_axisY->setTitleText("Value");
+    m_axisY->setTitleText(QStringLiteral("Value"));
     m_axisY->setTitleVisible(false); // Hidden by default
     m_chart->addAxis(m_axisY, Qt::AlignLeft);
 
@@ -315,31 +381,32 @@ PlotterWindow::PlotterWindow(const PlotterWindowConfig& config, pprzlink::Messag
     // Apply configuration values
     if (config.updateTime > 0) {
         int updateVal = static_cast<int>(config.updateTime * 100.0);
-        m_slUpdateRate->setValue(std::clamp(updateVal, m_slUpdateRate->minimum(), m_slUpdateRate->maximum()));
+        m_slUpdateRate->setValue(
+                std::clamp(updateVal, m_slUpdateRate->minimum(), m_slUpdateRate->maximum()));
     }
     if (config.memorySize > 0) {
-        m_slTimeWindow->setValue(std::clamp(config.memorySize, m_slTimeWindow->minimum(), m_slTimeWindow->maximum()));
+        m_slTimeWindow->setValue(std::clamp(
+                config.memorySize, m_slTimeWindow->minimum(), m_slTimeWindow->maximum()));
     }
 
-    for (const QString& curve : config.curves) {
+    for (const QString &curve : config.curves) {
         addPlotFromPayload(curve);
     }
 }
 
 /**
  * @brief Destructor.
+ * @details Windows no longer own m_link or m_dict; they are managed in main().
  */
-PlotterWindow::~PlotterWindow() {
-    // Windows no longer own m_link or m_dict; managed in main().
-}
-
+PlotterWindow::~PlotterWindow() = default;
 
 /**
  * @brief Constructs the application's widgets, layouts, menus, and timers dynamically.
  * @details This separates graphical state binding away from pure telemetry handling.
  *          Timers are generated here regulating UI FPS (default ~60Hz base).
  */
-void PlotterWindow::setupUI() {
+void PlotterWindow::setupUI()
+{
     QWidget *mainWidget = new QWidget(this);
     QVBoxLayout *mainLayout = new QVBoxLayout(mainWidget);
     mainLayout->setContentsMargins(0, 0, 0, 0);
@@ -349,7 +416,7 @@ void PlotterWindow::setupUI() {
     QHBoxLayout *toolbarLayout = new QHBoxLayout(toolbarWidget);
     toolbarLayout->setContentsMargins(2, 2, 2, 2); // keep some margin for the toolbar
 
-    m_cbAutoScale = new QCheckBox("Auto Scale");
+    m_cbAutoScale = new QCheckBox(QStringLiteral("Auto Scale"));
     m_cbAutoScale->setChecked(true);
 
     m_edtMinY = new QLineEdit();
@@ -360,28 +427,29 @@ void PlotterWindow::setupUI() {
     m_edtMaxY->setEnabled(false);
 
     m_slTimeWindow = new QSlider(Qt::Horizontal);
-    m_slTimeWindow->setToolTip("Memory Size");
+    m_slTimeWindow->setToolTip(QStringLiteral("Memory Size"));
     m_slTimeWindow->setRange(10, 1000); // 10 to 1000 points
     m_slTimeWindow->setSingleStep(10);
     m_slTimeWindow->setPageStep(10);
     m_slTimeWindow->setValue(500); // Default to 500
 
-    QLabel *lblConst = new QLabel("Constant");
+    QLabel *lblConst = new QLabel(QStringLiteral("Constant"));
     m_edtConstant = new QLineEdit();
     m_edtConstant->setMaximumWidth(50);
 
-    QLabel *lblScaleNext = new QLabel("Scale next by");
-    m_edtScaleNext = new QLineEdit("1.0");
+    QLabel *lblScaleNext = new QLabel(QStringLiteral("Scale next by"));
+    m_edtScaleNext = new QLineEdit(QStringLiteral("1.0"));
     m_edtScaleNext->setMaximumWidth(50);
-    m_edtScaleNext->setToolTip("Scale next curve (e.g. 0.0174 to convert deg in rad, 57.3 to convert rad in deg)");
+    m_edtScaleNext->setToolTip(QStringLiteral(
+            "Scale next curve (e.g. 0.0174 to convert deg in rad, 57.3 to convert rad in deg)"));
 
     m_slUpdateRate = new QSlider(Qt::Horizontal);
-    m_slUpdateRate->setToolTip("Update Rate (s)");
+    m_slUpdateRate->setToolTip(QStringLiteral("Update Rate (s)"));
     m_slUpdateRate->setRange(5, 100); // 0.05s to 1.00s (multiplied by 100 for integer slider)
     m_slUpdateRate->setValue(50); // Default to 0.5s => 50
 
     m_spnLineThickness = new QSpinBox();
-    m_spnLineThickness->setToolTip("Line Thickness (px)");
+    m_spnLineThickness->setToolTip(QStringLiteral("Line Thickness (px)"));
     m_spnLineThickness->setRange(1, 10);
     m_spnLineThickness->setValue(1);
     m_spnLineThickness->hide();
@@ -395,14 +463,14 @@ void PlotterWindow::setupUI() {
     m_statsTimer->start();
 
     toolbarLayout->addWidget(m_cbAutoScale);
-    toolbarLayout->addWidget(new QLabel("Min"));
+    toolbarLayout->addWidget(new QLabel(QStringLiteral("Min")));
     toolbarLayout->addWidget(m_edtMinY);
-    toolbarLayout->addWidget(new QLabel("Max"));
+    toolbarLayout->addWidget(new QLabel(QStringLiteral("Max")));
     toolbarLayout->addWidget(m_edtMaxY);
 
-    QLabel *lblTimeWindowVal = new QLabel(QString("%1").arg(m_slTimeWindow->value()));
+    QLabel *lblTimeWindowVal = new QLabel(QStringLiteral("%1").arg(m_slTimeWindow->value()));
     lblTimeWindowVal->setAlignment(Qt::AlignCenter);
-    lblTimeWindowVal->setToolTip("Memory Size");
+    lblTimeWindowVal->setToolTip(QStringLiteral("Memory Size"));
     QVBoxLayout *vboxTime = new QVBoxLayout();
     vboxTime->addWidget(lblTimeWindowVal);
     vboxTime->addWidget(m_slTimeWindow);
@@ -410,9 +478,10 @@ void PlotterWindow::setupUI() {
     QWidget *wTime = new QWidget();
     wTime->setLayout(vboxTime);
 
-    QLabel *lblUpdateRateVal = new QLabel(QString("%1").arg(m_slUpdateRate->value() / 100.0, 0, 'f', 2));
+    QLabel *lblUpdateRateVal
+            = new QLabel(QStringLiteral("%1").arg(m_slUpdateRate->value() / 100.0, 0, 'f', 2));
     lblUpdateRateVal->setAlignment(Qt::AlignCenter);
-    lblUpdateRateVal->setToolTip("Update Rate (s)");
+    lblUpdateRateVal->setToolTip(QStringLiteral("Update Rate (s)"));
     QVBoxLayout *vboxRate = new QVBoxLayout();
     vboxRate->addWidget(lblUpdateRateVal);
     vboxRate->addWidget(m_slUpdateRate);
@@ -420,12 +489,15 @@ void PlotterWindow::setupUI() {
     QWidget *wRate = new QWidget();
     wRate->setLayout(vboxRate);
 
-    connect(m_slTimeWindow, &QSlider::valueChanged, lblTimeWindowVal, [this, lblTimeWindowVal](int val) {
-        lblTimeWindowVal->setText(QString("%1").arg(val));
-        this->updatePlots(); // Instantly apply memory crop to the graph rendering
-    });
+    connect(m_slTimeWindow,
+            &QSlider::valueChanged,
+            lblTimeWindowVal,
+            [this, lblTimeWindowVal](int val) {
+                lblTimeWindowVal->setText(QStringLiteral("%1").arg(val));
+                this->updatePlots(); // Instantly apply memory crop to the graph rendering
+            });
     connect(m_slUpdateRate, &QSlider::valueChanged, lblUpdateRateVal, [lblUpdateRateVal](int val) {
-        lblUpdateRateVal->setText(QString("%1").arg(val / 100.0, 0, 'f', 2));
+        lblUpdateRateVal->setText(QStringLiteral("%1").arg(val / 100.0, 0, 'f', 2));
     });
 
     toolbarLayout->addWidget(wRate, 1);
@@ -434,11 +506,10 @@ void PlotterWindow::setupUI() {
     toolbarLayout->addWidget(m_edtConstant);
     toolbarLayout->addWidget(lblScaleNext);
     toolbarLayout->addWidget(m_edtScaleNext);
-    QLabel* lblLineThickness = new QLabel("Line:");
+    QLabel *lblLineThickness = new QLabel(QStringLiteral("Line:"));
     lblLineThickness->hide();
     toolbarLayout->addWidget(lblLineThickness);
     toolbarLayout->addWidget(m_spnLineThickness);
-
 
     QChartView *chartView = new QChartView(m_chart);
     chartView->setRenderHint(QPainter::Antialiasing);
@@ -458,14 +529,17 @@ void PlotterWindow::setupUI() {
     connect(m_edtMaxY, &QLineEdit::editingFinished, this, &PlotterWindow::onManualScaleChanged);
     connect(m_edtConstant, &QLineEdit::editingFinished, this, &PlotterWindow::onAddConstantClicked);
     connect(m_slUpdateRate, &QSlider::valueChanged, this, &PlotterWindow::onUpdateRateChanged);
-    connect(m_spnLineThickness, QOverload<int>::of(&QSpinBox::valueChanged), this, &PlotterWindow::onLineThicknessChanged);
+    connect(m_spnLineThickness,
+            QOverload<int>::of(&QSpinBox::valueChanged),
+            this,
+            &PlotterWindow::onLineThicknessChanged);
     connect(m_updateTimer, &QTimer::timeout, this, &PlotterWindow::updatePlots);
 }
 
 /**
  * @brief Periodically syncs statistical computations directly to UI display labels.
- * @details Re-walking plot arrays repeatedly is intense; batching them via a gentle 
- *          0.2s timer enables deep math analysis (StdDev, Average) without choking 
+ * @details Re-walking plot arrays repeatedly is intense; batching them via a gentle
+ *          0.2s timer enables deep math analysis (StdDev, Average) without choking
  *          the fast-rendering path.
  */
 void PlotterWindow::onLegendRefreshTimeout()
@@ -475,14 +549,17 @@ void PlotterWindow::onLegendRefreshTimeout()
     }
     m_statsNeedsRefresh = false;
 
-    std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
+    std::scoped_lock lock(m_plotMutex);
     // Compute average and standard deviation for each curve
-    for (const auto& plot : std::as_const(m_activePlots)) {
-        if (!plot.series || (!plot.avgAction && !plot.stdevAction)) continue;
+    for (const auto &plot : std::as_const(m_activePlots)) {
+        if (!plot.series || (!plot.avgAction && !plot.stdevAction))
+            continue;
         int n = plot.history.size();
         if (n < 1) {
-            if (plot.avgAction) plot.avgAction->setText(tr("Average: N/A"));
-            if (plot.stdevAction) plot.stdevAction->setText(tr("Stdev: N/A"));
+            if (plot.avgAction)
+                plot.avgAction->setText(tr("Average: N/A"));
+            if (plot.stdevAction)
+                plot.stdevAction->setText(tr("Stdev: N/A"));
             continue;
         }
         double sum = 0.0;
@@ -494,9 +571,9 @@ void PlotterWindow::onLegendRefreshTimeout()
         }
         double fn = static_cast<double>(n);
         double avg = sum / fn;
-        
+
         if (plot.avgAction) {
-            plot.avgAction->setText(QString("Average: %1").arg(avg, 0, 'f', 6));
+            plot.avgAction->setText(QStringLiteral("Average: %1").arg(avg, 0, 'f', 6));
         }
 
         if (plot.stdevAction) {
@@ -505,7 +582,7 @@ void PlotterWindow::onLegendRefreshTimeout()
             } else {
                 double variance = (sum_sq - fn * avg * avg) / fn;
                 double stdev = (variance > 0.0) ? std::sqrt(variance) : 0.0;
-                plot.stdevAction->setText(QString("Stdev: %1").arg(stdev, 0, 'f', 6));
+                plot.stdevAction->setText(QStringLiteral("Stdev: %1").arg(stdev, 0, 'f', 6));
             }
         }
     }
@@ -515,9 +592,10 @@ void PlotterWindow::onLegendRefreshTimeout()
  * @brief Obliterates all existing series data, purging memory completely.
  * @details Resets internal tracking extrema and the unified time origin safely.
  */
-void PlotterWindow::onClearClicked() {
-    std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
-    for (auto& plot : m_activePlots) {
+void PlotterWindow::onClearClicked()
+{
+    std::scoped_lock lock(m_plotMutex);
+    for (auto &plot : m_activePlots) {
         if (plot.series) {
             m_chart->removeSeries(plot.series);
             delete plot.series;
@@ -530,7 +608,7 @@ void PlotterWindow::onClearClicked() {
     if (m_curvesMenu) {
         m_curvesMenu->clear();
     }
-    m_chart->setTitle("Drag & Drop fields here");
+    m_chart->setTitle(QStringLiteral("Drag & Drop fields here"));
     m_minY = std::numeric_limits<double>::infinity();
     m_maxY = -std::numeric_limits<double>::infinity();
     m_startTime = QDateTime::currentMSecsSinceEpoch(); // reset time origin
@@ -541,14 +619,16 @@ void PlotterWindow::onClearClicked() {
 /**
  * @brief Freezes background updates gracefully. Buffer continues, but UI slumbers.
  */
-void PlotterWindow::onPauseToggled(bool checked) {
+void PlotterWindow::onPauseToggled(bool checked)
+{
     m_paused = checked;
 }
 
 /**
  * @brief Flips mode constraints when toggling automated y-axis boundaries.
  */
-void PlotterWindow::onAutoScaleToggled(bool checked) {
+void PlotterWindow::onAutoScaleToggled(bool checked)
+{
     m_autoScale = checked;
     m_edtMinY->setEnabled(!checked);
     m_edtMaxY->setEnabled(!checked);
@@ -562,9 +642,11 @@ void PlotterWindow::onAutoScaleToggled(bool checked) {
 /**
  * @brief Manual override parsing strictly for user text entries dictating min/max ranges.
  */
-void PlotterWindow::onManualScaleChanged() {
+void PlotterWindow::onManualScaleChanged()
+{
     if (!m_autoScale) {
-        bool okMin = false, okMax = false;
+        bool okMin = false;
+        bool okMax = false;
         double minY = m_edtMinY->text().toDouble(&okMin);
         double maxY = m_edtMaxY->text().toDouble(&okMax);
         if (okMin && okMax && minY < maxY) {
@@ -575,31 +657,35 @@ void PlotterWindow::onManualScaleChanged() {
 
 /**
  * @brief Recalculates mathematical bounds precisely across all visual layers (DRY implementation).
- * @details Because series logic actively drops historical buffers natively as sliding Windows 
- *          pass by, computing bounds sequentially against only the surviving active frame guarantees
- *          clean structural resizing across multi-curves seamlessly without duplicating array traversal.
+ * @details Because series logic actively drops historical buffers natively as sliding Windows
+ *          pass by, computing bounds sequentially against only the surviving active frame
+ * guarantees clean structural resizing across multi-curves seamlessly without duplicating array
+ * traversal.
  */
-void PlotterWindow::recalculateYBounds() {
-    if (!m_autoScale) return;
-    
-    std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
+void PlotterWindow::recalculateYBounds()
+{
+    if (!m_autoScale)
+        return;
+
+    std::scoped_lock lock(m_plotMutex);
     m_minY = std::numeric_limits<double>::infinity();
     m_maxY = -std::numeric_limits<double>::infinity();
     bool hasPoints = false;
-    
-    for (const auto& plot : std::as_const(m_activePlots)) {
-        if (!plot.series) continue;
-        for (int i = 0; i < plot.history.size(); ++i) {
-            const QPointF pt = plot.history.at(i);
-            if (pt.y() < m_minY) m_minY = pt.y();
-            if (pt.y() > m_maxY) m_maxY = pt.y();
+
+    for (const auto &plot : std::as_const(m_activePlots)) {
+        if (!plot.series)
+            continue;
+        for (auto pt : plot.history) {
+            m_minY = std::min(pt.y(), m_minY);
+            m_maxY = std::max(pt.y(), m_maxY);
             hasPoints = true;
         }
     }
-    
+
     if (hasPoints && m_minY <= m_maxY) {
         double margin = (m_maxY - m_minY) * 0.1;
-        if (margin == 0.0) margin = 1.0;
+        if (margin == 0.0)
+            margin = 1.0;
         m_axisY->setRange(m_minY - margin, m_maxY + margin);
         m_edtMinY->setText(QString::number(m_minY - margin, 'f', 2));
         m_edtMaxY->setText(QString::number(m_maxY + margin, 'f', 2));
@@ -608,42 +694,44 @@ void PlotterWindow::recalculateYBounds() {
 
 /**
  * @brief Injects a static infinite-length visual baseline dynamically.
- * @details Synthesizes a faux PlotConfig that bypasses network hooks but renders evenly 
+ * @details Synthesizes a faux PlotConfig that bypasses network hooks but renders evenly
  *          across the whole epoch timeline acting as a visual ruler.
  */
-void PlotterWindow::onAddConstantClicked() {
+void PlotterWindow::onAddConstantClicked()
+{
     bool ok = false;
     double val = m_edtConstant->text().toDouble(&ok);
-    if (!ok || !std::isfinite(val)) return;
-    
-    std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
-    
+    if (!ok || !std::isfinite(val))
+        return;
+
+    std::scoped_lock lock(m_plotMutex);
+
     // Create a new constant series
     PlotConfig cfg;
-    cfg.senderName = "sys";
-    cfg.className = "const";
-    cfg.msgName = "const";
-    cfg.fieldName = QString("C=%1").arg(val);
+    cfg.senderName = QStringLiteral("sys");
+    cfg.className = QStringLiteral("const");
+    cfg.msgName = QStringLiteral("const");
+    cfg.fieldName = QStringLiteral("C=%1").arg(val);
     cfg.coef = 1.0;
-    
+
     cfg.series = new QLineSeries();
     cfg.series->setName(cfg.fieldName);
-    
+
     // Assign black color for constant lines
     QPen pen1 = cfg.series->pen();
     pen1.setColor(Qt::black);
     pen1.setWidth(m_spnLineThickness->value());
     cfg.series->setPen(pen1);
     m_chart->addSeries(cfg.series);
-    
+
     // Series points will populate robustly on the first handleMessage payload,
     // or continuously from updatePlots() geometry-shaping if this is a 'const'.
-    
+
     cfg.series->attachAxis(m_axisX);
     cfg.series->attachAxis(m_axisY);
-    
+
     m_activePlots.append(cfg);
-    
+
     addCurveToMenu(m_activePlots.last());
     QTimer::singleShot(10, m_legendManager, &ChartLegendManager::updateLegendPosition);
 }
@@ -651,11 +739,12 @@ void PlotterWindow::onAddConstantClicked() {
 /**
  * @brief Dynamic slider hook propagating rendering speeds natively down to QTimer intervals.
  */
-void PlotterWindow::onUpdateRateChanged(int val) {
+void PlotterWindow::onUpdateRateChanged(int val)
+{
     const int interval = std::max(10, val * 10);
     // Restart the timer so it immediately adapts to the new interval
     m_updateTimer->start(interval);
-    
+
     // Smoothly redraw to instantly clamp or expand the visible time window
     updatePlots();
 }
@@ -663,7 +752,8 @@ void PlotterWindow::onUpdateRateChanged(int val) {
 /**
  * @brief Permits receiving raw text drops from other X11/Wayland Desktop apps.
  */
-void PlotterWindow::dragEnterEvent(QDragEnterEvent *event) {
+void PlotterWindow::dragEnterEvent(QDragEnterEvent *event)
+{
     if (event->mimeData()->hasText()) {
         event->acceptProposedAction();
     }
@@ -672,21 +762,27 @@ void PlotterWindow::dragEnterEvent(QDragEnterEvent *event) {
 /**
  * @brief Orchestrates raw dropped strings into formal telemetry series requests.
  */
-class DelayedDropWatcher : public QObject {
+class DelayedDropWatcher : public QObject
+{
     Q_OBJECT
     QString m_filePath;
     QTimer *m_timer;
-    int m_attempts;
+    int m_attempts {0};
+
 public:
-    DelayedDropWatcher(const QString& path, QObject* parent) : QObject(parent), m_filePath(path), m_attempts(0) {
+    DelayedDropWatcher(const QString &path, QObject *parent)
+        : QObject(parent)
+        , m_filePath(path)
+    {
         m_timer = new QTimer(this);
         connect(m_timer, &QTimer::timeout, this, &DelayedDropWatcher::checkFile);
         m_timer->start(100);
     }
 signals:
-    void payloadsReady(const QString& text);
+    void payloadsReady(const QString &);
 private slots:
-    void checkFile() {
+    void checkFile()
+    {
         m_attempts++;
         QFile f(m_filePath);
         if (f.exists()) {
@@ -707,25 +803,29 @@ private slots:
     }
 };
 
-void PlotterWindow::dropEvent(QDropEvent *event) {
+void PlotterWindow::dropEvent(QDropEvent *event)
+{
     if (event->mimeData()->hasText()) {
         QString payloadText = event->mimeData()->text();
-        if (payloadText.startsWith("delayed_array:")) {
+        if (payloadText.startsWith(QLatin1String("delayed_array:"))) {
             QString filePath = payloadText.mid(14);
-            DelayedDropWatcher* watcher = new DelayedDropWatcher(filePath, this);
-            connect(watcher, &DelayedDropWatcher::payloadsReady, this, [this](const QString& content) {
-                QStringList payloads = content.split('\n', Qt::SkipEmptyParts);
-                for (const QString& payload : payloads) {
-                    this->addPlotFromPayload(payload);
-                }
-            });
+            DelayedDropWatcher *watcher = new DelayedDropWatcher(filePath, this);
+            connect(watcher,
+                    &DelayedDropWatcher::payloadsReady,
+                    this,
+                    [this](const QString &content) {
+                        QStringList payloads = content.split('\n', Qt::SkipEmptyParts);
+                        for (const QString &payload : std::as_const(payloads)) {
+                            this->addPlotFromPayload(payload);
+                        }
+                    });
             event->acceptProposedAction();
             return;
         }
-        
+
         // payloadText can contain multiple payloads separated by newline
         QStringList payloads = payloadText.split('\n', Qt::SkipEmptyParts);
-        for (const QString& payload : payloads) {
+        for (const QString &payload : std::as_const(payloads)) {
             addPlotFromPayload(payload);
         }
         event->acceptProposedAction();
@@ -735,60 +835,72 @@ void PlotterWindow::dropEvent(QDropEvent *event) {
 /**
  * @brief Translates structured Paparazzi textual signatures into hard-linked data curves.
  * @param payload E.g. "senderName:className:msgName:fieldName:optional_coef".
- * @details Establishes a formal Ivy-bus lambda subscription parsing the specific 
+ * @details Establishes a formal Ivy-bus lambda subscription parsing the specific
  *          index directly matching the field name required natively upon connection.
  */
-void PlotterWindow::addPlotFromPayload(const QString& payload) {
-    // payload format: m_senderName + ":" + m_className + ":" + msgName + ":" + fieldName + ":" + coef;
-    QStringList parts = payload.split(":");
+void PlotterWindow::addPlotFromPayload(const QString &payload)
+{
+    // payload format: m_senderName + ":" + m_className + ":" + msgName + ":" + fieldName + ":" +
+    // coef;
+    QStringList parts = payload.split(QStringLiteral(":"));
     if (parts.size() >= 4) {
         PlotConfig cfg;
         cfg.senderName = parts[0];
         if (cfg.senderName.contains('*') || cfg.senderName.contains('?')) {
             cfg.hasWildcard = true;
-            cfg.senderNameRegex.setPattern(QRegularExpression::wildcardToRegularExpression(cfg.senderName));
+            cfg.senderNameRegex.setPattern(
+                    QRegularExpression::wildcardToRegularExpression(cfg.senderName));
         }
         cfg.className = parts[1];
         cfg.msgName = parts[2];
-        
-        QString fieldStr = parts[3];
+
+        const QString &fieldStr = parts[3];
         int bracketIndex = fieldStr.indexOf('[');
         if (bracketIndex != -1 && fieldStr.endsWith(']')) {
             cfg.fieldName = fieldStr.left(bracketIndex);
-            cfg.arrayIndex = fieldStr.mid(bracketIndex + 1, fieldStr.length() - bracketIndex - 2).toInt();
+            cfg.arrayIndex = QStringView(fieldStr)
+                                     .mid(bracketIndex + 1, fieldStr.length() - bracketIndex - 2)
+                                     .toInt();
         } else {
             cfg.fieldName = fieldStr;
             cfg.arrayIndex = -1;
         }
-        
+
         bool ok = false;
         double scaleNext = m_edtScaleNext->text().toDouble(&ok);
-        if (!ok || !std::isfinite(scaleNext)) scaleNext = 1.0;
+        if (!ok || !std::isfinite(scaleNext))
+            scaleNext = 1.0;
         double coef = 1.0;
         if (parts.size() >= 5) {
             bool okCoef = false;
             coef = parts[4].toDouble(&okCoef);
-            if (!okCoef || !std::isfinite(coef)) coef = 1.0;
+            if (!okCoef || !std::isfinite(coef))
+                coef = 1.0;
         }
         cfg.coef = coef * scaleNext;
-        if (cfg.coef == 0.0 || !std::isfinite(cfg.coef)) cfg.coef = 1.0;
+        if (cfg.coef == 0.0 || !std::isfinite(cfg.coef))
+            cfg.coef = 1.0;
 
         // Check if already plotted
-        for (const auto& existing : m_activePlots) {
-            if (existing.senderName == cfg.senderName &&
-                existing.msgName == cfg.msgName &&
-                existing.fieldName == cfg.fieldName &&
-                existing.arrayIndex == cfg.arrayIndex) {
+        for (const auto &existing : std::as_const(m_activePlots)) {
+            if (existing.senderName == cfg.senderName && existing.msgName == cfg.msgName
+                && existing.fieldName == cfg.fieldName && existing.arrayIndex == cfg.arrayIndex) {
                 return; // already plotting
             }
         }
 
         cfg.series = new QLineSeries();
-        QString prefix = (cfg.senderName.isEmpty() || cfg.senderName == "all") ? "" : cfg.senderName + ":";
-        QString classPrefix = cfg.className.isEmpty() ? "" : cfg.className + ":";
-        QString arraySuffix = (cfg.arrayIndex >= 0) ? QString("[%1]").arg(cfg.arrayIndex) : "";
-        cfg.series->setName(QString("%1%2%3:%4%5").arg(prefix).arg(classPrefix).arg(cfg.msgName).arg(cfg.fieldName).arg(arraySuffix));
-        
+        QString prefix = (cfg.senderName.isEmpty() || cfg.senderName == QLatin1String("all"))
+                ? QLatin1String("")
+                : cfg.senderName + QStringLiteral(":");
+        QString classPrefix
+                = cfg.className.isEmpty() ? QLatin1String("") : cfg.className + QStringLiteral(":");
+        QString arraySuffix = (cfg.arrayIndex >= 0) ? QStringLiteral("[%1]").arg(cfg.arrayIndex)
+                                                    : QLatin1String("");
+        cfg.series->setName(
+                QStringLiteral("%1%2%3:%4%5")
+                        .arg(prefix, classPrefix, cfg.msgName, cfg.fieldName, arraySuffix));
+
         // Assign custom distinct saturated color
         QPen pen2 = cfg.series->pen();
         pen2.setColor(getNextSaturatedColor());
@@ -804,25 +916,26 @@ void PlotterWindow::addPlotFromPayload(const QString& payload) {
         if (m_dict) {
             defs = m_dict->getMsgsForClass(cfg.className);
         }
-        for (const auto& existing : m_activePlots) {
+        for (const auto &existing : std::as_const(m_activePlots)) {
             if (existing.msgName == cfg.msgName && existing.className == cfg.className) {
                 alreadyBound = true;
                 break;
             }
         }
-        for (const auto& def : defs) {
+        for (const auto &def : defs) {
             if (def.getName() == cfg.msgName) {
-                for (int k = 0; k < (int)def.getNbFields(); ++k) {
+                for (int k = 0; k < (int) def.getNbFields(); ++k) {
                     if (def.getField(k).getName() == cfg.fieldName) {
                         fieldIndex = k;
                         break;
                     }
                 }
                 if (!alreadyBound && m_link) {
-                    //qDebug() << "Binding message:" << cfg.msgName;
-                    m_link->BindMessage(def, this, [this](QString sender, pprzlink::Message msg) {
-                        this->handleMessage(sender, msg);
-                    });
+                    // qDebug() << "Binding message:" << cfg.msgName;
+                    m_link->BindMessage(
+                            def, this, [this](const QString &sender, const pprzlink::Message &msg) {
+                                this->handleMessage(sender, msg);
+                            });
                 }
                 break;
             }
@@ -830,63 +943,66 @@ void PlotterWindow::addPlotFromPayload(const QString& payload) {
         cfg.fieldIndex = fieldIndex;
 
         {
-            std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
+            std::scoped_lock lock(m_plotMutex);
             m_activePlots.append(cfg);
-            m_chart->setTitle("");
-            
+            m_chart->setTitle(QLatin1String(""));
+
             addCurveToMenu(m_activePlots.last());
         }
         m_statsNeedsRefresh = true;
-    QTimer::singleShot(10, m_legendManager, &ChartLegendManager::updateLegendPosition);
+        QTimer::singleShot(10, m_legendManager, &ChartLegendManager::updateLegendPosition);
     }
 }
 
 /**
  * @brief Bootstraps standard menubar hooks supporting application-level suspension/quit calls.
  */
-void PlotterWindow::setupMenu() {
-    QMenu* plotMenu = menuBar()->addMenu(tr("&Plot"));
+void PlotterWindow::setupMenu()
+{
+    QMenu *plotMenu = menuBar()->addMenu(tr("&Plot"));
     plotMenu->setToolTipsVisible(true);
-    
-    QAction* newAction = plotMenu->addAction(tr("New"));
-    newAction->setShortcut(QKeySequence("Ctrl+N"));
+
+    QAction *newAction = plotMenu->addAction(tr("New"));
+    newAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+N")));
     connect(newAction, &QAction::triggered, this, [this]() {
-        PlotterWindow* newWindow = new PlotterWindow(PlotterWindowConfig(), m_dict, m_link);
+        PlotterWindow *newWindow = new PlotterWindow(PlotterWindowConfig(), m_dict, m_link);
         newWindow->show();
     });
 
-    QAction* resetAction = plotMenu->addAction(tr("Reset"));
+    QAction *resetAction = plotMenu->addAction(tr("Reset"));
     resetAction->setToolTip(tr("Reset the current display and the current data"));
     resetAction->setStatusTip(tr("Reset the current display and the current data"));
-    resetAction->setShortcut(QKeySequence("Ctrl+L"));
+    resetAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+L")));
     connect(resetAction, &QAction::triggered, this, &PlotterWindow::onClearClicked);
 
-    QAction* suspendAction = plotMenu->addAction(tr("Suspend"));
+    QAction *suspendAction = plotMenu->addAction(tr("Suspend"));
     suspendAction->setToolTip(tr("Freeze the display while the data are still updated"));
     suspendAction->setStatusTip(tr("Freeze the display while the data are still updated"));
-    suspendAction->setShortcut(QKeySequence("Ctrl+S"));
+    suspendAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+S")));
     connect(suspendAction, &QAction::triggered, this, [this]() { m_paused = true; });
 
-    QAction* stopAction = plotMenu->addAction(tr("Stop"));
-    stopAction->setToolTip(tr("Freeze the data update while the display is active (e.g. resizable)"));
-    stopAction->setStatusTip(tr("Freeze the data update while the display is active (e.g. resizable)"));
-    stopAction->setShortcut(QKeySequence("Ctrl+C"));
+    QAction *stopAction = plotMenu->addAction(tr("Stop"));
+    stopAction->setToolTip(
+            tr("Freeze the data update while the display is active (e.g. resizable)"));
+    stopAction->setStatusTip(
+            tr("Freeze the data update while the display is active (e.g. resizable)"));
+    stopAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+C")));
     connect(stopAction, &QAction::triggered, this, [this]() { m_paused = true; });
 
-    QAction* restartAction = plotMenu->addAction(tr("Restart"));
+    QAction *restartAction = plotMenu->addAction(tr("Restart"));
     restartAction->setToolTip(tr("UnFreeze"));
     restartAction->setStatusTip(tr("UnFreeze"));
-    restartAction->setShortcut(QKeySequence("Ctrl+X"));
+    restartAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+X")));
     connect(restartAction, &QAction::triggered, this, [this]() { m_paused = false; });
 
     plotMenu->addSeparator();
 
-    QAction* closeAction = plotMenu->addAction(tr("Close"));
-    closeAction->setShortcut(QKeySequence("Ctrl+W"));
+    QAction *closeAction = plotMenu->addAction(tr("Close"));
+    closeAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+W")));
     connect(closeAction, &QAction::triggered, this, &PlotterWindow::onClearClicked);
 
-    QAction* quitAction = plotMenu->addAction(tr("Quit"));
-    quitAction->setShortcut(QKeySequence("Ctrl+Q"));
+    QAction *quitAction = plotMenu->addAction(tr("Quit"));
+    quitAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+Q")));
     connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
 
     m_curvesMenu = menuBar()->addMenu(tr("&Curves"));
@@ -896,44 +1012,51 @@ void PlotterWindow::setupMenu() {
  * @brief Thread-safe ingestion queue receiving highly asynchronous Ivy bus telemetry packages.
  * @param sender Originating entity emitting the message format.
  * @param msg Validated and natively inflated binary structure definition mapping payload contents.
- * @details Appends numerical coordinates natively formatted into an internal memory buffer. 
- *          We explicitly restrict raw redraw actions (`series->append`) here, delegating drawing 
+ * @details Appends numerical coordinates natively formatted into an internal memory buffer.
+ *          We explicitly restrict raw redraw actions (`series->append`) here, delegating drawing
  *          solely to the main GUI event loop syncing logic securely to 60fps refresh limits.
  */
-void PlotterWindow::handleMessage(QString sender, const pprzlink::Message& msg) {
-    if (m_paused) return; // Skip updating data while paused
+void PlotterWindow::handleMessage(QString sender, const pprzlink::Message &msg)
+{
+    if (m_paused)
+        return; // Skip updating data while paused
 
-    QString sId = sender;
+    QString sId = std::move(sender);
     if (sId.isEmpty()) {
-        const auto& senderV = msg.getSenderId();
-        if (std::holds_alternative<QString>(senderV)) sId = std::get<QString>(senderV);
-        else sId = QString::number(std::get<uint8_t>(senderV));
+        const auto &senderV = msg.getSenderId();
+        if (std::holds_alternative<QString>(senderV))
+            sId = std::get<QString>(senderV);
+        else
+            sId = QString::number(std::get<uint8_t>(senderV));
     }
-    if (sId.isEmpty()) sId = "ground";
+    if (sId.isEmpty())
+        sId = QStringLiteral("ground");
 
     QString msgName = msg.getDefinition().getName();
     double currentTime = (QDateTime::currentMSecsSinceEpoch() - m_startTime) / 1000.0;
-    
-    std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
-    
-    for (auto& plot : m_activePlots) {
-        if (!plot.series) continue;
-        
+
+    std::scoped_lock lock(m_plotMutex);
+
+    for (auto &plot : m_activePlots) {
+        if (!plot.series)
+            continue;
+
         bool senderMatches = false;
-        if (plot.senderName.isEmpty() || plot.senderName == "all" || plot.senderName == "*") {
+        if (plot.senderName.isEmpty() || plot.senderName == QLatin1String("all")
+            || plot.senderName == QLatin1String("*")) {
             senderMatches = true;
         } else if (plot.hasWildcard) {
             senderMatches = plot.senderNameRegex.match(sId).hasMatch();
         } else {
             senderMatches = (plot.senderName == sId);
         }
-        
+
         if (plot.msgName == msgName && senderMatches) {
-            const auto& def = msg.getDefinition();
+            const auto &def = msg.getDefinition();
             int fieldIndex = plot.fieldIndex;
-            if (fieldIndex < 0 || fieldIndex >= (int)def.getNbFields()) {
+            if (fieldIndex < 0 || fieldIndex >= (int) def.getNbFields()) {
                 // fallback path for legacy configs or missing cached index
-                for (int i = 0; i < (int)def.getNbFields(); ++i) {
+                for (int i = 0; i < (int) def.getNbFields(); ++i) {
                     if (def.getField(i).getName() == plot.fieldName) {
                         fieldIndex = i;
                         plot.fieldIndex = i;
@@ -941,49 +1064,95 @@ void PlotterWindow::handleMessage(QString sender, const pprzlink::Message& msg) 
                     }
                 }
             }
-            if (fieldIndex < 0 || fieldIndex >= (int)def.getNbFields()) {
+            if (fieldIndex < 0 || fieldIndex >= (int) def.getNbFields()) {
                 continue;
             }
             try {
-                const auto& rv = msg.getRawValue(fieldIndex);
+                const auto &rv = msg.getRawValue(fieldIndex);
                 if (rv.getType().isArray() && plot.arrayIndex == -1) {
                     try {
                         int arrSize = 0;
                         switch (rv.getType().getBaseType()) {
-                            case pprzlink::BaseType::CHAR: { std::vector<char> v; rv.getValue(v); arrSize = v.size(); } break;
-                            case pprzlink::BaseType::INT8: { std::vector<int8_t> v; rv.getValue(v); arrSize = v.size(); } break;
-                            case pprzlink::BaseType::INT16: { std::vector<int16_t> v; rv.getValue(v); arrSize = v.size(); } break;
-                            case pprzlink::BaseType::INT32: { std::vector<int32_t> v; rv.getValue(v); arrSize = v.size(); } break;
-                            case pprzlink::BaseType::UINT8: { std::vector<uint8_t> v; rv.getValue(v); arrSize = v.size(); } break;
-                            case pprzlink::BaseType::UINT16: { std::vector<uint16_t> v; rv.getValue(v); arrSize = v.size(); } break;
-                            case pprzlink::BaseType::UINT32: { std::vector<uint32_t> v; rv.getValue(v); arrSize = v.size(); } break;
-                            case pprzlink::BaseType::FLOAT: { std::vector<float> v; rv.getValue(v); arrSize = v.size(); } break;
-                            case pprzlink::BaseType::DOUBLE: { std::vector<double> v; rv.getValue(v); arrSize = v.size(); } break;
-                            default: break;
+                        case pprzlink::BaseType::CHAR: {
+                            std::vector<char> v;
+                            rv.getValue(v);
+                            arrSize = v.size();
+                        } break;
+                        case pprzlink::BaseType::INT8: {
+                            std::vector<int8_t> v;
+                            rv.getValue(v);
+                            arrSize = v.size();
+                        } break;
+                        case pprzlink::BaseType::INT16: {
+                            std::vector<int16_t> v;
+                            rv.getValue(v);
+                            arrSize = v.size();
+                        } break;
+                        case pprzlink::BaseType::INT32: {
+                            std::vector<int32_t> v;
+                            rv.getValue(v);
+                            arrSize = v.size();
+                        } break;
+                        case pprzlink::BaseType::UINT8: {
+                            std::vector<uint8_t> v;
+                            rv.getValue(v);
+                            arrSize = v.size();
+                        } break;
+                        case pprzlink::BaseType::UINT16: {
+                            std::vector<uint16_t> v;
+                            rv.getValue(v);
+                            arrSize = v.size();
+                        } break;
+                        case pprzlink::BaseType::UINT32: {
+                            std::vector<uint32_t> v;
+                            rv.getValue(v);
+                            arrSize = v.size();
+                        } break;
+                        case pprzlink::BaseType::FLOAT: {
+                            std::vector<float> v;
+                            rv.getValue(v);
+                            arrSize = v.size();
+                        } break;
+                        case pprzlink::BaseType::DOUBLE: {
+                            std::vector<double> v;
+                            rv.getValue(v);
+                            arrSize = v.size();
+                        } break;
+                        default:
+                            break;
                         }
                         if (arrSize > 0) {
                             for (int k = 0; k < arrSize; ++k) {
-                                QString subPayload = QString("%1:%2:%3:%4[%5]:%6")
-                                    .arg(plot.senderName)
-                                    .arg(plot.className)
-                                    .arg(plot.msgName)
-                                    .arg(plot.fieldName)
-                                    .arg(k)
-                                    .arg(plot.coef);
-                                QMetaObject::invokeMethod(this, [this, subPayload]() {
-                                    this->addPlotFromPayload(subPayload);
-                                }, Qt::QueuedConnection);
+                                QString subPayload = QStringLiteral("%1:%2:%3:%4[%5]:%6")
+                                                             .arg(plot.senderName,
+                                                                  plot.className,
+                                                                  plot.msgName,
+                                                                  plot.fieldName)
+                                                             .arg(k)
+                                                             .arg(plot.coef);
+                                QMetaObject::invokeMethod(
+                                        this,
+                                        [this, subPayload]() {
+                                            this->addPlotFromPayload(subPayload);
+                                        },
+                                        Qt::QueuedConnection);
                             }
-                            QMetaObject::invokeMethod(this, [this, series = plot.series]() {
-                                this->removeCurve(series);
-                            }, Qt::QueuedConnection);
+                            QMetaObject::invokeMethod(
+                                    this,
+                                    [this, series = plot.series]() { this->removeCurve(series); },
+                                    Qt::QueuedConnection);
                         }
-                    } catch (...) {}
+                    } catch (...) {
+                        // Best-effort array auto-expansion; skip this plot on failure.
+                        qWarning()
+                                << "Plotter: failed to auto-expand array field" << plot.fieldName;
+                    }
                     continue;
                 }
 
                 double val = fieldValueAsDouble(rv, plot.arrayIndex);
-                if (!std::isfinite(val)) continue;
+                if (!std::isfinite(val))
+                    continue;
                 val *= plot.coef;
 
                 if (plot.discrete) {
@@ -996,14 +1165,15 @@ void PlotterWindow::handleMessage(QString sender, const pprzlink::Message& msg) 
                         lastY = plot.history.last().y();
                         hasLastY = true;
                     }
-                    // Optimize step-functions: only inject the right-angle corner if the state actually changed.
+                    // Optimize step-functions: only inject the right-angle corner if the state
+                    // actually changed.
                     if (hasLastY && lastY != val) {
                         plot.buffer.append(QPointF(currentTime, lastY));
                     }
                 }
 
                 plot.buffer.append(QPointF(currentTime, val));
-            } catch (const std::exception& e) {
+            } catch (const std::exception &e) {
                 qWarning() << "Exception in handleMessage:" << e.what();
             } catch (...) {
                 qWarning() << "Unknown exception in handleMessage.";
@@ -1014,13 +1184,15 @@ void PlotterWindow::handleMessage(QString sender, const pprzlink::Message& msg) 
 
 /**
  * @brief Core 60Hz rendering pass draining back-buffers flushing into native widget views.
- * @details Modifies visual ranges by stripping natively expired history points mathematically off 
- *          the time window scale (X-axis). Performs localized Y bounds expansion directly as 
- *          arrays stream safely across active timeframes. Employs `std::isfinite` to guard 
+ * @details Modifies visual ranges by stripping natively expired history points mathematically off
+ *          the time window scale (X-axis). Performs localized Y bounds expansion directly as
+ *          arrays stream safely across active timeframes. Employs `std::isfinite` to guard
  *          against QChart canvas corruptions safely.
  */
-void PlotterWindow::updatePlots() {
-    if (m_paused) return;
+void PlotterWindow::updatePlots()
+{
+    if (m_paused)
+        return;
 
     double currentTime = (QDateTime::currentMSecsSinceEpoch() - m_startTime) / 1000.0;
     // OCaml total time window corresponds to (Memory Size) * (Update Time)
@@ -1028,29 +1200,42 @@ void PlotterWindow::updatePlots() {
     bool needsAxisUpdate = false;
     bool needsFullRecalc = false;
 
-    std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
+    std::scoped_lock lock(m_plotMutex);
 
-    for (auto& plot : m_activePlots) {
-        if (!plot.series) continue;
-        if (plot.className == "const") {
+    for (auto &plot : m_activePlots) {
+        if (!plot.series)
+            continue;
+        if (plot.className == QLatin1String("const")) {
             bool ok = false;
             double val = plot.fieldName.section('=', 1).toDouble(&ok);
-            if (!ok || !std::isfinite(val)) continue;
-            plot.series->replace(
-                QList<QPointF>() << QPointF(currentTime - windowSize, val) << QPointF(currentTime, val)
-            );
+            if (!ok || !std::isfinite(val))
+                continue;
+            plot.series->replace(QList<QPointF>() << QPointF(currentTime - windowSize, val)
+                                                  << QPointF(currentTime, val));
             if (m_autoScale) {
-                if (val < m_minY) { m_minY = val; needsAxisUpdate = true; }
-                if (val > m_maxY) { m_maxY = val; needsAxisUpdate = true; }
+                if (val < m_minY) {
+                    m_minY = val;
+                    needsAxisUpdate = true;
+                }
+                if (val > m_maxY) {
+                    m_maxY = val;
+                    needsAxisUpdate = true;
+                }
             }
             continue;
         }
 
         if (!plot.buffer.isEmpty()) {
             plot.history.append(plot.buffer);
-            for (const QPointF& pt : std::as_const(plot.buffer)) {
-                if (pt.y() < m_minY) { m_minY = pt.y(); needsAxisUpdate = true; }
-                if (pt.y() > m_maxY) { m_maxY = pt.y(); needsAxisUpdate = true; }
+            for (const QPointF &pt : std::as_const(plot.buffer)) {
+                if (pt.y() < m_minY) {
+                    m_minY = pt.y();
+                    needsAxisUpdate = true;
+                }
+                if (pt.y() > m_maxY) {
+                    m_maxY = pt.y();
+                    needsAxisUpdate = true;
+                }
             }
             plot.buffer.clear();
         }
@@ -1060,7 +1245,8 @@ void PlotterWindow::updatePlots() {
         double cutoffTime = currentTime - windowSize;
         while (pointsToRemove < count && plot.history.at(pointsToRemove).x() < cutoffTime) {
             double ptY = plot.history.at(pointsToRemove).y();
-            // If the point we're dropping defined the bounding box, we must shrink/re-evaluate the whole box natively.
+            // If the point we're dropping defined the bounding box, we must shrink/re-evaluate the
+            // whole box natively.
             if (m_autoScale && (ptY <= m_minY || ptY >= m_maxY)) {
                 needsFullRecalc = true;
             }
@@ -1069,7 +1255,7 @@ void PlotterWindow::updatePlots() {
         if (pointsToRemove > 0) {
             plot.history.remove(0, pointsToRemove);
         }
-        
+
         plot.series->replace(plot.history);
     }
 
@@ -1081,7 +1267,8 @@ void PlotterWindow::updatePlots() {
             recalculateYBounds();
         } else if (needsAxisUpdate && m_minY <= m_maxY) {
             double margin = (m_maxY - m_minY) * 0.1;
-            if (margin == 0) margin = 1.0;
+            if (margin == 0)
+                margin = 1.0;
             m_axisY->setRange(m_minY - margin, m_maxY + margin);
             m_edtMinY->setText(QString::number(m_minY - margin, 'f', 2));
             m_edtMaxY->setText(QString::number(m_maxY + margin, 'f', 2));
@@ -1094,38 +1281,40 @@ void PlotterWindow::updatePlots() {
  * @brief Automates drop-down bindings allocating math operators / deletion tools onto curves.
  * @param cfg Passed dynamically to tether UI state triggers directly towards struct instances.
  */
-void PlotterWindow::addCurveToMenu(PlotConfig& cfg) {
-    if (!m_curvesMenu || !cfg.series) return;
+void PlotterWindow::addCurveToMenu(PlotConfig &cfg)
+{
+    if (!m_curvesMenu || !cfg.series)
+        return;
 
     QPixmap pixmap(16, 16);
     pixmap.fill(cfg.series->color());
     QIcon icon(pixmap);
 
-    QMenu* curveMenu = m_curvesMenu->addMenu(icon, cfg.series->name());
+    QMenu *curveMenu = m_curvesMenu->addMenu(icon, cfg.series->name());
 
-    QAction* avgAction = curveMenu->addAction(tr("Average: N/A"));
+    QAction *avgAction = curveMenu->addAction(tr("Average: N/A"));
     avgAction->setEnabled(false);
     cfg.avgAction = avgAction;
 
-    QAction* stdevAction = curveMenu->addAction(tr("Stdev: N/A"));
+    QAction *stdevAction = curveMenu->addAction(tr("Stdev: N/A"));
     stdevAction->setEnabled(false);
     cfg.stdevAction = stdevAction;
-    
-    QAction* deleteAction = curveMenu->addAction(tr("Delete"));
+
+    QAction *deleteAction = curveMenu->addAction(tr("Delete"));
     deleteAction->setToolTip(tr("Delete the curve"));
     deleteAction->setStatusTip(tr("Delete the curve"));
-    QLineSeries* targetSeries = cfg.series;
+    QLineSeries *targetSeries = cfg.series;
     connect(deleteAction, &QAction::triggered, this, [this, targetSeries, curveMenu]() {
         removeCurve(targetSeries);
         delete curveMenu;
     });
 
-    QAction* discreteAction = curveMenu->addAction(tr("Discrete"));
+    QAction *discreteAction = curveMenu->addAction(tr("Discrete"));
     discreteAction->setCheckable(true);
     discreteAction->setChecked(cfg.discrete);
     connect(discreteAction, &QAction::toggled, this, [this, targetSeries](bool checked) {
-        std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
-        for (auto& plot : m_activePlots) {
+        std::scoped_lock lock(m_plotMutex);
+        for (auto &plot : m_activePlots) {
             if (plot.series == targetSeries) {
                 plot.discrete = checked;
                 break;
@@ -1138,11 +1327,13 @@ void PlotterWindow::addCurveToMenu(PlotConfig& cfg) {
  * @brief Obliterates a selected line trajectory correctly de-registering GUI and heap ties.
  * @param series Targets exactly which curve UI element triggered the destruction hook.
  */
-void PlotterWindow::removeCurve(QLineSeries* series) {
-    if (!series) return;
-    
-    std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
-    
+void PlotterWindow::removeCurve(QLineSeries *series)
+{
+    if (!series)
+        return;
+
+    std::scoped_lock lock(m_plotMutex);
+
     for (int i = 0; i < m_activePlots.size(); ++i) {
         if (m_activePlots[i].series == series) {
             m_chart->removeSeries(series);
@@ -1150,9 +1341,9 @@ void PlotterWindow::removeCurve(QLineSeries* series) {
             m_activePlots.removeAt(i);
             delete series;
             series = nullptr;
-            
+
             recalculateYBounds();
-            
+
             QTimer::singleShot(10, m_legendManager, &ChartLegendManager::updateLegendPosition);
             m_statsNeedsRefresh = true;
             break;
@@ -1161,9 +1352,11 @@ void PlotterWindow::removeCurve(QLineSeries* series) {
 }
 
 /**
- * @brief Ensures overlay layout components reposition perfectly matching arbitrary desktop reframes.
+ * @brief Ensures overlay layout components reposition perfectly matching arbitrary desktop
+ * reframes.
  */
-void PlotterWindow::resizeEvent(QResizeEvent *event) {
+void PlotterWindow::resizeEvent(QResizeEvent *event)
+{
     QMainWindow::resizeEvent(event);
     m_legendManager->updateLegendPosition();
 }
@@ -1171,10 +1364,12 @@ void PlotterWindow::resizeEvent(QResizeEvent *event) {
 /**
  * @brief Interactively bolsters or weakens global plotting pixel strokes dynamically.
  */
-void PlotterWindow::onLineThicknessChanged(int val) {
-    std::lock_guard<std::recursive_mutex> lock(m_plotMutex);
-    for (auto& plot : m_activePlots) {
-        if (!plot.series) continue;
+void PlotterWindow::onLineThicknessChanged(int val)
+{
+    std::scoped_lock lock(m_plotMutex);
+    for (auto &plot : m_activePlots) {
+        if (!plot.series)
+            continue;
         QPen p = plot.series->pen();
         p.setWidth(val);
         plot.series->setPen(p);
@@ -1190,54 +1385,71 @@ void PlotterWindow::onLineThicknessChanged(int val) {
  * @param argv Array of command-line arguments.
  * @return Exit status code.
  */
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
-    QCoreApplication::setApplicationVersion("1.0");
+    QCoreApplication::setApplicationVersion(QStringLiteral("1.0"));
     QGuiApplication::setDesktopFileName(QStringLiteral("paparazzi_plotter"));
     QCoreApplication::setApplicationName(QStringLiteral("Paparazzi Real-time Plotter"));
 
     QApplication app(argc, argv);
-    app.setStyle(new EditorLighteningStyle(app.style()));
+    QApplication::setStyle(new EditorLighteningStyle(QApplication::style()));
 
     QCommandLineParser parser;
-    parser.setApplicationDescription("Paparazzi Real-time Plotter");
+    parser.setApplicationDescription(QStringLiteral("Paparazzi Real-time Plotter"));
     parser.addHelpOption();
     // Add same options as Logalizer/Plotter for the help display
-    QCommandLineOption busOpt("b", "ivy bus (Default is 127.255.255.255:2010)", "ivy bus");
+    QCommandLineOption busOpt(QStringLiteral("b"),
+                              QStringLiteral("ivy bus (Default is 127.255.255.255:2010)"),
+                              QStringLiteral("ivy bus"));
     parser.addOption(busOpt);
-    QCommandLineOption curveOpt("c", "Add a curve (e.g. '*:telemetry:BAT:voltage') or constant (e.g. '1.5'). The curve is inserted into the last open window (cf -n option)", "curve");
+    QCommandLineOption curveOpt(
+            QStringLiteral("c"),
+            QStringLiteral("Add a curve (e.g. '*:telemetry:BAT:voltage') or constant (e.g. '1.5'). "
+                           "The curve is inserted into the last open window (cf -n option)"),
+            QStringLiteral("curve"));
     parser.addOption(curveOpt);
-    QCommandLineOption titleOpt("t", "Set the last opened window title (cf -n option)", "title");
+    QCommandLineOption titleOpt(QStringLiteral("t"),
+                                QStringLiteral("Set the last opened window title (cf -n option)"),
+                                QStringLiteral("title"));
     parser.addOption(titleOpt);
-    QCommandLineOption geomOpt("g", "Set the last opened window geometry ( '500x500+100+100' )", "geometry");
+    QCommandLineOption geomOpt(
+            QStringLiteral("g"),
+            QStringLiteral("Set the last opened window geometry ( '500x500+100+100' )"),
+            QStringLiteral("geometry"));
     parser.addOption(geomOpt);
-    QCommandLineOption newOpt("n", "Open another window for the next curves");
+    QCommandLineOption newOpt(QStringLiteral("n"),
+                              QStringLiteral("Open another window for the next curves"));
     parser.addOption(newOpt);
-    QCommandLineOption memOpt("m", "Memory size (default 500)", "size");
+    QCommandLineOption memOpt(QStringLiteral("m"),
+                              QStringLiteral("Memory size (default 500)"),
+                              QStringLiteral("size"));
     parser.addOption(memOpt);
-    QCommandLineOption updateOpt("u", "Update time in s (default 0.5)", "time");
+    QCommandLineOption updateOpt(QStringLiteral("u"),
+                                 QStringLiteral("Update time in s (default 0.5)"),
+                                 QStringLiteral("time"));
     parser.addOption(updateOpt);
 
     parser.process(app);
 
     // Initialize global config
     PlotterWindowConfig globalConfig;
-    QString ivyBus = "127.255.255.255:2010"; // default
+    QString ivyBus = QStringLiteral("127.255.255.255:2010"); // default
 
     QList<PlotterWindowConfig> windowConfigs;
     PlotterWindowConfig currentConfig;
-    
-    QStringList args = app.arguments();
+
+    QStringList args = QApplication::arguments();
     QStringList mergedArgs;
     for (int i = 0; i < args.size(); ++i) {
         QString arg = args[i];
-        if ((arg.startsWith('\'') && !arg.endsWith('\'')) || (arg.startsWith('"') && !arg.endsWith('"'))) {
+        if ((arg.startsWith('\'') && !arg.endsWith('\''))
+            || (arg.startsWith('"') && !arg.endsWith('"'))) {
             QChar quoteType = arg[0];
             QString merged = arg;
             int j = i + 1;
             bool foundClosed = false;
             while (j < args.size()) {
-                merged += " " + args[j];
+                merged += QStringLiteral(" ") + args[j];
                 if (args[j].endsWith(quoteType)) {
                     foundClosed = true;
                     break;
@@ -1250,8 +1462,8 @@ int main(int argc, char *argv[])
             } else {
                 mergedArgs.append(arg);
             }
-        } else if ((arg.startsWith('\'') && arg.endsWith('\'') && arg.length() >= 2) ||
-                   (arg.startsWith('"') && arg.endsWith('"') && arg.length() >= 2)) {
+        } else if ((arg.startsWith('\'') && arg.endsWith('\'') && arg.length() >= 2)
+                   || (arg.startsWith('"') && arg.endsWith('"') && arg.length() >= 2)) {
             mergedArgs.append(arg.mid(1, arg.length() - 2));
         } else {
             mergedArgs.append(arg);
@@ -1259,31 +1471,31 @@ int main(int argc, char *argv[])
     }
 
     for (int i = 1; i < mergedArgs.size(); ++i) {
-        QString arg = mergedArgs[i];
-        if (arg == "-b") {
+        const QString &arg = mergedArgs[i];
+        if (arg == QLatin1String("-b")) {
             if (i + 1 < mergedArgs.size()) {
                 ivyBus = mergedArgs[++i];
             }
-        } else if (arg == "-m") {
+        } else if (arg == QLatin1String("-m")) {
             if (i + 1 < mergedArgs.size()) {
                 globalConfig.memorySize = mergedArgs[++i].toInt();
             }
-        } else if (arg == "-u") {
+        } else if (arg == QLatin1String("-u")) {
             if (i + 1 < mergedArgs.size()) {
                 globalConfig.updateTime = mergedArgs[++i].toDouble();
             }
-        } else if (arg == "-n") {
+        } else if (arg == QLatin1String("-n")) {
             windowConfigs.append(currentConfig);
             currentConfig = PlotterWindowConfig(); // start fresh
-        } else if (arg == "-c") {
+        } else if (arg == QLatin1String("-c")) {
             if (i + 1 < mergedArgs.size()) {
                 currentConfig.curves.append(mergedArgs[++i]);
             }
-        } else if (arg == "-t") {
+        } else if (arg == QLatin1String("-t")) {
             if (i + 1 < mergedArgs.size()) {
                 currentConfig.title = mergedArgs[++i];
             }
-        } else if (arg == "-g") {
+        } else if (arg == QLatin1String("-g")) {
             if (i + 1 < mergedArgs.size()) {
                 currentConfig.geometry = mergedArgs[++i];
             }
@@ -1293,21 +1505,24 @@ int main(int argc, char *argv[])
 
     // Setup Ivy Globally
     QString phome = qgetenv("PAPARAZZI_HOME");
-    if (phome.isEmpty()) phome = QString("/home/%1/paparazzi").arg(qgetenv("USER"));
-    QString xmlPath = phome + "/var/messages.xml";
+    if (phome.isEmpty())
+        phome = QStringLiteral("/home/%1/paparazzi").arg(qgetenv("USER"));
+    QString xmlPath = phome + QStringLiteral("/var/messages.xml");
 
-    pprzlink::MessageDictionary* g_dict = nullptr;
-    pprzlink::IvyQtLink* g_link = nullptr;
+    pprzlink::MessageDictionary *g_dict = nullptr;
+    pprzlink::IvyQtLink *g_link = nullptr;
 
     if (!QFile::exists(xmlPath)) {
-        qWarning() << "Plotter: message dictionary not found at" << xmlPath << ". Ivy telemetry will be disabled.";
+        qWarning() << "Plotter: message dictionary not found at" << xmlPath
+                   << ". Ivy telemetry will be disabled.";
     } else {
         try {
             g_dict = new pprzlink::MessageDictionary(xmlPath);
-            g_link = new pprzlink::IvyQtLink(*g_dict, "plotter", &app);
+            g_link = new pprzlink::IvyQtLink(*g_dict, QStringLiteral("plotter"), &app);
             g_link->start(ivyBus);
         } catch (const std::exception &e) {
-            qWarning() << "Plotter: failed to initialize Ivy link or message dictionary:" << e.what();
+            qWarning() << "Plotter: failed to initialize Ivy link or message dictionary:"
+                       << e.what();
             delete g_link;
             g_link = nullptr;
             delete g_dict;
@@ -1321,33 +1536,38 @@ int main(int argc, char *argv[])
         }
     }
 
-    QString iconPath = ":/penguin_icon_rtp.png";
+    QString iconPath = QStringLiteral(":/penguin_icon_rtp.png");
     QIcon icon(iconPath);
-    installLinuxDesktopIntegration(app.desktopFileName(), "Paparazzi Real-Time Plotter", "Real-time plotter for telemetry messages", iconPath, "paparazzi-plotter");
-    app.setWindowIcon(icon);
+    installLinuxDesktopIntegration(QApplication::desktopFileName(),
+                                   QStringLiteral("Paparazzi Real-Time Plotter"),
+                                   QStringLiteral("Real-time plotter for telemetry messages"),
+                                   iconPath,
+                                   QStringLiteral("paparazzi-plotter"));
+    QApplication::setWindowIcon(icon);
 
-    QList<PlotterWindow*> windows;
-    for (auto& cfg : windowConfigs) {
-        if (globalConfig.memorySize != 500) cfg.memorySize = globalConfig.memorySize;
+    QList<PlotterWindow *> windows;
+    for (auto &cfg : windowConfigs) {
+        if (globalConfig.memorySize != 500)
+            cfg.memorySize = globalConfig.memorySize;
         // Float precision safe check
-        if (std::abs(globalConfig.updateTime - 0.5) > 1e-5) cfg.updateTime = globalConfig.updateTime;
-        
-        PlotterWindow* w = new PlotterWindow(cfg, g_dict, g_link);
+        if (std::abs(globalConfig.updateTime - 0.5) > 1e-5)
+            cfg.updateTime = globalConfig.updateTime;
+
+        PlotterWindow *w = new PlotterWindow(cfg, g_dict, g_link);
         w->setWindowIcon(icon);
         w->show();
         windows.append(w);
     }
 
-    int ret = app.exec();
+    int ret = QApplication::exec();
 
     // Clean up
     if (g_link) {
         g_link->stop();
         delete g_link;
     }
-    if (g_dict) {
-        delete g_dict;
-    }
+
+    delete g_dict;
 
     return ret;
 }

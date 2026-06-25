@@ -34,7 +34,7 @@
 #include <QString>
 #include <QStringList>
 #include <QTextStream>
-#include <QtGlobal>          // Q_OS_LINUX, Q_OS_UNIX, Q_UNUSED, qEnvironmentVariable
+#include <QtGlobal> // Q_OS_LINUX, Q_OS_UNIX, Q_UNUSED, qEnvironmentVariable
 
 // Widget / styling headers used by EditorLighteningStyle (defined below).
 #include <QAbstractSpinBox>
@@ -47,9 +47,9 @@
 #include <QWidget>
 
 // POSIX headers used by StderrBlocker (file-descriptor redirection).
-#if defined(Q_OS_UNIX)
-#include <cstdio>   // std::fflush, stderr
-#include <fcntl.h>  // open, O_WRONLY, O_CLOEXEC
+#ifdef Q_OS_UNIX
+#include <cstdio> // std::fflush, stderr
+#include <fcntl.h> // open, O_WRONLY, O_CLOEXEC
 #include <unistd.h> // dup, dup2, close, STDERR_FILENO
 #endif
 
@@ -72,18 +72,20 @@
  * "Permission denied" issues of the global `/usr/share/applications` folder and keeps the helper
  * compatible with strict sandbox models (Flatpak / Snap / AppImage).
  *
- * @note If the icon resource is missing, the launcher falls back to the default generic system icon.
+ * @note If the icon resource is missing, the launcher falls back to the default generic system
+ * icon.
  */
-inline void installLinuxDesktopIntegration(const QString& appDesktopFileName,
-                                           const QString& displayName,
-                                           const QString& appComment,
-                                           const QString& iconResourcePath,
-                                           const QString& startupWMClass) {
-#if defined(Q_OS_LINUX)
+inline void installLinuxDesktopIntegration(const QString &appDesktopFileName,
+                                           const QString &displayName,
+                                           const QString &appComment,
+                                           const QString &iconResourcePath,
+                                           const QString &startupWMClass)
+{
+#ifdef Q_OS_LINUX
     // Resolve the absolute path of the running executable so the generated launcher
     // points back at this exact binary (works from a build tree, an install or an AppImage).
     QString exePath = QCoreApplication::arguments().at(0);
-    if (!exePath.contains("/")) {
+    if (!exePath.contains(QLatin1String("/"))) {
         exePath = QStandardPaths::findExecutable(exePath);
     } else {
         exePath = QDir::cleanPath(QDir().absoluteFilePath(exePath));
@@ -94,9 +96,10 @@ inline void installLinuxDesktopIntegration(const QString& appDesktopFileName,
     // Replacing /home/<user>/ with ~/ and running through a bash exec lets the path be expanded
     // from the environment at launch time, keeping the launcher portable across machines.
     QString userName = qEnvironmentVariable("USER");
-    if (!userName.isEmpty() && exePath.startsWith("/home/" + userName + "/")) {
-        exePath.replace(0, ("/home/" + userName).length(), "~");
-        exePath = "bash -c \"exec " + exePath + "\"";
+    if (!userName.isEmpty()
+        && exePath.startsWith(QStringLiteral("/home/") + userName + QStringLiteral("/"))) {
+        exePath.replace(0, (QStringLiteral("/home/") + userName).length(), QStringLiteral("~"));
+        exePath = QStringLiteral("bash -c \"exec ") + exePath + QStringLiteral("\"");
     }
 
     // Follow the XDG base directory spec for file locations so we never need sudo and it keeps
@@ -104,8 +107,8 @@ inline void installLinuxDesktopIntegration(const QString& appDesktopFileName,
     QString appsLocation = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
     if (!appsLocation.isEmpty()) {
         QDir().mkpath(appsLocation);
-        QString desktopFileName = appDesktopFileName + ".desktop";
-        QString desktopFilePath = appsLocation + "/" + desktopFileName;
+        QString desktopFileName = appDesktopFileName + QStringLiteral(".desktop");
+        QString desktopFilePath = appsLocation + QStringLiteral("/") + desktopFileName;
         QFile dfile(desktopFilePath);
         if (dfile.open(QIODevice::WriteOnly | QIODevice::Text)) {
             QTextStream out(&dfile);
@@ -125,9 +128,11 @@ inline void installLinuxDesktopIntegration(const QString& appDesktopFileName,
 
         // Publish the icon into the user hicolor theme under the launcher's name so that the
         // "Icon=<appDesktopFileName>" entry above resolves it.
-        QString iconDir = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/icons/hicolor/128x128/apps";
+        QString iconDir = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)
+                + QStringLiteral("/icons/hicolor/128x128/apps");
         QDir().mkpath(iconDir);
-        QString iconFilePath = iconDir + "/" + appDesktopFileName + ".png";
+        QString iconFilePath
+                = iconDir + QStringLiteral("/") + appDesktopFileName + QStringLiteral(".png");
         if (QFile::exists(iconFilePath)) {
             QFile::remove(iconFilePath);
         }
@@ -137,9 +142,19 @@ inline void installLinuxDesktopIntegration(const QString& appDesktopFileName,
 
         // Let the desktop databases catch up. These are best-effort: fired through Qt's native
         // cross-platform process API and silenced so a missing tool never disturbs the user.
-        QProcess::startDetached("/bin/sh", QStringList() << "-c" << QString("update-desktop-database -q \"%1\" >/dev/null 2>&1").arg(appsLocation));
-        QString hicolorDir = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/icons/hicolor";
-        QProcess::startDetached("/bin/sh", QStringList() << "-c" << QString("gtk-update-icon-cache -q -t -f \"%1\" >/dev/null 2>&1").arg(hicolorDir));
+        QProcess::startDetached(
+                QStringLiteral("/bin/sh"),
+                QStringList() << QStringLiteral("-c")
+                              << QStringLiteral("update-desktop-database -q \"%1\" >/dev/null 2>&1")
+                                         .arg(appsLocation));
+        QString hicolorDir = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)
+                + QStringLiteral("/icons/hicolor");
+        QProcess::startDetached(
+                QStringLiteral("/bin/sh"),
+                QStringList() << QStringLiteral("-c")
+                              << QStringLiteral(
+                                         "gtk-update-icon-cache -q -t -f \"%1\" >/dev/null 2>&1")
+                                         .arg(hicolorDir));
     }
 #else
     Q_UNUSED(appDesktopFileName);
@@ -165,7 +180,8 @@ inline void installLinuxDesktopIntegration(const QString& appDesktopFileName,
  *
  * Usage: @code app.setStyle(new EditorLighteningStyle(app.style())); @endcode
  */
-class EditorLighteningStyle : public QProxyStyle {
+class EditorLighteningStyle : public QProxyStyle
+{
 public:
     // Inherit QProxyStyle's constructors (notably the one taking a base QStyle*).
     using QProxyStyle::QProxyStyle;
@@ -175,18 +191,16 @@ public:
      * @param widget The widget being prepared for display.
      * @details Forces a lighter @c QPalette::Base on text-input widgets only.
      */
-    void polish(QWidget *widget) override {
+    void polish(QWidget *widget) override
+    {
         // Always run the base class polish first.
         QProxyStyle::polish(widget);
 
         // Only adjust editable text/number input widgets.
-        if (qobject_cast<QLineEdit*>(widget) ||
-            qobject_cast<QTextEdit*>(widget) ||
-            qobject_cast<QPlainTextEdit*>(widget) ||
-            qobject_cast<QAbstractSpinBox*>(widget)) {
-
+        if (qobject_cast<QLineEdit *>(widget) || qobject_cast<QTextEdit *>(widget)
+            || qobject_cast<QPlainTextEdit *>(widget) || qobject_cast<QAbstractSpinBox *>(widget)) {
             QPalette customPalette = widget->palette();
-            customPalette.setColor(QPalette::Base, QColor("#3a3a3a"));
+            customPalette.setColor(QPalette::Base, QColor(0x3a3a3a));
             // Apply only to this specific widget, not globally.
             widget->setPalette(customPalette);
         }
@@ -227,10 +241,12 @@ public:
  * compiles to a no-op. The redirection is process-wide for its (short) lifetime, so keep the
  * scope tight: any other stderr output produced while the dialog is open is suppressed too.
  */
-class StderrBlocker {
+class StderrBlocker
+{
 public:
-    StderrBlocker() {
-#if defined(Q_OS_UNIX)
+    StderrBlocker()
+    {
+#ifdef Q_OS_UNIX
         std::fflush(stderr);
         // Keep a copy of the real stderr so it can be restored, and only redirect once BOTH the
         // saved copy and /dev/null were obtained -- otherwise stderr could never be put back.
@@ -242,8 +258,9 @@ public:
 #endif
     }
 
-    ~StderrBlocker() {
-#if defined(Q_OS_UNIX)
+    ~StderrBlocker()
+    {
+#ifdef Q_OS_UNIX
         std::fflush(stderr);
         if (m_savedStderrFd >= 0) {
             ::dup2(m_savedStderrFd, STDERR_FILENO); // restore the original stderr
@@ -255,12 +272,12 @@ public:
 #endif
     }
 
-    StderrBlocker(const StderrBlocker&) = delete;
-    StderrBlocker& operator=(const StderrBlocker&) = delete;
-    StderrBlocker(StderrBlocker&&) = delete;
-    StderrBlocker& operator=(StderrBlocker&&) = delete;
+    StderrBlocker(const StderrBlocker &) = delete;
+    StderrBlocker &operator=(const StderrBlocker &) = delete;
+    StderrBlocker(StderrBlocker &&) = delete;
+    StderrBlocker &operator=(StderrBlocker &&) = delete;
 
-#if defined(Q_OS_UNIX)
+#ifdef Q_OS_UNIX
 private:
     int m_savedStderrFd = -1;
     int m_devNullFd = -1;

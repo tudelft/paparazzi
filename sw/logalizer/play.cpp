@@ -1,23 +1,24 @@
 /**
  * @file play.cpp
  * @brief Paparazzi Replay Engine (Native C++ Qt6 Implementation)
- * 
- * @details 
- * This application is a complete and robust architectural re-implementation of the legacy 
- * OCaml-based "play", "play_core", and "play-nox" toolkits for the Paparazzi UAV framework. 
- * It is engineered to load, parse, and broadcast Paparazzi .log telemetry datasets over an Ivy 
- * software bus, simulating active aircraft streams natively to downstream Ground Control Station 
+ *
+ * @details
+ * This application is a complete and robust architectural re-implementation of the legacy
+ * OCaml-based "play", "play_core", and "play-nox" toolkits for the Paparazzi UAV framework.
+ * It is engineered to load, parse, and broadcast Paparazzi .log telemetry datasets over an Ivy
+ * software bus, simulating active aircraft streams natively to downstream Ground Control Station
  * entities (GCS) and visualization toolings.
- * 
+ *
  * **Architectural Pillars:**
- * 1. **Zero-Allocation Parsing:** Relies on direct physical memory-mapped filesystem I/O (`mmap()`). 
- *    By abstaining from loading `QString` sequences onto the local heap, the application routinely indexes 
- *    gigabyte-scale datasets utilizing marginal active RAM (~20 bytes per telemetry line lookup struct).
- *    Note: Fallback is provided if memory mapping fails.
- * 2. **Drift-Free Virtual Chronology:** Abandons standard single-shot OS sleep timeouts in favor of 
- *    batched synchronous tracking (`QElapsedTimer`). The engine executes fixed 60Hz tick intervals and 
- *    bulk-transmits log sequences falling behind the active multiplied tracking clock, totally eliminating 
- *    long-term OS scheduler drift and UI stutter sequences even at heavy 100x+ multipliers.
+ * 1. **Zero-Allocation Parsing:** Relies on direct physical memory-mapped filesystem I/O
+ * (`mmap()`). By abstaining from loading `QString` sequences onto the local heap, the application
+ * routinely indexes gigabyte-scale datasets utilizing marginal active RAM (~20 bytes per telemetry
+ * line lookup struct). Note: Fallback is provided if memory mapping fails.
+ * 2. **Drift-Free Virtual Chronology:** Abandons standard single-shot OS sleep timeouts in favor of
+ *    batched synchronous tracking (`QElapsedTimer`). The engine executes fixed 60Hz tick intervals
+ * and bulk-transmits log sequences falling behind the active multiplied tracking clock, totally
+ * eliminating long-term OS scheduler drift and UI stutter sequences even at heavy 100x+
+ * multipliers.
  */
 
 #include <QAbstractSlider>
@@ -79,8 +80,9 @@
 
 // ---------------------------------------------------------------------------
 // Fast-forward / fast-backward seek step, in seconds. Since fixed at compile-time,
-// change this one value to tune how far the  <<  /  >>  transport buttons jump. 
-// No runtime / dynamic setting involved, keeping the UI clean and focused on core playback controls.
+// change this one value to tune how far the  <<  /  >>  transport buttons jump.
+// No runtime / dynamic setting involved, keeping the UI clean and focused on core playback
+// controls.
 // ---------------------------------------------------------------------------
 #define PLAY_SEEK_STEP_SECONDS 10.0
 
@@ -93,11 +95,14 @@
  * were also missing) we finally fall back to the current working directory so
  * headless/CI invocations never crash.
  */
-static QString paparazziHome() {
-    const QString home = qEnvironmentVariable("PAPARAZZI_HOME");
-    if (!home.isEmpty()) return home;
+static QString paparazziHome()
+{
+    QString home = qEnvironmentVariable("PAPARAZZI_HOME");
+    if (!home.isEmpty())
+        return home;
     const QString userHome = qEnvironmentVariable("HOME");
-    if (!userHome.isEmpty()) return userHome + "/paparazzi";
+    if (!userHome.isEmpty())
+        return userHome + QStringLiteral("/paparazzi");
     return QDir::currentPath();
 }
 
@@ -110,63 +115,71 @@ static QString paparazziHome() {
  * `$PAPARAZZI_HOME` is exported (previously an empty `$PAPARAZZI_SRC` produced the
  * broken root path `/sw/tools/generators/dump_flight_plan.out`).
  */
-static QString paparazziSrc() {
-    const QString src = qEnvironmentVariable("PAPARAZZI_SRC");
-    if (!src.isEmpty()) return src;
+static QString paparazziSrc()
+{
+    QString src = qEnvironmentVariable("PAPARAZZI_SRC");
+    if (!src.isEmpty())
+        return src;
     return QStringLiteral("/usr/share/paparazzi");
 }
 
 /**
  * @struct LogIndex
  * @brief An ultra-lightweight structural pointer indexing telemetry frames sequentially.
- * 
+ *
  * @details
- * Rather than instantiating heavily bloated object strings (`QString` naturally bounds internal arrays, encoders,
- * and meta layouts scaling around ~24+ bytes linearly per sequence), we track only physical properties. 
- * If a e.g. 2GB raw file harbors ~20 million rows of data bounds, storing an array of constructed strings would 
- * dynamically pull upwards of 12GB of operational virtual memory space triggering Garbage Collection lockups.
- * Using this struct, a dense 20-million sequence requires approximately `sizeof(LogIndex) * 20_000_000` 
- * (approx. 400 MB) of indexing capability linearly!
+ * Rather than instantiating heavily bloated object strings (`QString` naturally bounds internal
+ * arrays, encoders, and meta layouts scaling around ~24+ bytes linearly per sequence), we track
+ * only physical properties. If a e.g. 2GB raw file harbors ~20 million rows of data bounds, storing
+ * an array of constructed strings would dynamically pull upwards of 12GB of operational virtual
+ * memory space triggering Garbage Collection lockups. Using this struct, a dense 20-million
+ * sequence requires approximately `sizeof(LogIndex) * 20_000_000` (approx. 400 MB) of indexing
+ * capability linearly!
  */
-struct LogIndex {
-    double time;    ///< Primary chronological metric interpreted parsed during initialization mapping operations natively.
-    qint64 offset;  ///< Hard physical byte integer location matching strictly the start character of the parsed frame.
-    int length;     ///< Captured distance trailing the active newline carriage return dictating the read scope limits purely.
+struct LogIndex
+{
+    double time; ///< Primary chronological metric interpreted parsed during initialization mapping
+                 ///< operations natively.
+    qint64 offset; ///< Hard physical byte integer location matching strictly the start character of
+                   ///< the parsed frame.
+    int length; ///< Captured distance trailing the active newline carriage return dictating the
+                ///< read scope limits purely.
 };
 
 /**
  * @class PlayCore
- * @brief The Central Logic framework handling File Tracking, Timers, XML Generation and Ivy Network Broadcasts.
- * 
- * @details 
- * Implements a strict architectural partition. The core does not manage GUI states; it exclusively manages operational 
- * mathematics, Ivy bus instantiations, memory pointers, and tracking logic, enabling `play-nox` headless 
- * command-line deployments seamlessly tracking similar mechanisms to active desktop Window setups natively.
+ * @brief The Central Logic framework handling File Tracking, Timers, XML Generation and Ivy Network
+ * Broadcasts.
+ *
+ * @details
+ * Implements a strict architectural partition. The core does not manage GUI states; it exclusively
+ * manages operational mathematics, Ivy bus instantiations, memory pointers, and tracking logic,
+ * enabling `play-nox` headless command-line deployments seamlessly tracking similar mechanisms to
+ * active desktop Window setups natively.
  */
-class PlayCore : public QObject {
+class PlayCore : public QObject
+{
     Q_OBJECT
 public:
     /**
-     * @brief Initiates standard operational engine variables establishing high-precision ticking states.
+     * @brief Initiates standard operational engine variables establishing high-precision ticking
+     * states.
      */
-    explicit PlayCore(QObject* parent = nullptr) : QObject(parent),
-        m_speed(1.0),
-        m_currentIndex(0),
-        m_isPlaying(false),
-        m_virtualTime(0.0),
-        m_timeScaleIdx(-1),
-        m_bus(nullptr),
-        m_mappedData(nullptr)
+    explicit PlayCore(QObject *parent = nullptr)
+        : QObject(parent)
+
     {
-        // Enforce the use of High-Resolution Precision timers requesting explicit priority against backend OS schedulers
-        // This ensures interval drifting remains heavily controlled resolving at ~60 Hz cycles mimicking a smooth operational framerate.
+        // Enforce the use of High-Resolution Precision timers requesting explicit priority against
+        // backend OS schedulers This ensures interval drifting remains heavily controlled resolving
+        // at ~60 Hz cycles mimicking a smooth operational framerate.
         m_tickTimer = new QTimer(this);
         m_tickTimer->setTimerType(Qt::PreciseTimer);
-        m_tickTimer->setInterval(16); 
+        m_tickTimer->setInterval(16);
         connect(m_tickTimer, &QTimer::timeout, this, &PlayCore::onTimeout);
     }
 
-    ~PlayCore() {
+    ~PlayCore() override
+    {
         if (m_mappedData) {
             m_dataFile.unmap(m_mappedData);
         }
@@ -175,30 +188,39 @@ public:
         }
     }
 
-    void setIvyBus(const QString& busArg) { m_ivyBusArg = busArg; }
+    void setIvyBus(const QString &busArg) { m_ivyBusArg = busArg; }
     void setNoGui(bool noGui) { m_noGui = noGui; }
 
     /**
      * @brief Overrides the consumer message dictionary used to validate outgoing payloads.
-     * @param path An explicit messages.xml; empty keeps the default ($PAPARAZZI_HOME/var/messages.xml).
-     * @details Lets a user point payload int-validation at the exact dictionary their GCS/server runs,
-     * e.g. when replaying into a non-default or remote configuration. Must be called before loadLog().
+     * @param path An explicit messages.xml; empty keeps the default
+     * ($PAPARAZZI_HOME/var/messages.xml).
+     * @details Lets a user point payload int-validation at the exact dictionary their GCS/server
+     * runs, e.g. when replaying into a non-default or remote configuration. Must be called before
+     * loadLog().
      */
-    void setConsumerMessages(const QString& path) { m_consumerMessagesPath = path; }
+    void setConsumerMessages(const QString &path) { m_consumerMessagesPath = path; }
 
     /**
-     * @brief Interprets initial log payloads targeting configurations and indexing raw dataset binaries.
-     * @param xmlFile Target system path identifying the `.log` root tracking XML schema structure natively.
-     * @return True if parsing, environment linking, and dictionary processing completed without fail.
-     * 
-     * @details Discovers embedded `.data` files, validates automated decompression tools if data is 
-     * tightly bound, attempts High-Speed Memory Mapping (falling back robustly on chunk-reading constraints), 
-     * bounds dictionaries, and triggers configuration block extractions mimicking baseline Paparazzi environments.
+     * @brief Interprets initial log payloads targeting configurations and indexing raw dataset
+     * binaries.
+     * @param xmlFile Target system path identifying the `.log` root tracking XML schema structure
+     * natively.
+     * @return True if parsing, environment linking, and dictionary processing completed without
+     * fail.
+     *
+     * @details Discovers embedded `.data` files, validates automated decompression tools if data is
+     * tightly bound, attempts High-Speed Memory Mapping (falling back robustly on chunk-reading
+     * constraints), bounds dictionaries, and triggers configuration block extractions mimicking
+     * baseline Paparazzi environments.
      */
-    bool loadLog(const QString& xmlFile) {
-        if (m_isPlaying) stop();
-        
-        // Unmap memory bounds ensuring overlapping Hot-Reload capabilities do not leak massive active dataset bounds organically.
+    bool loadLog(const QString &xmlFile)
+    {
+        if (m_isPlaying)
+            stop();
+
+        // Unmap memory bounds ensuring overlapping Hot-Reload capabilities do not leak massive
+        // active dataset bounds organically.
         if (m_mappedData) {
             m_dataFile.unmap(m_mappedData);
             m_mappedData = nullptr;
@@ -217,40 +239,48 @@ public:
         QString content = file.readAll();
         file.close();
 
-        // GUARANTEE: Legacy paparazzi logs could contain heavily misformatted XML with un-escaped entities
-        // natively encoded into attributes. 
-        // Used library strictly rejects these violating standard definitions. Normalize explicitly!
-        // We only target strictly cased variants of explicit layout keys and never `CaseInsensitive` (<control> vs <Control>)
-        content.replace(QRegularExpression("<(Control|Shift|Alt)>"), "&lt;\\1&gt;");
-        // Only safely replace unescaped ampersands to avoid destroying valid tags (like <control> blocks in flight plans)
-        content.replace(QRegularExpression("&(?!(amp|lt|gt|quot|apos|#)[a-zA-Z0-9]*;)"), "&amp;");
+        // GUARANTEE: Legacy paparazzi logs could contain heavily misformatted XML with un-escaped
+        // entities natively encoded into attributes. Used library strictly rejects these violating
+        // standard definitions. Normalize explicitly! We only target strictly cased variants of
+        // explicit layout keys and never `CaseInsensitive` (<control> vs <Control>)
+        content.replace(QRegularExpression(QStringLiteral("<(Control|Shift|Alt)>")),
+                        QStringLiteral("&lt;\\1&gt;"));
+        // Only safely replace unescaped ampersands to avoid destroying valid tags (like <control>
+        // blocks in flight plans)
+        content.replace(
+                QRegularExpression(QStringLiteral("&(?!(amp|lt|gt|quot|apos|#)[a-zA-Z0-9]*;)")),
+                QStringLiteral("&amp;"));
 
         QString dataFileName = xmlFile;
-        
-        // Using robust RegEx same as from logplotter to find the data_file securely even if XML is poorly formed root-wise
-        QRegularExpression reDataFile("data_file=\"([^\"]+)\"");
+
+        // Using robust RegEx same as from logplotter to find the data_file securely even if XML is
+        // poorly formed root-wise
+        QRegularExpression reDataFile(QStringLiteral("data_file=\"([^\"]+)\""));
         QRegularExpressionMatch matchDataFile = reDataFile.match(content);
         if (matchDataFile.hasMatch()) {
             dataFileName = matchDataFile.captured(1);
-        } else if (!xmlFile.endsWith(".data", Qt::CaseInsensitive)) {
+        } else if (!xmlFile.endsWith(QLatin1String(".data"), Qt::CaseInsensitive)) {
             qWarning() << "data_file property not found in log.";
             return false;
         }
 
         QFileInfo fi(xmlFile);
         QString dataFilePath = fi.absoluteDir().filePath(dataFileName);
-        
+
         // Resolve a compressed data file the same way OCaml `Ocaml_tools.find_file` +
         // `open_compress` do: search the log's own directory for a known archive
         // extension and decompress it. Unlike the previous in-place `gunzip <file>`
         // (which DELETED the user's original archive), we stream via `-c` to a plain
         // sidecar file, leaving the original intact -- matching OCaml's `gunzip -c`.
         if (!QFile::exists(dataFilePath)) {
-            struct Variant { const char* ext; const char* tool; };
-            static const Variant variants[] = {
-                {".gz", "gunzip"}, {".Z", "gunzip"}, {".bz2", "bunzip2"}
+            struct Variant
+            {
+                const char *ext;
+                const char *tool;
             };
-            for (const auto& v : variants) {
+            static const Variant variants[]
+                    = {{".gz", "gunzip"}, {".Z", "gunzip"}, {".bz2", "bunzip2"}};
+            for (const auto &v : variants) {
                 const QString compressed = dataFilePath + v.ext;
                 if (QFile::exists(compressed)) {
                     QProcess proc;
@@ -274,62 +304,72 @@ public:
 
         m_log.clear();
         m_streamFrames.clear(); // invalidate any prior scrub index before re-indexing
-        QSet<QString> acs; 
-        
-        // Core Performance Optimization 1: System Memory Boundary Mappings mapping native file tracks into explicit pointer references zeroing block cache arrays naturally.
+        QSet<QString> acs;
+
+        // Core Performance Optimization 1: System Memory Boundary Mappings mapping native file
+        // tracks into explicit pointer references zeroing block cache arrays naturally.
         m_mappedData = m_dataFile.map(0, m_dataFile.size());
-        
+
         if (m_mappedData) {
-            const char* ptr = reinterpret_cast<const char*>(m_mappedData);
+            const char *ptr = reinterpret_cast<const char *>(m_mappedData);
             qint64 totalSize = m_dataFile.size();
             qint64 currentPos = 0;
-            
+
             while (currentPos < totalSize) {
-                const char* lineStartPtr = ptr + currentPos;
-                const char* nlPtr = static_cast<const char*>(memchr(lineStartPtr, '\n', totalSize - currentPos));
+                const char *lineStartPtr = ptr + currentPos;
+                const char *nlPtr = static_cast<const char *>(
+                        memchr(lineStartPtr, '\n', totalSize - currentPos));
                 int lineLen = nlPtr ? (nlPtr - lineStartPtr) : (totalSize - currentPos);
-                
+
                 int effectiveLineLen = lineLen;
                 if (effectiveLineLen > 0 && lineStartPtr[effectiveLineLen - 1] == '\r') {
-                    effectiveLineLen--; // Windows/CRLF stripping protecting parser validity strictly
+                    effectiveLineLen--; // Windows/CRLF stripping protecting parser validity
+                                        // strictly
                 }
 
                 if (effectiveLineLen > 0) {
                     processLineForIndex(lineStartPtr, effectiveLineLen, currentPos, acs);
                 }
-                
+
                 currentPos += lineLen + (nlPtr ? 1 : 0);
             }
         } else {
-            // Core Performance Fallback: Chunked boundaries protecting constrained generic environments failing OS large-file Mmap bindings dynamically.
+            // Core Performance Fallback: Chunked boundaries protecting constrained generic
+            // environments failing OS large-file Mmap bindings dynamically.
             const int CHUNK_SIZE = 1048576; // 1MB chunks
             QByteArray buffer;
             qint64 fileOffset = 0;
-            
+
             while (!m_dataFile.atEnd()) {
                 QByteArray chunk = m_dataFile.read(CHUNK_SIZE);
-                if (chunk.isEmpty()) break;
-                
+                if (chunk.isEmpty())
+                    break;
+
                 buffer.append(chunk);
-                // GUARANTEE: Prevent infinitely expanding buffers resulting in OOM on malformed binaries
+                // GUARANTEE: Prevent infinitely expanding buffers resulting in OOM on malformed
+                // binaries
                 if (buffer.size() > 50 * 1024 * 1024) {
-                    qWarning() << "Malformed log file: excessively long line strings detected. Halting stream parser.";
+                    qWarning() << "Malformed log file: excessively long line strings detected. "
+                                  "Halting stream parser.";
                     break;
                 }
                 int lineStart = 0;
                 while (true) {
                     int nlIdx = buffer.indexOf('\n', lineStart);
-                    if (nlIdx == -1) break;
+                    if (nlIdx == -1)
+                        break;
 
                     int lineLen = nlIdx - lineStart;
                     int effectiveLineLen = lineLen;
-                    if (effectiveLineLen > 0 && buffer.at(lineStart + effectiveLineLen - 1) == '\r') {
+                    if (effectiveLineLen > 0
+                        && buffer.at(lineStart + effectiveLineLen - 1) == '\r') {
                         effectiveLineLen--;
                     }
 
                     if (effectiveLineLen > 0) {
-                        const char* lineData = buffer.constData() + lineStart;
-                        processLineForIndex(lineData, effectiveLineLen, fileOffset + lineStart, acs);
+                        const char *lineData = buffer.constData() + lineStart;
+                        processLineForIndex(
+                                lineData, effectiveLineLen, fileOffset + lineStart, acs);
                     }
                     lineStart = nlIdx + 1;
                 }
@@ -338,7 +378,8 @@ public:
             }
             if (buffer.length() > 0) {
                 int effectiveLineLen = buffer.length();
-                if (buffer.at(effectiveLineLen - 1) == '\r') effectiveLineLen--;
+                if (buffer.at(effectiveLineLen - 1) == '\r')
+                    effectiveLineLen--;
                 if (effectiveLineLen > 0) {
                     processLineForIndex(buffer.constData(), effectiveLineLen, fileOffset, acs);
                 }
@@ -352,7 +393,7 @@ public:
 
         // GUARANTEE: Ensure absolute chronological integrity. Some logs reset or jump timelines.
         // std::lower_bound exhibits undefined behavior (crashing) if the timeline is un-ordered.
-        std::sort(m_log.begin(), m_log.end(), [](const LogIndex& a, const LogIndex& b) {
+        std::sort(m_log.begin(), m_log.end(), [](const LogIndex &a, const LogIndex &b) {
             return a.time < b.time;
         });
 
@@ -360,18 +401,20 @@ public:
         // O(log n) snapshot lookups for responsive live scrubbing (see broadcastSnapshot).
         buildStreamIndex();
 
-        // Now parse the standard XML properties (Conf and Protocols). Many Paparazzi .log files miss a single root element wrapper.
+        // Now parse the standard XML properties (Conf and Protocols). Many Paparazzi .log files
+        // miss a single root element wrapper.
         QDomDocument doc;
         QDomDocument::ParseResult result = doc.setContent(content);
         if (!result) {
             // Attempt to wrap it
-            QString wrapped = "<root>" + content + "</root>";
+            QString wrapped = QStringLiteral("<root>") + content + QStringLiteral("</root>");
             result = doc.setContent(wrapped);
             if (!result) {
-                qWarning() << "XML Parse Error:" << result.errorMessage << "at line:" << result.errorLine;
+                qWarning() << "XML Parse Error:" << result.errorMessage
+                           << "at line:" << result.errorLine;
             }
         }
-        
+
         QDomElement root = doc.documentElement();
 
         // Extract native configs and load internal routing dictionaries
@@ -382,17 +425,19 @@ public:
         m_currentIndex = 0;
         m_virtualTime = m_log.first().time;
         emit logLoaded(m_log.first().time, m_log.last().time);
-        
-        qInfo() << QString("Successfully indexed %1 telemetry frames.").arg(m_log.size());
+
+        qInfo() << QStringLiteral("Successfully indexed %1 telemetry frames.").arg(m_log.size());
         return true;
     }
 
     /**
-     * @brief Binds explicit external Ivy bus boundaries matching defined local scope limitations identically pushing system tracks cleanly.
+     * @brief Binds explicit external Ivy bus boundaries matching defined local scope limitations
+     * identically pushing system tracks cleanly.
      */
-    void startIvy() {
-        QString pprzName = "Paparazzi replay";
-        m_bus = new IvyQt(pprzName, "READY", this);
+    void startIvy()
+    {
+        QString pprzName = QStringLiteral("Paparazzi replay");
+        m_bus = new IvyQt(pprzName, QStringLiteral("READY"), this);
         QString domain = m_ivyBusArg;
         int port = 2010;
         if (domain.contains(':')) {
@@ -401,25 +446,28 @@ public:
             port = parts[1].toInt();
         }
         m_bus->start(domain, port);
-        
-        // Establish native bindings pushing logical configurations mimicking active Paparazzi sim limits modifying playback naturally tracking UI constraints
-        m_bus->bindMessage("WORLD_ENV (.*)", [this](Peer*, QStringList params) {
+
+        // Establish native bindings pushing logical configurations mimicking active Paparazzi sim
+        // limits modifying playback naturally tracking UI constraints
+        m_bus->bindMessage(QStringLiteral("WORLD_ENV (.*)"), [this](Peer *, QStringList params) {
             if (m_timeScaleIdx >= 0 && !params.isEmpty()) {
-                QString data = params[0];
+                const QString &data = params[0];
                 QStringList fields = data.split(' ', Qt::SkipEmptyParts);
                 if (m_timeScaleIdx < fields.size()) {
                     bool ok;
                     double scale = fields[m_timeScaleIdx].toDouble(&ok);
                     if (ok && scale > 0.0) {
-                        emit speedChangedByNetwork(scale); 
+                        emit speedChangedByNetwork(scale);
                     }
                 }
             }
         });
     }
 
-    void setSpeed(double speed) {
-        m_speed = std::max(0.001, speed); // Protective absolute capping rejecting logic gaps strictly 
+    void setSpeed(double speed)
+    {
+        m_speed = std::max(0.001,
+                           speed); // Protective absolute capping rejecting logic gaps strictly
     }
 
     /**
@@ -438,26 +486,33 @@ public:
      *  3. **Clock safety** -- if a scrub happens mid-playback the elapsed accumulator is
      *     restarted so the next tick does not dump a huge delta and fast-forward.
      */
-    void scrubTo(double t) {
-        if (m_log.isEmpty()) return; // Absolute protection against empty references
+    void scrubTo(double t)
+    {
+        if (m_log.isEmpty())
+            return; // Absolute protection against empty references
         m_currentIndex = indexForTime(t);
         m_virtualTime = m_log[m_currentIndex].time;
-        if (m_isPlaying) m_elapsed.restart();
+        if (m_isPlaying)
+            m_elapsed.restart();
         broadcastSnapshot(m_virtualTime);
         emit timeUpdated(m_virtualTime);
     }
-    
-    void getBounds(double& start, double& end) {
+
+    void getBounds(double &start, double &end)
+    {
         if (!m_log.isEmpty()) {
-           start = m_log.first().time;
-           end = m_log.last().time;
+            start = m_log.first().time;
+            end = m_log.last().time;
         } else {
-           start = 0; end = 0;
+            start = 0;
+            end = 0;
         }
     }
 
-    void play() {
-        if (m_log.isEmpty()) return;
+    void play()
+    {
+        if (m_log.isEmpty())
+            return;
         // If the head sits at (or past) the end of the log -- e.g. a previous run played
         // out completely -- rewind to the start so "Play" is never a silent no-op.
         if (m_currentIndex >= m_log.size()) {
@@ -471,7 +526,8 @@ public:
         emit stateChanged(true);
     }
 
-    void stop() {
+    void stop()
+    {
         m_isPlaying = false;
         m_tickTimer->stop();
         emit stateChanged(false);
@@ -481,31 +537,39 @@ public:
     bool isPlaying() const { return m_isPlaying; }
 
 signals:
-    void logLoaded(double minT, double maxT);
-    void timeUpdated(double currentT);
-    void speedChangedByNetwork(double newSpeed);
+    void logLoaded(double, double);
+    void timeUpdated(double);
+    void speedChangedByNetwork(double);
     void finished();
-    void stateChanged(bool isPlaying);
+    void stateChanged(bool);
 
-private slots:
+private:
     /**
-     * @brief Operational driver dictating native loop mechanisms bypassing OS drift issues implicitly.
-     * 
-     * @details 
-     * To accommodate robust simulation loops tracking 100x+ overrides locally driving Gigabyte datasets gracefully:
-     * 1. Check physical `QElapsedTimer` ms bounds organically passed generating precise chronological deltas structurally tracking active hardware.
-     * 2. Append values onto internal `virtualTime` constraints overriding software array limitations reliably mapping true-to-life offsets purely.
-     * 3. Send all consecutive payload lines strictly enclosed up to current tracked boundary ensuring zero-event stalls organically!
+     * @brief Operational driver dictating native loop mechanisms bypassing OS drift issues
+     * implicitly.
+     *
+     * @details
+     * To accommodate robust simulation loops tracking 100x+ overrides locally driving Gigabyte
+     * datasets gracefully:
+     * 1. Check physical `QElapsedTimer` ms bounds organically passed generating precise
+     * chronological deltas structurally tracking active hardware.
+     * 2. Append values onto internal `virtualTime` constraints overriding software array
+     * limitations reliably mapping true-to-life offsets purely.
+     * 3. Send all consecutive payload lines strictly enclosed up to current tracked boundary
+     * ensuring zero-event stalls organically!
      */
-    void onTimeout() {
-        if (!m_isPlaying || m_currentIndex >= m_log.size()) return;
-        
+    void onTimeout()
+    {
+        if (!m_isPlaying || m_currentIndex >= m_log.size())
+            return;
+
         qint64 ms = m_elapsed.restart();
         m_virtualTime += (ms / 1000.0) * m_speed;
-        
+
         int messagesSent = 0;
-        
-        // Loop resolves strictly passing messages evaluating valid mapped structures locally bounding transmission natively identically bypassing stall behaviors organically
+
+        // Loop resolves strictly passing messages evaluating valid mapped structures locally
+        // bounding transmission natively identically bypassing stall behaviors organically
         while (m_currentIndex < m_log.size() && m_log[m_currentIndex].time <= m_virtualTime) {
             // Broadcasting is delegated to sendFrame() so the identical wire format can be
             // reused by a future live-scrubbing seek path without duplicating any logic.
@@ -513,18 +577,19 @@ private slots:
 
             m_currentIndex++;
             messagesSent++;
-            
-            // Safety cap: Prevents permanent locking of the Main GUI render thread if multiplier 
+
+            // Safety cap: Prevents permanent locking of the Main GUI render thread if multiplier
             // is intensely high on ultra dense datalogs.
             if (messagesSent >= 5000) {
                 m_virtualTime = m_log[std::max(0, m_currentIndex - 1)].time;
                 break;
             }
         }
-        
-        // Synchronize visual displays exclusively executing single loop-bound variables tracking clean GUI events flawlessly minimizing CPU overhead naturally explicitly 
+
+        // Synchronize visual displays exclusively executing single loop-bound variables tracking
+        // clean GUI events flawlessly minimizing CPU overhead naturally explicitly
         emit timeUpdated(m_virtualTime);
-        
+
         if (m_currentIndex >= m_log.size()) {
             stop();
             if (m_noGui) {
@@ -534,25 +599,38 @@ private slots:
         }
     }
 
-private:
     /**
-     * @brief Manual raw char pointer string sequence parser dictating array definitions without issue.
-     * @details Extracts values directly indexing chronological elements without executing complex heap conversions enabling ultra low-latency evaluation variables natively.
+     * @brief Manual raw char pointer string sequence parser dictating array definitions without
+     * issue.
+     * @details Extracts values directly indexing chronological elements without executing complex
+     * heap conversions enabling ultra low-latency evaluation variables natively.
      */
-    inline void processLineForIndex(const char* lineData, int lineLen, qint64 fileOffset, QSet<QString>& acs) {
-        int s1 = -1, len1 = 0; 
-        int s2 = -1, len2 = 0; 
-        
+    void
+    processLineForIndex(const char *lineData, int lineLen, qint64 fileOffset, QSet<QString> &acs)
+    {
+        int s1 = -1;
+        int len1 = 0;
+        int s2 = -1;
+        int len2 = 0;
+
         for (int i = 0; i < lineLen; ++i) {
             if (lineData[i] != ' ' && lineData[i] != '\t' && lineData[i] != '\r') {
-                if (s1 == -1) { s1 = i; }
-                else if (len1 > 0 && s2 == -1) { s2 = i; }
+                if (s1 == -1) {
+                    s1 = i;
+                } else if (len1 > 0 && s2 == -1) {
+                    s2 = i;
+                }
             } else {
-                if (s1 != -1 && s2 == -1) { len1 = i - s1; }
-                else if (s2 != -1 && len2 == 0) { len2 = i - s2; break; }
+                if (s1 != -1 && s2 == -1) {
+                    len1 = i - s1;
+                } else if (s2 != -1 && len2 == 0) {
+                    len2 = i - s2;
+                    break;
+                }
             }
         }
-        if (s2 != -1 && len2 == 0) len2 = lineLen - s2;
+        if (s2 != -1 && len2 == 0)
+            len2 = lineLen - s2;
 
         if (s1 != -1 && len1 > 0 && s2 != -1 && len2 > 0) {
             bool ok = false;
@@ -561,28 +639,46 @@ private:
             if (ok && std::isfinite(t)) {
                 m_log.push_back({t, fileOffset, lineLen});
                 QString ac = QString::fromUtf8(lineData + s2, len2);
-                acs.insert(ac); 
+                acs.insert(ac);
             }
         }
     }
 
     /**
-     * @brief Isolates explicit payload arguments via direct String instantiations rapidly across memory blocks.
+     * @brief Isolates explicit payload arguments via direct String instantiations rapidly across
+     * memory blocks.
      */
-    inline void extractMsgData(const char* data, int lineLen, QString& ac, QString& msgName, QString& msg) {
-        int s1=-1, len1=0, s2=-1, len2=0, s3=-1, len3=0;
+    static void
+    extractMsgData(const char *data, int lineLen, QString &ac, QString &msgName, QString &msg)
+    {
+        int s1 = -1;
+        int len1 = 0;
+        int s2 = -1;
+        int len2 = 0;
+        int s3 = -1;
+        int len3 = 0;
         for (int i = 0; i < lineLen; ++i) {
             if (data[i] != ' ' && data[i] != '\t' && data[i] != '\r') {
-                if (s1 == -1) { s1 = i; }
-                else if (len1 > 0 && s2 == -1) { s2 = i; }
-                else if (len2 > 0 && s3 == -1) { s3 = i; }
+                if (s1 == -1) {
+                    s1 = i;
+                } else if (len1 > 0 && s2 == -1) {
+                    s2 = i;
+                } else if (len2 > 0 && s3 == -1) {
+                    s3 = i;
+                }
             } else {
-                if (s1 != -1 && s2 == -1) { len1 = i - s1; }
-                else if (s2 != -1 && s3 == -1) { len2 = i - s2; }
-                else if (s3 != -1 && len3 == 0) { len3 = i - s3; break; }
+                if (s1 != -1 && s2 == -1) {
+                    len1 = i - s1;
+                } else if (s2 != -1 && s3 == -1) {
+                    len2 = i - s2;
+                } else if (s3 != -1 && len3 == 0) {
+                    len3 = i - s3;
+                    break;
+                }
             }
         }
-        if (s3 != -1 && len3 == 0) len3 = lineLen - s3;
+        if (s3 != -1 && len3 == 0)
+            len3 = lineLen - s3;
 
         if (s2 != -1 && len2 > 0 && s3 != -1 && len3 > 0) {
             ac = QString::fromUtf8(data + s2, len2);
@@ -597,23 +693,31 @@ private:
      * @details `index` is the field's position in the message definition; `isArray` marks a
      * comma-separated array field whose every element must be a valid integer.
      */
-    struct IntFieldCheck { int index; bool isArray; };
+    struct IntFieldCheck
+    {
+        int index;
+        bool isArray;
+    };
 
     /**
      * @brief True iff `s` is a plain decimal integer (optional sign + digits) -- exactly what the
      * (OCaml or other)/PprzLink consumers accept via int_of_string for integer-typed fields.
      */
-    static bool isDecimalInteger(QStringView s) {
-        if (s.isEmpty()) return false;
+    static bool isDecimalInteger(QStringView s)
+    {
+        if (s.isEmpty())
+            return false;
         const int n = static_cast<int>(s.size());
         int i = 0;
         if (s[0] == QLatin1Char('+') || s[0] == QLatin1Char('-')) {
-            if (n == 1) return false; // a lone sign is not an integer
+            if (n == 1)
+                return false; // a lone sign is not an integer
             i = 1;
         }
         for (; i < n; ++i) {
             const QChar c = s[i];
-            if (c < QLatin1Char('0') || c > QLatin1Char('9')) return false;
+            if (c < QLatin1Char('0') || c > QLatin1Char('9'))
+                return false;
         }
         return true;
     }
@@ -622,14 +726,18 @@ private:
      * @brief Validates a single integer field token; for array fields every comma-separated
      * element must itself be a valid decimal integer.
      */
-    static bool validIntField(QStringView field, bool isArray) {
-        if (!isArray) return isDecimalInteger(field);
-        if (field.isEmpty()) return false;
+    static bool validIntField(QStringView field, bool isArray)
+    {
+        if (!isArray)
+            return isDecimalInteger(field);
+        if (field.isEmpty())
+            return false;
         const int m = static_cast<int>(field.size());
         int start = 0;
         for (int i = 0; i <= m; ++i) {
             if (i == m || field[i] == QLatin1Char(',')) {
-                if (!isDecimalInteger(field.mid(start, i - start))) return false;
+                if (!isDecimalInteger(field.mid(start, i - start)))
+                    return false;
                 start = i + 1;
             }
         }
@@ -646,8 +754,10 @@ private:
      * detected here. Returns false if a required integer field is absent (the line is under-filled
      * versus the current definition -- which the consumer cannot parse either).
      */
-    static bool payloadIntFieldsValid(const QVector<IntFieldCheck>& checks, const QString& msg) {
-        if (checks.isEmpty()) return true;
+    static bool payloadIntFieldsValid(const QVector<IntFieldCheck> &checks, const QString &msg)
+    {
+        if (checks.isEmpty())
+            return true;
         const QStringView v(msg);
         const int n = static_cast<int>(v.size());
         int ci = 0;
@@ -655,14 +765,19 @@ private:
         int tok = -1;
         int i = 0;
         while (i < n && ci < checks.size()) {
-            while (i < n && (v[i] == QLatin1Char(' ') || v[i] == QLatin1Char('\t'))) ++i;
-            if (i >= n) break;
+            while (i < n && (v[i] == QLatin1Char(' ') || v[i] == QLatin1Char('\t')))
+                ++i;
+            if (i >= n)
+                break;
             const int start = i;
-            while (i < n && v[i] != QLatin1Char(' ') && v[i] != QLatin1Char('\t')) ++i;
+            while (i < n && v[i] != QLatin1Char(' ') && v[i] != QLatin1Char('\t'))
+                ++i;
             ++tok;
             if (tok == targetTok) {
-                if (!validIntField(v.mid(start, i - start), checks[ci].isArray)) return false;
-                if (++ci < checks.size()) targetTok = checks[ci].index + 1;
+                if (!validIntField(v.mid(start, i - start), checks[ci].isArray))
+                    return false;
+                if (++ci < checks.size())
+                    targetTok = checks[ci].index + 1;
             }
         }
         return ci >= checks.size(); // every integer field was present AND valid
@@ -676,18 +791,23 @@ private:
      * @details A replay tool needs nothing more than plain XML here: the .log already embeds this
      * very dictionary, so QtXml (already a dependency) fully replaces the pprzlink message library.
      * setContent() ignores the SYSTEM DOCTYPE, so a `<!DOCTYPE protocol SYSTEM "messages.dtd">`
-     * header never triggers an external-DTD fetch. This is like the past OCaml code's `Xmlm.make_input` + `Xmlm.input` sequence,
-     * but with the robustness of Qt's forgiving parser and the convenience of a live DOM tree to query.
+     * header never triggers an external-DTD fetch. This is like the past OCaml code's
+     * `Xmlm.make_input` + `Xmlm.input` sequence, but with the robustness of Qt's forgiving parser
+     * and the convenience of a live DOM tree to query.
      */
-    static QDomElement openProtocol(const QString& path, QDomDocument& docOut) {
+    static QDomElement openProtocol(const QString &path, QDomDocument &docOut)
+    {
         QFile f(path);
-        if (!f.open(QIODevice::ReadOnly)) return QDomElement();
+        if (!f.open(QIODevice::ReadOnly))
+            return {};
         const QByteArray data = f.readAll();
         f.close();
         const QDomDocument::ParseResult res = docOut.setContent(data);
-        if (!res) return QDomElement();
+        if (!res)
+            return {};
         const QDomElement root = docOut.documentElement();
-        if (root.tagName() != QLatin1String("protocol")) return QDomElement();
+        if (root.tagName() != QLatin1String("protocol"))
+            return {};
         return root;
     }
 
@@ -696,15 +816,20 @@ private:
      * @details Mirrors pprzlink getMsgsForClass(name) -> message names, but tolerates a missing
      * class/message @c id (routing only needs the class<->name mapping, never the numeric ids).
      */
-    static void collectClassMessageNames(const QDomElement& protocol, const QString& className,
-                                         QSet<QString>& out) {
-        for (QDomElement cls = protocol.firstChildElement("msg_class"); !cls.isNull();
-             cls = cls.nextSiblingElement("msg_class")) {
-            if (cls.attribute("name") != className) continue;
-            for (QDomElement m = cls.firstChildElement("message"); !m.isNull();
-                 m = m.nextSiblingElement("message")) {
-                const QString n = m.attribute("name");
-                if (!n.isEmpty()) out.insert(n);
+    static void collectClassMessageNames(const QDomElement &protocol,
+                                         const QString &className,
+                                         QSet<QString> &out)
+    {
+        for (QDomElement cls = protocol.firstChildElement(QStringLiteral("msg_class"));
+             !cls.isNull();
+             cls = cls.nextSiblingElement(QStringLiteral("msg_class"))) {
+            if (cls.attribute(QStringLiteral("name")) != className)
+                continue;
+            for (QDomElement m = cls.firstChildElement(QStringLiteral("message")); !m.isNull();
+                 m = m.nextSiblingElement(QStringLiteral("message"))) {
+                const QString n = m.attribute(QStringLiteral("name"));
+                if (!n.isEmpty())
+                    out.insert(n);
             }
         }
     }
@@ -713,17 +838,21 @@ private:
      * @brief Zero-based index of field @p fieldName within message @p msgName, or -1 if absent.
      * @details Document order is the field order, exactly how pprzlink numbered fields.
      */
-    static int fieldIndex(const QDomElement& protocol, const QString& msgName,
-                          const QString& fieldName) {
-        for (QDomElement cls = protocol.firstChildElement("msg_class"); !cls.isNull();
-             cls = cls.nextSiblingElement("msg_class")) {
-            for (QDomElement m = cls.firstChildElement("message"); !m.isNull();
-                 m = m.nextSiblingElement("message")) {
-                if (m.attribute("name") != msgName) continue;
+    static int
+    fieldIndex(const QDomElement &protocol, const QString &msgName, const QString &fieldName)
+    {
+        for (QDomElement cls = protocol.firstChildElement(QStringLiteral("msg_class"));
+             !cls.isNull();
+             cls = cls.nextSiblingElement(QStringLiteral("msg_class"))) {
+            for (QDomElement m = cls.firstChildElement(QStringLiteral("message")); !m.isNull();
+                 m = m.nextSiblingElement(QStringLiteral("message"))) {
+                if (m.attribute(QStringLiteral("name")) != msgName)
+                    continue;
                 int idx = 0;
-                for (QDomElement f = m.firstChildElement("field"); !f.isNull();
-                     f = f.nextSiblingElement("field"), ++idx) {
-                    if (f.attribute("name") == fieldName) return idx;
+                for (QDomElement f = m.firstChildElement(QStringLiteral("field")); !f.isNull();
+                     f = f.nextSiblingElement(QStringLiteral("field")), ++idx) {
+                    if (f.attribute(QStringLiteral("name")) == fieldName)
+                        return idx;
                 }
                 return -1; // message found, field not present
             }
@@ -741,15 +870,17 @@ private:
      * selects the type. This reproduces pprzlink's FieldType classification without the library,
      * since the .log carries the very dictionary the player already parses.
      */
-    void buildIntChecks(const QDomElement& message,
-                        QHash<QString, QVector<IntFieldCheck>>& out) {
-        const QString msgName = message.attribute("name");
-        if (msgName.isEmpty()) return;
+    static void buildIntChecks(const QDomElement &message,
+                               QHash<QString, QVector<IntFieldCheck>> &out)
+    {
+        const QString msgName = message.attribute(QStringLiteral("name"));
+        if (msgName.isEmpty())
+            return;
         QVector<IntFieldCheck> checks;
         int i = 0;
-        for (QDomElement f = message.firstChildElement("field"); !f.isNull();
-             f = f.nextSiblingElement("field"), ++i) {
-            const QString typeStr = f.attribute("type");
+        for (QDomElement f = message.firstChildElement(QStringLiteral("field")); !f.isNull();
+             f = f.nextSiblingElement(QStringLiteral("field")), ++i) {
+            const QString typeStr = f.attribute(QStringLiteral("type"));
             const int br = typeStr.indexOf(QLatin1Char('['));
             const bool isArray = (br != -1);
             const QString base = (br == -1) ? typeStr : typeStr.left(br);
@@ -757,31 +888,37 @@ private:
             if (base == QLatin1String("string") || (base == QLatin1String("char") && isArray)) {
                 break;
             }
-            if (base == QLatin1String("int8")   || base == QLatin1String("int16") ||
-                base == QLatin1String("int32")  || base == QLatin1String("uint8") ||
-                base == QLatin1String("uint16") || base == QLatin1String("uint32")) {
-                checks.push_back(IntFieldCheck{i, isArray});
+            if (base == QLatin1String("int8") || base == QLatin1String("int16")
+                || base == QLatin1String("int32") || base == QLatin1String("uint8")
+                || base == QLatin1String("uint16") || base == QLatin1String("uint32")) {
+                checks.push_back(IntFieldCheck {i, isArray});
             }
         }
-        if (!checks.isEmpty()) out.insert(msgName, checks);
+        if (!checks.isEmpty())
+            out.insert(msgName, checks);
     }
 
     /**
      * @brief Class-aware guard: true if `msgName`'s payload is safe to broadcast. Logs a single
-     * notice per offending message so a version-mismatched log is easy to diagnose without spamming the log
+     * notice per offending message so a version-mismatched log is easy to diagnose without spamming
+     * the log
      */
-    bool frameIsBroadcastSafe(const QHash<QString, QVector<IntFieldCheck>>& checks,
-                              const QString& msgName, const QString& msg) {
+    bool frameIsBroadcastSafe(const QHash<QString, QVector<IntFieldCheck>> &checks,
+                              const QString &msgName,
+                              const QString &msg)
+    {
         const auto it = checks.constFind(msgName);
-        if (it == checks.constEnd()) return true; // no integer fields to validate
-        if (payloadIntFieldsValid(it.value(), msg)) return true;
+        if (it == checks.constEnd())
+            return true; // no integer fields to validate
+        if (payloadIntFieldsValid(it.value(), msg))
+            return true;
         if (!m_warnedMismatch.contains(msgName)) {
             m_warnedMismatch.insert(msgName);
             qWarning().noquote().nospace()
-                << "Replay: skipping broadcasts of '" << msgName
-                << "' - its logged payload does not match the current message definition "
-                   "(log likely recorded with an older message format). Further notices for "
-                   "this message are suppressed.";
+                    << "Replay: skipping broadcasts of '" << msgName
+                    << "' - its logged payload does not match the current message definition "
+                       "(log likely recorded with an older message format). Further notices for "
+                       "this message are suppressed.";
         }
         return false;
     }
@@ -802,31 +939,38 @@ private:
      * `arg(a, b)` form also performs simultaneous substitution, so a payload that happens
      * to contain `%1`/`%2` can never be re-interpreted as a placeholder.
      */
-    inline void sendFrame(const LogIndex& entry) {
-        if (!m_bus) return;
-        QString ac, msgName, msg;
+    void sendFrame(const LogIndex &entry)
+    {
+        if (!m_bus)
+            return;
+        QString ac;
+        QString msgName;
+        QString msg;
         if (m_mappedData) {
-            const char* data = reinterpret_cast<const char*>(m_mappedData + entry.offset);
+            const char *data = reinterpret_cast<const char *>(m_mappedData + entry.offset);
             extractMsgData(data, entry.length, ac, msgName, msg);
         } else {
             m_dataFile.seek(entry.offset);
             QByteArray chunk = m_dataFile.read(entry.length);
             extractMsgData(chunk.constData(), chunk.length(), ac, msgName, msg);
         }
-        if (msgName.isEmpty()) return;
+        if (msgName.isEmpty())
+            return;
 
         if (m_telemetryMsgs.contains(msgName)) {
             // Robustness: never emit a frame whose integer fields don't match the current message
-            // definition -- doing so would make OCaml/PprzLink consumers throw Failure("int_of_string").
-            // This guards both sequential playback and the live-scrub snapshot, which calls sendFrame().
+            // definition -- doing so would make OCaml/PprzLink consumers throw
+            // Failure("int_of_string"). This guards both sequential playback and the live-scrub
+            // snapshot, which calls sendFrame().
             if (frameIsBroadcastSafe(m_telIntChecks, msgName, msg)) {
-                m_bus->send(QString("replay%1 %2").arg(ac, msg));
-                m_bus->send(QString("time%1 %2").arg(ac, QString::number(entry.time, 'f', 6)));
+                m_bus->send(QStringLiteral("replay%1 %2").arg(ac, msg));
+                m_bus->send(
+                        QStringLiteral("time%1 %2").arg(ac, QString::number(entry.time, 'f', 6)));
             }
         }
         if (m_groundMsgs.contains(msgName)) {
             if (frameIsBroadcastSafe(m_groundIntChecks, msgName, msg)) {
-                m_bus->send(QString("replay_ground %1").arg(msg));
+                m_bus->send(QStringLiteral("replay_ground %1").arg(msg));
             }
         }
     }
@@ -834,13 +978,16 @@ private:
     /**
      * @brief Returns the index of the first frame at or after time `t`, clamped to valid bounds.
      */
-    inline int indexForTime(double t) const {
-        auto it = std::lower_bound(m_log.begin(), m_log.end(), t, [](const LogIndex& a, double tVal) {
-            return a.time < tVal;
-        });
+    int indexForTime(double t) const
+    {
+        auto it = std::lower_bound(m_log.begin(),
+                                   m_log.end(),
+                                   t,
+                                   [](const LogIndex &a, double tVal) { return a.time < tVal; });
         int idx = std::distance(m_log.begin(), it);
-        if (idx >= m_log.size()) idx = m_log.size() - 1;
-        if (idx < 0) idx = 0;
+        if (idx >= m_log.size())
+            idx = m_log.size() - 1;
+        idx = std::max(idx, 0);
         return idx;
     }
 
@@ -852,22 +999,39 @@ private:
      * field and allocates only the short key (never the full payload), so building the per-stream
      * index at load time stays cheap even on multi-million-frame logs.
      */
-    inline QString streamKeyOf(const char* data, int lineLen) const {
-        int s1 = -1, len1 = 0, s2 = -1, len2 = 0, s3 = -1, len3 = 0;
+    static QString streamKeyOf(const char *data, int lineLen)
+    {
+        int s1 = -1;
+        int len1 = 0;
+        int s2 = -1;
+        int len2 = 0;
+        int s3 = -1;
+        int len3 = 0;
         for (int i = 0; i < lineLen; ++i) {
             const char c = data[i];
             if (c != ' ' && c != '\t' && c != '\r') {
-                if (s1 == -1) { s1 = i; }
-                else if (len1 > 0 && s2 == -1) { s2 = i; }
-                else if (len2 > 0 && s3 == -1) { s3 = i; }
+                if (s1 == -1) {
+                    s1 = i;
+                } else if (len1 > 0 && s2 == -1) {
+                    s2 = i;
+                } else if (len2 > 0 && s3 == -1) {
+                    s3 = i;
+                }
             } else {
-                if (s1 != -1 && s2 == -1) { len1 = i - s1; }
-                else if (s2 != -1 && s3 == -1) { len2 = i - s2; }
-                else if (s3 != -1 && len3 == 0) { len3 = i - s3; break; }
+                if (s1 != -1 && s2 == -1) {
+                    len1 = i - s1;
+                } else if (s2 != -1 && s3 == -1) {
+                    len2 = i - s2;
+                } else if (s3 != -1 && len3 == 0) {
+                    len3 = i - s3;
+                    break;
+                }
             }
         }
-        if (s3 != -1 && len3 == 0) len3 = lineLen - s3;
-        if (s2 == -1 || len2 <= 0 || s3 == -1 || len3 <= 0) return QString();
+        if (s3 != -1 && len3 == 0)
+            len3 = lineLen - s3;
+        if (s2 == -1 || len2 <= 0 || s3 == -1 || len3 <= 0)
+            return {};
         return QString::fromUtf8(data + s2, len2) + QChar(' ') + QString::fromUtf8(data + s3, len3);
     }
 
@@ -879,15 +1043,16 @@ private:
      * time). Keyed by "<ac> <msgName>", each entry lists the frames belonging to that stream,
      * letting broadcastSnapshot() binary-search the latest value of every signal at any instant.
      */
-    void buildStreamIndex() {
+    void buildStreamIndex()
+    {
         m_streamFrames.clear();
         QByteArray scratch;
         for (int i = 0; i < m_log.size(); ++i) {
-            const LogIndex& e = m_log[i];
-            const char* data;
+            const LogIndex &e = m_log[i];
+            const char *data;
             int len;
             if (m_mappedData) {
-                data = reinterpret_cast<const char*>(m_mappedData + e.offset);
+                data = reinterpret_cast<const char *>(m_mappedData + e.offset);
                 len = e.length;
             } else {
                 m_dataFile.seek(e.offset);
@@ -896,7 +1061,8 @@ private:
                 len = static_cast<int>(scratch.size());
             }
             const QString key = streamKeyOf(data, len);
-            if (!key.isEmpty()) m_streamFrames[key].push_back(i);
+            if (!key.isEmpty())
+                m_streamFrames[key].push_back(i);
         }
     }
 
@@ -911,63 +1077,76 @@ private:
      * scrubbing responsive even on gigabyte logs. The scratch buffer is reused to stay
      * allocation-free in steady state.
      */
-    void broadcastSnapshot(double t) {
-        if (!m_bus || m_streamFrames.isEmpty()) return;
+    void broadcastSnapshot(double t)
+    {
+        if (!m_bus || m_streamFrames.isEmpty())
+            return;
         m_snapshotScratch.clear();
         m_snapshotScratch.reserve(m_streamFrames.size());
         for (auto it = m_streamFrames.cbegin(); it != m_streamFrames.cend(); ++it) {
-            const QVector<int>& v = it.value();
+            const QVector<int> &v = it.value();
             // Predecessor of the first frame whose time exceeds t == latest frame with time <= t.
-            int lo = 0, hi = static_cast<int>(v.size());
+            int lo = 0;
+            int hi = static_cast<int>(v.size());
             while (lo < hi) {
                 const int mid = (lo + hi) >> 1;
-                if (m_log[v[mid]].time <= t) lo = mid + 1; else hi = mid;
+                if (m_log[v[mid]].time <= t)
+                    lo = mid + 1;
+                else
+                    hi = mid;
             }
-            if (lo > 0) m_snapshotScratch.push_back(v[lo - 1]);
+            if (lo > 0)
+                m_snapshotScratch.push_back(v[lo - 1]);
         }
         std::sort(m_snapshotScratch.begin(), m_snapshotScratch.end());
-        for (int fi : m_snapshotScratch) sendFrame(m_log[fi]);
+        for (int fi : std::as_const(m_snapshotScratch))
+            sendFrame(m_log[fi]);
     }
 
     /**
      * @brief Maps physical configuration settings from target log environments into OS paths.
-     * 
+     *
      * @details Extracted fully representing logic formerly processed by `Ocaml ExtXml` nodes.
-     * Generates native `airframe`, `radio`, `flight_plan` directories inside `$PAPARAZZI_HOME/var/replay` 
-     * enabling external tool execution explicitly alongside the dataset replay natively.
+     * Generates native `airframe`, `radio`, `flight_plan` directories inside
+     * `$PAPARAZZI_HOME/var/replay` enabling external tool execution explicitly alongside the
+     * dataset replay natively.
      */
-    void storeConf(const QDomElement& root, const QSet<QString>& acs) {
+    static void storeConf(const QDomElement &root, const QSet<QString> &acs)
+    {
         QString pprzHome = paparazziHome();
-        
-        QString replayDir = pprzHome + "/var/replay";
-        QDir().mkpath(replayDir + "/conf");
-        QDir().mkpath(replayDir + "/var/aircrafts");
 
-        QDomNodeList confNodes = root.elementsByTagName("conf");
-        if (confNodes.isEmpty()) return;
+        QString replayDir = pprzHome + QStringLiteral("/var/replay");
+        QDir().mkpath(replayDir + QStringLiteral("/conf"));
+        QDir().mkpath(replayDir + QStringLiteral("/var/aircrafts"));
+
+        QDomNodeList confNodes = root.elementsByTagName(QStringLiteral("conf"));
+        if (confNodes.isEmpty())
+            return;
         QDomElement confEl = confNodes.at(0).toElement();
 
         QDomDocument outDoc;
-        QDomElement outConf = outDoc.createElement("conf");
+        QDomElement outConf = outDoc.createElement(QStringLiteral("conf"));
         outDoc.appendChild(outConf);
 
         QDomNode child = confEl.firstChild();
         while (!child.isNull()) {
-            if (child.isElement() && child.nodeName() == "aircraft") {
+            if (child.isElement() && child.nodeName() == QLatin1String("aircraft")) {
                 QDomElement acEl = child.toElement();
-                QString acId = acEl.attribute("ac_id");
-                
-                // Process solely AC configurations actually encountered internally matching logged identifiers
+                QString acId = acEl.attribute(QStringLiteral("ac_id"));
+
+                // Process solely AC configurations actually encountered internally matching logged
+                // identifiers
                 if (acs.contains(acId)) {
-                    QString acName = acEl.attribute("name");
-                    QString acDirStr = replayDir + "/var/aircrafts/" + acName;
+                    QString acName = acEl.attribute(QStringLiteral("name"));
+                    QString acDirStr = replayDir + QStringLiteral("/var/aircrafts/") + acName;
                     QDir acDir(acDirStr);
-                    acDir.mkpath(".");
-                    acDir.mkpath("conf");
-                    
-                    auto writeXmlFile = [](const QString& path, const QDomElement& el) {
+                    acDir.mkpath(QStringLiteral("."));
+                    acDir.mkpath(QStringLiteral("conf"));
+
+                    auto writeXmlFile = [](const QString &path, const QDomElement &el) {
                         QFileInfo fi(path);
-                        fi.absoluteDir().mkpath("."); // Force dependency folders into existence natively!
+                        fi.absoluteDir().mkpath(QStringLiteral(
+                                ".")); // Force dependency folders into existence natively!
                         QFile f(path);
                         if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
                             QTextStream out(&f);
@@ -977,47 +1156,54 @@ private:
                         }
                     };
 
-                    auto extractChild = [&](const QString& tag) {
+                    auto extractChild = [&](const QString &tag) {
                         QDomNodeList list = acEl.elementsByTagName(tag);
                         if (!list.isEmpty()) {
                             QDomElement el = list.at(0).toElement();
-                            writeXmlFile(replayDir + "/conf/" + acEl.attribute(tag), el);
-                            writeXmlFile(acDirStr + "/conf/" + acEl.attribute(tag), el);
+                            writeXmlFile(replayDir + QStringLiteral("/conf/") + acEl.attribute(tag),
+                                         el);
+                            writeXmlFile(acDirStr + QStringLiteral("/conf/") + acEl.attribute(tag),
+                                         el);
                         }
                     };
 
-                    extractChild("airframe");
-                    extractChild("radio");
+                    extractChild(QStringLiteral("airframe"));
+                    extractChild(QStringLiteral("radio"));
 
-                    QDomNodeList genSet = acEl.elementsByTagName("generated_settings");
+                    QDomNodeList genSet
+                            = acEl.elementsByTagName(QStringLiteral("generated_settings"));
                     if (!genSet.isEmpty()) {
                         QDomElement settingsXml = genSet.at(0).toElement();
-                        writeXmlFile(acDirStr + "/settings.xml", settingsXml);
-                        writeXmlFile(replayDir + "/settings.xml", settingsXml);
+                        writeXmlFile(acDirStr + QStringLiteral("/settings.xml"), settingsXml);
+                        writeXmlFile(replayDir + QStringLiteral("/settings.xml"), settingsXml);
                     } else {
                         qWarning() << "Replay: no settings for display natively bundled in log.";
-                        QDomElement dummy = outDoc.createElement("settings");
-                        writeXmlFile(acDirStr + "/settings.xml", dummy);
-                        writeXmlFile(replayDir + "/settings.xml", dummy);
+                        QDomElement dummy = outDoc.createElement(QStringLiteral("settings"));
+                        writeXmlFile(acDirStr + QStringLiteral("/settings.xml"), dummy);
+                        writeXmlFile(replayDir + QStringLiteral("/settings.xml"), dummy);
                     }
 
-                    bool orig_fp = !acEl.elementsByTagName("flight_plan").isEmpty();
+                    bool orig_fp = !acEl.elementsByTagName(QStringLiteral("flight_plan")).isEmpty();
                     if (orig_fp) {
-                        // Automatically compile target Flight Plan out outputs using PAPARAZZI tooling natively.
-                        extractChild("flight_plan");
-                        QString fpName = acEl.attribute("flight_plan");
-                        QString dumpFpProg = paparazziSrc() + "/sw/tools/generators/dump_flight_plan.out";
+                        // Automatically compile target Flight Plan out outputs using PAPARAZZI
+                        // tooling natively.
+                        extractChild(QStringLiteral("flight_plan"));
+                        QString fpName = acEl.attribute(QStringLiteral("flight_plan"));
+                        QString dumpFpProg = paparazziSrc()
+                                + QStringLiteral("/sw/tools/generators/dump_flight_plan.out");
                         // OCaml feeded the aircraft-local copy (the return value of `w`) to
                         // dump_flight_plan; both copies are byte-identical, but using the
                         // ac_dir path keeps include-resolution depth identical to OCaml.
-                        QString fpath = acDirStr + "/conf/" + fpName;
-                        QString dumpPath = acDirStr + "/flight_plan.xml";
+                        QString fpath = acDirStr + QStringLiteral("/conf/") + fpName;
+                        QString dumpPath = acDirStr + QStringLiteral("/flight_plan.xml");
                         QProcess::execute(dumpFpProg, {fpath, dumpPath});
                     } else {
-                        // Support dump blocks universally generated via active legacy logging routines.
-                        QDomNodeList dumps = acEl.elementsByTagName("dump");
+                        // Support dump blocks universally generated via active legacy logging
+                        // routines.
+                        QDomNodeList dumps = acEl.elementsByTagName(QStringLiteral("dump"));
                         if (!dumps.isEmpty()) {
-                            writeXmlFile(acDirStr + "/flight_plan.xml", dumps.at(0).toElement());
+                            writeXmlFile(acDirStr + QStringLiteral("/flight_plan.xml"),
+                                         dumps.at(0).toElement());
                         }
                     }
                     // OCaml emits `Xml.Element ("aircraft", Xml.attribs x, [])` -- the
@@ -1033,7 +1219,7 @@ private:
             child = child.nextSibling();
         }
 
-        QFile outF(replayDir + "/conf/conf.xml");
+        QFile outF(replayDir + QStringLiteral("/conf/conf.xml"));
         if (outF.open(QIODevice::WriteOnly | QIODevice::Text)) {
             QTextStream outT(&outF);
             outDoc.save(outT, 2);
@@ -1043,30 +1229,38 @@ private:
     /**
      * @brief Integrates Paparazzi's native XML protocol Dictionary definitions mapping metadata.
      */
-    void storeMessages(const QDomElement& root) {
+    static void storeMessages(const QDomElement &root)
+    {
         QString pprzHome = paparazziHome();
-        QString replayDir = pprzHome + "/var/replay";
-        QDir().mkpath(replayDir + "/var");
+        QString replayDir = pprzHome + QStringLiteral("/var/replay");
+        QDir().mkpath(replayDir + QStringLiteral("/var"));
 
-        QDomNodeList protoNodes = root.elementsByTagName("protocol");
+        QDomNodeList protoNodes = root.elementsByTagName(QStringLiteral("protocol"));
         if (!protoNodes.isEmpty()) {
-            QFile protoFile(replayDir + "/var/messages.xml");
+            QFile protoFile(replayDir + QStringLiteral("/var/messages.xml"));
             if (protoFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
                 QTextStream outT(&protoFile);
                 QString protoStr;
                 QTextStream tmp(&protoStr);
                 protoNodes.at(0).save(tmp, 2);
                 tmp.flush(); // IMPORTANT: flush before string operations!
-                
-                // GUARANTEE: Legacy logger outputs explicitly uppercase attributes (NAME, ID, TYPE) 
-                // which violates case-sensitive PprzLinkCPP dictionary parsers. Force normalize bindings!
-                protoStr.replace(QRegularExpression("\\bNAME="), "name=");
-                protoStr.replace(QRegularExpression("\\bID="), "id=");
-                protoStr.replace(QRegularExpression("\\bTYPE="), "type=");
-                protoStr.replace(QRegularExpression("\\bUNIT="), "unit=");
-                protoStr.replace(QRegularExpression("\\bALT_UNIT_COEF="), "alt_unit_coef=");
-                protoStr.replace(QRegularExpression("\\bVALUES="), "values=");
-                
+
+                // GUARANTEE: Legacy logger outputs explicitly uppercase attributes (NAME, ID, TYPE)
+                // which violates case-sensitive PprzLinkCPP dictionary parsers. Force normalize
+                // bindings!
+                protoStr.replace(QRegularExpression(QStringLiteral("\\bNAME=")),
+                                 QStringLiteral("name="));
+                protoStr.replace(QRegularExpression(QStringLiteral("\\bID=")),
+                                 QStringLiteral("id="));
+                protoStr.replace(QRegularExpression(QStringLiteral("\\bTYPE=")),
+                                 QStringLiteral("type="));
+                protoStr.replace(QRegularExpression(QStringLiteral("\\bUNIT=")),
+                                 QStringLiteral("unit="));
+                protoStr.replace(QRegularExpression(QStringLiteral("\\bALT_UNIT_COEF=")),
+                                 QStringLiteral("alt_unit_coef="));
+                protoStr.replace(QRegularExpression(QStringLiteral("\\bVALUES=")),
+                                 QStringLiteral("values="));
+
                 outT << "<?xml version=\"1.0\"?>\n";
                 // ---------------------------------------------------------------------------
                 // WORKAROUND: deliberately DO NOT emit `<!DOCTYPE protocol SYSTEM "messages.dtd">`.
@@ -1092,11 +1286,12 @@ private:
             }
         }
     }
-    
+
     /**
      * @brief Initializes dictionary classification indices parsing variables dynamically reliably.
      */
-    void initDictionary() {
+    void initDictionary()
+    {
         QString pprzHome = paparazziHome();
 
         // --- Replay dictionary: classifies each logged message as telemetry vs ground ------------
@@ -1108,65 +1303,73 @@ private:
         // Parsing is plain QtXml -- no message library is needed to re-emit logged lines on Ivy.
         {
             QDomDocument doc;
-            const QDomElement proto = openProtocol(pprzHome + "/var/replay/var/messages.xml", doc);
+            const QDomElement proto
+                    = openProtocol(pprzHome + QStringLiteral("/var/replay/var/messages.xml"), doc);
             if (!proto.isNull()) {
-                collectClassMessageNames(proto, "ground", m_groundMsgs);
-                for (const QString& tc : {QStringLiteral("telemetry"),
+                collectClassMessageNames(proto, QStringLiteral("ground"), m_groundMsgs);
+                for (const QString &tc : {QStringLiteral("telemetry"),
                                           QStringLiteral("telemetry_ap"),
                                           QStringLiteral("telemetry_fbw")}) {
                     collectClassMessageNames(proto, tc, m_telemetryMsgs);
                 }
-                m_timeScaleIdx = fieldIndex(proto, "WORLD_ENV", "time_scale");
+                m_timeScaleIdx = fieldIndex(
+                        proto, QStringLiteral("WORLD_ENV"), QStringLiteral("time_scale"));
             } else {
                 qWarning() << "Replay: routing dictionary unavailable "
-                              "(var/replay/var/messages.xml); no messages can be routed for broadcast.";
+                              "(var/replay/var/messages.xml); no messages can be routed for "
+                              "broadcast.";
             }
         }
 
         // --- Consumer dictionary: decides whether a payload is *parseable* by receivers ----------
         // Receivers on the Ivy bus (GCS, server, ...) decode replay messages with the CURRENT
         // message set, not the log's old set. When a message's field layout changed between the two
-        // -- e.g. IMU_GYRO/IMU_ACCEL/IMU_MAG gained a leading uint8 'id' field -- an old log supplies
-        // a float where the consumer now expects an integer, so the consumer's int_of_string raises
-        // Failure("int_of_string"). We therefore build the integer-field checks from THIS dictionary;
-        // sendFrame() then skips any frame whose integer fields would not parse under it. If the file
-        // is unavailable the checks stay empty and we fall back to the previous (unchecked) behaviour
-        // rather than refusing to replay.
+        // -- e.g. IMU_GYRO/IMU_ACCEL/IMU_MAG gained a leading uint8 'id' field -- an old log
+        // supplies a float where the consumer now expects an integer, so the consumer's
+        // int_of_string raises Failure("int_of_string"). We therefore build the integer-field
+        // checks from THIS dictionary; sendFrame() then skips any frame whose integer fields would
+        // not parse under it. If the file is unavailable the checks stay empty and we fall back to
+        // the previous (unchecked) behaviour rather than refusing to replay.
         //
         // The dictionary defaults to the live build's $PAPARAZZI_HOME/var/messages.xml (what the
         // standard agents use), but --consumer-messages <file> overrides it so a user can validate
-        // against the exact set their GCS/server runs -- e.g. replaying into a non-default or remote
-        // configuration. An explicit-but-missing path is reported loudly (below) because a silent
-        // fallback to no validation would hide a user mistake; the default path stays quiet so a bare
-        // install without var/messages.xml simply replays unchecked, exactly as before.
+        // against the exact set their GCS/server runs -- e.g. replaying into a non-default or
+        // remote configuration. An explicit-but-missing path is reported loudly (below) because a
+        // silent fallback to no validation would hide a user mistake; the default path stays quiet
+        // so a bare install without var/messages.xml simply replays unchecked, exactly as before.
         const bool explicitConsumer = !m_consumerMessagesPath.isEmpty();
-        const QString consumerPath = explicitConsumer ? m_consumerMessagesPath
-                                                       : (pprzHome + "/var/messages.xml");
+        const QString consumerPath = explicitConsumer
+                ? m_consumerMessagesPath
+                : (pprzHome + QStringLiteral("/var/messages.xml"));
         if (explicitConsumer && !QFile::exists(consumerPath)) {
-            qWarning().noquote()
-                << "Replay: --consumer-messages file not found, payload int-validation disabled:"
-                << consumerPath;
+            qWarning().noquote() << "Replay: --consumer-messages file not found, payload "
+                                    "int-validation disabled:"
+                                 << consumerPath;
         }
         {
             QDomDocument doc;
             const QDomElement proto = openProtocol(consumerPath, doc);
             if (!proto.isNull()) {
                 // Route each class's messages to the matching check table, mirroring the original
-                // getMsgsForClass(telemetry|telemetry_ap|telemetry_fbw) and getMsgsForClass(ground).
-                for (QDomElement cls = proto.firstChildElement("msg_class"); !cls.isNull();
-                     cls = cls.nextSiblingElement("msg_class")) {
-                    const QString cn = cls.attribute("name");
-                    QHash<QString, QVector<IntFieldCheck>>* target = nullptr;
+                // getMsgsForClass(telemetry|telemetry_ap|telemetry_fbw) and
+                // getMsgsForClass(ground).
+                for (QDomElement cls = proto.firstChildElement(QStringLiteral("msg_class"));
+                     !cls.isNull();
+                     cls = cls.nextSiblingElement(QStringLiteral("msg_class"))) {
+                    const QString cn = cls.attribute(QStringLiteral("name"));
+                    QHash<QString, QVector<IntFieldCheck>> *target = nullptr;
                     if (cn == QLatin1String("ground")) {
                         target = &m_groundIntChecks;
-                    } else if (cn == QLatin1String("telemetry") ||
-                               cn == QLatin1String("telemetry_ap") ||
-                               cn == QLatin1String("telemetry_fbw")) {
+                    } else if (cn == QLatin1String("telemetry")
+                               || cn == QLatin1String("telemetry_ap")
+                               || cn == QLatin1String("telemetry_fbw")) {
                         target = &m_telIntChecks;
                     }
-                    if (!target) continue;
-                    for (QDomElement m = cls.firstChildElement("message"); !m.isNull();
-                         m = m.nextSiblingElement("message")) {
+                    if (!target)
+                        continue;
+                    for (QDomElement m = cls.firstChildElement(QStringLiteral("message"));
+                         !m.isNull();
+                         m = m.nextSiblingElement(QStringLiteral("message"))) {
                         buildIntChecks(m, *target);
                     }
                 }
@@ -1175,52 +1378,80 @@ private:
         }
     }
 
-    double m_speed;         ///< Engine Multiplier tracking relative simulation speeds.
-    int m_currentIndex;     ///< Target line alignment pointing specifically towards next execution blocks.
-    bool m_isPlaying;       ///< Standard Operational State explicitly pausing functional triggers natively cleanly. 
-    double m_virtualTime;   ///< Absolute numerical representation binding structural variables tracking chronological variables precisely explicitly.
-    int m_timeScaleIdx;     ///< Operational boundary dictating structural scaling mapping external elements reliably dynamically uniquely normally fully cleanly safely. 
-    bool m_noGui = false;   ///< Legacy toggle explicitly masking generic components reproducing play-nox variables identically implicitly.
-    QString m_consumerMessagesPath; ///< Optional explicit consumer messages.xml (--consumer-messages); empty => default $PAPARAZZI_HOME/var/messages.xml.
-    
-    QTimer* m_tickTimer;     ///< Precision component bounding display metrics dynamically safely mapping limits natively normally accurately inherently dynamically.
-    QElapsedTimer m_elapsed; ///< Clock element implicitly driving tracking strings purely identically driving loops flawlessly organically normally uniquely efficiently.
-    
-    QString m_xmlFile;       ///< Functional generic origin boundary strictly uniquely correctly generating tracks linearly efficiently.
-    QVector<LogIndex> m_log; ///< Operational boundary structure storing mapped locations accurately linearly uniquely organically normally efficiently.
-    QHash<QString, QVector<int>> m_streamFrames; ///< Per-stream ("<ac> <msgName>") frame indices into the sorted log; powers O(log n) scrub snapshots.
-    QVector<int> m_snapshotScratch;              ///< Reused buffer for snapshot frame collection (steady-state zero-allocation).
-    QFile m_dataFile;        ///< Physical boundary pointer limiting load conditions functionally tracking loops functionally normally implicitly implicitly natively naturally efficiently.
-    uchar* m_mappedData;     ///< Explicit memory boundary zero-allocation target mapping securely.
-    
-    IvyQt* m_bus;            ///< Network broadcast pipeline seamlessly handling external payloads.
-    QString m_ivyBusArg;     ///< Defined Ivy domain structural limits.
-    
-    QSet<QString> m_groundMsgs;     ///< Classification index cleanly isolating transmission vectors natively.
-    QSet<QString> m_telemetryMsgs;  ///< Telemetry class indicator map generating strict array limitations.
-    QHash<QString, QVector<IntFieldCheck>> m_telIntChecks;    ///< Per telemetry msg: integer fields to validate before broadcast.
-    QHash<QString, QVector<IntFieldCheck>> m_groundIntChecks; ///< Per ground msg: integer fields to validate before broadcast.
-    QSet<QString> m_warnedMismatch;                           ///< Message names already warned about (one notice each).
+    double m_speed {1.0}; ///< Engine Multiplier tracking relative simulation speeds.
+    int m_currentIndex {0}; ///< Target line alignment pointing specifically towards next execution
+                            ///< blocks.
+    bool m_isPlaying {false}; ///< Standard Operational State explicitly pausing functional triggers
+                              ///< natively cleanly.
+    double m_virtualTime {0.0}; ///< Absolute numerical representation binding structural variables
+                                ///< tracking chronological variables precisely explicitly.
+    int m_timeScaleIdx {
+            -1}; ///< Operational boundary dictating structural scaling mapping external
+                 ///< elements reliably dynamically uniquely normally fully cleanly safely.
+    bool m_noGui = false; ///< Legacy toggle explicitly masking generic components reproducing
+                          ///< play-nox variables identically implicitly.
+    QString m_consumerMessagesPath; ///< Optional explicit consumer messages.xml
+                                    ///< (--consumer-messages); empty => default
+                                    ///< $PAPARAZZI_HOME/var/messages.xml.
+
+    QTimer *m_tickTimer; ///< Precision component bounding display metrics dynamically safely
+                         ///< mapping limits natively normally accurately inherently dynamically.
+    QElapsedTimer
+            m_elapsed; ///< Clock element implicitly driving tracking strings purely identically
+                       ///< driving loops flawlessly organically normally uniquely efficiently.
+
+    QString m_xmlFile; ///< Functional generic origin boundary strictly uniquely correctly
+                       ///< generating tracks linearly efficiently.
+    QVector<LogIndex> m_log; ///< Operational boundary structure storing mapped locations accurately
+                             ///< linearly uniquely organically normally efficiently.
+    QHash<QString, QVector<int>>
+            m_streamFrames; ///< Per-stream ("<ac> <msgName>") frame indices into the sorted log;
+                            ///< powers O(log n) scrub snapshots.
+    QVector<int> m_snapshotScratch; ///< Reused buffer for snapshot frame collection (steady-state
+                                    ///< zero-allocation).
+    QFile m_dataFile; ///< Physical boundary pointer limiting load conditions functionally tracking
+                      ///< loops functionally normally implicitly implicitly natively naturally
+                      ///< efficiently.
+    uchar *m_mappedData {
+            nullptr}; ///< Explicit memory boundary zero-allocation target mapping securely.
+
+    IvyQt *m_bus {nullptr}; ///< Network broadcast pipeline seamlessly handling external payloads.
+    QString m_ivyBusArg; ///< Defined Ivy domain structural limits.
+
+    QSet<QString>
+            m_groundMsgs; ///< Classification index cleanly isolating transmission vectors natively.
+    QSet<QString>
+            m_telemetryMsgs; ///< Telemetry class indicator map generating strict array limitations.
+    QHash<QString, QVector<IntFieldCheck>>
+            m_telIntChecks; ///< Per telemetry msg: integer fields to validate before broadcast.
+    QHash<QString, QVector<IntFieldCheck>>
+            m_groundIntChecks; ///< Per ground msg: integer fields to validate before broadcast.
+    QSet<QString> m_warnedMismatch; ///< Message names already warned about (one notice each).
 };
 
 /**
  * @class PlayWindow
- * @brief GUI Controller coordinating Front-End operational requirements directly pushing boundaries internally cleanly identically safely natively.
+ * @brief GUI Controller coordinating Front-End operational requirements directly pushing boundaries
+ * internally cleanly identically safely natively.
  */
-class PlayWindow : public QMainWindow {
+class PlayWindow : public QMainWindow
+{
     Q_OBJECT
 public:
-    explicit PlayWindow(PlayCore* core, QWidget* parent = nullptr) : QMainWindow(parent), m_core(core) {
+    explicit PlayWindow(PlayCore *core, QWidget *parent = nullptr)
+        : QMainWindow(parent)
+        , m_core(core)
+    {
         setAttribute(Qt::WA_DeleteOnClose);
-        setWindowTitle("Paparazzi Replay");
+        setWindowTitle(QStringLiteral("Paparazzi Replay"));
         resize(480, 100);
-        
-                // Mimic original OCaml GTK Menu ("File" -> "Open Log", "Play", "Stop", "Quit")
-        QMenu* fileMenu = menuBar()->addMenu(tr("&File"));
-        
-        QAction* actionOpen = fileMenu->addAction(tr("Open Log"));
+
+        // Mimic original OCaml GTK Menu ("File" -> "Open Log", "Play", "Stop", "Quit")
+        QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
+
+        QAction *actionOpen = fileMenu->addAction(tr("Open Log"));
         actionOpen->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_O));
-        
+
         // Single Play/Pause action: text + behaviour toggle, kept congruent with the
         // Play/Pause button via onPlayStateChanged(). Starts life as "Play".
         m_actionPlayPause = fileMenu->addAction(tr("Play"));
@@ -1229,31 +1460,33 @@ public:
         // Stop = rewind to the very start of the log, then wait (paused) for the user to Play.
         m_actionStop = fileMenu->addAction(tr("Stop"));
         m_actionStop->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_S)); // OCaml used _S
-        
+
         fileMenu->addSeparator();
 
-        QAction* actionQuit = fileMenu->addAction(tr("Quit"));
+        QAction *actionQuit = fileMenu->addAction(tr("Quit"));
         actionQuit->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Q));
-        
+
         connect(actionOpen, &QAction::triggered, this, &PlayWindow::onOpen);
         connect(m_actionPlayPause, &QAction::triggered, this, &PlayWindow::onPlayPause);
         connect(m_actionStop, &QAction::triggered, this, &PlayWindow::onStop);
         connect(actionQuit, &QAction::triggered, qApp, &QApplication::quit);
 
-        QWidget* central = new QWidget(this);
-        QVBoxLayout* vlayout = new QVBoxLayout(central);
-        
-        QHBoxLayout* tools = new QHBoxLayout();
-        const QStyle* st = style();
+        QWidget *central = new QWidget(this);
+        QVBoxLayout *vlayout = new QVBoxLayout(central);
 
-        // [ Back ]  fast-backward by the fixed compile-time step. Carries text + icon (not icon-only)
-        // so the glyph is always drawn -- including while disabled before a log is loaded.
+        QHBoxLayout *tools = new QHBoxLayout();
+        const QStyle *st = style();
+
+        // [ Back ]  fast-backward by the fixed compile-time step. Carries text + icon (not
+        // icon-only) so the glyph is always drawn -- including while disabled before a log is
+        // loaded.
         m_btnBackward = new QPushButton(st->standardIcon(QStyle::SP_MediaSeekBackward), tr("Back"));
         m_btnBackward->setToolTip(QStringLiteral("Jump backward %1 s").arg(PLAY_SEEK_STEP_SECONDS));
 
-        // [ Play / Pause ]  fused toggle; icon + text track the engine state (see onPlayStateChanged).
+        // [ Play / Pause ]  fused toggle; icon + text track the engine state (see
+        // onPlayStateChanged).
         m_btnPlayPause = new QPushButton(st->standardIcon(QStyle::SP_MediaPlay), tr("Play"));
-        m_btnPlayPause->setToolTip("Play / Pause");
+        m_btnPlayPause->setToolTip(QStringLiteral("Play / Pause"));
 
         // [ Fwd ]  fast-forward by the fixed compile-time step. Text + icon, same as Back.
         m_btnForward = new QPushButton(st->standardIcon(QStyle::SP_MediaSeekForward), tr("Fwd"));
@@ -1269,15 +1502,15 @@ public:
         m_btnBackward->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
         m_btnPlayPause->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
         m_btnForward->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-        
+
         m_speedBox = new QDoubleSpinBox();
-        m_speedBox->setToolTip("Playback Speed Multiplier");
-        m_speedBox->setRange(0.01, 100.0);    
+        m_speedBox->setToolTip(QStringLiteral("Playback Speed Multiplier"));
+        m_speedBox->setRange(0.01, 100.0);
         m_speedBox->setSingleStep(0.5);
         m_speedBox->setValue(1.0);
-        m_speedBox->setPrefix("x ");
-        
-        m_timeLabel = new QLabel("00:00 / 00:00");
+        m_speedBox->setPrefix(QStringLiteral("x "));
+
+        m_timeLabel = new QLabel(QStringLiteral("00:00 / 00:00"));
         m_timeLabel->setAlignment(Qt::AlignCenter);
         m_timeLabel->setMinimumWidth(100);
 
@@ -1290,14 +1523,14 @@ public:
 
         // Transport controls stay disabled until a log is successfully loaded.
         setTransportEnabled(false);
-        
+
         m_slider = new QSlider(Qt::Horizontal);
-        m_slider->setPageStep(500); 
+        m_slider->setPageStep(500);
         m_slider->setEnabled(false); // becomes interactive once a log is loaded
-        m_slider->setToolTip("Drag to scrub backward/forward through the log");
+        m_slider->setToolTip(QStringLiteral("Drag to scrub backward/forward through the log"));
         vlayout->insertWidget(0, m_slider); // pin the timeline slider to the TOP of the form
-        vlayout->addStretch(1);             // absorb any spare space at the BOTTOM so the slider +
-                                            // button row stay flush under the menu (top-aligned)
+        vlayout->addStretch(1); // absorb any spare space at the BOTTOM so the slider +
+                                // button row stay flush under the menu (top-aligned)
 
         // Coalescing timer that bounds how often the cheap-but-bus-heavy scrub snapshot is sent.
         m_scrubThrottle = new QTimer(this);
@@ -1310,18 +1543,23 @@ public:
         m_scrubIdle = new QTimer(this);
         m_scrubIdle->setSingleShot(true);
         m_scrubIdle->setInterval(kScrubIdleMs);
-        
+
         setCentralWidget(central);
-        
+
         connect(m_btnPlayPause, &QPushButton::clicked, this, &PlayWindow::onPlayPause);
-        connect(m_btnForward,   &QPushButton::clicked, this, &PlayWindow::onSeekForward);
-        connect(m_btnBackward,  &QPushButton::clicked, this, &PlayWindow::onSeekBackward);
-        connect(m_speedBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), m_core, &PlayCore::setSpeed);
+        connect(m_btnForward, &QPushButton::clicked, this, &PlayWindow::onSeekForward);
+        connect(m_btnBackward, &QPushButton::clicked, this, &PlayWindow::onSeekBackward);
+        connect(m_speedBox,
+                QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+                m_core,
+                &PlayCore::setSpeed);
         connect(m_core, &PlayCore::speedChangedByNetwork, m_speedBox, &QDoubleSpinBox::setValue);
         // Single source of truth for the Play/Pause UI (button + menu), regardless of trigger.
         connect(m_core, &PlayCore::stateChanged, this, &PlayWindow::onPlayStateChanged);
 
-        // Core Interaction Guard: Programmatic `setValue` commands trigger slider signals causing cyclic jump commands. Uniquely binds user inputs exclusively protecting processing operations robustly.
+        // Core Interaction Guard: Programmatic `setValue` commands trigger slider signals causing
+        // cyclic jump commands. Uniquely binds user inputs exclusively protecting processing
+        // operations robustly.
         connect(m_slider, &QAbstractSlider::valueChanged, this, &PlayWindow::onSliderValueChanged);
 
         // --- Live scrubbing wiring --------------------------------------------------------
@@ -1336,11 +1574,12 @@ public:
         //                       for groove clicks / keyboard / wheel, where sliderReleased never
         //                       fires (these were the cases that left playback stuck paused).
         // Both funnel through the idempotent finishScrub(), so a double trigger is harmless.
-        connect(m_slider, &QSlider::sliderPressed,  this, &PlayWindow::beginScrub);
+        connect(m_slider, &QSlider::sliderPressed, this, &PlayWindow::beginScrub);
         connect(m_slider, &QSlider::sliderReleased, this, &PlayWindow::finishScrub);
-        connect(m_scrubIdle, &QTimer::timeout,      this, &PlayWindow::finishScrub);
+        connect(m_scrubIdle, &QTimer::timeout, this, &PlayWindow::finishScrub);
 
-        // The throttle's trailing tick coalesces rapid drag updates so the Ivy bus is never flooded.
+        // The throttle's trailing tick coalesces rapid drag updates so the Ivy bus is never
+        // flooded.
         connect(m_scrubThrottle, &QTimer::timeout, this, [this] {
             if (m_scrubPendingFlush) {
                 m_scrubPendingFlush = false;
@@ -1348,7 +1587,7 @@ public:
                 m_scrubThrottle->start(); // keep coalescing while the drag continues
             }
         });
-        
+
         connect(m_core, &PlayCore::logLoaded, this, &PlayWindow::onLogLoaded);
         connect(m_core, &PlayCore::timeUpdated, this, &PlayWindow::onTimeUpdated);
 
@@ -1364,7 +1603,8 @@ protected:
      * fits the slider and button row exactly and can no longer be stretched vertically, while the
      * width remains freely resizable.
      */
-    void showEvent(QShowEvent* ev) override {
+    void showEvent(QShowEvent *ev) override
+    {
         QMainWindow::showEvent(ev);
         if (!m_heightLocked) {
             m_heightLocked = true;
@@ -1372,8 +1612,9 @@ protected:
         }
     }
 
-private slots:
-    void onOpen() {
+private:
+    void onOpen()
+    {
         m_core->stop();
         QString fileName;
         {
@@ -1391,7 +1632,8 @@ private slots:
                         found = true;
                         break;
                     }
-                    if (!searchDir.cdUp()) break;
+                    if (!searchDir.cdUp())
+                        break;
                 }
                 if (!found) {
                     if (QDir(QDir::current().filePath(defaultLogExtPath)).exists()) {
@@ -1400,33 +1642,40 @@ private slots:
                     }
                 }
                 if (!found) {
-                    QString dataLoc = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-                    logDir = QDir(dataLoc).filePath("logs");
+                    QString dataLoc
+                            = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+                    logDir = QDir(dataLoc).filePath(QStringLiteral("logs"));
                 }
             }
-            fileName = QFileDialog::getOpenFileName(this, "Open Paparazzi Log", logDir, "Log Files (*.log *.xml);;All Files (*)");
+            fileName = QFileDialog::getOpenFileName(
+                    this,
+                    QStringLiteral("Open Paparazzi Log"),
+                    logDir,
+                    QStringLiteral("Log Files (*.log *.xml);;All Files (*)"));
         }
         if (!fileName.isEmpty()) {
             if (m_core->loadLog(fileName)) {
-                setWindowTitle("Replay: " + QFileInfo(fileName).fileName());
+                setWindowTitle(QStringLiteral("Replay: ") + QFileInfo(fileName).fileName());
             }
         }
     }
-    
-    void onLogLoaded(double minT, double maxT) {
+
+    void onLogLoaded(double minT, double maxT)
+    {
         m_slider->setRange(0, kSliderSteps);
         m_minT = minT;
         m_maxT = maxT;
         m_currentT = minT;
         m_slider->setEnabled(true); // log present -> scrubbing available
-        setTransportEnabled(true);  // Play/Pause + fast-seek become usable
+        setTransportEnabled(true); // Play/Pause + fast-seek become usable
         m_slider->blockSignals(true);
         m_slider->setValue(0);
         m_slider->blockSignals(false);
         updateLabel(minT);
     }
-    
-    void onTimeUpdated(double currentT) {
+
+    void onTimeUpdated(double currentT)
+    {
         m_currentT = currentT; // authoritative playback position; anchors seek-by-delta
         if (!m_slider->isSliderDown() && m_maxT > m_minT) {
             double frac = (currentT - m_minT) / (m_maxT - m_minT);
@@ -1437,36 +1686,42 @@ private slots:
         }
         updateSeekButtons(); // Back/Forward track the head: disabled at the very start/end
     }
-    
-    void onSliderValueChanged(int val) {
-        if (m_maxT <= m_minT) return;
+
+    void onSliderValueChanged(int val)
+    {
+        if (m_maxT <= m_minT)
+            return;
         // Robust begin: every user-driven value change marks an active scrub (and pauses playback
         // the first time). Programmatic updates from playback are blockSignals-guarded upstream,
         // so they never reach this slot.
         beginScrub();
-        const double t = m_minT + (val / static_cast<double>(kSliderSteps)) * (m_maxT - m_minT);
+        const double t = m_minT + ((val / static_cast<double>(kSliderSteps)) * (m_maxT - m_minT));
         m_currentT = t; // keep seek-by-delta anchored to the latest scrub position
         updateLabel(t); // instant visual feedback, independent of broadcast throttling
         updateSeekButtons(); // live-enable/disable Back/Forward as the slider nears the ends
         m_pendingScrubT = t;
         if (m_scrubThrottle->isActive()) {
-            m_scrubPendingFlush = true;  // coalesce; the trailing timer tick broadcasts the latest position
+            m_scrubPendingFlush
+                    = true; // coalesce; the trailing timer tick broadcasts the latest position
         } else {
-            m_core->scrubTo(t);          // leading edge: broadcast immediately so scrubbing feels responsive
-            m_scrubThrottle->start();    // open the throttle window
+            m_core->scrubTo(t); // leading edge: broadcast immediately so scrubbing feels responsive
+            m_scrubThrottle->start(); // open the throttle window
         }
-        m_scrubIdle->start();            // (re)arm end-of-scrub detection; resume fires once movement stops
+        m_scrubIdle->start(); // (re)arm end-of-scrub detection; resume fires once movement stops
     }
 
     /**
-     * @brief Marks the start of a scrub gesture: records whether playback was active, then pauses it.
-     * Idempotent -- safe to call on sliderPressed and on every subsequent value change.
+     * @brief Marks the start of a scrub gesture: records whether playback was active, then pauses
+     * it. Idempotent -- safe to call on sliderPressed and on every subsequent value change.
      */
-    void beginScrub() {
-        if (m_scrubbing) return;
+    void beginScrub()
+    {
+        if (m_scrubbing)
+            return;
         m_scrubbing = true;
         m_wasPlayingBeforeScrub = m_core->isPlaying();
-        if (m_wasPlayingBeforeScrub) m_core->stop();
+        if (m_wasPlayingBeforeScrub)
+            m_core->stop();
     }
 
     /**
@@ -1475,9 +1730,12 @@ private slots:
      * first wins; the other becomes a no-op. While the handle is still physically held
      * (isSliderDown), resume is deferred to sliderReleased so the idle timer can't resume mid-drag.
      */
-    void finishScrub() {
-        if (!m_scrubbing) return;
-        if (m_slider->isSliderDown()) return; // handle still held: let sliderReleased finish the gesture
+    void finishScrub()
+    {
+        if (!m_scrubbing)
+            return;
+        if (m_slider->isSliderDown())
+            return; // handle still held: let sliderReleased finish the gesture
         m_scrubbing = false;
         m_scrubIdle->stop();
         m_scrubThrottle->stop();
@@ -1487,7 +1745,7 @@ private slots:
         }
         if (m_wasPlayingBeforeScrub) {
             m_wasPlayingBeforeScrub = false;
-            m_core->play();                   // seamless resume from the scrubbed position
+            m_core->play(); // seamless resume from the scrubbed position
         }
     }
 
@@ -1496,17 +1754,21 @@ private slots:
      * Pause keeps the current position (it is the old "stop" semantics = timer halt); Play
      * resumes from there (PlayCore::play() auto-rewinds only when the head sits at end-of-log).
      */
-    void onPlayPause() {
-        if (m_core->isPlaying()) m_core->stop(); // Pause: halt the timer, keep position
-        else                     m_core->play(); // Play : resume from the current position
+    void onPlayPause()
+    {
+        if (m_core->isPlaying())
+            m_core->stop(); // Pause: halt the timer, keep position
+        else
+            m_core->play(); // Play : resume from the current position
     }
 
     /**
      * @brief Stop: rewind to the very start of the log and wait, paused, for the user to Play.
      * Deliberately distinct from Pause -- this one resets the playback head to the beginning.
      */
-    void onStop() {
-        m_core->stop();              // ensure paused first (so scrubTo performs no clock restart)
+    void onStop()
+    {
+        m_core->stop(); // ensure paused first (so scrubTo performs no clock restart)
         if (m_maxT > m_minT) {
             m_currentT = m_minT;
             m_core->scrubTo(m_minT); // seek head to start + broadcast the initial-state snapshot
@@ -1514,7 +1776,7 @@ private slots:
     }
 
     /// @brief Fast-forward by the fixed compile-time step (PLAY_SEEK_STEP_SECONDS).
-    void onSeekForward()  { seekByDelta(+PLAY_SEEK_STEP_SECONDS); }
+    void onSeekForward() { seekByDelta(+PLAY_SEEK_STEP_SECONDS); }
     /// @brief Fast-backward by the fixed compile-time step (PLAY_SEEK_STEP_SECONDS).
     void onSeekBackward() { seekByDelta(-PLAY_SEEK_STEP_SECONDS); }
 
@@ -1522,23 +1784,26 @@ private slots:
      * @brief Keeps the Play/Pause button AND menu action congruent with the engine state, no
      * matter what changed it (button, menu, end-of-log auto-stop, or scrub pause/resume).
      */
-    void onPlayStateChanged(bool playing) {
-        const QStyle* st = style();
+    void onPlayStateChanged(bool playing)
+    {
+        const QStyle *st = style();
         const QIcon icon = st->standardIcon(playing ? QStyle::SP_MediaPause : QStyle::SP_MediaPlay);
         const QString text = playing ? tr("Pause") : tr("Play");
         m_btnPlayPause->setIcon(icon);
         m_btnPlayPause->setText(text);
-        if (m_actionPlayPause) m_actionPlayPause->setText(text);
+        if (m_actionPlayPause)
+            m_actionPlayPause->setText(text);
     }
 
-private:
     /**
      * @brief Seeks the playback head by `delta` seconds, clamped to the log bounds. Works whether
      * playing or paused: PlayCore::scrubTo() restarts the playback clock when active (so playback
      * continues seamlessly from the new spot) and always broadcasts a coherent state snapshot.
      */
-    void seekByDelta(double delta) {
-        if (m_maxT <= m_minT) return; // empty / single-frame log -> nothing to seek
+    void seekByDelta(double delta)
+    {
+        if (m_maxT <= m_minT)
+            return; // empty / single-frame log -> nothing to seek
         const double t = qBound(m_minT, m_currentT + delta, m_maxT);
         m_currentT = t;
         m_core->scrubTo(t);
@@ -1548,18 +1813,24 @@ private:
      * @brief Enables/disables every transport control at once (button trio + menu actions).
      * Held false until a log loads, true afterwards -- so the UI can never drive an empty engine.
      */
-    void setTransportEnabled(bool on) {
+    void setTransportEnabled(bool on)
+    {
         // Play/Pause and Stop (button + menu twins) follow the log-loaded state directly.
-        if (m_btnPlayPause)    m_btnPlayPause->setEnabled(on);
-        if (m_actionPlayPause) m_actionPlayPause->setEnabled(on);
-        if (m_actionStop)      m_actionStop->setEnabled(on);
+        if (m_btnPlayPause)
+            m_btnPlayPause->setEnabled(on);
+        if (m_actionPlayPause)
+            m_actionPlayPause->setEnabled(on);
+        if (m_actionStop)
+            m_actionStop->setEnabled(on);
         // Back/Forward additionally depend on the head position (disabled at the very ends), so
         // when enabling we defer to updateSeekButtons(); when disabling we force them both off.
         if (on) {
             updateSeekButtons();
         } else {
-            if (m_btnBackward) m_btnBackward->setEnabled(false);
-            if (m_btnForward)  m_btnForward->setEnabled(false);
+            if (m_btnBackward)
+                m_btnBackward->setEnabled(false);
+            if (m_btnForward)
+                m_btnForward->setEnabled(false);
         }
     }
 
@@ -1569,14 +1840,17 @@ private:
      * (the authoritative head) with a one-slider-step epsilon, so truncation in the time->slider
      * mapping can never leave a button wrongly enabled right at an extreme.
      */
-    void updateSeekButtons() {
+    void updateSeekButtons()
+    {
         const double range = m_maxT - m_minT;
         const bool haveLog = range > 0.0;
         const double eps = haveLog ? range / kSliderSteps : 0.0;
         const bool atStart = !haveLog || m_currentT <= m_minT + eps;
-        const bool atEnd   = !haveLog || m_currentT >= m_maxT - eps;
-        if (m_btnBackward) m_btnBackward->setEnabled(haveLog && !atStart);
-        if (m_btnForward)  m_btnForward->setEnabled(haveLog && !atEnd);
+        const bool atEnd = !haveLog || m_currentT >= m_maxT - eps;
+        if (m_btnBackward)
+            m_btnBackward->setEnabled(haveLog && !atStart);
+        if (m_btnForward)
+            m_btnForward->setEnabled(haveLog && !atEnd);
     }
 
     /**
@@ -1584,96 +1858,141 @@ private:
      * measured relative to the log's start (so a freshly loaded log reads 00:00) and
      * widening automatically to H:MM:SS for logs longer than one hour.
      */
-    void updateLabel(double currentT) {
-        if (!std::isfinite(currentT) || !std::isfinite(m_maxT)) return;
+    void updateLabel(double currentT)
+    {
+        if (!std::isfinite(currentT) || !std::isfinite(m_maxT))
+            return;
         const double elapsed = std::max(0.0, currentT - m_minT);
         const double total = std::max(0.0, m_maxT - m_minT);
-        m_timeLabel->setText(formatClock(elapsed) + " / " + formatClock(total));
+        m_timeLabel->setText(formatClock(elapsed) + QStringLiteral(" / ") + formatClock(total));
     }
 
     /**
      * @brief Formats a non-negative second count as MM:SS, or H:MM:SS when >= 1 hour.
      */
-    static QString formatClock(double seconds) {
+    static QString formatClock(double seconds)
+    {
         const int totalSecs = static_cast<int>(seconds);
         const int h = totalSecs / 3600;
         const int m = (totalSecs % 3600) / 60;
         const int s = totalSecs % 60;
         if (h > 0) {
-            return QString("%1:%2:%3").arg(h).arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
+            return QStringLiteral("%1:%2:%3")
+                    .arg(h)
+                    .arg(m, 2, 10, QChar('0'))
+                    .arg(s, 2, 10, QChar('0'));
         }
-        return QString("%1:%2").arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
+        return QStringLiteral("%1:%2").arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
     }
 
-    PlayCore* m_core;             ///< Pointer coordinating GUI interactions dynamically bounded to internal engines.
-    QSlider* m_slider;            ///< User structural UI input bounds explicitly tracking track position.
-    QDoubleSpinBox* m_speedBox;   ///< Visual speed multiplier tracking limits intuitively.
-    QLabel* m_timeLabel;          ///< Human readable clock supporting visual string outputs seamlessly.
-    QPushButton* m_btnPlayPause = nullptr; ///< Fused Play/Pause toggle (icon + text track engine state).
-    QPushButton* m_btnForward = nullptr;   ///< Fast-forward: jumps +PLAY_SEEK_STEP_SECONDS.
-    QPushButton* m_btnBackward = nullptr;  ///< Fast-backward: jumps -PLAY_SEEK_STEP_SECONDS.
-    QAction* m_actionPlayPause = nullptr;  ///< Menu twin of the Play/Pause button (kept congruent).
-    QAction* m_actionStop = nullptr;       ///< Menu Stop = rewind to start, then wait paused.
-    double m_currentT = 0.0;               ///< Latest playback position; anchor for seek-by-delta.
-    static constexpr int kSliderSteps = 10000;  ///< Slider granularity; higher = finer live-scrubbing resolution.
-    static constexpr int kScrubThrottleMs = 33; ///< Min interval between scrub snapshot broadcasts (~30 Hz) to keep the bus calm.
-    QTimer* m_scrubThrottle = nullptr;          ///< Coalesces rapid drag updates so the Ivy bus is never flooded.
-    static constexpr int kScrubIdleMs = 150;    ///< Idle gap after the last slider move that marks end-of-scrub.
-    QTimer* m_scrubIdle = nullptr;              ///< Fires kScrubIdleMs after the last move; robust end-of-scrub resume.
-    bool m_scrubbing = false;                   ///< True between begin/finish of a scrub gesture (any interaction mode).
-    double m_pendingScrubT = 0.0;               ///< Latest scrub target awaiting a throttled broadcast.
-    bool m_scrubPendingFlush = false;           ///< True when a coalesced scrub position still needs to be sent.
-    bool m_wasPlayingBeforeScrub = false;       ///< Remembers play state at scrub start so playback auto-resumes on end.
-    double m_minT = 0, m_maxT = 0;///< Explicitly cached variable boundaries logically limiting dynamic parameters.
-    bool m_heightLocked = false;                ///< True once the window height has been frozen to its content (first show).
+    PlayCore *m_core; ///< Pointer coordinating GUI interactions dynamically bounded to internal
+                      ///< engines.
+    QSlider *m_slider; ///< User structural UI input bounds explicitly tracking track position.
+    QDoubleSpinBox *m_speedBox; ///< Visual speed multiplier tracking limits intuitively.
+    QLabel *m_timeLabel; ///< Human readable clock supporting visual string outputs seamlessly.
+    QPushButton *m_btnPlayPause
+            = nullptr; ///< Fused Play/Pause toggle (icon + text track engine state).
+    QPushButton *m_btnForward = nullptr; ///< Fast-forward: jumps +PLAY_SEEK_STEP_SECONDS.
+    QPushButton *m_btnBackward = nullptr; ///< Fast-backward: jumps -PLAY_SEEK_STEP_SECONDS.
+    QAction *m_actionPlayPause = nullptr; ///< Menu twin of the Play/Pause button (kept congruent).
+    QAction *m_actionStop = nullptr; ///< Menu Stop = rewind to start, then wait paused.
+    double m_currentT = 0.0; ///< Latest playback position; anchor for seek-by-delta.
+    static constexpr int kSliderSteps
+            = 10000; ///< Slider granularity; higher = finer live-scrubbing resolution.
+    static constexpr int kScrubThrottleMs
+            = 33; ///< Min interval between scrub snapshot broadcasts (~30 Hz) to keep the bus calm.
+    QTimer *m_scrubThrottle
+            = nullptr; ///< Coalesces rapid drag updates so the Ivy bus is never flooded.
+    static constexpr int kScrubIdleMs
+            = 150; ///< Idle gap after the last slider move that marks end-of-scrub.
+    QTimer *m_scrubIdle
+            = nullptr; ///< Fires kScrubIdleMs after the last move; robust end-of-scrub resume.
+    bool m_scrubbing
+            = false; ///< True between begin/finish of a scrub gesture (any interaction mode).
+    double m_pendingScrubT = 0.0; ///< Latest scrub target awaiting a throttled broadcast.
+    bool m_scrubPendingFlush
+            = false; ///< True when a coalesced scrub position still needs to be sent.
+    bool m_wasPlayingBeforeScrub
+            = false; ///< Remembers play state at scrub start so playback auto-resumes on end.
+    double m_minT = 0,
+           m_maxT
+            = 0; ///< Explicitly cached variable boundaries logically limiting dynamic parameters.
+    bool m_heightLocked
+            = false; ///< True once the window height has been frozen to its content (first show).
 };
 
 /**
  * @brief Point of initialization setting Desktop hooks globally.
  */
-int main(int argc, char *argv[]) {
-    QCoreApplication::setApplicationVersion("1.0");
+int main(int argc, char *argv[])
+{
+    QCoreApplication::setApplicationVersion(QStringLiteral("1.0"));
     QGuiApplication::setDesktopFileName(QStringLiteral("paparazzi_play"));
     QCoreApplication::setApplicationName(QStringLiteral("Paparazzi replay"));
     qputenv("QT_LOGGING_RULES", "qt.qpa.wayland.textinput=false");
 
     QApplication app(argc, argv);
-    QString iconPath = ":/penguin_icon_rep.png";
+    QString iconPath = QStringLiteral(":/penguin_icon_rep.png");
     QIcon icon(iconPath);
-    installLinuxDesktopIntegration(app.desktopFileName(), "Paparazzi replay", "Player to replay flights", iconPath, "paparazzi-play");
-    app.setWindowIcon(icon);
+    installLinuxDesktopIntegration(QApplication::desktopFileName(),
+                                   QStringLiteral("Paparazzi replay"),
+                                   QStringLiteral("Player to replay flights"),
+                                   iconPath,
+                                   QStringLiteral("paparazzi-play"));
+    QApplication::setWindowIcon(icon);
 
     QCommandLineParser parser;
-    parser.setApplicationDescription("Paparazzi Replay");
+    parser.setApplicationDescription(QStringLiteral("Paparazzi Replay"));
     parser.addHelpOption();
-    parser.addOption(QCommandLineOption(QStringList() << "version", "Displays version information."));
-    parser.addOption(QCommandLineOption(QStringList() << "b", "Ivy Bus. Default is 127.255.255.255:2010", "bus", "127.255.255.255:2010"));
-    parser.addOption(QCommandLineOption(QStringList() << "d", "Port Default is /dev/ttyUSB0", "port", "/dev/ttyUSB0"));
-    parser.addOption(QCommandLineOption(QStringList() << "o", "Output binary messages on serial port"));
-    parser.addOption(QCommandLineOption(QStringList() << "s", "Baudrate Default is 9600", "baudrate", "9600"));
-    parser.addOption(QCommandLineOption(QStringList() << "shfc", "Enable UART hardware flow control (CTS/RTS)"));
-    parser.addOption(QCommandLineOption(QStringList() << "no-gui", "Run without GUI (equivalent to play-nox)"));
-    parser.addOption(QCommandLineOption(QStringList() << "consumer-messages",
-        "Validate replay payloads against this messages.xml -- the dictionary your GCS/server uses to "
-        "decode them. Frames whose integer fields do not match it are skipped, preventing consumer "
-        "int_of_string errors on version-mismatched logs. Default: $PAPARAZZI_HOME/var/messages.xml.",
-        "file"));
-    
-    parser.addPositionalArgument("log", "Log file to load.", "[log file]");
+    parser.addOption(QCommandLineOption(QStringList() << QStringLiteral("version"),
+                                        QStringLiteral("Displays version information.")));
+    parser.addOption(QCommandLineOption(QStringList() << QStringLiteral("b"),
+                                        QStringLiteral("Ivy Bus. Default is 127.255.255.255:2010"),
+                                        QStringLiteral("bus"),
+                                        QStringLiteral("127.255.255.255:2010")));
+    parser.addOption(QCommandLineOption(QStringList() << QStringLiteral("d"),
+                                        QStringLiteral("Port Default is /dev/ttyUSB0"),
+                                        QStringLiteral("port"),
+                                        QStringLiteral("/dev/ttyUSB0")));
+    parser.addOption(QCommandLineOption(QStringList() << QStringLiteral("o"),
+                                        QStringLiteral("Output binary messages on serial port")));
+    parser.addOption(QCommandLineOption(QStringList() << QStringLiteral("s"),
+                                        QStringLiteral("Baudrate Default is 9600"),
+                                        QStringLiteral("baudrate"),
+                                        QStringLiteral("9600")));
+    parser.addOption(
+            QCommandLineOption(QStringList() << QStringLiteral("shfc"),
+                               QStringLiteral("Enable UART hardware flow control (CTS/RTS)")));
+    parser.addOption(
+            QCommandLineOption(QStringList() << QStringLiteral("no-gui"),
+                               QStringLiteral("Run without GUI (equivalent to play-nox)")));
+    parser.addOption(QCommandLineOption(QStringList() << QStringLiteral("consumer-messages"),
+                                        "Validate replay payloads against this messages.xml -- the "
+                                        "dictionary your GCS/server uses to "
+                                        "decode them. Frames whose integer fields do not match it "
+                                        "are skipped, preventing consumer "
+                                        "int_of_string errors on version-mismatched logs. Default: "
+                                        "$PAPARAZZI_HOME/var/messages.xml.",
+                                        QStringLiteral("file")));
+
+    parser.addPositionalArgument(QStringLiteral("log"),
+                                 QStringLiteral("Log file to load."),
+                                 QStringLiteral("[log file]"));
 
     // Robust Command-Line Argument Parsing (Ported from LogPlotter)
     // Resolves issues where external launchers incorrectly fragment quoted file paths or arguments.
-    QStringList argsList = app.arguments();
+    QStringList argsList = QApplication::arguments();
     QStringList mergedArgs;
     for (int i = 0; i < argsList.size(); ++i) {
         QString arg = argsList[i];
-        if ((arg.startsWith('\'') && !arg.endsWith('\'')) || (arg.startsWith('"') && !arg.endsWith('"'))) {
+        if ((arg.startsWith('\'') && !arg.endsWith('\''))
+            || (arg.startsWith('"') && !arg.endsWith('"'))) {
             QChar quoteType = arg[0];
             QString merged = arg;
             int j = i + 1;
             bool foundClosed = false;
             while (j < argsList.size()) {
-                merged += " " + argsList[j];
+                merged += QStringLiteral(" ") + argsList[j];
                 if (argsList[j].endsWith(quoteType)) {
                     foundClosed = true;
                     break;
@@ -1686,8 +2005,8 @@ int main(int argc, char *argv[]) {
             } else {
                 mergedArgs.append(arg);
             }
-        } else if ((arg.startsWith('\'') && arg.endsWith('\'') && arg.length() >= 2) ||
-                   (arg.startsWith('"') && arg.endsWith('"') && arg.length() >= 2)) {
+        } else if ((arg.startsWith('\'') && arg.endsWith('\'') && arg.length() >= 2)
+                   || (arg.startsWith('"') && arg.endsWith('"') && arg.length() >= 2)) {
             mergedArgs.append(arg.mid(1, arg.length() - 2));
         } else {
             mergedArgs.append(arg);
@@ -1696,27 +2015,29 @@ int main(int argc, char *argv[]) {
 
     parser.process(mergedArgs);
 
-    if (parser.isSet("version")) {
+    if (parser.isSet(QStringLiteral("version"))) {
         parser.showVersion();
         return 0;
     }
 
-    if (parser.isSet("o")) {
-        qWarning() << "Notice: Replaying to physical binary serial out (-o) is not fully implemented in this Qt architecture revision.";
+    if (parser.isSet(QStringLiteral("o"))) {
+        qWarning() << "Notice: Replaying to physical binary serial out (-o) is not fully "
+                      "implemented in this Qt architecture revision.";
     }
 
-    QString ivyBus = parser.value("b");
-    if(ivyBus.isEmpty()) ivyBus = "127.255.255.255:2010"; 
-    bool noGui = parser.isSet("no-gui");
+    QString ivyBus = parser.value(QStringLiteral("b"));
+    if (ivyBus.isEmpty())
+        ivyBus = QStringLiteral("127.255.255.255:2010");
+    bool noGui = parser.isSet(QStringLiteral("no-gui"));
     QStringList args = parser.positionalArguments();
-    
+
     PlayCore core;
     core.setIvyBus(ivyBus);
     core.setNoGui(noGui);
-    core.setConsumerMessages(parser.value("consumer-messages"));
+    core.setConsumerMessages(parser.value(QStringLiteral("consumer-messages")));
     core.startIvy();
 
-    PlayWindow* window = nullptr;
+    PlayWindow *window = nullptr;
     if (!noGui) {
         window = new PlayWindow(&core);
         window->show();
@@ -1724,16 +2045,18 @@ int main(int argc, char *argv[]) {
 
     if (!args.isEmpty()) {
         if (core.loadLog(args.first())) {
-            double s, e;
+            double s;
+            double e;
             core.getBounds(s, e);
             if (window) {
-                window->setWindowTitle("Replay: " + QFileInfo(args.first()).fileName());
+                window->setWindowTitle(QStringLiteral("Replay: ")
+                                       + QFileInfo(args.first()).fileName());
             }
             core.play();
         }
     }
 
-    return app.exec();
+    return QApplication::exec();
 }
 
 #include "play.moc"

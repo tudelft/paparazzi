@@ -74,7 +74,7 @@ public:
         // Pass mouse events directly to the chart underneath so panning/zooming
         // works seamlessly even if the mouse initiates a drag over the legend.
         m_legendOverlay->setAttribute(Qt::WA_TransparentForMouseEvents);
-        m_legendOverlay->setStyleSheet("#LegendOverlay { background-color: rgba(255, 255, 255, 220); border: none; border-radius: 4px; } * { color: black; }");
+        m_legendOverlay->setStyleSheet(QStringLiteral("#LegendOverlay { background-color: rgba(255, 255, 255, 220); border: none; border-radius: 4px; } * { color: black; }"));
         
         m_legendLayout = new QVBoxLayout(m_legendOverlay);
         m_legendLayout->setContentsMargins(0, 0, 0, 0);
@@ -128,26 +128,26 @@ public:
             return;
         }
         
-        for (auto* s : seriesList) {
+        for (auto* s : std::as_const(seriesList)) {
             QLineSeries* ls = qobject_cast<QLineSeries*>(s);
             if (ls) {
                 QWidget* rowWidget = new QWidget();
-                rowWidget->setStyleSheet("background: transparent; border: none;");
+                rowWidget->setStyleSheet(QStringLiteral("background: transparent; border: none;"));
                 QHBoxLayout* rowLayout = new QHBoxLayout(rowWidget);
                 rowLayout->setContentsMargins(4, 2, 4, 2);
                 rowLayout->setSpacing(5);
                 
                 QLabel* colorBox = new QLabel();
                 QString colorMsg = ls->pen().color().name();
-                colorBox->setStyleSheet(QString("background-color: %1; border: none;").arg(colorMsg));
+                colorBox->setStyleSheet(QStringLiteral("background-color: %1; border: none;").arg(colorMsg));
                 
                 double latestVal = 0.0;
                 if (ls->count() > 0) {
                     // Extract only the tail-end Y node as a visual data-snapshot.
                     latestVal = ls->at(ls->count() - 1).y();
                 }
-                QLabel* textLbl = new QLabel(QString("%1 : %2").arg(ls->name()).arg(latestVal, 0, 'f', 4));
-                textLbl->setStyleSheet("color: black; border: none; background: transparent;");
+                QLabel* textLbl = new QLabel(QStringLiteral("%1 : %2").arg(ls->name()).arg(latestVal, 0, 'f', 4));
+                textLbl->setStyleSheet(QStringLiteral("color: black; border: none; background: transparent;"));
                 textLbl->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                 
                 int textHeight = textLbl->fontMetrics().height();
@@ -245,7 +245,7 @@ private:
                     if (l && l->count() >= 2) {
                         QLabel* lbl = qobject_cast<QLabel*>(l->itemAt(0)->widget());
                         if (lbl) {
-                            lbl->setText(QString("%1 : %2").arg(ls->name()).arg(latestVal, 0, 'f', 4));
+                            lbl->setText(QStringLiteral("%1 : %2").arg(ls->name()).arg(latestVal, 0, 'f', 4));
                         }
                     }
                 }
