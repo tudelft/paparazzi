@@ -22,7 +22,7 @@
 #include <mutex>
 
 #include "plotter_common.h"
-#include "../include/linux_desktop_utils.h"
+#include "../include/os_desktop_utils.h"
 
 #include "pprzlinkQt/IvyQtLink.h"
 

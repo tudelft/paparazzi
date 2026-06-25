@@ -59,7 +59,7 @@
 // are integer-typed -- are read straight from messages.xml with QtXml (QDomDocument, already used
 // here for the conf/protocol parsing). See initDictionary() / buildIntChecks().
 
-#include "../include/linux_desktop_utils.h"
+#include "../include/os_desktop_utils.h"
 
 // Includes strictly mapped to allow file-descriptor interactions driving the StderrBlocker
 #include <unistd.h>

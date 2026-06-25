@@ -36,7 +36,7 @@
 #include <algorithm>
 #include <vector>
 
-#include "../include/linux_desktop_utils.h"
+#include "../include/os_desktop_utils.h"
 #include "pprzlinkQt/IvyQtLink.h"
 
 #ifndef M_PI
@@ -226,8 +226,9 @@ void GaiaWindow::setupUI(double initTimeScale, double initWindSpeed, double init
 
     // Left side: sliders
     QFrame *slidersFrame = new QFrame();
-    slidersFrame->setFrameShape(QFrame::StyledPanel);
+    slidersFrame->setFrameShape(QFrame::NoFrame);
     QVBoxLayout *slidersLayout = new QVBoxLayout(slidersFrame);
+    slidersLayout->setSpacing(12);
 
     auto createSliderBlock = [this, slidersLayout](const QString& text, double min, double max, double step, int decimals, double current, bool isVisible = true) -> QDoubleSpinBox* {
         QWidget* container = new QWidget();
@@ -256,10 +257,6 @@ void GaiaWindow::setupUI(double initTimeScale, double initWindSpeed, double init
         containerLayout->addLayout(textLayout);
         containerLayout->addWidget(slider);
         
-        QFrame* hline = new QFrame();
-        hline->setFrameShape(QFrame::HLine);
-        hline->setFrameShadow(QFrame::Plain);
-        containerLayout->addWidget(hline);
         slidersLayout->addWidget(container);
         container->setVisible(isVisible);
         

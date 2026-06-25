@@ -1,13 +1,13 @@
 /**
- * @file linux_desktop_utils.h
+ * @file os_desktop_utils.h
  * @brief Utilities for dynamically integrating applications into the Linux desktop environment.
  * 
  * @details This component enables auto-generation of XDG desktop rules (creating `.desktop` files)
  * directly from the binary executable at runtime. This allows seamless integration into 
  * GNOME/Wayland launchers without requiring elevated system or `sudo` compilation passes.
  */
-#ifndef LINUX_DESKTOP_UTILS_H
-#define LINUX_DESKTOP_UTILS_H
+#ifndef OS_DESKTOP_UTILS_H
+#define OS_DESKTOP_UTILS_H
 
 #include <QCoreApplication>
 #include <QStandardPaths>
@@ -100,4 +100,4 @@ inline void installLinuxDesktopIntegration(const QString& appDesktopFileName, co
 #endif
 }
 
-#endif // LINUX_DESKTOP_UTILS_H
+#endif // OS_DESKTOP_UTILS_H

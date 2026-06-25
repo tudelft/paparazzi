@@ -34,7 +34,7 @@
 #include <fcntl.h>
 
 #include "plotter_common.h"
-#include "../include/linux_desktop_utils.h"
+#include "../include/os_desktop_utils.h"
 
 /**
  * @class StderrBlocker
@@ -82,7 +82,7 @@ public:
  * we precisely elevate the `QPalette::Base` without touching Qt's global stylesheet mechanism, 
  * which is notorious for stripping native OS-render configurations.
  */
-class EditorLighteningStyle : public QProxyStyle { //TODO: Move to common header linux_desktop_utils.h since we like this elsewhere also
+class EditorLighteningStyle : public QProxyStyle { //TODO: Move to common header os_desktop_utils.h since we like this elsewhere also
 public:
     // Inherit constructors from QProxyStyle
     using QProxyStyle::QProxyStyle; 

@@ -23,10 +23,11 @@
 #include <QRegularExpression>
 #include <QTimer>
 #include <QFile>
+#include <QFileInfo>
 #include <QXmlStreamReader>
 #include <QDebug>
 #include "pprzlinkQt/IvyQtLink.h"
-#include "../../include/linux_desktop_utils.h"
+#include "../../include/os_desktop_utils.h"
 
 /**
  * @brief Represents the MessagesConfig struct.
@@ -43,6 +44,19 @@ struct MessagesConfig {
 };
 
 /**
+ * @brief Per-field rendering metadata, cached on a message's first arrival.
+ * @details Mirrors what pprzlink's messages.ml resolves once per field: the
+ * scaling coefficient and alternate unit used to render "raw (scaled alt_unit)",
+ * plus the enum value table used to render "NAME (index)".
+ */
+struct FieldDisplay {
+    double coef = 1.0;       // alt_unit_coef (1.0 = no scaling)
+    QString altUnit;         // non-empty -> append " (coef*raw <altUnit>)"
+    QStringList enumValues;  // non-empty -> integer shown as "NAME (index)"
+    QString format;          // 'format' attribute (e.g. "%.1f"); empty -> default
+};
+
+/**
  * @brief Represents the MsgTracker struct.
  * @details This struct encapsulates the primary logic and UI structures required 
  * for MsgTracker operations, ensuring robust and memory-safe management within the telemetry pipeline.
@@ -52,6 +66,9 @@ struct MsgTracker {
     QWidget* timeBox = nullptr;
     QVector<QLabel*> fieldLabels;
     QVector<class DraggableButton*> fieldButtons;
+    // Per-field rendering metadata (coef, alt_unit, enum table), resolved once
+    // when the message's page is first built.
+    QVector<FieldDisplay> fieldDisplays;
     qint64 lastUpdateMs = 0;
     bool isGreen = false;
     int lastSecs = -1;
@@ -114,14 +131,152 @@ private:
  * for FieldInfo operations, ensuring robust and memory-safe management within the telemetry pipeline.
  */
 struct FieldInfo {
-    QString coef;
-    QString unit;
+    QString coef;       // alt_unit_coef (explicit, or resolved via units.xml)
+    QString baseUnit;   // 'unit' attribute -> shown in the field button label
+    QString altUnit;    // 'alt_unit' attribute -> appended to the scaled value
+    QStringList values; // enum 'values' (split on '|'); empty when not an enum
+    QString format;     // 'format' attribute (printf, e.g. "%.1f"); empty if none
 };
 static QHash<QString, QHash<QString, QHash<QString, FieldInfo>>> s_fieldInfos;
 static constexpr int GREEN_DECAY_RATE_MS = 200;
 
 #include <QXmlStreamReader>
+
+/**
+ * @brief One row of the pprzlink unit-conversion table (units.xml).
+ * @details Mirrors a <unit from="..." to="..." coef="..." [auto="code|display"]/>
+ * entry. The optional @c automode reproduces pprzlink's airframe/display
+ * auto-conversion semantics so the lookup matches the canonical ground segment.
+ */
+struct UnitConv {
+    QString from;
+    QString to;
+    QString automode; // "code", "display" or empty
+    double coef = 1.0;
+};
+static QVector<UnitConv> s_unitConvs;
+
+/**
+ * @brief Loads the default unit-conversion table (units.xml).
+ * @param unitsXmlPath Absolute path to units.xml (lives next to messages.xml).
+ * @details This table is what lets a field declared as e.g. unit="mm"
+ * alt_unit="m" be displayed in meters even though messages.xml carries no
+ * explicit alt_unit_coef. Missing/malformed entries are skipped rather than
+ * aborting, so a partial table still scales every unit it does know about.
+ */
+static void loadUnitsTable(const QString& unitsXmlPath) {
+    s_unitConvs.clear();
+    QFile file(unitsXmlPath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "Could not open" << unitsXmlPath << "for unit conversions";
+        return;
+    }
+    QXmlStreamReader xml(&file);
+    while (!xml.atEnd() && !xml.hasError()) {
+        if (xml.readNext() == QXmlStreamReader::StartElement &&
+            xml.name() == QLatin1String("unit")) {
+            const auto attrs = xml.attributes();
+            UnitConv u;
+            u.from = attrs.value(QLatin1String("from")).toString();
+            u.to = attrs.value(QLatin1String("to")).toString();
+            u.automode = attrs.value(QLatin1String("auto")).toString().toLower();
+            bool ok = false;
+            u.coef = attrs.value(QLatin1String("coef")).toString().toDouble(&ok);
+            if (ok && u.coef != 0.0 && !u.from.isEmpty() && !u.to.isEmpty()) {
+                s_unitConvs.append(u);
+            }
+        }
+    }
+    if (xml.hasError()) {
+        qWarning() << "XML error in" << unitsXmlPath << ":" << xml.errorString();
+    }
+}
+
+/**
+ * @brief Conversion factor turning a value in @p fromUnit into @p toUnit.
+ * @return The matching coefficient, or 1.0 when no conversion is known.
+ * @details Faithful re-implementation of pprzlink's OCaml @c scale_of_units
+ * (without the airframe "auto" override): identical units need no scaling;
+ * otherwise the first units.xml row whose from/to match wins, honouring the
+ * permissive auto="display"/auto="code" rows exactly as the reference does. An
+ * unknown pair falls back to 1.0 so a value is never silently zeroed.
+ */
+static double scaleOfUnits(const QString& fromUnit, const QString& toUnit) {
+    if (fromUnit == toUnit) {
+        return 1.0;
+    }
+    for (const UnitConv& u : s_unitConvs) {
+        // pprzlink resolves message scales with ~auto:"display": rows that carry
+        // an auto="code"/"display" attribute are matched on their target unit
+        // alone; every other row needs an exact from/to match. First hit wins.
+        const bool match = u.automode.isEmpty()
+            ? (u.from == fromUnit && u.to == toUnit)
+            : (u.to == toUnit);
+        if (match) {
+            return u.coef;
+        }
+    }
+    return 1.0;
+}
+
+/**
+ * @brief Render a double exactly like OCaml's @c Stdlib.string_of_float.
+ * @param x The value to format.
+ * @return The OCaml-style textual representation.
+ * @details messages.ml prints scalar floats through @c PprzLink.string_of_value,
+ * which for a float calls @c string_of_float: the number is formatted with
+ * @c "%.12g" and, when the result reads as a bare integer (only digits and an
+ * optional leading sign), a trailing @c '.' is appended so the lexeme is
+ * unmistakably a float. Hence 12.0 -> "12." and 185.0 -> "185.", while 12.5,
+ * 0.001 and 1e-07 are already float-looking and pass through untouched.
+ * @c QString::asprintf formats in the C locale, matching OCaml's decimal point.
+ */
+static QString ocamlStringOfFloat(double x) {
+    const QString s = QString::asprintf("%.12g", x);
+    // OCaml's valid_float_lexem: append '.' only when every character is a digit
+    // or a '-' (i.e. there is no '.', exponent 'e', or inf/nan letter already).
+    bool bare = !s.isEmpty();
+    for (const QChar c : s) {
+        if (!(c.isDigit() || c == QLatin1Char('-'))) {
+            bare = false;
+            break;
+        }
+    }
+    return bare ? s + QLatin1Char('.') : s;
+}
+
+/**
+ * @brief Apply a messages.xml @c format to a floating value, OCaml-style.
+ * @param fmt The printf format string taken from the field's @c format attribute.
+ * @param value The value to format.
+ * @return The formatted text, or a null QString when @p fmt is not a single safe
+ *         floating-point conversion (the caller then falls back to
+ *         string_of_float, mirroring OCaml where an incompatible format raises).
+ * @details messages.ml renders a field that carries a @c format through
+ * @c PprzLink.formatted_string_of_value, which for a float is
+ * @c sprintf (Scanf.format_from_string format "%f") -- i.e. the format must be
+ * type-compatible with @c "%f". Hence @c "%.1f" 12.0 -> "12.0". Non-printf
+ * markers such as @c "csv" raise in OCaml and are rejected here so we degrade to
+ * the default rendering instead. The accepted grammar is a single conversion
+ * @c %[flags][width][.precision]<float-spec> with no @c %% , @c * , positional
+ * @c $ , length modifier or @c %n, which also defuses any format-string attack
+ * even though messages.xml is a trusted generated file.
+ */
+static QString applyFloatFormat(const QString& fmt, double value) {
+    static const QRegularExpression re(
+        QStringLiteral("\\A%[-+ 0#]*[0-9]*(?:\\.[0-9]+)?[eEfFgGaA]\\z"));
+    if (!re.match(fmt).hasMatch()) {
+        return QString();  // signal: fall back to string_of_float
+    }
+    return QString::asprintf(fmt.toUtf8().constData(), value);
+}
+
 static void loadUnitCoefs(const QString& xmlPath) {
+    // The unit-conversion table sits next to messages.xml (both are generated
+    // into $PAPARAZZI_HOME/var by the build). Load it first so fields that rely
+    // on an implicit conversion (unit + alt_unit but no alt_unit_coef) scale.
+    loadUnitsTable(QFileInfo(xmlPath).absolutePath() + QStringLiteral("/units.xml"));
+
     QFile file(xmlPath);
     if (!file.open(QIODevice::ReadOnly)) {
         qWarning() << "Could not open" << xmlPath << "to parse unit coefs";
@@ -140,12 +295,30 @@ static void loadUnitCoefs(const QString& xmlPath) {
             } else if (name == QLatin1String("field")) {
                 auto attrs = xml.attributes();
                 QString fieldName = attrs.value(QLatin1String("name")).toString();
-                QString coef = attrs.value(QLatin1String("alt_unit_coef")).toString();
-                if (coef.isEmpty()) coef = QStringLiteral("1.");
-                QString unit = attrs.value(QLatin1String("alt_unit")).toString();
-                if (unit.isEmpty()) unit = attrs.value(QLatin1String("unit")).toString();
-                
-                s_fieldInfos[currentClass][currentMessage][fieldName] = {coef, unit};
+                // Resolve the display metadata exactly like pprzlink's messages.ml:
+                //   * the field button shows the BASE unit -> "<type> <name> (<unit>): ";
+                //   * the value shows "raw (alt_unit_coef*raw  alt_unit)" whenever an
+                //     alt_unit exists, the coefficient coming from an explicit
+                //     alt_unit_coef or, failing that, the units.xml table (mm->m=0.001);
+                //   * enum fields (a "values" list) are shown as "NAME (index)".
+                const QString rawUnit = attrs.value(QLatin1String("unit")).toString();
+                const QString altUnit = attrs.value(QLatin1String("alt_unit")).toString();
+                const QString explicitCoef = attrs.value(QLatin1String("alt_unit_coef")).toString();
+                const QString valuesAttr = attrs.value(QLatin1String("values")).toString();
+                const QString formatAttr = attrs.value(QLatin1String("format")).toString();
+
+                FieldInfo info;
+                info.coef = explicitCoef.isEmpty()
+                    ? QString::number(scaleOfUnits(rawUnit, altUnit), 'g', 12)
+                    : explicitCoef;
+                info.baseUnit = rawUnit;
+                info.altUnit = altUnit;
+                info.format = formatAttr;
+                if (!valuesAttr.isEmpty()) {
+                    info.values = valuesAttr.split(QLatin1Char('|'), Qt::SkipEmptyParts);
+                }
+
+                s_fieldInfos[currentClass][currentMessage][fieldName] = info;
             }
         }
         else if (token == QXmlStreamReader::EndElement) {
@@ -426,9 +599,11 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
         
         // Fields for the right page
         const auto& def = msg.getDefinition();
-        tracker.fieldLabels.resize(def.getNbFields());
-        tracker.fieldButtons.resize(def.getNbFields());
-        for (int i = 0; i < (int)def.getNbFields(); ++i) {
+        const int nbFields = static_cast<int>(def.getNbFields());
+        tracker.fieldLabels.resize(nbFields);
+        tracker.fieldButtons.resize(nbFields);
+        tracker.fieldDisplays.resize(nbFields);
+        for (int i = 0; i < nbFields; ++i) {
             const auto& field = def.getField(i);
             QHBoxLayout* hlayout = new QHBoxLayout();
             
@@ -436,7 +611,10 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
             QString typeName = field.getType().toString();
             
             QString coef = QStringLiteral("1.");
-            QString unit;
+            QString baseUnit;
+            QString altUnit;
+            QStringList enumValues;
+            QString fieldFormat;
             auto classIt = s_fieldInfos.constFind(m_className);
             if (classIt != s_fieldInfos.constEnd()) {
                 auto msgIt = classIt->constFind(msgName);
@@ -444,13 +622,34 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
                     auto fieldIt = msgIt->constFind(fieldName);
                     if (fieldIt != msgIt->constEnd()) {
                         coef = fieldIt->coef;
-                        unit = fieldIt->unit;
+                        baseUnit = fieldIt->baseUnit;
+                        altUnit = fieldIt->altUnit;
+                        enumValues = fieldIt->values;
+                        fieldFormat = fieldIt->format;
                     }
                 }
             }
             
-            QString btnText = typeName + " " + fieldName + (unit.isEmpty() ? "" : ": (" + unit + ")");
-            
+            // Button label mirrors messages.ml's `sprintf "%s %s %s: "`: the type,
+            // the field name and the BASE unit in parentheses (e.g.
+            // "int32 alt (mm): "). The parenthesis is dropped when there is no unit.
+            const QString unitPart = baseUnit.isEmpty()
+                ? QString()
+                : QStringLiteral("(") + baseUnit + QStringLiteral(")");
+            QString btnText = typeName + " " + fieldName + " " + unitPart + ": ";
+
+            // Parse the textual coefficient once, here, so the hot value-update
+            // path only multiplies doubles. A missing/invalid or zero coef is
+            // treated as 1.0 (no scaling) so a malformed entry can never blank
+            // out or zero a field.
+            bool coefOk = false;
+            const double coefValue = coef.toDouble(&coefOk);
+            FieldDisplay& fd = tracker.fieldDisplays[i];
+            fd.coef = (coefOk && coefValue != 0.0) ? coefValue : 1.0;
+            fd.altUnit = altUnit;
+            fd.enumValues = enumValues;
+            fd.format = fieldFormat;
+
             DraggableButton* btn = new DraggableButton(btnText, m_senderName, m_className, msgName, fieldName, coef, field.getType().isArray(), field.getType().getArraySize(), page);
             QLabel* valLabel = new QLabel("XXXX", page);
             
@@ -492,7 +691,8 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
     }
     
     const auto& def = msg.getDefinition();
-    for (int i = 0; i < (int)def.getNbFields(); ++i) {
+    const int nbFields = static_cast<int>(def.getNbFields());
+    for (int i = 0; i < nbFields; ++i) {
         if (i >= tracker.fieldLabels.size() || !tracker.fieldLabels[i]) {
             continue;
         }
@@ -500,17 +700,63 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
         try {
             auto rv = msg.getRawValue(i);
             const auto& type = def.getField(i).getType();
+
+            // Per-field rendering metadata resolved when the page was first built.
+            static const FieldDisplay s_emptyFd;
+            const FieldDisplay& fd = (i < tracker.fieldDisplays.size())
+                                       ? tracker.fieldDisplays[i] : s_emptyFd;
+            const double coef = fd.coef;
+            const bool hasAlt = !fd.altUnit.isEmpty();
+
             if (!type.isArray()) {
+                // Reproduce messages.ml's scalar rendering:
+                //   * an enum field (a "values" list) shows "NAME (index)";
+                //   * a field carrying a printf "format" is rendered through it
+                //     (formatted_string_of_value), e.g. "%.1f" 12.0 -> "12.0";
+                //   * otherwise integers use string_of_int and floats use
+                //     string_of_float (so a whole value keeps its dot: 12.0 ->
+                //     "12.").
+                // When an alt_unit exists the scaled part " (coef*v  alt_unit)"
+                // (%f, 6 decimals) is appended, where v is parsed back from the
+                // displayed raw string exactly as OCaml's alt_value does
+                // (float_of_string value) -- so any format truncation carries
+                // through, e.g. "%.2f" 0.123456 -> "0.12 (6.876000deg)".
+                auto render = [&](double raw, bool isIntegral) -> QString {
+                    if (isIntegral && !fd.enumValues.isEmpty()) {
+                        const int idx = static_cast<int>(raw);
+                        if (idx >= 0 && idx < fd.enumValues.size()) {
+                            return fd.enumValues.at(idx) + QStringLiteral(" (")
+                                 + QString::number(idx) + QStringLiteral(")");
+                        }
+                    }
+                    QString rawStr;
+                    if (!isIntegral && !fd.format.isEmpty()) {
+                        rawStr = applyFloatFormat(fd.format, raw); // null if unusable
+                    }
+                    if (rawStr.isNull()) {
+                        rawStr = isIntegral
+                            ? QString::number(static_cast<qlonglong>(raw))
+                            : ocamlStringOfFloat(raw);
+                    }
+                    if (!hasAlt) {
+                        return rawStr;
+                    }
+                    bool baseOk = false;
+                    const double base = rawStr.toDouble(&baseOk);
+                    return rawStr + QStringLiteral(" (")
+                         + QString::number(coef * (baseOk ? base : raw), 'f', 6)
+                         + fd.altUnit + QStringLiteral(")");
+                };
                 switch (type.getBaseType()) {
-                    case pprzlink::BaseType::CHAR: { char v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(static_cast<int>(v))); } break;
-                    case pprzlink::BaseType::INT8: { int8_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(v)); } break;
-                    case pprzlink::BaseType::INT16: { int16_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(v)); } break;
-                    case pprzlink::BaseType::INT32: { int32_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(v)); } break;
-                    case pprzlink::BaseType::UINT8: { uint8_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(v)); } break;
-                    case pprzlink::BaseType::UINT16: { uint16_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(v)); } break;
-                    case pprzlink::BaseType::UINT32: { uint32_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(v)); } break;
-                    case pprzlink::BaseType::FLOAT: { float v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(v, 'g', 6)); } break;
-                    case pprzlink::BaseType::DOUBLE: { double v; rv.getValue(v); tracker.fieldLabels[i]->setText(QString::number(v, 'g', 6)); } break;
+                    case pprzlink::BaseType::CHAR: { char v; rv.getValue(v); tracker.fieldLabels[i]->setText(render(static_cast<double>(v), true)); } break;
+                    case pprzlink::BaseType::INT8: { int8_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(render(static_cast<double>(v), true)); } break;
+                    case pprzlink::BaseType::INT16: { int16_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(render(static_cast<double>(v), true)); } break;
+                    case pprzlink::BaseType::INT32: { int32_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(render(static_cast<double>(v), true)); } break;
+                    case pprzlink::BaseType::UINT8: { uint8_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(render(static_cast<double>(v), true)); } break;
+                    case pprzlink::BaseType::UINT16: { uint16_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(render(static_cast<double>(v), true)); } break;
+                    case pprzlink::BaseType::UINT32: { uint32_t v; rv.getValue(v); tracker.fieldLabels[i]->setText(render(static_cast<double>(v), true)); } break;
+                    case pprzlink::BaseType::FLOAT: { float v; rv.getValue(v); tracker.fieldLabels[i]->setText(render(static_cast<double>(v), false)); } break;
+                    case pprzlink::BaseType::DOUBLE: { double v; rv.getValue(v); tracker.fieldLabels[i]->setText(render(v, false)); } break;
                     case pprzlink::BaseType::STRING: { QString v; rv.getValue(v); tracker.fieldLabels[i]->setText(v); } break;
                     default: {
                         rv.setOutputInt8AsInt(true);
@@ -520,28 +766,60 @@ void SenderTab::handleMessage(const pprzlink::Message& msg) {
                     } break;
                 }
             } else {
+                // Arrays are shown raw (unscaled), matching messages.ml which
+                // does not scale comma-separated values. Float/double arrays are
+                // rendered element-by-element with the field's "format" when it is
+                // a usable printf conversion, else string_of_float (so 12.0 ->
+                // "12."), joined by ',' like OCaml; other element types keep the
+                // pprzlink stream formatting. The element count is still probed to
+                // keep the drag-to-plot index dialog in sync with dynamic arrays.
+                int dynSize = 0;
+                QString floatArrayText;
+                bool haveFloatArray = false;
+                auto fmtElem = [&](double e) -> QString {
+                    QString s;
+                    if (!fd.format.isEmpty()) {
+                        s = applyFloatFormat(fd.format, e);
+                    }
+                    return s.isNull() ? ocamlStringOfFloat(e) : s;
+                };
                 try {
-                    int dynSize = 0;
                     switch (type.getBaseType()) {
-                        case pprzlink::BaseType::CHAR: { std::vector<char> v; rv.getValue(v); dynSize = v.size(); } break;
-                        case pprzlink::BaseType::INT8: { std::vector<int8_t> v; rv.getValue(v); dynSize = v.size(); } break;
-                        case pprzlink::BaseType::INT16: { std::vector<int16_t> v; rv.getValue(v); dynSize = v.size(); } break;
-                        case pprzlink::BaseType::INT32: { std::vector<int32_t> v; rv.getValue(v); dynSize = v.size(); } break;
-                        case pprzlink::BaseType::UINT8: { std::vector<uint8_t> v; rv.getValue(v); dynSize = v.size(); } break;
+                        case pprzlink::BaseType::CHAR:   { std::vector<char> v;     rv.getValue(v); dynSize = v.size(); } break;
+                        case pprzlink::BaseType::INT8:   { std::vector<int8_t> v;   rv.getValue(v); dynSize = v.size(); } break;
+                        case pprzlink::BaseType::INT16:  { std::vector<int16_t> v;  rv.getValue(v); dynSize = v.size(); } break;
+                        case pprzlink::BaseType::INT32:  { std::vector<int32_t> v;  rv.getValue(v); dynSize = v.size(); } break;
+                        case pprzlink::BaseType::UINT8:  { std::vector<uint8_t> v;  rv.getValue(v); dynSize = v.size(); } break;
                         case pprzlink::BaseType::UINT16: { std::vector<uint16_t> v; rv.getValue(v); dynSize = v.size(); } break;
                         case pprzlink::BaseType::UINT32: { std::vector<uint32_t> v; rv.getValue(v); dynSize = v.size(); } break;
-                        case pprzlink::BaseType::FLOAT: { std::vector<float> v; rv.getValue(v); dynSize = v.size(); } break;
-                        case pprzlink::BaseType::DOUBLE: { std::vector<double> v; rv.getValue(v); dynSize = v.size(); } break;
+                        case pprzlink::BaseType::FLOAT:  {
+                            std::vector<float> v; rv.getValue(v); dynSize = v.size();
+                            QStringList elems;
+                            for (float e : v) { elems << fmtElem(static_cast<double>(e)); }
+                            floatArrayText = elems.join(QLatin1Char(','));
+                            haveFloatArray = true;
+                        } break;
+                        case pprzlink::BaseType::DOUBLE: {
+                            std::vector<double> v; rv.getValue(v); dynSize = v.size();
+                            QStringList elems;
+                            for (double e : v) { elems << fmtElem(e); }
+                            floatArrayText = elems.join(QLatin1Char(','));
+                            haveFloatArray = true;
+                        } break;
                         default: break;
                     }
-                    if (dynSize > 0) {
+                    if (dynSize > 0 && i < tracker.fieldButtons.size() && tracker.fieldButtons[i]) {
                         tracker.fieldButtons[i]->setDynamicArraySize(dynSize);
                     }
                 } catch (...) {}
-                rv.setOutputInt8AsInt(true);
-                std::stringstream ss;
-                ss << rv;
-                tracker.fieldLabels[i]->setText(QString::fromStdString(ss.str()));
+                if (haveFloatArray) {
+                    tracker.fieldLabels[i]->setText(floatArrayText);
+                } else {
+                    rv.setOutputInt8AsInt(true);
+                    std::stringstream ss;
+                    ss << rv;
+                    tracker.fieldLabels[i]->setText(QString::fromStdString(ss.str()));
+                }
             }
         } catch(const std::exception &ex) {
             qWarning() << "Failed to read field value for" << msgName << "field index" << i << ":" << ex.what();
@@ -567,10 +845,10 @@ MessagesWindow::MessagesWindow(const MessagesConfig& config, QWidget *parent) : 
                 move(x, y);
             }
         } else {
-            resize(400, 400);
+            resize(600, 400);
         }
     } else {
-        resize(400, 400);
+        resize(600, 400);
     }
 
     QWidget* cntral = new QWidget(this);
