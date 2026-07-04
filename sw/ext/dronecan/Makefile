@@ -46,7 +46,7 @@ dronecan_dsdlc.build:
 	$(eval DSDL_ROOTS := $(filter-out $(DRONECAN_DIR)/DSDL/tests/ $(DRONECAN_DIR)/DSDL/,$(DSDL_ROOTS_PART)))
 	$(eval DSDL_ROOTS := $(DSDL_ROOTS) $(CUSTOM_DSDL))
 	@echo Generating dsdl code from $(DSDL_ROOTS) to $(PAPARAZZI_SRC)/var/include/DSDLcode
-	$(Q) python $(DRONECAN_DIR)/dronecan_dsdlc/dronecan_dsdlc.py -O $(PAPARAZZI_SRC)/var/include/DSDLcode $(DSDL_ROOTS)
+	$(Q) python3 $(DRONECAN_DIR)/dronecan_dsdlc/dronecan_dsdlc.py -O $(PAPARAZZI_SRC)/var/include/DSDLcode $(DSDL_ROOTS)
 	@echo Done
 
 

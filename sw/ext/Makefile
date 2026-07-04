@@ -33,7 +33,6 @@ EXT_DIR=$(PAPARAZZI_SRC)/sw/ext
 include $(PAPARAZZI_SRC)/conf/Makefile.arm-embedded-toolchain
 
 MY_PYTHON := $(shell echo `which python3`)
-MY_MAVLINKTOOLS := $(shell $(MY_PYTHON) -c 'import future' 2>&1)
 MY_DRONECANTOOLS := $(shell $(MY_PYTHON) -c 'import em' 2>&1)
 BOOST_INSTALLED := $(shell dpkg -s libboost-program-options-dev >/dev/null 2>&1 && echo yes)
 CMAKE_INSTALLED := $(shell command -v cmake 2>/dev/null)
@@ -77,13 +76,9 @@ matrix: matrix.update
 mavlink: mavlink.update mavlink.build
 
 mavlink.build:
-ifneq ($(findstring ModuleNotFoundError, $(MY_MAVLINKTOOLS)),ModuleNotFoundError)
 	@echo GENERATE $(PAPARAZZI_SRC)/var/include/mavlink
-	$(Q)PYTHONPATH=$(EXT_DIR)/mavlink python $(EXT_DIR)/mavlink/pymavlink/tools/mavgen.py --output $(PAPARAZZI_SRC)/var/include/mavlink --lang C $(EXT_DIR)/mavlink/message_definitions/v1.0/ardupilotmega.xml --wire-protocol 2.0 --no-validate > /dev/null
-	$(Q)PYTHONPATH=$(EXT_DIR)/mavlink python $(EXT_DIR)/mavlink/pymavlink/tools/mavgen.py --output $(PAPARAZZI_SRC)/var/include/mavlink --lang C $(EXT_DIR)/mavlink/message_definitions/v1.0/paparazzi.xml --wire-protocol 2.0 --no-validate > /dev/null
-else
-	@echo mavlink not installed, missing packages 'imp' or 'future'
-endif
+	$(Q)PYTHONPATH=$(EXT_DIR)/mavlink $(MY_PYTHON) $(EXT_DIR)/mavlink/pymavlink/tools/mavgen.py --output $(PAPARAZZI_SRC)/var/include/mavlink --lang C $(EXT_DIR)/mavlink/message_definitions/v1.0/ardupilotmega.xml --wire-protocol 2.0 --no-validate > /dev/null
+	$(Q)PYTHONPATH=$(EXT_DIR)/mavlink $(MY_PYTHON) $(EXT_DIR)/mavlink/pymavlink/tools/mavgen.py --output $(PAPARAZZI_SRC)/var/include/mavlink --lang C $(EXT_DIR)/mavlink/message_definitions/v1.0/paparazzi.xml --wire-protocol 2.0 --no-validate > /dev/null
 
 libsbp: libsbp.update
 
