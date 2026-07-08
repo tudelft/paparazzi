@@ -808,7 +808,7 @@
     </session>
     <session name="AAAAAAH">
       <program name="Simulator">
-        <arg flag="-t" constant="sim"/>
+        <arg flag="-t" constant="nps"/>
         <arg flag="-a" constant="Easystar_3"/>
       </program>
       <program name="Data Link">
