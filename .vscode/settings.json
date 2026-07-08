@@ -14,4 +14,7 @@
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",
     "git.ignoreLimitWarning": true,
+    "ocaml.sandbox": {
+        "kind": "global"
+    },
 }
