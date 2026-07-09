@@ -1,21 +1,24 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 <airframe name="Talon_250G">
   <description>
-    Fun Fixedwing airframe equipped with a MATEKSYS F405TE V3 or compatible flightcontroller hardware
+   + Small airframe to test all functionality of Matek F405-TE-SD FC
 
-    + Model:       ZoHD Talon 250G
-    + Autopilot:   MATEKSYSF405TE compatible FlyingRC F405 v1.5
-    + Actuators:   PDI 1143HB 4.3g servos
-    + GNSS         Ublox M10 GNSS
-    + MAG          External QMC Magnetometer on GNSS device
-    + ESC:         AM32 20A ESC
-    + RCRX:        TBS Nano Receiver
-    + AIRSPEED:    SDP33 nano
-    + TELEMETRY:   ESP32C3 with 
-    + CURRENT:     None
-    + RANGER:      None
-    + MOTOR:       Default 1406-2600KV Outrunner Brushless
-    + PROP:        Two blade 5" x 5" 
+    + MODEL:            ZoHD Talon 250G
+    + FLIGHTCONTROLLER: Mateksys F405-TE-SD (RCFlying F4)
+    + IMU:              ICM42688-P
+    + ACTUATORS:        JX PDI-1143HB 4.3g
+    + GNSS              uBlox M10 GNSS
+    + MAGNETOMETER      QMC5338L
+    + ESC:              32A 35A with AM32 firmware
+    + RCRX:             OpenR-XSR
+    + AIRSPEED:         Sensirion SDP33
+    + TELEMETRY:        Mesh 433
+    + BARO:             SPL06-001 on FC
+    + CURRENT:          FC onboard sensor on the default analog ports
+    + RANGEFINDER:      VB22A on I2C
+    + MOTOR:            Kv 2600 rpm V Outrunner Brushless
+    + PROPELLER:        Default 2 Blade 6in x 3in Left
+    + BATTERY:          21700 Li-Ion 3S1P INR21700M58T 5650mAh
 
     NOTES:
     + ServoPins on PCB point to tail of airframe
@@ -36,7 +39,7 @@
   </description>
 
   <firmware name="fixedwing">
-    <!--<configure name="RTOS_DEBUG" value="0"/>-->
+    <!--<configure name="RTOS_DEBUG" value="FALSE"/>-->
     <!--configure name="CH_OPT" value="0 -g -ggdb3"/-->
 
     <!-- <target name="ap" board="px4fmu_4.0_chibios"> -->
@@ -49,6 +52,8 @@
       <!--<define name="USE_PERIODIC_TELEMETRY_REPORT" value="TRUE"/> -->
 
       <configure name="CPU_LED" value="1"/><!-- Multicolor -->
+      <!--<configure name="SYS_TIME_LED" value="2"/>-->
+      <!--<configure name="AHRS_ALIGNER_LED" value="none"/>-->
 
       <configure name="PERIODIC_FREQUENCY" value="500"/>
 
@@ -82,7 +87,8 @@
       <!-- Magnetometer chip on GNSS board instead of FC --> 
       <module name="mag" type="qmc5883l">
         <configure name="MAG_QMC5883L_I2C_DEV" value="i2c1"/>
-        <configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="50"/>
+        <!--<configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="50"/>-->
+        <define name="MODULE_QMC5883L_UPDATE_AHRS" value="FALSE"/>
         <define name="QMC5883L_CHAN_X" value="1"/>
         <define name="QMC5883L_CHAN_Y" value="0"/>
         <define name="QMC5883L_CHAN_Z" value="2"/>
@@ -91,6 +97,8 @@
         <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
         <!-- <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/> -->
       </module> 
+
+      <!-- We add anothr Magneto if on GNSS module does not satisfy-->
       <!-- 
       <module name="mag" type="rm3100">
         <configure name="MAG_RM3100_I2C_DEV" value="i2c2"/>
@@ -125,18 +133,6 @@
         <!--<define name="SDP3X_SYNC_SEND" value="TRUE"/>--> <!-- Only enable while debugging -->
       </module>
 
-      <!-- Only enable with a module that supports v_ctl_auto_airspeed_setpoint-->
-      <!--
-      <module name="flight_benchmark">
-        <define name="BENCHMARK_AIRSPEED" value="TRUE"/>
-        <define name="BENCHMARK_ALTITUDE" value="TRUE"/>
-        <define name="BENCHMARK_POSITION" value="TRUE"/>
-        <define name="BENCHMARK_TOLERANCE_AIRSPEED" value="1" unit="m/s"/>
-        <define name="BENCHMARK_TOLERANCE_ALTITUDE" value="4" unit="m"/>
-        <define name="BENCHMARK_TOLERANCE_POSITION" value="6" unit="m"/>
-      </module>
-      -->
-
       <module name="telemetry" type="transparent">
         <configure name="MODEM_PORT" value="usb_serial"/>
         <!-- <configure  name="MODEM_BAUD" value="B57600"/>
@@ -149,7 +145,7 @@
         <configure name="GPS_LED"  value="2"/>
       </module>
 
-      <module name="control" type="energyadaptive" />
+      <module name="control" type="energyadaptive"/>
 
       <!--<module name="radio_control" type="ppm">
         <define name="RADIO_CONTROL_PPM_PIN" value="UART2_RX"/>
@@ -169,6 +165,17 @@
 
       <module name="nav_line"/>
 
+      <!-- Only enable with a module that supports v_ctl_auto_airspeed_setpoint-->
+      <!--
+      <module name="flight_benchmark">
+        <define name="BENCHMARK_AIRSPEED" value="TRUE"/>
+        <define name="BENCHMARK_ALTITUDE" value="TRUE"/>
+        <define name="BENCHMARK_POSITION" value="TRUE"/>
+        <define name="BENCHMARK_TOLERANCE_AIRSPEED" value="1" unit="m/s"/>
+        <define name="BENCHMARK_TOLERANCE_ALTITUDE" value="4" unit="m"/>
+        <define name="BENCHMARK_TOLERANCE_POSITION" value="6" unit="m"/>
+      </module>
+      -->
     </target>
 
     <!-- NPS simulation target: flies the validated JSBSim model
@@ -226,11 +233,27 @@
 
     <define name="BAT_CHECKER_DELAY" value="80"/>
     <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="410"/>
+
     <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
     <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/>
 
-    <module name="actuators" type="pwm">
+    <module name="actuators" type="pwm"/>
+
+    <module name="navigation"/>
+    <module name="nav" type="drop"/>
+    <module name="nav" type="line"/>
+    <module name="nav" type="line_border"/>
+    <module name="nav" type="line_osam"/>
+    <module name="nav" type="survey_polygon">
+      <define name="POLYSURVEY_DEFAULT_DISTANCE" value="40"/>
     </module>
+    <module name="nav" type="survey_poly_osam"/>
+    <module name="nav" type="smooth"/>
+    <module name="nav" type="vertical_raster"/>
+    <module name="nav" type="flower"/>
+    <module name="photogrammetry_calculator"/>
+    <module name="traffic_info"/>
+    <module name="tcas"/>
 
   </firmware>
 
@@ -243,24 +266,40 @@
   </firmware>
 
   <servos driver="Pwm">
-    <servo name="S_THROTTLE" no="4" min="1098" neutral="1100" max="1900"/>
-    <servo name="S_AILERON" no="1" min="1900" neutral="1500" max="1100"/>
-    <servo name="S_ELEVATOR" no="2" min="1900" neutral="1500" max="1100"/>
-    <servo name="S_RUDDER" no="3" min="1100" neutral="1550" max="1900"/>
+    <servo name="S_THROTTLE"          no="0" min="1098" neutral="1104" max="1900"/>
+    <servo name="S_AILERON"           no="1" min="1100" neutral="1500" max="1900"/>
+    <servo name="S_RUDDERVATOR_LEFT"  no="2" min="1100" neutral="1500" max="1900"/>
+    <servo name="S_RUDDERVATOR_RIGHT" no="3" min="1900" neutral="1500" max="1100"/>
   </servos>
 
-  <!--For mixed servo controls -->
+  <section name="ServoPositions">
+    <define name="LANDINGGEAR_EXTEND" value="MIN_PPRZ"/>
+    <define name="LANDINGGEAR_RETRACT" value="MAX_PPRZ"/>
+    <define name="FLAP_FULL" value="MIN_PPRZ"/>
+    <define name="FLAP_HALF" value="MIN_PPRZ/2"/>
+    <define name="FLAP_NONE" value="0"/>
+    <define name="BEACON_ROTATE" value="MAX_PPRZ"/>
+    <define name="BEACON_FLASH" value="0"/>
+    <define name="BEACON_OFF" value="MIN_PPRZ"/>
+    <define name="SERVO_BRAKE_FULL" value="MIN_PPRZ"/>
+    <define name="SERVO_HATCH_OPEN" value="0"/>
+    <define name="SERVO_HATCH_CLOSED" value="MIN_PPRZ"/>
+    <define name="ThrottleHigh()" value="(commands[COMMAND_THROTTLE]>MAX_PPRZ/2)"/>
+    <define name="SPOILERON_BRAKE_FULL" value="MIN_PPRZ"/>
+    <define name="FLAPERON_BRAKE_FULL" value="MAX_PPRZ"/>
+  </section>
+
   <section name="MIXER">
     <define name="ASSIST_ROLL_WITH_RUDDER" value="0.0"/>
-    <define name="AILERON_DIFF" value="0.0"/>
-    <define name="BRAKE" value="0.3"/>
+    <define name="RUDDERVATOR_PITCH_FACTOR" value="1.0f"/>
+    <define name="RUDDERVATOR_YAW_FACTOR" value="0.9f"/>
   </section>
 
   <command_laws>
     <set servo="S_THROTTLE" value="@THROTTLE"/>
     <set servo="S_AILERON" value="@ROLL"/>
-    <set servo="S_ELEVATOR" value="@PITCH"/>
-    <set servo="S_RUDDER" value="@YAW - @ROLL*ASSIST_ROLL_WITH_RUDDER"/>
+    <set servo="S_RUDDERVATOR_LEFT" value="@PITCH+@YAW"/>
+    <set servo="S_RUDDERVATOR_RIGHT" value="@PITCH-@YAW"/>
   </command_laws>
 
   <rc_commands>
@@ -276,7 +315,7 @@
 
   <commands>
     <axis name="THROTTLE" failsafe_value="0"/>
-    <axis name="ROLL" failsafe_value="400"/>
+    <axis name="ROLL" failsafe_value="0"/>
     <axis name="PITCH" failsafe_value="0"/>
     <axis name="YAW" failsafe_value="0"/>
   </commands>
@@ -323,6 +362,10 @@
     <define name="ACCEL_X_SENS" value="4.90" integer="16"/>
     <define name="ACCEL_Y_SENS" value="4.90" integer="16"/>
     <define name="ACCEL_Z_SENS" value="4.93" integer="16"/>
+
+    <define name="MAG_X_NEUTRAL" value="0"/>
+    <define name="MAG_Y_NEUTRAL" value="0"/>
+    <define name="MAG_Z_NEUTRAL" value="0"/>
 
     <define name="BODY_TO_IMU_PHI" value="0.0" unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0.0" unit="deg"/>
@@ -386,7 +429,7 @@
     <define name="ROLL_SLEW" value="0.2"/>
     <define name="ROLL_ATTITUDE_GAIN" value="11000."/>
     <define name="ROLL_RATE_GAIN" value="500."/>
-    <!-- integrator: trims aileron in sustained circles (old 20 was inert) -->
+    <!-- integrator: trims aileron in sustained circles (old 20. was inert) -->
     <define name="ROLL_IGAIN" value="100."/>
     <!-- feedforward on reference roll acceleration: faster, cleaner
          roll-in for the oval turns (plant-inverse would be ~150) -->
@@ -497,27 +540,8 @@
     <define name="AIRSPEED_MIN" value="8.0" unit="m/s"/>
   </section>
 
-  <!-- Unused with the energy adaptive controller (kept for reference only) -->
-  <section name="AGGRESSIVE" prefix="AGR_">
-    <define name="BLEND_START" value="20" unit="m"/>
-    <define name="BLEND_END" value="10" unit="m"/>
-    <define name="CLIMB_THROTTLE" value="0.85" unit="%"/>
-    <define name="CLIMB_PITCH" value="45" unit="deg"/>
-    <define name="DESCENT_THROTTLE" value="0.4" unit="%"/>
-    <define name="DESCENT_PITCH" value="-35" unit="deg"/>
-    <define name="CLIMB_NAV_RATIO" value="0.6" unit="%"/>
-    <define name="DESCENT_NAV_RATIO" value="0.9" unit="%"/>
-  </section>
-
   <section name="BAT">
-    <define name="CALIB_AMP_A" value="0.0045360"/>
-    <define name="CALIB_AMP_B" value="2.8136"/>
-    <!--define name="MilliAmpereOfAdc(_adc)" value="(_adc-620)*4.536"/-->
-
-    <!--<define name="MilliAmpereOfAdc(_adc)" value="(_adc-632)*4.14"/>--><!-- Change if you have a non default 3DR type powerbrick-->
-    <!--<define name="VoltageOfAdc(_adc)" value="0.01017793941"/>--><!-- Change if you have a non default 3DR type powerbrick-->
-    <!-- tested at V 11.7 the avg -->  <!-- idle RPM then ?.0A half throttle ?A-->
-    <define name="MAX_BAT_CAPACITY" value="3300" unit="mAh"/>
+    <define name="MAX_BAT_CAPACITY" value="3500" unit="mAh"/>
     <define name="MILLIAMP_AT_IDLE_THROTTLE" value="220" unit="mA"/>
     <define name="MILLIAMP_AT_FULL_THROTTLE" value="9000" unit="mA"/>
     <!-- <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.0"/> -->
@@ -560,6 +584,39 @@
     <define name="RC_LOST_MODE" value="AP_MODE_AUTO2"/>
 
     <define name="NO_XBEE_API_INIT" value="TRUE"/>
+  </section>
+
+   <section name="PHOTOGRAMMETRY" prefix="PHOTOGRAMMETRY_">
+    <define name="FOCAL_LENGTH" value="2.5" unit="mm"/>
+    <define name="SENSOR_WIDTH" value="2.304" unit="mm"/>
+    <define name="SENSOR_HEIGHT" value="1.728" unit="mm"/>
+    <define name="PIXELS_WIDTH" value="320"/>
+    <define name="HEIGHT_MIN" value="20." unit="m"/>
+    <define name="HEIGHT_MAX" value="120." unit="m"/>
+    <define name="RADIUS_MIN" value="70." unit="m"/>
+  </section>
+
+  <section name="GLS_APPROACH" prefix="APP_">
+    <define name="DISTANCE_AF_SD" value="30" unit="m"/>
+    <define name="ANGLE" value="4" unit="deg"/>
+    <define name="INTERCEPT_AF_SD" value="50" unit="m"/>
+    <define name="TARGET_SPEED" value="GLIDE_AIRSPEED*1.1" unit="m/s"/>
+  </section>
+
+  <section name="GCS">
+    <define name="SPEECH_NAME" value="250 Gee"/>
+    <define name="AC_ICON" value="fixedwing"/>
+    <define name="ALT_SHIFT_PLUS_PLUS" value="50"/>
+    <define name="ALT_SHIFT_PLUS" value="10"/>
+    <define name="ALT_SHIFT_MINUS" value="-10"/>
+  </section>
+
+  <section name="TCAS" prefix="TCAS_">
+    <define name="TAU_TA" value="6." unit="s"/>
+    <define name="TAU_RA" value="4." unit="s"/>
+    <define name="ALIM" value="12." unit="m"/>
+    <define name="DMOD" value="14." unit="m"/>
+    <define name="DT_MAX" value="1500" unit="ms"/>
   </section>
 
   <section name="SIMU">

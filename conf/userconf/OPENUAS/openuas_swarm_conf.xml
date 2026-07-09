@@ -5,20 +5,20 @@
    airframe="airframes/OPENUAS/openuas_zohd_talon_250g.xml"
    radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
    telemetry="telemetry/default_fixedwing.xml"
-   flight_plan="flight_plans/dummy.xml"
-   settings="[settings/fixedwing_basic.xml] [settings/estimation/ac_char.xml] [settings/control/ctl_energy.xml] [settings/control/ctl_energyadaptive.xml]"
-   settings_modules="modules/ahrs_float_dcm.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_basic_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml [modules/stabilization_attitude_fw.xml]"
+   flight_plan="flight_plans/basic.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_basic_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/stabilization_attitude_fw.xml"
    gui_color="pink"
   />
   <aircraft
-   name="TalonG"
+   name="Talon_G"
    ac_id="123"
    airframe="airframes/OPENUAS/openuas_zohd_talon_250g.xml"
    radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
    telemetry="telemetry/default_fixedwing.xml"
    flight_plan="flight_plans/basic.xml"
    settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
-   settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/airspeed_sdp3x.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_energy.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/stabilization_adaptive_fw.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_basic_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/stabilization_attitude_fw.xml"
    gui_color="white"
   />
   <aircraft
@@ -27,9 +27,9 @@
    airframe="airframes/OPENUAS/openuas_zohd_talon_250g.xml"
    radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
    telemetry="telemetry/default_fixedwing.xml"
-   flight_plan="flight_plans/dummy.xml"
-   settings="[settings/fixedwing_basic.xml] [settings/estimation/ac_char.xml] [settings/control/ctl_energy.xml] [settings/control/ctl_energyadaptive.xml]"
-   settings_modules="modules/ahrs_float_dcm.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_basic_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml [modules/stabilization_attitude_fw.xml]"
+   flight_plan="flight_plans/basic.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_basic_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/stabilization_attitude_fw.xml"
    gui_color="brown"
   />
   <aircraft
@@ -38,9 +38,9 @@
    airframe="airframes/OPENUAS/openuas_zohd_talon_250g.xml"
    radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
    telemetry="telemetry/default_fixedwing.xml"
-   flight_plan="flight_plans/dummy.xml"
-   settings="[settings/fixedwing_basic.xml] [settings/estimation/ac_char.xml] [settings/control/ctl_energy.xml] [settings/control/ctl_energyadaptive.xml]"
-   settings_modules="modules/ahrs_float_dcm.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_basic_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml [modules/stabilization_attitude_fw.xml]"
+   flight_plan="flight_plans/basic.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_basic_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/stabilization_attitude_fw.xml"
    gui_color="red"
   />
   <aircraft
@@ -49,9 +49,9 @@
    airframe="airframes/OPENUAS/openuas_zohd_talon_250g.xml"
    radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
    telemetry="telemetry/default_fixedwing.xml"
-   flight_plan="flight_plans/dummy.xml"
-   settings="[settings/fixedwing_basic.xml] [settings/estimation/ac_char.xml] [settings/control/ctl_energy.xml] [settings/control/ctl_energyadaptive.xml]"
-   settings_modules="modules/ahrs_float_dcm.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_basic_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml [modules/stabilization_attitude_fw.xml]"
+   flight_plan="flight_plans/basic.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_basic_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/stabilization_attitude_fw.xml"
    gui_color="orange"
   />
   <aircraft
@@ -60,9 +60,9 @@
    airframe="airframes/OPENUAS/openuas_zohd_talon_250g.xml"
    radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
    telemetry="telemetry/default_fixedwing.xml"
-   flight_plan="flight_plans/dummy.xml"
-   settings="[settings/fixedwing_basic.xml] [settings/estimation/ac_char.xml] [settings/control/ctl_energy.xml] [settings/control/ctl_energyadaptive.xml]"
-   settings_modules="modules/ahrs_float_dcm.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_basic_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml [modules/stabilization_attitude_fw.xml]"
+   flight_plan="flight_plans/basic.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_basic_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/stabilization_attitude_fw.xml"
    gui_color="purple"
   />
   <aircraft
@@ -71,9 +71,9 @@
    airframe="airframes/OPENUAS/openuas_zohd_talon_250g.xml"
    radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
    telemetry="telemetry/default_fixedwing.xml"
-   flight_plan="flight_plans/dummy.xml"
-   settings="[settings/fixedwing_basic.xml] [settings/estimation/ac_char.xml] [settings/control/ctl_energy.xml] [settings/control/ctl_energyadaptive.xml]"
-   settings_modules="modules/ahrs_float_dcm.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_basic_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml [modules/stabilization_attitude_fw.xml]"
+   flight_plan="flight_plans/basic.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_basic_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/stabilization_attitude_fw.xml"
    gui_color="green"
   />
   <aircraft
@@ -82,9 +82,9 @@
    airframe="airframes/OPENUAS/openuas_zohd_talon_250g.xml"
    radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
    telemetry="telemetry/default_fixedwing.xml"
-   flight_plan="flight_plans/dummy.xml"
-   settings="settings/fixedwing_basic.xml [settings/estimation/ac_char.xml] [settings/control/ctl_energy.xml] [settings/control/ctl_energyadaptive.xml]"
-   settings_modules="modules/ahrs_float_dcm.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_basic_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml [modules/stabilization_attitude_fw.xml]"
+   flight_plan="flight_plans/basic.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_basic_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/stabilization_attitude_fw.xml"
    gui_color="yellow"
   />
 </conf>
