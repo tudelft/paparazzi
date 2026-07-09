@@ -44,6 +44,7 @@ extern uint8_t v_ctl_speed_mode;
 extern float v_ctl_altitude_setpoint; ///< in meters above MSL
 extern float v_ctl_altitude_pre_climb; ///< Path Angle
 extern float v_ctl_altitude_pgain;
+extern float v_ctl_altitude_accel_capture; ///< m/s^2, constant-deceleration altitude capture, 0 = classic linear law
 extern float v_ctl_airspeed_pgain;
 
 extern float v_ctl_auto_airspeed_setpoint; ///< in meters per second

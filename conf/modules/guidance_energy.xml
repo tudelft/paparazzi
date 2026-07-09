@@ -11,6 +11,7 @@
       <define name="ALTITUDE_PGAIN" value="0.1" description="altitude loop P gain"/>
       <define name="ALTITUDE_MAX_CLIMB" value="5." description="max climb rate" unit="m/s"/>
       <define name="ALTITUDE_MAX_CLIMB_DOT" value="2." description="vertical acceleration limit of the climb setpoint. Historic hardcoded value was 2; agile mini UAVs benefit from 4-8 so the altitude feedback can both catch and unwind disturbances (e.g. turn entry/exit) quickly instead of lagging into an overshoot" unit="m/s2"/>
+      <define name="ALTITUDE_ACCEL_CAPTURE" value="0." description="constant-deceleration ('square root') altitude capture. The classic proportional law levels off exponentially (tau = 1/ALTITUDE_PGAIN): the last meters take forever. With a value a > 0 the climb setpoint follows sqrt(2*a*|err|) near the target - a level-off at constant vertical deceleration a - tangent-blended into the linear law for |err| <= a/PGAIN^2, so terminal smoothness and cruise hold are unchanged. Requires a fairly high ALTITUDE_PGAIN (the sqrt branch only engages when PGAIN > a/ALTITUDE_MAX_CLIMB) and a <= ALTITUDE_MAX_CLIMB_DOT. Typical: 1.0-1.5 with PGAIN 0.6-1.0. 0 disables (default, strictly historic behaviour)" unit="m/s2"/>
       <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.3" description="nominal throttle for cruise flight"/>
       <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0." description="nominal pitch angle for cruise flight"/>
       <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.1" description="feedforward throttle gain" unit="%/(m/s)"/>
@@ -57,6 +58,7 @@
           <dl_setting MAX="0.5" MIN="0" STEP="0.005" VAR="v_ctl_energy_bank_throttle_gain" shortname="bank_thr_ff" param="V_CTL_ENERGY_BANK_THROTTLE_GAIN"/>
           <dl_setting MAX="1.5" MIN="0" STEP="0.01" VAR="v_ctl_energy_bank_washout_gain" shortname="bank_wo_ff" param="V_CTL_ENERGY_BANK_WASHOUT_GAIN"/>
           <dl_setting MAX="0.5" MIN="0" STEP="0.005" VAR="v_ctl_energy_bank_pitch_gain" shortname="bank_pitch_ff" param="V_CTL_ENERGY_BANK_PITCH_GAIN"/>
+          <dl_setting MAX="4." MIN="0" STEP="0.05" VAR="v_ctl_altitude_accel_capture" shortname="alt_acc_capt" param="V_CTL_ALTITUDE_ACCEL_CAPTURE"/>
         </dl_settings>
         <dl_settings name="groundspeed">
           <dl_setting max="40" min="5" step="0.1" var="v_ctl_auto_groundspeed_setpoint" shortname="gs_sp"  module="guidance/energy_ctrl" param="V_CTL_AUTO_GROUNDSPEED_SETPOINT"/>

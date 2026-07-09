@@ -89,6 +89,7 @@ float v_ctl_auto_throttle_sum_err = 0;
 float v_ctl_altitude_setpoint;
 float v_ctl_altitude_pre_climb; ///< Path Angle
 float v_ctl_altitude_pgain;
+float v_ctl_altitude_accel_capture;
 float v_ctl_airspeed_pgain;
 float v_ctl_altitude_error;    ///< in meters, (setpoint - alt) -> positive = too low
 
@@ -188,6 +189,21 @@ INFO("V_CTL_GLIDE_RATIO not defined - default is 8.")
 #ifndef V_CTL_ALTITUDE_MAX_CLIMB_DOT
 #define V_CTL_ALTITUDE_MAX_CLIMB_DOT 2.0f
 #endif
+/* Constant-deceleration ("square root") altitude capture (m/s^2).
+ * The classic proportional law levels off exponentially: the last few
+ * meters take forever (tau = 1/pgain). With a capture deceleration
+ * a > 0 the commanded vertical speed follows
+ *    sp = sign(e) * sqrt(2 a (|e| - a/(2 P^2)))
+ * far from the setpoint - a level-off at constant sink/climb-rate
+ * decay - blended tangentially (continuous in value AND slope) into
+ * the classic linear law sp = P e for |e| <= a/P^2, keeping the
+ * terminal meters and the cruise altitude hold exactly as before.
+ * 0 (default) disables the feature: strictly historic behaviour.
+ * Keep a <= V_CTL_ALTITUDE_MAX_CLIMB_DOT or the rate limiter will
+ * lag the capture and cause overshoot. */
+#ifndef V_CTL_ALTITUDE_ACCEL_CAPTURE
+#define V_CTL_ALTITUDE_ACCEL_CAPTURE 0.0f
+#endif
 /* Never trust more than 60 deg of bank for the feedforward:
  * cos(60 deg) = 0.5 bounds (1/cos^2 - 1) to 3, so a spiral upset can not
  * command a large throttle/pitch excursion through this path. */
@@ -250,6 +266,7 @@ void v_ctl_init(void)
   v_ctl_altitude_setpoint = 0.;
   v_ctl_altitude_pre_climb = 0.;
   v_ctl_altitude_pgain = V_CTL_ALTITUDE_PGAIN;
+  v_ctl_altitude_accel_capture = V_CTL_ALTITUDE_ACCEL_CAPTURE;
 
 #ifdef V_CTL_AUTO_THROTTLE_NOMINAL_CRUISE_PITCH
   v_ctl_auto_throttle_nominal_cruise_pitch = V_CTL_AUTO_THROTTLE_NOMINAL_CRUISE_PITCH;
@@ -329,7 +346,23 @@ void v_ctl_altitude_loop(void)
 
   // Altitude Controller
   v_ctl_altitude_error = v_ctl_altitude_setpoint - stateGetPositionUtm_f()->alt;
-  float sp = v_ctl_altitude_pgain * v_ctl_altitude_error + v_ctl_altitude_pre_climb ;
+  float sp;
+  /* Constant-deceleration capture: sqrt law outside the linear region
+   * |e| <= a/P^2 where it is tangent to the classic proportional law
+   * (see V_CTL_ALTITUDE_ACCEL_CAPTURE above). Guard the gain so a
+   * (mis)set pgain of ~0 can not divide by zero; with accel_capture at
+   * its default 0 the condition is never true and this reduces exactly
+   * to the historic linear law. */
+  const float abs_e = fabsf(v_ctl_altitude_error);
+  if ((v_ctl_altitude_accel_capture > 0.f) && (v_ctl_altitude_pgain > 1e-3f)
+      && (abs_e * v_ctl_altitude_pgain * v_ctl_altitude_pgain > v_ctl_altitude_accel_capture)) {
+    sp = sqrtf(2.f * v_ctl_altitude_accel_capture
+               * (abs_e - v_ctl_altitude_accel_capture / (2.f * v_ctl_altitude_pgain * v_ctl_altitude_pgain)));
+    if (v_ctl_altitude_error < 0.f) { sp = -sp; }
+    sp += v_ctl_altitude_pre_climb;
+  } else {
+    sp = v_ctl_altitude_pgain * v_ctl_altitude_error + v_ctl_altitude_pre_climb;
+  }
 
   // Vertical Speed Limiter
   BoundAbs(sp, v_ctl_max_climb);

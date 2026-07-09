@@ -407,11 +407,19 @@
     <!-- power: 2S Li-Ion, nominal under load -->
     <define name="POWER_CTL_BAT_NOMINAL" value="7.2" unit="volt"/>
 
-    <!-- outer loop: 0.15 verified in the Oval 1-2 block: ETECS has no
-         altitude integrator so standing sag in banked turns scales with
-         1/PGAIN; the +30 m capture stays overshoot-free (large-change
-         smoothness comes from ALTITUDE_MAX_CLIMB + the setpoint slew) -->
-    <define name="ALTITUDE_PGAIN" value="0.15"/> <!--unit="(m/s)/m"-->
+    <!-- outer loop: with ACCEL_CAPTURE the sqrt law handles the approach
+         to the setpoint at constant deceleration; PGAIN only rules the
+         terminal linear region |err| <= CAPTURE/PGAIN^2 (= 2.2 m here)
+         and the cruise/turn altitude hold. ETECS has no altitude
+         integrator so standing sag in banked turns scales with 1/PGAIN:
+         0.6 keeps turns tight AND gives a smooth 1.7 s terminal tau -->
+    <define name="ALTITUDE_PGAIN" value="0.6"/> <!--unit="(m/s)/m"-->
+    <!-- constant-deceleration altitude capture: hold MAX_CLIMB until
+         ~3.3 m to go, then level off at a gentle 0.8 m/s2 (must stay
+         below MAX_CLIMB_DOT). Kills the exponential level-off crawl of
+         the pure P law without touching airspeed (level-off 4.6 s vs
+         17.8 s with the pure P law, overshoot +0.04 m) -->
+    <define name="ALTITUDE_ACCEL_CAPTURE" value="0.8" unit="m/s2"/>
     <!-- max climb: 4.3 m/s available at full throttle; 2.0 keeps climbs
          gentle and leaves the speed loop plenty of throttle authority -->
     <define name="ALTITUDE_MAX_CLIMB" value="2.0" unit="m/s"/>
@@ -468,7 +476,7 @@
            (works with the reduced PITCH_OF_ROLL 0.04, which acts on the
            lagged measured bank - split verified in the oval).
          Oval acceptance: dip <= 0.24 m, balloon <= 0.19 m, mean -0.04. -->
-    <define name="ENERGY_BANK_THROTTLE_GAIN" value="0.40"/>
+    <define name="ENERGY_BANK_THROTTLE_GAIN" value="0.36"/>
     <define name="ENERGY_BANK_WASHOUT_GAIN" value="0.85"/>
     <define name="ENERGY_BANK_WASHOUT_TAU" value="2.0"/>
     <define name="ENERGY_BANK_PITCH_GAIN" value="0.19"/>
