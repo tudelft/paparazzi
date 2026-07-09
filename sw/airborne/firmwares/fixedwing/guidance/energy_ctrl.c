@@ -64,6 +64,7 @@
 #include "firmwares/fixedwing/guidance/energy_ctrl.h"
 #include "state.h"
 #include "firmwares/fixedwing/nav.h"
+#include "firmwares/fixedwing/stabilization/stabilization_attitude.h"
 #include "generated/airframe.h"
 #include "autopilot.h"
 #include "modules/core/abi.h"
@@ -118,6 +119,10 @@ float v_ctl_energy_total_igain;
 float v_ctl_energy_diff_pgain;
 float v_ctl_energy_diff_igain;
 
+float v_ctl_energy_bank_throttle_gain;
+float v_ctl_energy_bank_washout_gain;
+float v_ctl_energy_bank_pitch_gain;
+
 float v_ctl_auto_airspeed_setpoint; ///< in meters per second
 float v_ctl_auto_airspeed_setpoint_slew;
 float v_ctl_auto_airspeed_controlled;
@@ -157,6 +162,36 @@ INFO("V_CTL_GLIDE_RATIO not defined - default is 8.")
 #ifndef V_CTL_MAX_ACCELERATION
 #define V_CTL_MAX_ACCELERATION 0.5 //G
 #endif
+/* Bank-angle energy feedforward: defaults keep the feature off so that
+ * existing airframes are strictly unaffected (see energy_ctrl.h). */
+#ifndef V_CTL_ENERGY_BANK_THROTTLE_GAIN
+#define V_CTL_ENERGY_BANK_THROTTLE_GAIN 0.
+#endif
+#ifndef V_CTL_ENERGY_BANK_WASHOUT_GAIN
+#define V_CTL_ENERGY_BANK_WASHOUT_GAIN 0.
+#endif
+#ifndef V_CTL_ENERGY_BANK_PITCH_GAIN
+#define V_CTL_ENERGY_BANK_PITCH_GAIN 0.
+#endif
+/* Washout (high-pass) time constant of the transient feedforward term.
+ * ~1 s: long enough to bridge the throttle/prop/speed-loop lag at
+ * roll-in, short enough that the term has fully handed over to the
+ * exact steady-state compensation before mid-turn. */
+#ifndef V_CTL_ENERGY_BANK_WASHOUT_TAU
+#define V_CTL_ENERGY_BANK_WASHOUT_TAU 1.0f
+#endif
+/* Vertical acceleration limit of the climb setpoint (m/s^2).
+ * Historically hardcoded to 2: adequate for slow airframes, but agile
+ * mini UAVs can correct altitude errors much faster - a low limit makes
+ * the feedback both catch a disturbance late AND unwind late (overshoot
+ * on the other side). Default keeps the historic behaviour. */
+#ifndef V_CTL_ALTITUDE_MAX_CLIMB_DOT
+#define V_CTL_ALTITUDE_MAX_CLIMB_DOT 2.0f
+#endif
+/* Never trust more than 60 deg of bank for the feedforward:
+ * cos(60 deg) = 0.5 bounds (1/cos^2 - 1) to 3, so a spiral upset can not
+ * command a large throttle/pitch excursion through this path. */
+#define V_CTL_ENERGY_BANK_COS_MIN 0.5f
 
 #ifndef V_CTL_ENERGY_IMU_ID
 #define V_CTL_ENERGY_IMU_ID ABI_BROADCAST
@@ -256,6 +291,10 @@ void v_ctl_init(void)
 #warning "V_CTL_ENERGY_TOT GAINS are not defined and set to 0"
 #endif
 
+  v_ctl_energy_bank_throttle_gain = V_CTL_ENERGY_BANK_THROTTLE_GAIN;
+  v_ctl_energy_bank_washout_gain = V_CTL_ENERGY_BANK_WASHOUT_GAIN;
+  v_ctl_energy_bank_pitch_gain = V_CTL_ENERGY_BANK_PITCH_GAIN;
+
 #ifdef V_CTL_ALTITUDE_MAX_CLIMB
   v_ctl_max_climb = V_CTL_ALTITUDE_MAX_CLIMB;
 #else
@@ -297,7 +336,7 @@ void v_ctl_altitude_loop(void)
 
   // Vertical Acceleration Limiter
   float incr = sp - v_ctl_climb_setpoint;
-  BoundAbs(incr, 2 * dt_navigation);
+  BoundAbs(incr, V_CTL_ALTITUDE_MAX_CLIMB_DOT * dt_navigation);
   v_ctl_climb_setpoint += incr;
 }
 
@@ -391,6 +430,32 @@ void v_ctl_climb_loop(void)
                               + v_ctl_auto_throttle_of_airspeed_pgain * speed_error
                               + v_ctl_energy_total_pgain * en_tot_err;
 
+  /* Bank-angle energy feedforward (see energy_ctrl.h).
+   * A coordinated turn costs extra induced drag proportional to
+   * (n^2 - 1) = (1/cos^2(phi) - 1). Two-part lead compensation:
+   *
+   *  1. steady term  K_ss * u        - the exact physics of the turn,
+   *  2. washout term K_wo * (u - w)  - a high-passed copy of u that
+   *     bridges the throttle/prop/speed-loop lag at roll-in, decays to
+   *     zero within ~tau in a sustained turn (no mid-turn surplus), and
+   *     goes NEGATIVE at roll-out, actively suppressing the exit balloon.
+   *
+   * u is driven by the LARGER of commanded and measured bank: the
+   * command leads the aircraft (true feedforward), the measurement
+   * still covers gust upsets. cos is bounded away from 0, u is bounded
+   * to [0,3], the washout state w is a contraction (always bounded by
+   * max(u)), and nothing here feeds the adaptation integrals. */
+  static float bank_washout_state = 0.f;
+  float bank_angle = fabsf(h_ctl_roll_setpoint);
+  float bank_meas = fabsf(stateGetNedToBodyEulers_f()->phi);
+  if (bank_meas > bank_angle) { bank_angle = bank_meas; }
+  float bank_cos = cosf(bank_angle);
+  Bound(bank_cos, V_CTL_ENERGY_BANK_COS_MIN, 1.0f);
+  float bank_n2m1 = 1.0f / (bank_cos * bank_cos) - 1.0f;
+  bank_washout_state += (bank_n2m1 - bank_washout_state) * dt_attidude / V_CTL_ENERGY_BANK_WASHOUT_TAU;
+  controlled_throttle += v_ctl_energy_bank_throttle_gain * bank_n2m1
+                         + v_ctl_energy_bank_washout_gain * (bank_n2m1 - bank_washout_state);
+
   if ((controlled_throttle >= 1.0f) || (controlled_throttle <= 0.0f) || (autopilot_throttle_killed() == 1)) {
     // If your energy supply is not sufficient, then neglect the climb requirement
     en_dis_err = -vdot_err;
@@ -412,6 +477,7 @@ void v_ctl_climb_loop(void)
     - v_ctl_auto_pitch_of_airspeed_pgain * speed_error
     + v_ctl_auto_pitch_of_airspeed_dgain * vdot
     + v_ctl_energy_diff_pgain * en_dis_err
+    + v_ctl_energy_bank_pitch_gain * (1.0f / bank_cos - 1.0f)
     + v_ctl_auto_throttle_nominal_cruise_pitch;
   if (autopilot_throttle_killed()) { v_ctl_pitch_of_vz = v_ctl_pitch_of_vz - 1 / V_CTL_GLIDE_RATIO; }
 

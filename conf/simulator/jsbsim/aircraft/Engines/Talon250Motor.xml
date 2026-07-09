@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!--
+    Dummy zero-power engine for the openuas_jsbsim_zohd_talon_250g model.
+    Real hardware: 1406-2600KV brushless outrunner, 30 A ESC, 2S Li-Ion
+    (8.4 V max / 6.0 V min), 5x5 2-blade pusher prop at the tail.
+    This engine's only purpose is to make one engine exist so that Paparazzi
+    NPS (FCS->SetThrottleCmd) and the fcs/throttle-cmd-norm property work.
+    Actual thrust is applied via <external_reactions> in
+    OPENUAS/openuas_jsbsim_zohd_talon_250g.xml:
+    JSBSim's propeller reaction torque (power/omega, omega clamped at
+    0.01 rad/s) produces a huge spurious roll kick at throttle-up that
+    a 250 g airframe with Ixx ~ 0.0018 slug*ft2 cannot survive.
+-->
+<electric_engine name="electric_dummy">
+  <power unit="WATTS"> 0.000001 </power>
+</electric_engine>

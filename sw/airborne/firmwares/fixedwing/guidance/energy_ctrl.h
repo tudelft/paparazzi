@@ -71,6 +71,38 @@ extern float v_ctl_energy_total_igain;
 extern float v_ctl_energy_diff_pgain;
 extern float v_ctl_energy_diff_igain;
 
+/** Bank-angle energy feedforward.
+ *
+ * In a coordinated turn the wing must produce lift for a load factor
+ * n = 1/cos(phi), and the induced drag grows with n^2. This energy loss
+ * is perfectly predictable from the commanded bank, so it can be paid
+ * for the moment the aircraft rolls, instead of waiting for the
+ * altitude/speed feedback loops to detect it (1-2 s later).
+ *
+ * throttle += bank_throttle_gain * (1/cos^2(phi) - 1)    [steady physics]
+ *          +  bank_washout_gain  * washout(1/cos^2 - 1)   [transient lead]
+ * pitch    += bank_pitch_gain    * (1/cos(phi)   - 1)     [distribution]
+ *
+ * The washout term is a high-passed copy (time constant
+ * V_CTL_ENERGY_BANK_WASHOUT_TAU, default 1 s): full authority during
+ * the roll-in where the throttle/prop/speed-loop lag lives, zero in a
+ * sustained turn (no mid-turn energy surplus), negative on roll-out
+ * (suppresses the exit balloon).
+ *
+ * All default to 0 (feature disabled, no behaviour change).
+ * The bank angle used is the larger of the commanded roll setpoint and
+ * the measured roll (command leads the turn: true feedforward), limited
+ * to 60 deg so a knife-edge upset can never command more than 3x the
+ * gain value; the terms are purely additive, are NOT integrated (no
+ * trim/adaptation pollution), and vanish wings-level.
+ *
+ * Note: if H_CTL_PITCH_OF_ROLL is already used at stabilization level,
+ * leave bank_pitch_gain at 0 to avoid compensating twice.
+ */
+extern float v_ctl_energy_bank_throttle_gain;
+extern float v_ctl_energy_bank_washout_gain;
+extern float v_ctl_energy_bank_pitch_gain;
+
 extern float v_ctl_auto_groundspeed_pgain;
 extern float v_ctl_auto_groundspeed_igain;
 extern float v_ctl_auto_groundspeed_sum_err;
