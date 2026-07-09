@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!--
+    Dummy zero-power engine for the openuas_jsbsim_generic_fixedwing model
+    (Multiplex Minimag).
+    Real hardware: Surpass Hobby 2830-1300KV brushless outrunner, ESC,
+    3S Li-Ion (12.6 V max / 9.0 V min), 7x4 3-blade tractor prop.
+    This engine's only purpose is to make one engine exist so that Paparazzi
+    NPS (FCS->SetThrottleCmd) and the fcs/throttle-cmd-norm property work.
+    Actual thrust is applied via <external_reactions> in
+    OPENUAS/openuas_jsbsim_generic_fixedwing.xml:
+    JSBSim's propeller reaction torque (power/omega, omega clamped at
+    0.01 rad/s) produces a huge spurious roll kick at throttle-up that
+    a 730 g airframe cannot survive.
+-->
+<electric_engine name="electric_dummy_minimag">
+  <power unit="WATTS"> 0.000001 </power>
+</electric_engine>

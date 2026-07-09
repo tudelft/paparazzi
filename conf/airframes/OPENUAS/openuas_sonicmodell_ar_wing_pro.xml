@@ -94,7 +94,7 @@
       <module name="actuators" type="pwm"/>
  
       <module name="airspeed" type="sdp3x">
-        <define name="SDP3X_I2C_DEV" value="i2c1"/>
+        <configure name="SDP3X_I2C_DEV" value="i2c1"/>
         <!-- <define name="SDP3X_I2C_ADDR" value=""/> --> <!-- 0x50 is the deafault address -->
         <!-- <define name="SDP3X_PRESSURE_SCALE" value="1.0"/> --> <!-- pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet) -->
         <!-- <define name="SDP3X_PRESSURE_OFFSET" value="0.0"/>--> <!-- pressure offset in Pa (default: set according to pressure range and output type according to datasheet) -->
@@ -103,7 +103,8 @@
         <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
         <define name="USE_AIRSPEED" value="TRUE"/>
         <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/>
-        <define name="SDP3X_SYNC_SEND" value="TRUE"/> <!-- Only enable while debugging -->
+        <!-- <define name="USE_AIRSPEED_LOWPASS_FILTER" value="TRUE"/> --><!-- Already TRUE per default -->
+        <!--<define name="SDP3X_SYNC_SEND" value="TRUE"/>--> <!-- Only enable while debugging -->
       </module>
 
       <module name="gps" type="ublox">
@@ -148,7 +149,6 @@
         <define name="SDLOG_ENABLE_LOWBAT_FLUSH" value="FALSE"/>
         <define name="SDLOG_START_DELAY" value="20" unit="s"/>
       </module>
-      <module name="flight_recorder"/>
 
       <!-- use the paprazzi/sd2log tool to convert log to be able to use in logplotter as normal -->
       <!-- 

@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<!--
+    INERT placeholder propeller (7x4 3-blade tractor) for the
+    openuas_jsbsim_generic_fixedwing (Multiplex Minimag) model.
+    C_THRUST and C_POWER are zero on purpose: the real thrust (including
+    windmill braking above effective pitch speed) is modeled as an external
+    reaction in OPENUAS/openuas_jsbsim_generic_fixedwing.xml. A live JSBSim
+    propeller cannot be used on a 730 g airframe because the engine spin-up
+    reaction torque (power/omega with omega clamped at 0.01 rad/s) instantly
+    tumbles it.
+-->
+<propeller name="prop 7x4x3 inert">
+  <ixx> 0.0002 </ixx>
+  <diameter unit="IN"> 7.0 </diameter>
+  <numblades> 3 </numblades>
+  <minpitch> 13 </minpitch> <!-- 4 in pitch at 75% radius -->
+  <maxpitch> 13 </maxpitch>
+  <minrpm> 0 </minrpm>
+  <maxrpm> 16380 </maxrpm> <!-- 1300KV * 12.6V no-load -->
+
+  <table name="C_THRUST" type="internal">
+    <tableData>
+      0.0   0.0
+      1.2   0.0
+    </tableData>
+  </table>
+
+  <table name="C_POWER" type="internal">
+    <tableData>
+      0.0   0.0
+      1.2   0.0
+    </tableData>
+  </table>
+</propeller>
