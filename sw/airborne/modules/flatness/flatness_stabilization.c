@@ -114,7 +114,7 @@ static const float EAST_OFFSET = 0.0f;
 
 static struct FloatVect3 pos_end = {0.0f, 0.0f, -2.0f};
 static const float P2P_DT = 3.0f;
-static const float P2P_TO_TRAJ_DELAY = 5.0f;
+static const float P2P_TO_TRAJ_DELAY = 2.0f;
 
 typedef enum {
     FSM_INIT = 0,
