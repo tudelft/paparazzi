@@ -36,7 +36,7 @@
       <define name="PSI_DDGAIN"   value="300" description="feedforward yaw acceleration gain"/>
     </section>
   </doc>
-  <settings target="ap|nps">
+  <settings target="ap|sim|nps">
     <dl_settings>
       <dl_settings NAME="Att Loop">
         <dl_setting var="stabilization_gains.p.x" min="1" step="1" max="8000" shortname="pgain phi" param="STABILIZATION_ATTITUDE_PHI_PGAIN" type="int32" persistent="true" module="stabilization/stabilization_attitude_common_int"/>
@@ -68,7 +68,7 @@
     <file name="stabilization_attitude_quat_int.h"/>
   </header>
   <init fun="stabilization_attitude_quat_int_init()"/>
-  <makefile target="ap|nps" firmware="rotorcraft">
+  <makefile target="ap|sim|nps" firmware="rotorcraft">
     <file name="stabilization_attitude_quat_int.c" dir="$(SRC_FIRMWARE)/stabilization"/>
     <file name="stabilization_attitude_ref_quat_int.c" dir="$(SRC_FIRMWARE)/stabilization"/>
   </makefile>

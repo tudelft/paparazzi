@@ -1,5 +1,16 @@
 <conf>
   <aircraft
+   name="QuadRotorcraftSim"
+   ac_id="42"
+   airframe="airframes/examples/quad_rotorcraft_sim.xml"
+   radio="radios/dummy.xml"
+   telemetry="telemetry/default_rotorcraft.xml"
+   flight_plan="flight_plans/rotorcraft_basic.xml"
+   settings="settings/rotorcraft_basic.xml settings/nps.xml"
+   settings_modules=""
+   gui_color="#00ff00"
+  />
+  <aircraft
    name="Easystar_3"
    ac_id="114"
    airframe="airframes/OPENUAS/openuas_multiplex_easystar_3.xml"

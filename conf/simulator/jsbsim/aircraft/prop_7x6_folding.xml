@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<propeller name="prop_7x6_folding">
+    <ixx unit="SLUG*FT2"> 0.001 </ixx>
+    
+    <diameter unit="IN"> 7.0 </diameter>
+    <numblades> 2 </numblades>
+    <gearratio> 1.0 </gearratio> <minpitch> 6.0 </minpitch>
+    <maxpitch> 6.0 </maxpitch>
+    
+    <minrpm>     0 </minrpm>
+    <maxrpm> 14000 </maxrpm>
+    
+    <table name="C_THRUST" type="internal">
+        <tableData>
+            0.0      0.1100
+            0.1      0.1050
+            0.2      0.0980
+            0.3      0.0880
+            0.4      0.0760
+            0.5      0.0620
+            0.6      0.0450
+            0.7      0.0250
+            0.8      0.0030
+            0.9     -0.0200
+            1.0     -0.0450
+        </tableData>
+    </table>
+
+    <table name="C_POWER" type="internal">
+        <tableData>
+            0.0      0.0520
+            0.1      0.0510
+            0.2      0.0490
+            0.3      0.0450
+            0.4      0.0410
+            0.5      0.0350
+            0.6      0.0280
+            0.7      0.0190
+            0.8      0.0080
+            0.9     -0.0050
+            1.0     -0.0200
+        </tableData>
+    </table>
+</propeller>

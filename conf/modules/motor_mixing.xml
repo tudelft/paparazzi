@@ -27,7 +27,7 @@
     <file name="motor_mixing.h"/>
   </header>
   <init fun="motor_mixing_init()"/>
-  <makefile target="!sim">
+  <makefile>
     <define name="USE_MOTOR_MIXING"/>
     <file name="motor_mixing.c"/>
   </makefile>

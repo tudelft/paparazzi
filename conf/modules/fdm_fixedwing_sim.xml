@@ -9,6 +9,9 @@
       Its only purpose is to allow to test the flight plans with a very simple airplane model.
     </description>
   </doc>
+  <dep>
+    <provides>fdm</provides>
+  </dep>
   <header/>
   <makefile target="sim|nps|hitl">
     <define name="NPS_BYPASS_AHRS" value="TRUE"/>

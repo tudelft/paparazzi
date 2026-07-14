@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!--
+    Dummy zero-power engine for the openuas_jsbsim_multiplex_easystar3 model.
+    Real hardware: Roxxy 2830 1100KV brushless outrunner with 7x6 folding prop.
+    This engine's only purpose is to make one engine exist so that Paparazzi
+    NPS (FCS->SetThrottleCmd) and the fcs/throttle-cmd-norm property work.
+    Actual thrust is applied via <external_reactions> in the aircraft file:
+    JSBSim's propeller reaction torque (power/omega, omega clamped at
+    0.01 rad/s) produces a huge spurious roll kick at throttle-up that a
+    700 g airframe with Ixx ~ 0.045 slug*ft2 cannot survive.
+-->
+<electric_engine name="roxxy_2830_1100">
+    <power unit="WATTS"> 0.000001 </power>
+</electric_engine>

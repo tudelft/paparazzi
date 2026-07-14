@@ -1,0 +1,33 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="fdm_rotorcraft_sim" dir="fdm">
+  <doc>
+    <description>
+      Basic rotorcraft FDM for NPS simulator
+
+      Minimum complexity hover-dynamics model, the rotorcraft counterpart of
+      fdm_fixedwing_sim. Its only purpose is to allow testing of flight plans,
+      navigation and guidance with a very simple rotorcraft model, without a
+      full physics backend (JSBSim, Gazebo, ...). Not suitable for control
+      loop tuning: the model responds to the stabilization commands
+      (NPS_USE_COMMANDS), not to individual actuators, so it works with any
+      motor layout. AHRS and INS are bypassed with the true state.
+    </description>
+    <define name="NPS_ROTORCRAFT_SIM_HOVER_THROTTLE" value="0.5" description="normalized thrust command that exactly balances gravity (default: GUIDANCE_V_NOMINAL_HOVER_THROTTLE if defined)"/>
+    <define name="NPS_ROTORCRAFT_SIM_MAX_TILT_RATE" value="RadOfDeg(180.)" description="roll/pitch rate at full stick in rad/s"/>
+    <define name="NPS_ROTORCRAFT_SIM_MAX_YAW_RATE" value="RadOfDeg(120.)" description="yaw rate at full stick in rad/s"/>
+    <define name="NPS_ROTORCRAFT_SIM_ATT_TAU" value="0.05" description="time constant of the angular rate response in s"/>
+    <define name="NPS_ROTORCRAFT_SIM_MAX_TILT" value="RadOfDeg(45.)" description="maximum bank/pitch angle in rad"/>
+    <define name="NPS_ROTORCRAFT_SIM_DRAG" value="0.35" description="linear drag coefficient in 1/s"/>
+  </doc>
+  <dep>
+    <provides>fdm</provides>
+  </dep>
+  <header/>
+  <makefile target="sim|nps|hitl">
+    <define name="NPS_BYPASS_AHRS" value="TRUE"/>
+    <define name="NPS_BYPASS_INS" value="TRUE"/>
+    <define name="NPS_USE_COMMANDS" value="TRUE"/>
+    <file name="nps_fdm_rotorcraft_sim.c" dir="nps"/>
+  </makefile>
+</module>

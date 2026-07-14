@@ -215,7 +215,7 @@ NOTES:
       <!--<module name="radio_control" type="datalink"/>-->
 
       <module name="telemetry" type="transparent">
-        <!--<configure name="MODEM_PORT" value="usb_serial"/>--> <!-- For quick on desk testing on USB port -->
+         <!-- <configure name="MODEM_PORT" value="usb_serial"/>--><!-- For quick on desk testing on USB port -->
          <configure name="MODEM_PORT" value="UART3"/> <!-- UART3 is port Telem2 on pixracer -->  
          <configure name="MODEM_BAUD" value="B57600"/>
       </module>
@@ -296,6 +296,7 @@ NOTES:
     </target>
 
     <target name="nps" board="pc">
+      <define name="DEBUG_NPS_JSBSIM" value="TRUE"/><!-- Just for now... -->
       <configure name="PERIODIC_FREQUENCY" value="500"/>
       <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
       <module name="fdm" type="jsbsim"/>

@@ -140,12 +140,12 @@
       </module>
 
       <module name="gps"  type="ublox" >
-        <configure name="GPS_BAUD" value="B38400"/>
+        <configure name="GPS_BAUD" value="B460800"/>
         <configure name="GPS_PORT" value="UART1"/>
         <configure name="GPS_LED"  value="2"/>
       </module>
 
-      <module name="control" type="energyadaptive"/>
+      <!-- <module name="control" type="energyadaptive"/> -->
 
       <!--<module name="radio_control" type="ppm">
         <define name="RADIO_CONTROL_PPM_PIN" value="UART2_RX"/>
@@ -155,15 +155,14 @@
         <configure name="SBUS_PORT" value="UART2"/>
       </module> -->
 
-      <module name="navigation"/>
-      <module name="ahrs" type="float_dcm"/>
+      <!-- <module name="ahrs" type="float_dcm"/>
 
       <module name="ins" type="alt_float">
         <define name="AHRS_USE_GPS_HEADING" value="true"/>
         <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN"/>
-      </module>
+      </module> -->
 
-      <module name="nav_line"/>
+      <!-- <module name="nav_line"/> -->
 
       <!-- Only enable with a module that supports v_ctl_auto_airspeed_setpoint-->
       <!--
@@ -191,19 +190,20 @@
       <configure name="MODULES_FREQUENCY" value="500"/>
       <module name="fdm" type="jsbsim"/>
       <module name="radio_control" type="ppm"/>
-      <module name="telemetry" type="transparent">
+      <!-- <module name="telemetry" type="transparent">
         <configure name="MODEM_PORT" value="/dev/ttyUSB0"/>
-      </module>
+      </module> -->
       <module name="imu" type="nps"/>
       <module name="gps" type="sim"/>
-      <module name="control" type="energyadaptive"/>
-      <module name="navigation"/>
-      <module name="ahrs" type="float_dcm"/>
+      <!-- <module name="control" type="energyadaptive"/> -->
+      <!-- <module name="navigation"/> -->
+      <!-- <module name="ahrs" type="float_dcm"/>
       <module name="ins" type="alt_float">
         <define name="AHRS_USE_GPS_HEADING" value="true"/>
         <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN"/>
-      </module>
-      <module name="nav_line"/>
+      </module> -->
+
+      <!-- <module name="nav_line"/> -->
       <!-- perfect airspeed from the FDM: ETECS requires an airspeed source.
            air_data consumes the ABI AIRSPEED message and feeds the state
            interface (on the ap target the sdp3x module pulls it in) -->
@@ -239,6 +239,14 @@
 
     <module name="actuators" type="pwm"/>
 
+    <module name="control" type="energyadaptive"/>
+
+    <module name="ahrs" type="float_dcm"/>
+    <module name="ins" type="alt_float">
+      <define name="AHRS_USE_GPS_HEADING" value="true"/>
+      <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN"/>
+    </module>
+
     <module name="navigation"/>
     <module name="nav" type="drop"/>
     <module name="nav" type="line"/>
@@ -251,19 +259,20 @@
     <module name="nav" type="smooth"/>
     <module name="nav" type="vertical_raster"/>
     <module name="nav" type="flower"/>
+
     <module name="photogrammetry_calculator"/>
     <module name="traffic_info"/>
     <module name="tcas"/>
 
   </firmware>
 
-<!-- *********************** -->
-  <firmware name="setup">
+<!-- *********************** ONLY used to SETUP the Hardware settings GNSS Modem -->
+  <!-- <firmware name="setup">
     <target name="tunnel" board="matek_f405_te_sd" />
     <target name="usb_tunnel" board="matek_f405_te_sd">
     <configure name="TUNNEL_PORT" value="UART3"/>
     </target>
-  </firmware>
+  </firmware> -->
 
   <servos driver="Pwm">
     <servo name="S_THROTTLE"          no="0" min="1098" neutral="1104" max="1900"/>
@@ -631,7 +640,7 @@
 
   <section name="SIMULATOR" prefix="NPS_">
     <define name="JSBSIM_LAUNCHSPEED" value="10.0"/> <!-- firm hand toss, m/s -->
-    <define name="JSBSIM_MODEL" value="OPENUAS/openuas_jsbsim_zohd_talon_250g" type="string"/>
+    <define name="JSBSIM_MODEL" value="openuas_jsbsim_zohd_talon_250g" type="string"/>
     <define name="COMMANDS_NB" value="4"/>
     <define name="ACTUATOR_NAMES" value="throttle-cmd-norm, aileron-cmd-norm, elevator-cmd-norm, rudder-cmd-norm" type="string[]"/>
     <!--<define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>-->

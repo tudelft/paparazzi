@@ -15,7 +15,7 @@
     <file name="ins_gps_passthrough.h"/>
   </header>
   <init fun="ins_gps_passthrough_init()"/>
-  <makefile target="ap|nps" firmware="rotorcraft">
+  <makefile target="ap|sim|nps" firmware="rotorcraft">
     <file name="ins.c"/>
     <file name="ins_gps_passthrough.c"/>
     <test firmware="rotorcraft"/>

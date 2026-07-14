@@ -19,7 +19,7 @@
       <define name="ADAPT_THROTTLE_ENABLED" value="FALSE|TRUE" description="enable adaptive control by default"/>
     </section>
   </doc>
-  <settings target="ap|nps">
+  <settings target="ap|sim|nps">
     <dl_settings>
       <dl_settings NAME="Vert PID">
         <dl_setting var="guidance_pid.v_kp" min="0" step="1" max="600" shortname="kp" param="GUIDANCE_V_HOVER_KP" persistent="true" module="guidance/guidance_pid"/>
@@ -45,7 +45,7 @@
     <file name="guidance_pid.h"/>
   </header>
   <init fun="guidance_pid_init()"/>
-  <makefile target="ap|nps" firmware="rotorcraft">
+  <makefile target="ap|sim|nps" firmware="rotorcraft">
     <file name="guidance_pid.c" dir="$(SRC_FIRMWARE)/guidance"/>
   </makefile>
 </module>

@@ -6,12 +6,14 @@
       Basic Simulator (SIM)
 
       Bindings between embedded autopilot code and a flight dynamic model (FDM).
-      FDM and low level code is written in OCaml.
-      Only for fixed-wing.
+      Uses the basic FDM of the firmware: fdm_fixedwing_sim for fixed-wing
+      (default), fdm_rotorcraft_sim for rotorcraft (load it explicitly with
+      module fdm type rotorcraft_sim).
     </description>
   </doc>
   <dep>
-    <depends>targets/nps,fdm_fixedwing_sim</depends>
+    <depends>targets/nps,@fdm</depends>
+    <suggests>fdm_fixedwing_sim</suggests>
   </dep>
   <makefile target="sim">
   </makefile>
