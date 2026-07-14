@@ -180,6 +180,15 @@ POST_MAKE_ALL_RULE_HOOK:
 
 $(OBJS): | $(BUILDDIR) $(OBJDIR) $(LSTDIR)
 
+# The compilation flags (e.g. -DUSE_UART5, -DUSE_usb_serial) are generated from
+# the airframe configuration into $(AIRCRAFT_BUILD_DIR)/Makefile.ac, which is
+# only re-copied when the configuration changes. Depend on it so that objects
+# are rebuilt with the new flags instead of being linked stale (same behavior
+# as conf/Makefile.linux).
+ifneq ($(AIRCRAFT_BUILD_DIR),)
+$(OBJS): $(AIRCRAFT_BUILD_DIR)/Makefile.ac
+endif
+
 $(BUILDDIR):
 ifneq ($(USE_VERBOSE_COMPILE),yes)
 	@echo Compiler Options
