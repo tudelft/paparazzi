@@ -100,10 +100,12 @@ void autopilot_static_periodic(void)
 void autopilot_static_on_rc_frame(void)
 {
   // Send back uncontrolled channels.
+#if defined RADIO_CONTROL || defined RADIO_CONTROL_AUTO1
 #ifdef SetAutoCommandsFromRC
   SetAutoCommandsFromRC(commands, radio_control.values);
 #elif defined RADIO_YAW && defined COMMAND_YAW
   command_set(COMMAND_YAW, radio_control_get(RADIO_YAW));
+#endif
 #endif
 
 #if defined RADIO_CONTROL || defined RADIO_CONTROL_AUTO1
