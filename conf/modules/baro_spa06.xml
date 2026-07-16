@@ -3,7 +3,7 @@
 <module name="baro_spa06" dir="sensors" task="sensors">
   <doc>
     <description>
-     SPA06/SPL06 pressure sensor (I2C or SPI)
+     Goertek SPA06 and SPL06 pressure sensor driver for I2C and SPI bus
     </description>
     <configure name="SPA06_USE_SPI" default="FALSE" description="select which bus type use (default I2C -> FALSE, SPI -> TRUE)"/>
     <configure name="SPA06_DEV" value="i2cX/spiX" description="select which i2c/spi peripheral to use (default i2c1/spi1)"/>

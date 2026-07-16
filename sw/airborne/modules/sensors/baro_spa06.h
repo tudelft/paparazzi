@@ -21,9 +21,11 @@
 
 /**
  * @file modules/sensors/baro_spa06.h
- *  SPA06  sensor interface.
+ * @brief Module glue for the Goertek SPA06-003 / SPL06-001 barometer
  *
- * This reads the values for pressure and temperature from the  SPA06 sensor.
+ * Publishes pressure and temperature as ABI messages (BARO_SPA_SENDER_ID);
+ * see baro_spa06.c for details. Configure the bus with SPA06_USE_SPI,
+ * SPA06_DEV and SPA06_SLAVE_ADDR / SPA06_SLAVE_IDX.
  */
 
 #ifndef BARO_SPA06_H
@@ -31,13 +33,17 @@
 
 #include "peripherals/spa06.h"
 
+/** The barometer driver instance, exposed for debugging/telemetry */
 extern struct spa06_t baro_spa06;
 
-extern float baro_alt;
-extern  bool baro_alt_valid;
+extern float baro_spa06_alt;       ///< ISA pressure altitude of the last sample [m]
+extern bool baro_spa06_alt_valid;  ///< true once the first valid sample has been processed
 
+/** @brief Bind the driver to the configured bus and register telemetry (module init hook) */
 void baro_spa06_init(void);
+/** @brief Drive the sensor state machine (module periodic hook) */
 void baro_spa06_periodic(void);
+/** @brief Process finished bus transactions and publish new measurements (module event hook) */
 void baro_spa06_event(void);
 
 #endif
