@@ -56,7 +56,7 @@ enum spa06_bus_t {
 };
 
 enum spa06_device_t{
-  UNKOWN,
+  SPA06_UNKNOWN,
   SPA06,
   SPL06
 };
@@ -69,6 +69,7 @@ enum spa06_status_t {
   SPA06_STATUS_UNINIT,
   SPA06_STATUS_IDLE,
   SPA06_STATUS_INIT_OK,
+  SPA06_STATUS_GET_COEF_SRCE,
   SPA06_STATUS_GET_CALIB,
   SPA06_STATUS_CONFIGURE,
   SPA06_STATUS_READ_STATUS_REG,
@@ -78,7 +79,7 @@ enum spa06_status_t {
 /**
  * @brief Register Trim Variables
  */ 
-struct spa06_reg_calbi_data {
+struct spa06_reg_calib_data {
   int16_t c0;
   int16_t c1;
   int16_t c01;
@@ -97,11 +98,12 @@ struct spa06_t {
   enum spa06_device_t device;       ///< The device type detected
   bool initialized;                 ///< config done flag
   bool is_broken;                   ///< hardware failure detected
-  bool reset;                       //
+  bool reset;                       ///< reset command sent, waiting for the sensor to restart
   uint32_t timer;                     ///< Used to time operations during configuration (samples left during measuring)
   uint8_t init_error_cnt;           ///< Number of initialization failures
   volatile bool data_available;     ///< data ready flag
-  struct spa06_reg_calbi_data calib; ///< calibration data
+  struct spa06_reg_calib_data calib; ///< calibration data
+  uint8_t tmp_coef_srce;            ///< TMP_COEF_SRCE bit read from the sensor, mirrored into TMP_CFG bit 7
   int32_t raw_pressure;            ///< uncompensated pressure
   int32_t raw_temperature;         ///< uncompensated temperature
   float pressure;                   ///< pressure in Pascal
@@ -120,7 +122,6 @@ struct spa06_t {
 };
 
 
-extern void spa06_read_eeprom_calib(struct spa06_t *spa);
 extern void spa06_init(struct spa06_t *spa);
 extern void spa06_periodic(struct spa06_t *spa);
 extern void spa06_event(struct spa06_t *spa);

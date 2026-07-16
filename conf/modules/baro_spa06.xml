@@ -19,7 +19,7 @@
     <file name="baro_spa06.h"/>
   </header>
   <init fun="baro_spa06_init()"/>
-  <periodic fun="baro_spa06_periodic()" freq="50"/>
+  <periodic fun="baro_spa06_periodic()" freq="25"/>
   <event fun="baro_spa06_event()"/>
   <makefile target="ap" >
     <configure name="SPA06_USE_SPI" default="FALSE"/>

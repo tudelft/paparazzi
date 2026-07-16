@@ -66,13 +66,12 @@ struct spa06_t baro_spa06;
 #if DOWNLINK && !defined(SPA06_SYNC_SEND)
 static void send_baro_spa_data(struct transport_tx *trans, struct link_device *dev)
 {
-  int32_t baro_altitude = (int32_t)(baro_alt * 100);
-  int32_t baro_pressure = (int32_t)(baro_press);
-  int32_t baro_temperature = (int32_t)(baro_temp * 100);
+  int32_t up = baro_spa06.raw_pressure;
+  int32_t ut = baro_spa06.raw_temperature;
+  int32_t baro_pressure = (int32_t)(baro_press);           // Pa
+  int32_t baro_temperature = (int32_t)(baro_temp * 10.0f); // 0.1 deg Celcius
 
-  pprz_msg_send_BMP_STATUS(trans, dev, AC_ID, &baro_altitude, &baro_altitude , &baro_pressure, & baro_temperature);
-
-  return;
+  pprz_msg_send_BMP_STATUS(trans, dev, AC_ID, &up, &ut, &baro_pressure, &baro_temperature);
 }
 #endif
 
@@ -111,14 +110,14 @@ void baro_spa06_event(void)
     baro_spa06.data_available = false;
     baro_alt = pprz_isa_altitude_of_pressure(baro_spa06.pressure);
     baro_alt_valid = true;
-    baro_press = (float)baro_spa06.pressure;
-    baro_temp = ((float)baro_spa06.temperature) / 100;
+    baro_press = baro_spa06.pressure;      // Pa
+    baro_temp = baro_spa06.temperature;    // deg Celcius
 
 #if defined(SPA06_SYNC_SEND)
     int32_t up = (int32_t)(baro_spa06.raw_pressure);
     int32_t ut = (int32_t)(baro_spa06.raw_temperature);
     int32_t p = (int32_t) baro_spa06.pressure;
-    int32_t t = (int32_t)(baro_spa06.temperature);
+    int32_t t = (int32_t)(baro_spa06.temperature * 10.0f); // 0.1 deg Celcius
     DOWNLINK_SEND_BMP_STATUS(DefaultChannel, DefaultDevice, &up, &ut, &p, &t);
 #endif
   }

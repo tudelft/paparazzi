@@ -21,9 +21,6 @@
 /**
  * @file peripherals/spa06.c
  * @brief Sensor driver for SPA06/SPL06 sensor
- *
- * 
- *
  */
 
 #include "peripherals/spa06.h"
@@ -57,10 +54,12 @@ void spa06_init(struct spa06_t *spa)
     spa->initialized = false;
     spa->is_broken = false;
     spa->status = SPA06_STATUS_UNINIT;
+    spa->device = SPA06_UNKNOWN;
     spa->reset = false;
     spa->init_error_cnt = 0;
     spa->config_idx = 0;
     spa->calib_idx = 0;
+    spa->tmp_coef_srce = 0;
 
   /* SPI setup */
   if(spa->bus == SPA06_SPI) {
@@ -154,6 +153,10 @@ void spa06_periodic(struct spa06_t *spa)
           spa06_register_read(spa, SPL06_REG_MODE_AND_STATUS, 1);
           break;
 
+        case SPA06_STATUS_GET_COEF_SRCE:
+          spa06_register_read(spa, SPL06_REG_COEF_SRCE, 1);
+          break;
+
         case SPA06_STATUS_GET_CALIB:
           // request calibration data
           if(spa06_get_calib(spa)){
@@ -199,13 +202,11 @@ void spa06_event(struct spa06_t *spa)
      (spa->bus == SPA06_I2C && spa->i2c.trans.status == I2CTransSuccess)) {
       switch (spa->status) {
         case SPA06_STATUS_UNINIT:
-          spa->reset = true; //If the transaction success, we ask a reset
+          spa->reset = true; // Reset command acknowledged, wait for the sensor to restart
           break;
 
-        case SPA06_STATUS_IDLE:
+        case SPA06_STATUS_IDLE: {
           /* WHO_AM_I */
-          spa->device = SPL06;
-          
           uint8_t chip_id = spa->rx_buffer[0];
           if (chip_id == SPA06_CHIP_ID) {
               spa->device = SPA06;
@@ -226,15 +227,23 @@ void spa06_event(struct spa06_t *spa)
               }
           }
           break;
-        
+        }
+
         case SPA06_STATUS_INIT_OK: 
         {
           uint8_t status = spa->rx_buffer[0];
           if((status & (SPL06_MEAS_CFG_COEFFS_RDY | SPL06_MEAS_CFG_SENSOR_RDY)) == (SPL06_MEAS_CFG_COEFFS_RDY | SPL06_MEAS_CFG_SENSOR_RDY) ){
-            spa->status = SPA06_STATUS_GET_CALIB;
+            spa->status = SPA06_STATUS_GET_COEF_SRCE;
           }
           break;
         }
+
+        case SPA06_STATUS_GET_COEF_SRCE:
+          // The temperature measurement must use the same sensor as was used for
+          // the factory calibration coefficients (TMP_COEF_SRCE, mirrored into TMP_CFG bit 7)
+          spa->tmp_coef_srce = spa->rx_buffer[0] & SPL06_COEF_SRCE_BIT_TMP_COEF_SRCE;
+          spa->status = SPA06_STATUS_GET_CALIB;
+          break;
 
         case SPA06_STATUS_GET_CALIB:
           // compute calib
@@ -262,7 +271,6 @@ void spa06_event(struct spa06_t *spa)
           break;
 
         default:
-          spa->status = SPA06_STATUS_GET_CALIB; // just to avoid the compiler's warning message
           break;
       }
       if(spa->bus == SPA06_I2C){
@@ -343,11 +351,19 @@ static void parse_calib_data(struct spa06_t *spa, volatile uint8_t *coef)
     case 2:
       // 0x20 c30 [15:8] + 0x21 c30 [7:0]
       spa->calib.c30 = getTwosComplement(((uint32_t)coef[0] << 8) | (uint32_t)coef[1], 16);
-      // SPL06 only
-      spa->calib.c31 = 0;
-      spa->calib.c40 = 0; 
-      
+      if (spa->device == SPA06) {
+        // 0x22 c31 [11:4] + 0x23 c31 [3:0]
+        spa->calib.c31 = getTwosComplement(((uint32_t)coef[2] << 4) | (((uint32_t)coef[3] >> 4) & 0x0F), 12);
+        // 0x23 c40 [11:8] + 0x24 c40 [7:0]
+        spa->calib.c40 = getTwosComplement((((uint32_t)coef[3] & 0x0F) << 8) | (uint32_t)coef[4], 12);
+      } else {
+        // The SPL06 has no c31 and c40 coefficients
+        spa->calib.c31 = 0;
+        spa->calib.c40 = 0;
+      }
       spa->calib_idx++;
+    break;
+    default:
     break;
   } 
 }
@@ -363,8 +379,9 @@ static void compensate_pressure(struct spa06_t *spa)
   float Praw_sc = (float)spa->raw_pressure / raw_value_scale_factor(SPL06_PRESSURE_OVERSAMPLING);
   float Traw_sc = (float)spa->raw_temperature / raw_value_scale_factor(SPL06_TEMPERATURE_OVERSAMPLING);
 
-  // Calculates SPL06 compensated variables (Bypasses SPA06 branching)
-  spa->pressure = spa->calib.c00 + Praw_sc * (spa->calib.c10 + Praw_sc * (spa->calib.c20 + Praw_sc * spa->calib.c30)) + Traw_sc * spa->calib.c01 + Traw_sc * Praw_sc * (spa->calib.c11 + Praw_sc * spa->calib.c21);
+  // Full SPA06 compensation polynomial (datasheet section 4.9.1); c31 and c40
+  // are zero on the SPL06, so this reduces exactly to the SPL06 formula
+  spa->pressure = spa->calib.c00 + Praw_sc * (spa->calib.c10 + Praw_sc * (spa->calib.c20 + Praw_sc * (spa->calib.c30 + Praw_sc * spa->calib.c40))) + Traw_sc * spa->calib.c01 + Traw_sc * Praw_sc * (spa->calib.c11 + Praw_sc * (spa->calib.c21 + Praw_sc * spa->calib.c31));
 
   // See section 4.9.2, How to Calculate Compensated Temperature Values, of datasheet
   spa->temperature = spa->calib.c0 * 0.5f + spa->calib.c1 * Traw_sc;
@@ -387,8 +404,8 @@ static bool spa06_config(struct spa06_t *spa) {
       break;
 
     case 1: 
-       // TMP_CFG: temperature measurement rate (32 Hz) and oversampling 
-      spa06_register_write(spa, SPL06_REG_TEMPERATURE_CFG, (SPL06_PRES_RATE_4HZ | SPL06_TEMPERATURE_OVERSAMPLING));
+       // TMP_CFG: temperature measurement rate (4 Hz), oversampling and calibration temperature source
+      spa06_register_write(spa, SPL06_REG_TEMPERATURE_CFG, (SPL06_TEMP_RATE_4HZ | SPL06_TEMPERATURE_OVERSAMPLING | spa->tmp_coef_srce));
       spa->config_idx++;
       break;
 
@@ -405,9 +422,8 @@ static bool spa06_config(struct spa06_t *spa) {
       spa->config_idx++;
       break;
     }
-      break;
 
-     case 3:
+    case 3:
       spa06_register_write(spa, SPL06_REG_MODE_AND_STATUS, SPL06_MEAS_CON_PRE_TEM);
       spa->config_idx++;
       break;
@@ -429,8 +445,9 @@ static bool spa06_get_calib(struct spa06_t *spa){
       spa06_register_read(spa, SPL06_REG_CALIB_COEFFS_START+8, 8);
     break;
     case 2:
-      // Strictly read 3 calibration bytes for SPL06 to prevent I2C NACK on missing regs
-      spa06_register_read(spa, SPL06_REG_CALIB_COEFFS_START+16, 3);
+      // c30 (0x20-0x21); the SPA06 additionally has c31 and c40 (0x22-0x24).
+      // Strictly read only the registers that exist on the detected device.
+      spa06_register_read(spa, SPL06_REG_CALIB_COEFFS_START+16, (spa->device == SPA06) ? 5 : 2);
     break;
     default:
       return true;
@@ -511,7 +528,7 @@ static void spa06_register_read(struct spa06_t *spa, uint8_t reg, uint16_t size)
 static int32_t getTwosComplement(uint32_t raw, uint8_t length)
 {
     if (raw & (1U << (length - 1))) {
-        return ((int32_t)raw) - (1 << length); /* This relies on correct subtraction overflow rules, preferably: */
+        return ((int32_t)raw) - ((int32_t)1 << length);
     }
     return raw;
 }

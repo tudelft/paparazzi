@@ -31,10 +31,10 @@
 
 #include "std.h"
 
-// I2C addresses (8 bits)
+// I2C addresses (8-bit, i.e. 7-bit address << 1)
 
-#define SPA06_I2C_ADDR                         0xec //0x76 -> 0xef  (if the SDO pin is pulled-down to GND)
-#define SPA06_I2C_ADDR_ALT                     0xee //0x77 -> 0xee (default) 
+#define SPA06_I2C_ADDR                         0xec // 0x76 << 1 (SDO pin pulled down to GND)
+#define SPA06_I2C_ADDR_ALT                     0xee // 0x77 << 1 (SDO pin high, default)
 
 /**\ chip identifier */
 #define SPL06_CHIP_ID                          0x10
@@ -56,14 +56,16 @@
 #define SPL06_REG_TEMPERATURE_CFG              0x07    // Temperature config
 #define SPL06_REG_MODE_AND_STATUS              0x08    // Mode and status
 #define SPL06_REG_INT_AND_FIFO_CFG             0x09    // Interrupt and FIFO config
-#define SPL06_REG_INT_STATUS                   0x0A    // Interrupt and FIFO config
-#define SPL06_REG_FIFO_STATUS                  0x0B    // Interrupt and FIFO config
+#define SPL06_REG_INT_STATUS                   0x0A    // Interrupt status
+#define SPL06_REG_FIFO_STATUS                  0x0B    // FIFO status
 #define SPL06_REG_RST                          0x0C    // Softreset Register
 #define SPL06_RESET_BIT_SOFT_RST               0x09    // 0b1001
 #define SPL06_REG_CHIP_ID                      0x0D    // Chip ID Register
 #define SPL06_REG_CALIB_COEFFS_START           0x10
 #define SPL06_REG_CALIB_COEFFS_END             0x21
 #define SPA06_REG_CALIB_COEFFS_END             0x24
+#define SPL06_REG_COEF_SRCE                    0x28    // Calibration coefficients temperature sensor source
+#define SPL06_COEF_SRCE_BIT_TMP_COEF_SRCE      (1<<7)  // Mirror this bit into TMP_CFG bit 7 (TMP_EXT)
 
 // PRESSURE_CFG_REG
 #define SPL06_PRES_RATE_1HZ				             (0x00 << 4)
@@ -74,6 +76,7 @@
 // TEMPERATURE_CFG_REG
 #define SPL06_TEMP_USE_EXT_SENSOR              (1<<7)
 #define SPL06_TEMP_RATE_1HZ				             (0x00)
+#define SPL06_TEMP_RATE_4HZ				             (0x02 << 4)
 #define SPL06_TEMP_RATE_32HZ				           (0x05 << 4)
 
 // MODE_AND_STATUS_REG
