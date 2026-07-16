@@ -21,6 +21,23 @@
 
 #include "peripherals/dps310_i2c.h"
 
+/**
+ * DPS310 temperature errata fix.
+ *
+ * Some DPS310 silicon revisions report temperature roughly 60 degC too high
+ * this corrupts the temperature-compensated pressure. Writing this specific 
+ * sequence of register writes fixes the issue.
+ */
+static const uint8_t dps310_temp_fix_seq[][2] = {
+  { 0x0E, 0xA5 },
+  { 0x0F, 0x96 },
+  { 0x62, 0x02 },
+  { 0x0E, 0x00 },
+  { 0x0F, 0x00 }
+};
+
+#define DPS310_TEMP_FIX_SEQ_LEN (sizeof(dps310_temp_fix_seq) / sizeof(dps310_temp_fix_seq[0]))
+
 static int32_t getTwosComplement(uint32_t raw, uint8_t length)
 {
   if (raw & ((uint32_t)1 << (length - 1))) {
@@ -95,6 +112,7 @@ void dps310_i2c_init(struct Dps310_I2c *dps, struct i2c_periph *i2c_p, uint8_t a
   dps->initialized = false;
   dps->status = DPS310_STATUS_UNINIT;
   dps->temp_coef_srce = 0;
+  dps->temp_fix_step = 0;
 }
 
 void dps310_i2c_periodic(struct Dps310_I2c *dps)
@@ -107,7 +125,19 @@ void dps310_i2c_periodic(struct Dps310_I2c *dps)
     case DPS310_STATUS_UNINIT:
       dps->data_available = false;
       dps->initialized = false;
-      dps->status = DPS310_STATUS_GET_COEF_SRCE;
+      dps->temp_fix_step = 0;
+      dps->status = DPS310_STATUS_GET_ID;
+      break;
+
+    case DPS310_STATUS_GET_ID:
+      dps->i2c_trans.buf[0] = DPS310_REG_ID;
+      i2c_transceive(dps->i2c_p, &dps->i2c_trans, dps->i2c_trans.slave_addr, 1, 1);
+      break;
+
+    case DPS310_STATUS_TEMP_FIX:
+      dps->i2c_trans.buf[0] = dps310_temp_fix_seq[dps->temp_fix_step][0];
+      dps->i2c_trans.buf[1] = dps310_temp_fix_seq[dps->temp_fix_step][1];
+      i2c_transmit(dps->i2c_p, &dps->i2c_trans, dps->i2c_trans.slave_addr, 2);
       break;
 
     case DPS310_STATUS_GET_COEF_SRCE:
@@ -122,7 +152,10 @@ void dps310_i2c_periodic(struct Dps310_I2c *dps)
 
     case DPS310_STATUS_CONFIGURE_REGS:
       dps->i2c_trans.buf[0] = DPS310_REG_PRS_CFG;
-      // Ensure Rate doesn't exceed 1/conversion time for both PR and TMP. 16Hz is perfectly safe.
+      // Sensor-internal background rates, decoupled from the (e.g. 50Hz) periodic polling rate.
+      // Datasheet budget: total conversion time < 1s/s. At 16x oversampling (27.6ms/conversion),
+      // 16Hz P + 16Hz T = 883ms/s, so 16Hz is the maximum legal rate for both channels.
+      // Note: 16x oversampling requires P_SHIFT/T_SHIFT below and kT=kP=253952 in compensate_sensor().
       dps->i2c_trans.buf[1] = DPS310_PRS_CFG_PM_RATE_16HZ | DPS310_PRS_CFG_PM_PRC_16;
       dps->i2c_trans.buf[2] = DPS310_TMP_CFG_TMP_RATE_16HZ | DPS310_TMP_CFG_TMP_PRC_16 | dps->temp_coef_srce;
       dps->i2c_trans.buf[3] = 0x00; // Idle MEAS_CFG initially until CFG_REG is correctly established below!
@@ -151,6 +184,24 @@ void dps310_i2c_event(struct Dps310_I2c *dps)
 {
   if (dps->i2c_trans.status == I2CTransSuccess) {
     switch (dps->status) {
+      case DPS310_STATUS_GET_ID:
+        // Apply the temperature errata fix only on genuine DPS310 silicon.
+        // Register-compatible parts (e.g. SPL07-003, ID 0x11) skip it.
+        if (dps->i2c_trans.buf[0] == DPS310_CHIP_ID) {
+          dps->temp_fix_step = 0;
+          dps->status = DPS310_STATUS_TEMP_FIX;
+        } else {
+          dps->status = DPS310_STATUS_GET_COEF_SRCE;
+        }
+        break;
+
+      case DPS310_STATUS_TEMP_FIX:
+        dps->temp_fix_step++;
+        if (dps->temp_fix_step >= DPS310_TEMP_FIX_SEQ_LEN) {
+          dps->status = DPS310_STATUS_GET_COEF_SRCE;
+        }
+        break;
+
       case DPS310_STATUS_GET_COEF_SRCE:
         // Isolate the bit handling internal/external temperature sensor src logic
         dps->temp_coef_srce = dps->i2c_trans.buf[0] & DPS310_COEF_SRCE_BIT_TMP_COEF_SRCE;

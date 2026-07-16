@@ -27,6 +27,8 @@
 
 enum Dps310Status {
   DPS310_STATUS_UNINIT,
+  DPS310_STATUS_GET_ID,
+  DPS310_STATUS_TEMP_FIX,
   DPS310_STATUS_GET_COEF_SRCE,
   DPS310_STATUS_GET_CALIB,
   DPS310_STATUS_CONFIGURE_REGS,
@@ -42,6 +44,7 @@ struct Dps310_I2c {
   volatile bool data_available;     ///< data ready flag
   struct dps310_reg_calib_data calib; ///< calibration data
   uint8_t temp_coef_srce;          ///< temp coef source
+  uint8_t temp_fix_step;           ///< current step of the temperature errata fix sequence
 
   int32_t raw_pressure;            ///< uncompensated pressure
   int32_t raw_temperature;         ///< uncompensated temperature

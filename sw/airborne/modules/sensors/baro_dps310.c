@@ -28,11 +28,13 @@
 
 
 #include "baro_dps310.h"
-
 #include "modules/core/abi.h"
+
+#ifdef DPS310_SYNC_SEND
 #include "mcu_periph/uart.h"
 #include "pprzlink/messages.h"
 #include "modules/datalink/downlink.h"
+#endif
 
 /** default slave address */
 #ifndef DPS310_SLAVE_ADDR

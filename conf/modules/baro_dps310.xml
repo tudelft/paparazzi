@@ -17,7 +17,7 @@
     <file name="baro_dps310.h"/>
   </header>
   <init fun="baro_dps310_init()"/>
-  <periodic fun="baro_dps310_periodic()" freq="50"/>
+  <periodic fun="baro_dps310_periodic()" freq="25"/>
   <event fun="baro_dps310_event()"/>
   <makefile target="ap">
     <configure name="DPS310_I2C_PORT" default="i2c1" case="upper|lower"/>
