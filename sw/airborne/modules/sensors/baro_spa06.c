@@ -29,10 +29,12 @@
 #include "baro_spa06.h"
 
 #include "modules/core/abi.h"
+#include "math/pprz_isa.h"
+#ifdef SPA06_SYNC_SEND
 #include "mcu_periph/uart.h"
 #include "pprzlink/messages.h"
 #include "modules/datalink/downlink.h"
-#include "math/pprz_isa.h"
+#endif
 
 #if DOWNLINK && !defined(SPA06_SYNC_SEND)
 #include "modules/datalink/telemetry.h"

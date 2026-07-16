@@ -20,17 +20,33 @@
 
 /**
  * @file peripherals/spa06.c
- * @brief Sensor driver for SPA06/SPL06 sensor
+ * @brief Driver for the Goertek SPA06-003 / SPL06-001 barometer (I2C or SPI)
+ *
+ * Non-blocking state machine driver:
+ * @verbatim
+ * UNINIT (soft reset + 40ms wait) -> IDLE (chip ID) -> INIT_OK (wait ready)
+ *   -> GET_COEF_SRCE -> GET_CALIB (3 chunks) -> CONFIGURE (4 writes)
+ *   -> READ_STATUS_REG <-> READ_DATA_REGS (looping)
+ * @endverbatim
+ *
+ * spa06_periodic() submits at most one bus transaction per call and
+ * spa06_event() consumes the result and advances the state machine.
+ * The device type (SPA06 vs SPL06) is detected from the chip ID and decides
+ * whether the additional c31/c40 calibration coefficients are used.
  */
 
 #include "peripherals/spa06.h"
 
 #define SPL06_PRESSURE_OVERSAMPLING SPL06_OVERSAMPLING_64X_P  
 #define SPL06_TEMPERATURE_OVERSAMPLING SPL06_OVERSAMPLING_1X_T
+/* Reliability limits */
+#define SPA06_BROKEN_RETRY_US    5000000   ///< retry a failed/absent sensor every 5s instead of giving up forever
+#define SPA06_MAX_ERROR_CNT      10        ///< consecutive transaction failures before escalating
+#define SPA06_PRESSURE_MIN_PA    30000.0f  ///< specified measurement range is 300-1200 hPa,
+#define SPA06_PRESSURE_MAX_PA    120000.0f ///< anything outside means the data got corrupted
 
-/** local function to extract raw data from i2c/spi buffer
- *  and compute compensation with selected precision
- */
+/* Local functions: raw data extraction, calibration handling, compensation
+ * and bus access helpers. See the definitions below for details. */
 static void parse_sensor_data(struct spa06_t *spa, volatile uint8_t *data);
 static void parse_calib_data(struct spa06_t *spa, volatile uint8_t *coef);
 static void compensate_pressure(struct spa06_t *spa);
@@ -41,7 +57,6 @@ static void spa06_register_write(struct spa06_t *spa, uint8_t reg, uint8_t value
 static void spa06_register_read(struct spa06_t *spa, uint8_t reg, uint16_t size);
 static int32_t getTwosComplement(uint32_t raw, uint8_t length);
 
-
 /**
  * @brief Initialize the spa06 sensor instance
  * 
@@ -49,7 +64,6 @@ static int32_t getTwosComplement(uint32_t raw, uint8_t length);
  */
 void spa06_init(struct spa06_t *spa)
 {
-
     spa->data_available = false;
     spa->initialized = false;
     spa->is_broken = false;
@@ -60,6 +74,7 @@ void spa06_init(struct spa06_t *spa)
     spa->config_idx = 0;
     spa->calib_idx = 0;
     spa->tmp_coef_srce = 0;
+    spa->timer = 0;
 
   /* SPI setup */
   if(spa->bus == SPA06_SPI) {
@@ -82,7 +97,6 @@ void spa06_init(struct spa06_t *spa)
     // in SPI read, the first byte is garbage because writing the register address
     spa->rx_buffer = (volatile uint8_t *)&spa->spi.rx_buf[1];
     spa->tx_buffer = (volatile uint8_t *)spa->spi.tx_buf;
-    spa->rx_length = (volatile uint16_t *)&spa->spi.trans.input_length;
   }
   /* I2C setup */
   else {
@@ -92,7 +106,6 @@ void spa06_init(struct spa06_t *spa)
 
     spa->rx_buffer = spa->i2c.trans.buf;
     spa->tx_buffer = spa->i2c.trans.buf;
-    spa->rx_length = (volatile uint16_t *)&spa->i2c.trans.len_r;
 
   }
 }
@@ -101,14 +114,25 @@ void spa06_init(struct spa06_t *spa)
  * @brief Should be called periodically to request sensor readings
  * - First detects the sensor using WHO_AM_I reading
  * - Configures the sensor according the users requested configuration
- * - Requests a sensor reading 
- * 
+ * - Requests a sensor reading
+ *
+ * Submits at most one bus transaction per call and does nothing while a
+ * transaction is still in flight. A persistently failing or absent sensor is
+ * retried after a SPA06_BROKEN_RETRY_US backoff instead of spamming the bus.
+ *
  * @param spa The spa06 instance
  */
 void spa06_periodic(struct spa06_t *spa)
 {
   if (spa->is_broken) {
-      return;  // Sensor completely failed or not found, stop spamming the bus
+    // Back off, but periodically retry a full re-detection instead of giving up forever
+    if ((uint32_t)(get_sys_time_usec() - spa->timer) < SPA06_BROKEN_RETRY_US) {
+      return;
+    }
+    spa->is_broken = false;
+    spa->init_error_cnt = 0;
+    spa->status = SPA06_STATUS_UNINIT;
+    spa->reset = false;
   }
 
   /* Idle */
@@ -127,13 +151,8 @@ void spa06_periodic(struct spa06_t *spa)
             spa->reset = true;
           }
           if (spa->reset == true) {
-            uint32_t current_time = get_sys_time_usec();
-            uint32_t diff_val = 0;
-            if (current_time >= spa->timer) {
-                diff_val = current_time - spa->timer;
-            } else {
-                diff_val = (UINT32_MAX - spa->timer) + current_time + 1;
-            }
+            // Unsigned arithmetic handles a wrap-around of the time counter
+            uint32_t diff_val = get_sys_time_usec() - spa->timer;
             if(diff_val < 40000){
               spa->status = SPA06_STATUS_UNINIT; //Stay in uninit state for 40ms after reset
               break;
@@ -169,6 +188,7 @@ void spa06_periodic(struct spa06_t *spa)
           if(spa06_config(spa)) {
             spa->status = SPA06_STATUS_READ_STATUS_REG;
             spa->initialized = true;
+            spa->init_error_cnt = 0;
           }
           break;
 
@@ -191,8 +211,14 @@ void spa06_periodic(struct spa06_t *spa)
 /**
  * @brief Should be called in the event thread
  * - Configures the sensor and reads the responses
- * - Parse and request the sensor data 
- * 
+ * - Parses the responses and publishes plausibility-checked measurements
+ *   through data_available
+ *
+ * On a failed transaction it counts consecutive errors, escalating from a
+ * simple retry to a full re-initialization (SPA06_MAX_ERROR_CNT) and, while
+ * uninitialized, to a timed backoff. During initialization the I2C address is
+ * hot-swapped between the two possible assignments on every failure.
+ *
  * @param spa The spa06 instance
  */
 void spa06_event(struct spa06_t *spa)
@@ -220,7 +246,8 @@ void spa06_event(struct spa06_t *spa)
               // Invalid chip ID, sensor might be disconnected or corrupt
               spa->init_error_cnt++;
               if (spa->init_error_cnt >= 10) {
-                  spa->is_broken = true;  // Stop trying
+                  spa->is_broken = true;  // Back off, retried after SPA06_BROKEN_RETRY_US
+                  spa->timer = get_sys_time_usec();
               } else {
                   spa->status = SPA06_STATUS_UNINIT;
                   spa->reset = false;
@@ -266,7 +293,12 @@ void spa06_event(struct spa06_t *spa)
           // parse sensor data, compensate temperature first, then pressure
           parse_sensor_data(spa, &spa->rx_buffer[0]);
           compensate_pressure(spa);
-          spa->data_available = true;
+          spa->init_error_cnt = 0; // successful transaction, reset the consecutive failure counter
+          // Only publish values within the specified measurement range of the sensor,
+          // anything outside means the data got corrupted on its way here
+          if ((spa->pressure >= SPA06_PRESSURE_MIN_PA) && (spa->pressure <= SPA06_PRESSURE_MAX_PA)) {
+            spa->data_available = true;
+          }
           spa->status = SPA06_STATUS_READ_STATUS_REG;
           break;
 
@@ -282,19 +314,28 @@ void spa06_event(struct spa06_t *spa)
 
     } else if ((spa->bus == SPA06_SPI && spa->spi.trans.status == SPITransFailed) || 
                (spa->bus == SPA06_I2C && spa->i2c.trans.status == I2CTransFailed)) {
-      /* try again */
+      spa->init_error_cnt++;
       if (!spa->initialized) {
-        spa->init_error_cnt++;
-        if (spa->init_error_cnt >= 10) {
-            spa->is_broken = true;  // Give up after 10 failed initialization attempts
+        /* Failure during initialization: count and eventually back off */
+        if (spa->init_error_cnt >= SPA06_MAX_ERROR_CNT) {
+            spa->is_broken = true;  // Back off, retried after SPA06_BROKEN_RETRY_US
+            spa->timer = get_sys_time_usec();
         }
+        spa->status = SPA06_STATUS_UNINIT;
+        spa->reset = false;  // Ensure reset sequence runs again
+        // Hot-swap address (0xEC <-> 0xEE) on init failure to prevent deadlocking the I2C queue on wrong assignments
+        if (spa->bus == SPA06_I2C && !spa->is_broken) {
+          spa->i2c.slave_addr = (spa->i2c.slave_addr == SPA06_I2C_ADDR) ? SPA06_I2C_ADDR_ALT : SPA06_I2C_ADDR;
+        }
+      } else if (spa->init_error_cnt >= SPA06_MAX_ERROR_CNT) {
+        /* Too many consecutive failures during measurements: full re-initialization */
+        spa->initialized = false;
+        spa->data_available = false;
+        spa->init_error_cnt = 0;
+        spa->status = SPA06_STATUS_UNINIT;
+        spa->reset = false;
       }
-      spa->status = SPA06_STATUS_UNINIT;
-      spa->reset = false;  // Ensure reset sequence runs again
-      // Hot-swap address (0xEC <-> 0xEE) on init failure to prevent deadlocking the I2C queue on wrong assignments
-      if (spa->bus == SPA06_I2C && !spa->initialized && !spa->is_broken) {
-        spa->i2c.slave_addr = (spa->i2c.slave_addr == SPA06_I2C_ADDR) ? SPA06_I2C_ADDR_ALT : SPA06_I2C_ADDR;
-      }
+      /* Otherwise a transient failure simply retries the current read on the next periodic tick */
       
       if(spa->bus == SPA06_I2C){
         spa->i2c.trans.status = I2CTransDone; 
@@ -307,6 +348,11 @@ void spa06_event(struct spa06_t *spa)
   return;
 }
 
+/**
+ * @brief Extract the raw 24-bit pressure and temperature measurements
+ * @param spa  The spa06 instance
+ * @param data The 6 result bytes (registers 0x00-0x05, burst-read in one transaction)
+ */
 static void parse_sensor_data(struct spa06_t *spa, volatile uint8_t *data)
 {
   spa->raw_pressure = getTwosComplement(((uint32_t)data[0] << 16) | ((uint32_t)data[1] << 8) | (uint32_t)data[2], 24);
@@ -315,8 +361,15 @@ static void parse_sensor_data(struct spa06_t *spa, volatile uint8_t *data)
 
 
 /**
- *  @brief This internal API is used to parse the calibration data, compensates
- *  it and store it in device structure (float version)
+ * @brief Unpack one chunk of calibration coefficient bytes
+ * @param spa  The spa06 instance, calib_idx selects which chunk is being parsed
+ * @param coef The coefficient bytes as read by spa06_get_calib()
+ *
+ * The coefficients are packed as mixed 12/16/20 bit two's complement values,
+ * see the COEF register description in the datasheet. Called once per chunk
+ * (in reading order); increments calib_idx itself. The SPA06-only c31/c40
+ * coefficients are zeroed on the SPL06 so that a single compensation formula
+ * can serve both devices.
  */
 static void parse_calib_data(struct spa06_t *spa, volatile uint8_t *coef)
 {
@@ -370,8 +423,13 @@ static void parse_calib_data(struct spa06_t *spa, volatile uint8_t *coef)
 
 
 /**
- * @brief Compensate the raw pressure and temperature data 
- * return the compensated pressure data in integer data type.
+ * @brief Convert raw measurements into pressure [Pa] and temperature [deg C]
+ * @param spa The spa06 instance
+ *
+ * Implements the compensation formulas of the datasheet (sections 4.9.1 and
+ * 4.9.2) using the factory calibration coefficients. The scale factors are
+ * tied to the configured oversampling; keep SPL06_*_OVERSAMPLING and
+ * spa06_config() in sync.
  */
 static void compensate_pressure(struct spa06_t *spa)
 {
@@ -389,7 +447,12 @@ static void compensate_pressure(struct spa06_t *spa)
 
 /**
  * @brief Configure the spa06 device register by register
- * 
+ *
+ * Writes PRS_CFG, TMP_CFG (including the calibration temperature source read
+ * earlier), the result bit shifts (mandatory for oversampling > 8x) and
+ * finally enables continuous measurements. Only one register is written per
+ * call; config_idx tracks the progress.
+ *
  * @param spa The spa06 instance
  * @return true When the configuration is completed
  * @return false Still busy configuring
@@ -434,9 +497,20 @@ static bool spa06_config(struct spa06_t *spa) {
   return false;
 }
 
+/**
+ * @brief Request the calibration coefficients, one chunk per call
+ *
+ * The coefficients are read in three chunks because the chip returns a read
+ * failure when reading the whole block at once over I2C. The last chunk is
+ * device-dependent: the SPA06 has two extra coefficients (c31/c40) in
+ * registers that do not exist on the SPL06. Parsing happens in spa06_event()
+ * via parse_calib_data(), which advances calib_idx.
+ *
+ * @param spa The spa06 instance
+ * @return true When all coefficients have been requested
+ * @return false Still busy reading
+ */
 static bool spa06_get_calib(struct spa06_t *spa){
-  // Only one transaction can be made per call to the periodic function 
-  // Do the read of the coefficients in multiple parts, as the chip will return a read failure when trying to read all at once over I2C.
   switch(spa->calib_idx) {
     case 0:
       spa06_register_read(spa, SPL06_REG_CALIB_COEFFS_START, 8);
@@ -455,7 +529,15 @@ static bool spa06_get_calib(struct spa06_t *spa){
   return false;
 }
 
-int32_t raw_value_scale_factor(uint8_t oversampling)
+/**
+ * @brief Scale factor for raw values at a given oversampling setting
+ * @param oversampling Oversampling register code (0-7, see SPL06_OVERSAMPLING_*)
+ * @return Compensation scale factor from the datasheet, -1 for an invalid code
+ *
+ * Note the values are not monotonic: settings above 8x store shifted results
+ * (see SPL06_*_RESULT_BIT_SHIFT) and therefore use smaller factors.
+ */
+static int32_t raw_value_scale_factor(uint8_t oversampling)
 {
     // From the datasheet page 13
     switch(oversampling)
@@ -474,43 +556,52 @@ int32_t raw_value_scale_factor(uint8_t oversampling)
 
 
 /**
- * @brief Write a register with a value
- * 
- * @param spa The spa06 instance
- * @param reg The register address
+ * @brief Write a single register over the configured bus (SPI or I2C)
+ * @param spa   The spa06 instance
+ * @param reg   The register address (bit 7 is masked off for the SPI write command)
  * @param value The value to write to the register
+ *
+ * Silently does nothing while a transaction is still in flight; callers are
+ * driven by the periodic/event pair, so the write is simply retried later.
  */
 static void spa06_register_write(struct spa06_t *spa, uint8_t reg, uint8_t value) {
 
-  spa->tx_buffer[1] = value;
-
   if (spa->bus == SPA06_SPI) {
-    if (spa->spi.trans.status == SPITransPending) return;
+    /* Never touch the buffers of a transaction that is still in flight */
+    if (spa->spi.trans.status != SPITransDone) return;
   /* SPI transaction */
     spa->tx_buffer[0] = (reg & 0x7F); //write command (bit 7 = RW = '0')
+    spa->tx_buffer[1] = value;
     spa->spi.trans.output_length = 2;
     spa->spi.trans.input_length = 0;
     spi_submit(spa->spi.p, &(spa->spi.trans));
   } else { 
-    if (spa->i2c.trans.status == I2CTransPending) return;
+    if (spa->i2c.trans.status != I2CTransDone) return;
   /* I2C transaction */
     spa->tx_buffer[0] = reg;
+    spa->tx_buffer[1] = value;
     i2c_transmit(spa->i2c.p, &(spa->i2c.trans), spa->i2c.slave_addr, 2);
   }
 }
 
 /**
- * @brief Read a register 
- * 
- * @param spa The spa06 instance
- * @param reg The register address
- * @param size The size to read 
+ * @brief Read consecutive registers over the configured bus (SPI or I2C)
+ * @param spa  The spa06 instance
+ * @param reg  The first register address (auto-incremented by the sensor)
+ * @param size The number of registers to read
+ *
+ * The response ends up in rx_buffer (which already hides the SPI dummy byte).
+ * Requests larger than the receive buffer are rejected. Silently does nothing
+ * while a transaction is still in flight.
  */
 static void spa06_register_read(struct spa06_t *spa, uint8_t reg, uint16_t size) {
 
   
   if (spa->bus == SPA06_SPI) {
-    if (spa->spi.trans.status == SPITransPending) return;
+    /* Never touch the buffers of a transaction that is still in flight */
+    if (spa->spi.trans.status != SPITransDone) return;
+    /* Guard against receive buffer overflow */
+    if ((size + 1u) > sizeof(spa->spi.rx_buf)) return;
     /* SPI transaction */
     spa->tx_buffer[0] = reg | SPL06_READ_FLAG ; 
     spa->spi.trans.output_length = 2;
@@ -518,13 +609,21 @@ static void spa06_register_read(struct spa06_t *spa, uint8_t reg, uint16_t size)
     spa->tx_buffer[1] = 0;
     spi_submit(spa->spi.p, &(spa->spi.trans));
   } else { 
-    if (spa->i2c.trans.status == I2CTransPending) return;
+    if (spa->i2c.trans.status != I2CTransDone) return;
+    /* Guard against receive buffer overflow */
+    if (size > I2C_BUF_LEN) return;
     /* I2C transaction */
     spa->tx_buffer[0] = reg ; 
     i2c_transceive(spa->i2c.p, &(spa->i2c.trans), spa->i2c.slave_addr, 1, size);
   }
 }
 
+/**
+ * @brief Sign-extend a raw two's complement value of arbitrary bit length
+ * @param raw    Unsigned register value holding the two's complement number
+ * @param length Number of significant bits (e.g. 12, 16, 20, 24)
+ * @return Sign-extended signed value
+ */
 static int32_t getTwosComplement(uint32_t raw, uint8_t length)
 {
     if (raw & (1U << (length - 1))) {

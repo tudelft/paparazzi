@@ -26,7 +26,6 @@
  * This reads the values for pressure and temperature from the Infineon DPS310 sensor through I2C.
  */
 
-
 #include "baro_dps310.h"
 #include "modules/core/abi.h"
 
