@@ -65,16 +65,15 @@
       <configure name="MODULES_FREQUENCY" value="500"/>
 
       <!-- OSD CONFIGURATION -->
-      <!-- <module name="osd_max7456">
+      <module name="osd_max7456">
         <configure name="MAX7456_SPI_DEV" value="spi2"/>
         <configure name="MAX7456_SLAVE_IDX" value="SPI_SLAVE1"/>
         <define name="USE_MATEK_TYPE_OSD_CHIP" value="true"/>
-        <define name="USE_PAL_FOR_OSD_VIDEO" value="true"/> -->
-        <!-- <define name="BARO_ALTITUDE_VAR" value="baro_alt"/> -->
-      <!-- if non defined the default var is ''baro_alt'' -->
-        <!-- <define name="BAT_CAPACITY" value="MAX_BAT_CAPACITY" unit="mAh"/>
+        <define name="USE_PAL_FOR_OSD_VIDEO" value="true"/>
+        <!-- <define name="BARO_ALTITUDE_VAR" value="200"/> --><!-- Correction -->
+        <define name="BAT_CAPACITY" value="MAX_BAT_CAPACITY" unit="mAh"/>
         <define name="LOITER_BAT_CURRENT" value="MILLIAMP_AT_FULL_THROTTLE/2" unit="mA"/>
-      </module> -->
+      </module>
 
       <module name="imu" type="icm42688">
         <configure name="IMU_SPI_DEV" value="spi1"/>
