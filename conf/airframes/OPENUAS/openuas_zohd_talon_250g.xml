@@ -101,7 +101,7 @@
         <define name="QMC5883L_CHAN_Y" value="0"/>
         <define name="QMC5883L_CHAN_Z" value="2"/>
         <define name="QMC5883L_CHAN_X_SIGN" value="+"/>
-        <define name="QMC5883L_CHAN_Y_SIGN" value="-"/>
+        <define name="QMC5883L_CHAN_Y_SIGN" value="+"/>
         <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
         <!-- <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/> -->
       </module> 
