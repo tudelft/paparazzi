@@ -44,6 +44,11 @@
 #define DPS310_PRESSURE_MIN_PA   30000.0f  ///< specified measurement range is 300-1200 hPa,
 #define DPS310_PRESSURE_MAX_PA   120000.0f ///< anything outside means the data got corrupted
 
+/* Compensation scale factors for 16x oversampling (datasheet table "Compensation Scale Factors").
+ * Tied to the PM_PRC/TMP_PRC settings written in DPS310_STATUS_CONFIGURE_REGS: change them together. */
+#define DPS310_SCALE_FACTOR_KT   253952.0f ///< temperature, 16x oversampling
+#define DPS310_SCALE_FACTOR_KP   253952.0f ///< pressure, 16x oversampling
+
 /* The 18-byte calibration read must fit in the I2C transaction buffer */
 #if I2C_BUF_LEN < 18
 #error "DPS310: I2C_BUF_LEN is too small for the 18 byte calibration coefficient read"
@@ -147,12 +152,8 @@ static void parse_sensor_data(struct Dps310_I2c *dps)
  */
 static void compensate_sensor(struct Dps310_I2c *dps)
 {
-  // Standard scaling for 16x oversampling
-  float kT = 253952.0f;
-  float kP = 253952.0f;
-
-  float Traw_sc = (float)dps->raw_temperature / kT;
-  float Praw_sc = (float)dps->raw_pressure / kP;
+  float Traw_sc = (float)dps->raw_temperature / DPS310_SCALE_FACTOR_KT;
+  float Praw_sc = (float)dps->raw_pressure / DPS310_SCALE_FACTOR_KP;
 
   struct dps310_reg_calib_data *c = &dps->calib;
 
@@ -250,7 +251,7 @@ void dps310_i2c_periodic(struct Dps310_I2c *dps)
       dps->i2c_trans.buf[0] = DPS310_REG_PRS_CFG;
       // Sensor-internal background rates, decoupled from the (e.g. 50Hz) periodic polling rate.
       // Datasheet budget: total conversion time < 1s/s. At 16x oversampling (27.6ms/conversion),
-      // 16Hz P + 16Hz T = 883ms/s, so 16Hz is the maximum legal rate for both channels.
+      // 16Hz P + 16Hz T = 883ms/s, so 16Hz is the maximum working rate for both channels.
       // Note: 16x oversampling requires P_SHIFT/T_SHIFT below and kT=kP=253952 in compensate_sensor().
       dps->i2c_trans.buf[1] = DPS310_PRS_CFG_PM_RATE_16HZ | DPS310_PRS_CFG_PM_PRC_16;
       dps->i2c_trans.buf[2] = DPS310_TMP_CFG_TMP_RATE_16HZ | DPS310_TMP_CFG_TMP_PRC_16 | dps->temp_coef_srce;

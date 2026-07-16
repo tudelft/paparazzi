@@ -23,7 +23,7 @@
  * @file modules/sensors/baro_dps310.h
  * Infineon DPS310 I2C sensor interface.
  *
- * This reads the values for pressure and temperature from the Infineon DPS310 sensor through I2C.
+ * This code reads the values for pressure and temperature from the Infineon DPS310 sensor over I2C.
  */
 
 #ifndef BARO_DPS310_H

@@ -76,12 +76,12 @@
 #define BARO_BMP3_SENDER_ID 20
 #endif
 
-#ifndef BARO_SPA_SENDER_ID
-#define BARO_SPA_SENDER_ID 21
+#ifndef BARO_DPS310_SENDER_ID
+#define BARO_DPS310_SENDER_ID 21
 #endif
 
-#ifndef BARO_DPS310_SENDER_ID
-#define BARO_DPS310_SENDER_ID 22
+#ifndef BARO_SPA_SENDER_ID
+#define BARO_SPA_SENDER_ID 22
 #endif
 
 #ifndef METEO_STICK_SENDER_ID
@@ -149,8 +149,8 @@
 /*
  * IDs of AGL measurment modules that can be loaded (sonars, lidars,...) (message 2)
  */
-#ifndef AGL_RANGEFINDER_ADC_ID
-#define AGL_RANGEFINDER_ADC_ID 1
+#ifndef AGL_SONAR_ADC_ID
+#define AGL_SONAR_ADC_ID 1
 #endif
 
 #ifndef AGL_SONAR_ARDRONE2_ID
@@ -197,8 +197,8 @@
 #define AGL_VL53L1X_ID 12
 #endif
 
-#ifndef AGL_RANGEFINDER_PWM_ID
-#define AGL_RANGEFINDER_PWM_ID 13
+#ifndef AGL_SONAR_PWM_ID
+#define AGL_SONAR_PWM_ID 13
 #endif
 
 #ifndef AGL_LIDAR_TFMINI_I2C_ID
@@ -213,8 +213,8 @@
 #define AGL_UAVCAN_ID 16
 #endif
 
-#ifndef AGL_RANGEFINDER_I2C_ID
-#define AGL_RANGEFINDER_I2C_ID 17
+#ifndef AGL_SONAR_I2C_ID
+#define AGL_SONAR_I2C_ID 17
 #endif
 
 /*
@@ -312,8 +312,8 @@
 #define GPS_IMCU_ID 14
 #endif
 
-#ifndef GPS_DW1000_ID
-#define GPS_DW1000_ID 15
+#ifndef GPS_UWB_ID
+#define GPS_UWB_ID 15
 #endif
 
 #ifndef GPS_UBX2_ID
@@ -536,12 +536,20 @@
 #endif
 
 /*
- * UWB communication (message 19)
+ * UWB communication and ranging (messages 19, 43, 44)
 */
 #ifndef UWB_COMM_ID
 #define UWB_COMM_ID 1
 #endif
 
+#ifndef UWB_DW1000_ARDUINO_ID
+#define UWB_DW1000_ARDUINO_ID 2
+#endif
+
+
+#ifndef UWB_PDEC_ID
+#define UWB_PDEC_ID 3
+#endif
 /*
  * IDs of Obstacle detection systems
  */

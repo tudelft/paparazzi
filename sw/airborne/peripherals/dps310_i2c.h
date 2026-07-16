@@ -49,22 +49,21 @@ enum Dps310Status {
 };
 
 struct Dps310_I2c {
-  struct i2c_periph *i2c_p;         ///< I2C peripheral used for communication
-  struct i2c_transaction i2c_trans; ///< I2C transaction (only one in flight at a time)
+  struct i2c_periph *i2c_p;           ///< I2C peripheral used for communication
+  struct i2c_transaction i2c_trans;   ///< I2C transaction (only one in flight at a time)
   enum Dps310Status status;           ///< state machine status
-  bool initialized;                 ///< config done flag
-  bool is_broken;                   ///< sensor not found or persistently failing, retried after a backoff period
-  uint8_t init_error_cnt;           ///< number of consecutive transaction failures
-  uint32_t timer;                   ///< broken-sensor retry backoff timer
-  volatile bool data_available;     ///< data ready flag
+  bool initialized;                   ///< config done flag
+  bool is_broken;                     ///< sensor not found or persistently failing, retried after a backoff period
+  uint8_t init_error_cnt;             ///< number of consecutive transaction failures
+  uint32_t timer;                     ///< broken-sensor retry backoff timer
+  volatile bool data_available;       ///< data ready flag
   struct dps310_reg_calib_data calib; ///< calibration data
-  uint8_t temp_coef_srce;          ///< TMP_COEF_SRCE bit read from the sensor, mirrored into TMP_CFG bit 7
-  uint8_t temp_fix_step;           ///< current step of the temperature errata fix sequence
-
-  int32_t raw_pressure;            ///< uncompensated pressure
-  int32_t raw_temperature;         ///< uncompensated temperature
-  float pressure;                   ///< pressure in Pascal
-  float temperature;                ///< temperature in deg Celcius
+  uint8_t temp_coef_srce;             ///< TMP_COEF_SRCE bit read from the sensor, mirrored into TMP_CFG bit 7
+  uint8_t temp_fix_step;              ///< current step of the temperature errata fix sequence
+  int32_t raw_pressure;               ///< uncompensated pressure
+  int32_t raw_temperature;            ///< uncompensated temperature
+  float pressure;                     ///< pressure in Pascal
+  float temperature;                  ///< temperature in deg Celsius
 };
 
 extern void dps310_i2c_init(struct Dps310_I2c *dps, struct i2c_periph *i2c_p, uint8_t addr);
