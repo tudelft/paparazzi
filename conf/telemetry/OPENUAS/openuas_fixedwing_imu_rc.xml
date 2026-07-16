@@ -57,6 +57,7 @@
       <message name="DL_VALUE"            period="1.5"/>
       <message name="SURVEY"              period="2.1"/>
       <message name="GPS_SOL"             period="5.0"/>
+      <message name="PAYLOAD_FLOAT"         period="0.5"/>
     </mode>
     <mode name="extremal" key_press="e">
       <message name="ALIVE"               period="5.0"/>

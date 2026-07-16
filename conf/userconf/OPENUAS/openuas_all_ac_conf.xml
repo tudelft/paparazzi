@@ -475,7 +475,7 @@
   <aircraft
    name="Minimag"
    ac_id="233"
-   airframe="airframes/OPENUAS/openuas_multiplex_minimag.xml"
+   airframe="airframes/tudelft/tudelft_x5_gervaise.xml"
    radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
    telemetry="telemetry/OPENUAS/openuas_fixedwing_imu_rc.xml"
    flight_plan="flight_plans/basic.xml"
