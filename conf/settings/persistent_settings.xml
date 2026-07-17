@@ -1,6 +1,7 @@
 <!DOCTYPE settings SYSTEM "settings.dtd">
 
 <settings>
+<!-- A configuration to use so that made during flight settings value, e.g. gains, can be stored on the flightcontroller -->
   <dl_settings>
     <dl_settings NAME="Persistence">
       <dl_setting var="settings_store_flag" min="1" step="1" max="1" shortname="store" handler="StoreSettings" module="modules/core/settings" values="Stored"/>

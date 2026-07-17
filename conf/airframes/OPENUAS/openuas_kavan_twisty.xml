@@ -36,7 +36,7 @@
 
     <target name="ap" board="px4fmu_4.0_chibios">
 
-      <!-- <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/> --><!-- FIXME: Not working under Chibios -->
+      <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/><!-- Stored in the last flash sector -->
 
       <!-- <configure name="AHRS_CORRECT_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/> -->
       <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="125"/>
