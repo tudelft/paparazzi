@@ -21,30 +21,55 @@
 
 /**
  * @file arch/chibios/modules/core/settings_arch.c
- * Persistent settings low level flash routines for ChibiOS,
+ * Flight safe persistent settings flash routines for ChibiOS,
  * supporting the STM32F1, STM32F4, STM32F7 and STM32H7 families.
  *
- * The settings are stored in the last flash sector, with the
- * following layout (same scheme as the former bare metal stm32 arch):
+ * The settings live in the last flash sector as an append only
+ * journal of self contained records:
  *
- * data          sector_addr
- * data_size     sector_end - FSIZ (uint32)
- * checksum      sector_end - FCHK (uint32)
+ *   sector: | record | record | ... | erased space ...             |
+ *   record: | magic, data size | data (padded) | crc32 (padded)   |
  *
- * The generic part (layout, checksum, verification) is family
- * independent; only four small primitives (geometry detection,
- * erase, programming of one write unit, cache flush) are implemented
- * per flash controller family. The flash registers are accessed
- * directly (CMSIS definitions provided through the ChibiOS HAL
- * headers), so no HAL/EFL driver configuration is required.
+ * with all record fields aligned to the family programming unit (at
+ * least 4 bytes). Reading returns the newest record with a valid
+ * checksum; storing appends a new record into erased space. The flash
+ * registers are accessed directly (CMSIS definitions provided through
+ * the ChibiOS HAL headers), so no HAL/EFL driver configuration is
+ * required.
  *
- * Note: while the sector erase is in progress (up to ~2s for a large
- * sector) the CPU stalls on any flash fetch, so settings should only
- * be stored/cleared on the ground.
+ * Why it is safe to store settings in flight:
+ *
+ * - No sector erase is ever performed in flight. Appending makes an
+ *   erase (which stalls the CPU on flash fetches for up to ~2 seconds)
+ *   unnecessary until the sector is full: then persistent_write()
+ *   returns PFLASH_ERR_FULL in flight, and reclaims the sector with an
+ *   erase only when the autopilot reports motors off and not in flight
+ *   (persistent_clear() is refused in flight the same way).
+ *
+ * - Programming a single unit stalls flash fetches only for tens of
+ *   microseconds, and even that is hidden: the programming routines
+ *   execute from RAM (ChibiOS .ramtext) with interrupts masked
+ *   (chSysLock) for exactly that window, so neither the CPU nor a
+ *   preempting ISR can fetch from flash while the flash bus is busy.
+ *   Between units, interrupts are served normally.
+ *
+ * - All operations are serialized by a mutex (thread safe), and every
+ *   busy poll is bounded, so a faulty flash controller degrades to an
+ *   error return, never a hang.
+ *
+ * - A power cut during a store can at worst produce a torn record,
+ *   which the checksum rejects on the next boot: the previous valid
+ *   record (or the airframe defaults) are used instead. A sector
+ *   holding torn data beyond the valid record chain is never appended
+ *   to again (a partially programmed flash word must not be programmed
+ *   twice); it is reclaimed by the next on ground store or clear.
+ *   Erases and programs are verified by reading back.
  */
 
 #include "modules/core/settings.h"
+#include "autopilot.h"
 
+#include <ch.h>
 #include <hal.h>
 #include <string.h>
 
@@ -52,10 +77,6 @@
 
 /** Base address of the internal flash on all supported STM32 families. */
 #define PFLASH_BASE 0x08000000UL
-/** Offset of the stored data size word, counted back from the sector end. */
-#define FSIZ 8
-/** Offset of the stored checksum word, counted back from the sector end. */
-#define FCHK 4
 
 /* ST flash unlock key sequence, identical on all supported families
  * (defined here only if the CMSIS device header does not provide it) */
@@ -67,11 +88,43 @@
 #endif
 
 /**
- * Upper bound for busy polling, far above the worst case erase time.
- * It only turns a (theoretical) stuck flash controller into an error
- * return instead of an infinite loop in the autopilot.
+ * Return codes of the persistent_write/read/clear API.
+ * All errors are negative, so callers may simply test for != 0.
+ */
+enum pflash_status {
+  PFLASH_OK           = 0,   ///< success
+  PFLASH_ERR_SECTOR   = -1,  ///< no usable settings sector (geometry or overlap)
+  PFLASH_ERR_SIZE     = -2,  ///< requested size is zero or does not fit a sector
+  PFLASH_ERR_NODATA   = -3,  ///< no valid stored settings (or stored size mismatch)
+  PFLASH_ERR_VERIFY   = -4,  ///< erase/program failed or read back mismatch
+  PFLASH_ERR_FULL     = -5,  ///< journal full, erase deferred until on the ground
+  PFLASH_ERR_INFLIGHT = -6,  ///< sector erase refused while in flight
+};
+
+/**
+ * Upper bound for busy polling an erase, far above the worst case
+ * erase time. It only turns a (theoretical) stuck flash controller
+ * into an error return instead of an infinite loop in the autopilot.
  */
 #define PFLASH_WAIT_MAX_POLLS 400000000UL
+
+/**
+ * Upper bound for busy polling one unit program operation, which runs
+ * with interrupts masked: generous for the worst case programming time
+ * (tens of microseconds), while still bounding the interrupt blackout
+ * to milliseconds should the flash controller ever get stuck.
+ */
+#define PFLASH_PROG_MAX_POLLS 2000000UL
+
+/**
+ * Place a function in RAM (ChibiOS .ramtext, copied to RAM together
+ * with .data by crt0) so it executes without a single flash fetch, and
+ * forbid inlining it back into a flash resident caller.
+ */
+#define PFLASH_RAMFUNC __attribute__((noinline, section(".ramtext")))
+
+/** Serializes all persistent settings operations (thread safety). */
+static MUTEX_DECL(pflash_mutex);
 
 /** Location and geometry of the settings sector, filled by pflash_detect(). */
 struct FlashInfo {
@@ -84,8 +137,11 @@ struct FlashInfo {
  * Family specific primitives:
  *
  * pflash_detect       locate the last flash sector
- * pflash_erase        erase (only) the settings sector
- * pflash_program_unit program one PFLASH_PROG_SIZE byte aligned unit
+ * pflash_erase        erase (only) the settings sector, ground only
+ * pflash_ram_program  program one unit, executes from RAM (.ramtext)
+ * pflash_program_unit flight safe wrapper around pflash_ram_program:
+ *                     interrupts masked only for the microseconds the
+ *                     flash bus is actually busy
  * pflash_cache_flush  make cached flash reads coherent again
  */
 
@@ -172,7 +228,37 @@ static int32_t pflash_erase(const struct FlashInfo *flash)
 }
 
 /**
+ * Program one 16bit half word, executed entirely from RAM (.ramtext):
+ * while the FPEC is busy the CPU must not fetch a single instruction
+ * from flash or it would stall. Called with interrupts masked, all
+ * polls bounded, keep it minimal and free of calls into flash code.
+ * @return 0 on success
+ */
+PFLASH_RAMFUNC static int32_t pflash_ram_program(uint32_t addr, uint16_t val)
+{
+  uint32_t i;
+
+  for (i = 0; (i < PFLASH_PROG_MAX_POLLS) && (FLASH->SR & FLASH_SR_BSY); i++) { }
+  if (FLASH->SR & FLASH_SR_BSY) { return -1; }
+
+  FLASH->CR = FLASH_CR_PG;
+  *(volatile uint16_t *)addr = val;
+  __DSB();
+  for (i = 0; (i < PFLASH_PROG_MAX_POLLS) && (FLASH->SR & FLASH_SR_BSY); i++) { }
+
+  uint32_t sr = FLASH->SR;
+  FLASH->CR &= ~FLASH_CR_PG;
+
+  return ((sr & FLASH_SR_BSY) || (sr & PFLASH_F1_SR_ERRORS)) ? -1 : 0;
+}
+
+/**
  * Program one 16bit half word (flash must be unlocked by the caller).
+ *
+ * Flight safe: the controller is confirmed idle first, then interrupts
+ * are masked only for the microseconds of the actual programming,
+ * executed from RAM so nothing can touch the stalled flash bus.
+ *
  * @param addr destination address in erased flash, half word aligned
  * @param buf  source of PFLASH_PROG_SIZE bytes
  * @return 0 on success
@@ -180,18 +266,14 @@ static int32_t pflash_erase(const struct FlashInfo *flash)
 static int32_t pflash_program_unit(const struct FlashInfo *flash __attribute__((unused)),
                                    uint32_t addr, const uint8_t *buf)
 {
-  uint16_t half;
-  memcpy(&half, buf, 2);
+  uint16_t half = (uint16_t)((uint16_t)buf[0] | ((uint16_t)buf[1] << 8));
 
-  if (pflash_wait()) { return -1; }
-  FLASH->CR = FLASH_CR_PG;
-  *(volatile uint16_t *)addr = half;
-  __DSB();
-  int32_t ret = pflash_wait();
-  FLASH->CR &= ~FLASH_CR_PG;
-
-  if (ret || (FLASH->SR & PFLASH_F1_SR_ERRORS)) { return -1; }
-  return 0;
+  if (pflash_wait()) { return -1; }              /* enter the critical zone idle */
+  FLASH->SR = PFLASH_F1_SR_ERRORS | FLASH_SR_EOP; /* clear stale flags */
+  chSysLock();
+  int32_t ret = pflash_ram_program(addr, half);
+  chSysUnlock();
+  return ret;
 }
 
 #elif defined(STM32F4XX) || defined(STM32F7XX)
@@ -199,19 +281,30 @@ static int32_t pflash_program_unit(const struct FlashInfo *flash __attribute__((
 /** F4/F7 flash programming unit: one 32bit word. */
 #define PFLASH_PROG_SIZE 4
 
-/** Error flags common to F4/F7, plus the family specific ones. */
-static const uint32_t pflash_sr_errors =
-  FLASH_SR_WRPERR | FLASH_SR_PGAERR | FLASH_SR_PGPERR
+/* optional family specific error flags, absent ones contribute 0 */
 #ifdef FLASH_SR_PGSERR /* F4 */
-  | FLASH_SR_PGSERR
+#define PFLASH_SR_ERR_PGS FLASH_SR_PGSERR
+#else
+#define PFLASH_SR_ERR_PGS 0
 #endif
 #ifdef FLASH_SR_ERSERR /* F7 */
-  | FLASH_SR_ERSERR
+#define PFLASH_SR_ERR_ERS FLASH_SR_ERSERR
+#else
+#define PFLASH_SR_ERR_ERS 0
 #endif
 #ifdef FLASH_SR_RDERR  /* F42x/F43x, F7 */
-  | FLASH_SR_RDERR
+#define PFLASH_SR_ERR_RD FLASH_SR_RDERR
+#else
+#define PFLASH_SR_ERR_RD 0
 #endif
-  ;
+
+/**
+ * All F4/F7 error flags. Deliberately a macro, not a static const: a
+ * flash resident constant could not be read by the RAM programming
+ * routine while the flash bus is stalled.
+ */
+#define PFLASH_SR_ERRORS (FLASH_SR_WRPERR | FLASH_SR_PGAERR | FLASH_SR_PGPERR | \
+                          PFLASH_SR_ERR_PGS | PFLASH_SR_ERR_ERS | PFLASH_SR_ERR_RD)
 
 /**
  * Detect the flash geometry and locate the last sector.
@@ -318,7 +411,7 @@ static int32_t pflash_erase(const struct FlashInfo *flash)
 {
   pflash_unlock();
   if (pflash_wait()) { pflash_lock(); return -1; }
-  FLASH->SR = pflash_sr_errors; /* clear pending error flags */
+  FLASH->SR = PFLASH_SR_ERRORS; /* clear pending error flags */
 
   /* sector erase, 32bit parallelism (PSIZE = x32, VDD > 2.7V) */
   FLASH->CR = FLASH_CR_PSIZE_1 | FLASH_CR_SER |
@@ -328,12 +421,43 @@ static int32_t pflash_erase(const struct FlashInfo *flash)
   FLASH->CR &= ~(FLASH_CR_SER | FLASH_CR_SNB);
   pflash_lock();
 
-  if (ret || (FLASH->SR & pflash_sr_errors)) { return -1; }
+  if (ret || (FLASH->SR & PFLASH_SR_ERRORS)) { return -1; }
   return 0;
 }
 
 /**
+ * Program one 32bit word, executed entirely from RAM (.ramtext):
+ * while the flash controller is busy the CPU must not fetch a single
+ * instruction from flash or it would stall. Called with interrupts
+ * masked, all polls bounded, keep it minimal and free of calls into
+ * flash code.
+ * @return 0 on success
+ */
+PFLASH_RAMFUNC static int32_t pflash_ram_program(uint32_t addr, uint32_t val)
+{
+  uint32_t i;
+
+  for (i = 0; (i < PFLASH_PROG_MAX_POLLS) && (FLASH->SR & FLASH_SR_BSY); i++) { }
+  if (FLASH->SR & FLASH_SR_BSY) { return -1; }
+
+  FLASH->CR = FLASH_CR_PSIZE_1 | FLASH_CR_PG;
+  *(volatile uint32_t *)addr = val;
+  __DSB();
+  for (i = 0; (i < PFLASH_PROG_MAX_POLLS) && (FLASH->SR & FLASH_SR_BSY); i++) { }
+
+  uint32_t sr = FLASH->SR;
+  FLASH->CR &= ~FLASH_CR_PG;
+
+  return ((sr & FLASH_SR_BSY) || (sr & PFLASH_SR_ERRORS)) ? -1 : 0;
+}
+
+/**
  * Program one 32bit word (flash must be unlocked by the caller).
+ *
+ * Flight safe: the controller is confirmed idle first, then interrupts
+ * are masked only for the microseconds of the actual programming,
+ * executed from RAM so nothing can touch the stalled flash bus.
+ *
  * @param addr destination address in erased flash, word aligned
  * @param buf  source of PFLASH_PROG_SIZE bytes
  * @return 0 on success
@@ -341,18 +465,15 @@ static int32_t pflash_erase(const struct FlashInfo *flash)
 static int32_t pflash_program_unit(const struct FlashInfo *flash __attribute__((unused)),
                                    uint32_t addr, const uint8_t *buf)
 {
-  uint32_t word;
-  memcpy(&word, buf, 4);
+  uint32_t val;
+  memcpy(&val, buf, 4);
 
-  if (pflash_wait()) { return -1; }
-  FLASH->CR = FLASH_CR_PSIZE_1 | FLASH_CR_PG;
-  *(volatile uint32_t *)addr = word;
-  __DSB();
-  int32_t ret = pflash_wait();
-  FLASH->CR &= ~FLASH_CR_PG;
-
-  if (ret || (FLASH->SR & pflash_sr_errors)) { return -1; }
-  return 0;
+  if (pflash_wait()) { return -1; } /* enter the critical zone idle */
+  FLASH->SR = PFLASH_SR_ERRORS;     /* clear stale error flags */
+  chSysLock();
+  int32_t ret = pflash_ram_program(addr, val);
+  chSysUnlock();
+  return ret;
 }
 
 #elif defined(STM32H7XX)
@@ -438,31 +559,61 @@ static int32_t pflash_erase(const struct FlashInfo *flash)
 }
 
 /**
+ * Program one 256bit flash word, executed entirely from RAM (.ramtext)
+ * with interrupts masked and bounded polls. On H7 the settings sector
+ * is in bank2 while code runs from bank1, so fetches would not stall,
+ * but the uniform RAM + masked window keeps this correct even for
+ * firmware images that grow into bank2.
+ * @param addr destination, 32 byte aligned
+ * @param w    source of 8 words, 4 byte aligned, in RAM
+ * @return 0 on success
+ */
+PFLASH_RAMFUNC static int32_t pflash_ram_program(uint32_t addr, const uint32_t *w)
+{
+  uint32_t i;
+
+  for (i = 0; (i < PFLASH_PROG_MAX_POLLS) &&
+       (FLASH->SR2 & (FLASH_SR_BSY | FLASH_SR_QW | FLASH_SR_WBNE)); i++) { }
+  if (FLASH->SR2 & (FLASH_SR_BSY | FLASH_SR_QW | FLASH_SR_WBNE)) { return -1; }
+
+  FLASH->CR2 = FLASH_CR_PSIZE_1 | FLASH_CR_PG;
+  __DSB();
+
+  /* fill the write buffer with the complete flash word */
+  volatile uint32_t *dst = (volatile uint32_t *)addr;
+  for (int j = 0; j < 8; j++) { dst[j] = w[j]; }
+  __DSB();
+  for (i = 0; (i < PFLASH_PROG_MAX_POLLS) &&
+       (FLASH->SR2 & (FLASH_SR_BSY | FLASH_SR_QW)); i++) { }
+
+  uint32_t sr = FLASH->SR2;
+  FLASH->CR2 &= ~FLASH_CR_PG;
+
+  return ((sr & (FLASH_SR_BSY | FLASH_SR_QW)) || (sr & PFLASH_H7_SR_ERRORS)) ? -1 : 0;
+}
+
+/**
  * Program one 256bit flash word (flash must be unlocked by the caller).
- * All 8 words must be written before the controller starts programming.
+ *
+ * Flight safe: the controller is confirmed idle first, then interrupts
+ * are masked only for the actual programming, executed from RAM.
+ *
  * @param addr destination address in erased flash, 32 byte aligned
- * @param buf  source of PFLASH_PROG_SIZE bytes
+ * @param buf  source of PFLASH_PROG_SIZE bytes, 4 byte aligned
+ *             (guaranteed by pflash_program_buffer())
  * @return 0 on success
  */
 static int32_t pflash_program_unit(const struct FlashInfo *flash __attribute__((unused)),
                                    uint32_t addr, const uint8_t *buf)
 {
-  if (pflash_wait()) { return -1; }
-  FLASH->CR2 = FLASH_CR_PSIZE_1 | FLASH_CR_PG;
-  __DSB();
+  const uint32_t *w = (const uint32_t *)(const void *)buf;
 
-  /* fill the write buffer with the complete flash word */
-  for (int i = 0; i < 8; i++) {
-    uint32_t word;
-    memcpy(&word, buf + 4 * i, 4);
-    ((volatile uint32_t *)addr)[i] = word;
-  }
-  __DSB();
-  int32_t ret = pflash_wait();
-  FLASH->CR2 &= ~FLASH_CR_PG;
-
-  if (ret || (FLASH->SR2 & PFLASH_H7_SR_ERRORS)) { return -1; }
-  return 0;
+  if (pflash_wait()) { return -1; }  /* enter the critical zone idle */
+  FLASH->CCR2 = PFLASH_H7_SR_ERRORS; /* clear stale error flags */
+  chSysLock();
+  int32_t ret = pflash_ram_program(addr, w);
+  chSysUnlock();
+  return ret;
 }
 
 #endif /* family specific primitives */
@@ -498,23 +649,48 @@ static void pflash_cache_flush(const struct FlashInfo *flash __attribute__((unus
 }
 
 /*
- * Generic part, common to all families.
+ * Generic part, common to all families: an append only journal.
  */
 
+/** Journal record marker ("PS1" + version), never 0xFFFFFFFF (erased). */
+#define PJRN_MAGIC 0x50533101UL
+
+/** Journal alignment: the programming unit, but at least one 32bit word. */
+#define PFLASH_UNIT ((PFLASH_PROG_SIZE) > 4 ? (PFLASH_PROG_SIZE) : 4)
+
+_Static_assert((PFLASH_UNIT & (PFLASH_UNIT - 1)) == 0, "PFLASH_UNIT must be a power of two");
+
+/** Round a byte count up to a whole number of journal units. */
+#define PFLASH_ALIGN_UP(x) (((uint32_t)(x) + PFLASH_UNIT - 1) & ~(uint32_t)(PFLASH_UNIT - 1))
+
+/** Header block of a record: magic and data size words, unit padded. */
+#define PJRN_HDR PFLASH_ALIGN_UP(8)
+/** Checksum block of a record: one crc32 word, unit padded. */
+#define PJRN_CRC PFLASH_ALIGN_UP(4)
+/** Total flash footprint of a record carrying @p size data bytes. */
+#define PJRN_RECORD_SIZE(size) (PJRN_HDR + PFLASH_ALIGN_UP(size) + PJRN_CRC)
+
+/** Read one 32bit word directly from flash. */
+static inline uint32_t pflash_read32(uint32_t addr)
+{
+  return *(volatile const uint32_t *)addr;
+}
+
 /**
- * Software CRC-32 (polynomial 0x04C11DB7, MSB first) over a byte range.
+ * Update a software CRC-32 (polynomial 0x04C11DB7, MSB first) over a
+ * byte range, allowing non contiguous fields to be chained.
  *
  * Deliberately bitwise and table free: the settings blob is tiny, so a
  * 1k lookup table or the hardware CRC unit (extra clock and peripheral
- * dependency) would buy nothing.
+ * dependency) would buy nothing. Zero RAM, portable.
  *
+ * @param crc  running value, start with 0xFFFFFFFF
  * @param ptr  start address (RAM or flash)
  * @param size number of bytes
- * @return CRC-32 of the range
+ * @return updated CRC-32
  */
-static uint32_t pflash_checksum(uint32_t ptr, uint32_t size)
+static uint32_t pflash_crc32(uint32_t crc, uint32_t ptr, uint32_t size)
 {
-  uint32_t crc = 0xFFFFFFFFUL;
   for (uint32_t i = 0; i < size; i++) {
     crc ^= ((uint32_t)(*(volatile const uint8_t *)(ptr + i))) << 24;
     for (int b = 0; b < 8; b++) {
@@ -526,25 +702,94 @@ static uint32_t pflash_checksum(uint32_t ptr, uint32_t size)
 }
 
 /**
- * Size of the trailer block at the sector end holding data size and
- * checksum: at least one programming unit, so the trailer never shares
- * a write unit with the data (on H7 it is one full 32 byte flash word).
+ * CRC-32 of a record: chained over the data size word and the data
+ * itself, so a corrupted size field can never validate.
  */
-#define PFLASH_TRAILER ((FSIZ > PFLASH_PROG_SIZE) ? FSIZ : PFLASH_PROG_SIZE)
+static uint32_t pflash_record_crc(uint32_t size, uint32_t data_addr)
+{
+  uint32_t crc = pflash_crc32(0xFFFFFFFFUL, (uint32_t)&size, 4);
+  return pflash_crc32(crc, data_addr, size);
+}
 
 /**
- * Maximum usable settings data size.
- * @return sector size minus the trailer block
+ * Maximum data size of a single journal record.
+ * @return sector size minus the record overhead
  */
 static uint32_t pflash_max_size(const struct FlashInfo *flash)
 {
-  return flash->page_size - PFLASH_TRAILER;
+  return flash->page_size - PJRN_HDR - PJRN_CRC;
+}
+
+/** Journal state, as found in the settings sector by pflash_scan(). */
+struct PflashJournal {
+  uint32_t last_off;  ///< sector offset of the newest valid record, or UINT32_MAX
+  uint32_t last_size; ///< data size of the newest valid record
+  uint32_t chain_off; ///< offset just past the last valid record of the chain
+  uint32_t free_off;  ///< first offset of fully erased space, unit aligned
+};
+
+/**
+ * Scan the settings sector.
+ *
+ * Forward pass: walk the record chain from the sector start, remember
+ * the newest record whose checksum validates, stop at the first hole
+ * or corruption (later records cannot be trusted once the chain is
+ * broken, since record boundaries derive from the stored sizes).
+ *
+ * Backward pass: locate the erased tail of the sector as everything
+ * after the last non erased word. Comparing it against the chain end
+ * tells a healthy journal (free_off <= chain_off, where any 0xFF
+ * padding or checksum words of valid records may make free_off
+ * smaller) from one holding torn or foreign data past the chain
+ * (free_off > chain_off): such garbage must never be programmed
+ * again (on H7 reprogramming a flash word is a hard error), and a
+ * record appended beyond it would be unreachable by this very scan,
+ * so the sector is reclaimed instead (see persistent_write()).
+ *
+ * @param flash    settings sector location
+ * @param[out] j   scan result
+ */
+static void pflash_scan(const struct FlashInfo *flash, struct PflashJournal *j)
+{
+  uint32_t off = 0;
+
+  j->last_off = UINT32_MAX;
+  j->last_size = 0;
+
+  while ((off + PJRN_HDR + PJRN_CRC) <= flash->page_size) {
+    if (pflash_read32(flash->addr + off) != PJRN_MAGIC) { break; }
+
+    uint32_t size = pflash_read32(flash->addr + off + 4);
+    if ((size == 0) || (size > pflash_max_size(flash))) { break; }
+    uint32_t rec = PJRN_RECORD_SIZE(size);
+    if (rec > (flash->page_size - off)) { break; }
+
+    uint32_t data = flash->addr + off + PJRN_HDR;
+    uint32_t stored_crc = pflash_read32(data + PFLASH_ALIGN_UP(size));
+    if (pflash_record_crc(size, data) != stored_crc) { break; }
+
+    j->last_off = off;
+    j->last_size = size;
+    off += rec;
+  }
+  j->chain_off = off;
+
+  /* backward pass: first fully erased offset in the whole sector */
+  uint32_t used = 0;
+  for (uint32_t end = flash->page_size; end > 0; end -= 4) {
+    if (pflash_read32(flash->addr + end - 4) != 0xFFFFFFFFUL) {
+      used = end;
+      break;
+    }
+  }
+  j->free_off = PFLASH_ALIGN_UP(used);
 }
 
 /**
  * ChibiOS GCC linker symbols used to compute the end of the firmware
  * image in flash: load address of the initialized data section plus its
- * size (the ChibiOS linker rules place .data last in the flash image).
+ * size (the ChibiOS linker rules place .data, which also carries the
+ * .ramtext programming routines, last in the flash image).
  */
 extern uint8_t __textdata_base__, __data_base__, __data_end__;
 
@@ -567,6 +812,15 @@ static int32_t pflash_get(struct FlashInfo *flash)
 }
 
 /**
+ * True while erasing the settings sector would endanger the flight:
+ * sector erase is only permitted with motors off and not in flight.
+ */
+static bool pflash_in_flight(void)
+{
+  return autopilot_get_motors_on() || autopilot_in_flight();
+}
+
+/**
  * Program a byte buffer as a sequence of programming units, padding the
  * last partial unit with 0xFF (the erased state, so the padding does
  * not disturb anything). Flash must be unlocked by the caller.
@@ -579,7 +833,8 @@ static int32_t pflash_get(struct FlashInfo *flash)
 static int32_t pflash_program_buffer(const struct FlashInfo *flash,
                                      uint32_t dst, uint32_t src, uint32_t size)
 {
-  uint8_t unit[PFLASH_PROG_SIZE];
+  /* 4 byte aligned so the H7 primitive can use direct word access */
+  uint8_t unit[PFLASH_PROG_SIZE] __attribute__((aligned(4)));
 
   for (uint32_t i = 0; i < size; i += PFLASH_PROG_SIZE) {
     uint32_t n = size - i;
@@ -597,6 +852,10 @@ static int32_t pflash_program_buffer(const struct FlashInfo *flash,
 /**
  * Erase the settings sector and verify word by word that it reads back
  * fully erased (flash erases can fail silently).
+ *
+ * Ground only: the erase stalls flash fetches for up to ~2 seconds,
+ * callers must check pflash_in_flight() first.
+ *
  * @param flash settings sector location
  * @return 0 on success
  */
@@ -608,131 +867,186 @@ static int32_t pflash_erase_verified(const struct FlashInfo *flash)
 
   /* verify erase */
   for (uint32_t i = 0; i < flash->page_size; i += 4) {
-    if ((*(volatile uint32_t *)(flash->addr + i)) != 0xFFFFFFFFUL) { return -1; }
+    if (pflash_read32(flash->addr + i) != 0xFFFFFFFFUL) { return -1; }
   }
   return 0;
 }
 
 /**
- * Store a settings blob: erase the sector, program data and trailer,
- * then read everything back for verification (a false "stored OK" is
- * worse than an error).
- * @param flash  settings sector location
- * @param src    RAM address of the data
- * @param size   data size in bytes
- * @param chksum CRC-32 of the data, stored in the trailer
- * @return 0 on success, -1 erase/program failed, -2 data mismatch,
- *         -3 size word mismatch, -4 checksum word mismatch
+ * Append one journal record into erased space and read it back for
+ * verification (a false "stored OK" is worse than an error).
+ *
+ * Flight safe: only unit programming, no erase; interrupts run
+ * normally between units.
+ *
+ * @param flash settings sector location
+ * @param off   destination sector offset, fully erased, record fits
+ * @param src   RAM address of the data
+ * @param size  data size in bytes
+ * @return PFLASH_OK or PFLASH_ERR_VERIFY
  */
-static int32_t pflash_program_bytes(const struct FlashInfo *flash,
-                                    uint32_t src,
-                                    uint32_t size,
-                                    uint32_t chksum)
+static int32_t pflash_append_record(const struct FlashInfo *flash,
+                                    uint32_t off, uint32_t src, uint32_t size)
 {
-  uint32_t i;
+  uint32_t crc = pflash_record_crc(size, src);
+  uint32_t base = flash->addr + off;
   int32_t ret;
 
-  /* erase, return with error if not successful */
-  if (pflash_erase_verified(flash)) { return -1; }
+  uint8_t hdr[PJRN_HDR];
+  memset(hdr, 0xFF, PJRN_HDR);
+  const uint32_t magic = PJRN_MAGIC;
+  memcpy(&hdr[0], &magic, 4);
+  memcpy(&hdr[4], &size, 4);
 
   pflash_unlock();
-
-  /* write data */
-  ret = pflash_program_buffer(flash, flash->addr, src, size);
-
-  /* write trailer: 0xFF padding, then size and checksum in the last 8 bytes */
+  ret = pflash_program_buffer(flash, base, (uint32_t)hdr, PJRN_HDR);
   if (ret == 0) {
-    uint8_t trailer[PFLASH_TRAILER];
-    memset(trailer, 0xFF, PFLASH_TRAILER);
-    memcpy(&trailer[PFLASH_TRAILER - FSIZ], &size, 4);
-    memcpy(&trailer[PFLASH_TRAILER - FCHK], &chksum, 4);
-    ret = pflash_program_buffer(flash, flash->addr + flash->page_size - PFLASH_TRAILER,
-                                (uint32_t)trailer, PFLASH_TRAILER);
+    ret = pflash_program_buffer(flash, base + PJRN_HDR, src, size);
   }
-
+  if (ret == 0) {
+    ret = pflash_program_buffer(flash, base + PJRN_HDR + PFLASH_ALIGN_UP(size),
+                                (uint32_t)&crc, 4);
+  }
   pflash_lock();
-  if (ret) { return -1; }
+  if (ret) { return PFLASH_ERR_VERIFY; }
 
   pflash_cache_flush(flash);
 
-  /* verify data */
-  for (i = 0; i < size; i++) {
-    if ((*(volatile uint8_t *)(flash->addr + i)) != (*(const uint8_t *)(src + i))) { return -2; }
+  /* verify the complete record by reading back */
+  if (pflash_read32(base) != PJRN_MAGIC) { return PFLASH_ERR_VERIFY; }
+  if (pflash_read32(base + 4) != size) { return PFLASH_ERR_VERIFY; }
+  for (uint32_t i = 0; i < size; i++) {
+    if ((*(volatile const uint8_t *)(base + PJRN_HDR + i)) !=
+        (*(const uint8_t *)(src + i))) {
+      return PFLASH_ERR_VERIFY;
+    }
   }
-  if (*(volatile uint32_t *)(flash->addr + flash->page_size - FSIZ) != size) { return -3; }
-  if (*(volatile uint32_t *)(flash->addr + flash->page_size - FCHK) != chksum) { return -4; }
+  if (pflash_read32(base + PJRN_HDR + PFLASH_ALIGN_UP(size)) != crc) {
+    return PFLASH_ERR_VERIFY;
+  }
 
-  return 0;
+  return PFLASH_OK;
 }
 
 /**
- * Store the settings in the last flash sector.
+ * Store the settings as a new journal record in the last flash sector.
  *
- * Blocking call: while the sector erase is in progress the CPU may
- * stall on flash fetches (up to ~2s), so only use it on the ground.
+ * Flight safe: appends into erased space without erasing (microsecond
+ * interrupt masking per programmed unit only). When the journal is
+ * full, the sector is reclaimed with a blocking erase strictly on the
+ * ground; in flight PFLASH_ERR_FULL is returned instead and the store
+ * can be retried after landing.
+ *
+ * Thread safe, must be called from thread context (not from an ISR).
  *
  * @param ptr  RAM address of the settings data
  * @param size data size in bytes
- * @return 0 on success, -1 no usable/safe sector, -2 invalid size,
- *         other negative values from pflash_program_bytes()
+ * @return PFLASH_OK on success, negative pflash_status otherwise
  */
 int32_t persistent_write(void *ptr, uint32_t size)
 {
   struct FlashInfo flash;
-  if (pflash_get(&flash)) { return -1; }
-  if ((size > pflash_max_size(&flash)) || (size == 0)) { return -2; }
+  struct PflashJournal j;
 
-  return pflash_program_bytes(&flash,
-                              (uint32_t)ptr,
-                              size,
-                              pflash_checksum((uint32_t)ptr, size));
+  if (pflash_get(&flash)) { return PFLASH_ERR_SECTOR; }
+  if ((size == 0) || (size > pflash_max_size(&flash))) { return PFLASH_ERR_SIZE; }
+
+  chMtxLock(&pflash_mutex);
+
+  pflash_scan(&flash, &j);
+
+  /* append strictly at the end of the valid record chain, so the new
+   * record is always found by the boot time scan */
+  uint32_t off = j.chain_off;
+
+  if ((j.free_off > off) || (PJRN_RECORD_SIZE(size) > (flash.page_size - off))) {
+    /* the sector is full, or it holds torn/foreign data beyond the
+     * chain (power cut, legacy layout) which must never be programmed
+     * again and would make an appended record unreachable: reclaiming
+     * either state needs a sector erase, ground only */
+    if (pflash_in_flight()) {
+      chMtxUnlock(&pflash_mutex);
+      return PFLASH_ERR_FULL;
+    }
+    if (pflash_erase_verified(&flash)) {
+      chMtxUnlock(&pflash_mutex);
+      return PFLASH_ERR_VERIFY;
+    }
+    off = 0;
+  }
+
+  int32_t ret = pflash_append_record(&flash, off, (uint32_t)ptr, size);
+
+  chMtxUnlock(&pflash_mutex);
+  return ret;
 }
 
 /**
- * Load the settings from flash after validating the stored size and
- * checksum, so stale or corrupt data is never loaded.
+ * Load the newest valid settings record from the journal.
+ *
+ * The record checksum (chained over size and data) guarantees that
+ * stale, torn or corrupt data is never loaded; on any failure the
+ * caller falls back to the airframe file defaults.
+ *
+ * Thread safe, must be called from thread context (not from an ISR).
  *
  * @param ptr  RAM destination for the settings data
  * @param size expected data size in bytes (must equal the stored size)
- * @return 0 on success, -1 no usable/safe sector, -2 invalid size,
- *         -3 stored size mismatch (e.g. sector erased or layout changed),
- *         -4 checksum mismatch
+ * @return PFLASH_OK on success, negative pflash_status otherwise
  */
 int32_t persistent_read(void *ptr, uint32_t size)
 {
   struct FlashInfo flash;
-  uint32_t i;
+  struct PflashJournal j;
 
-  /* check parameters */
-  if (pflash_get(&flash)) { return -1; }
-  if ((size > pflash_max_size(&flash)) || (size == 0)) { return -2; }
+  if (pflash_get(&flash)) { return PFLASH_ERR_SECTOR; }
+  if ((size == 0) || (size > pflash_max_size(&flash))) { return PFLASH_ERR_SIZE; }
 
-  /* check consistency */
-  if (size != *(volatile uint32_t *)(flash.addr + flash.page_size - FSIZ)) { return -3; }
-  if (pflash_checksum(flash.addr, size) !=
-      *(volatile uint32_t *)(flash.addr + flash.page_size - FCHK)) {
-    return -4;
+  chMtxLock(&pflash_mutex);
+
+  pflash_scan(&flash, &j);
+  if ((j.last_off == UINT32_MAX) || (j.last_size != size)) {
+    chMtxUnlock(&pflash_mutex);
+    return PFLASH_ERR_NODATA;
   }
 
-  /* copy data */
-  for (i = 0; i < size; i++) {
-    *(uint8_t *)((uint32_t)ptr + i) = *(volatile uint8_t *)(flash.addr + i);
+  uint32_t data = flash.addr + j.last_off + PJRN_HDR;
+  for (uint32_t i = 0; i < size; i++) {
+    ((uint8_t *)ptr)[i] = *(volatile const uint8_t *)(data + i);
   }
 
-  return 0;
+  chMtxUnlock(&pflash_mutex);
+  return PFLASH_OK;
 }
 
 /**
  * Erase the settings sector, invalidating any stored settings
- * (a following persistent_read() will fail with -3).
- * @return 0 on success
+ * (a following persistent_read() will fail with PFLASH_ERR_NODATA).
+ *
+ * Ground only: the blocking erase is refused with PFLASH_ERR_INFLIGHT
+ * while the autopilot reports motors on or in flight.
+ *
+ * Thread safe, must be called from thread context (not from an ISR).
+ *
+ * @return PFLASH_OK on success, negative pflash_status otherwise
  */
 int32_t persistent_clear(void)
 {
   struct FlashInfo flash;
-  if (pflash_get(&flash)) { return -1; }
 
-  return pflash_erase_verified(&flash);
+  if (pflash_get(&flash)) { return PFLASH_ERR_SECTOR; }
+
+  chMtxLock(&pflash_mutex);
+
+  if (pflash_in_flight()) {
+    chMtxUnlock(&pflash_mutex);
+    return PFLASH_ERR_INFLIGHT;
+  }
+
+  int32_t ret = pflash_erase_verified(&flash) ? PFLASH_ERR_VERIFY : PFLASH_OK;
+
+  chMtxUnlock(&pflash_mutex);
+  return ret;
 }
 
 #else /* unsupported MCU family: dummy implementation so it still links */
