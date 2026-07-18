@@ -91,6 +91,13 @@
         <!-- <define name="DPS310_SYNC_SEND" value="TRUE"/> -->
       </module>
 
+      <!-- Some of the board have no real DPS310 barometer but this SPA06. No baro, use this one then..-->
+      <!-- <module name="baro" type="spa06">
+        <configure name="SPA06_I2C_PORT" value="i2c1"/>
+        <define name="SPA06_SLAVE_ADDR" value="SPA06_I2C_ADDR_ALT"/>
+        <define name="SPA06_SYNC_SEND" value="TRUE"/>
+      </module> -->
+
       <!-- Magnetometer chip on GNSS board instead of FC --> 
       <module name="mag" type="qmc5883l">
         <configure name="MAG_QMC5883L_I2C_DEV" value="i2c1"/>
@@ -196,6 +203,7 @@
     <define name="USE_ADC_2"/>
     <define name="USE_ADC_3"/>
     <define name="USE_ADC_4"/>
+
     <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
 
     <define name="STRONG_WIND"/>
@@ -222,6 +230,7 @@
 
     <module name="ahrs" type="float_dcm"/>
     
+    <!-- *** Common for all targets-->
     <module name="ins" type="alt_float">
       <define name="AHRS_USE_GPS_HEADING" value="true"/>
       <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN"/>
@@ -254,11 +263,13 @@
     </target>
   </firmware> -->
 
+  <!-- ********************* Actuation related settings -->
+
   <servos driver="Pwm">
-    <servo name="S_THROTTLE"          no="2" min="1090" neutral="1100" max="1900"/>
-    <servo name="S_AILERON_LEFT"      no="1" min="1100" neutral="1500" max="1900"/>
+    <servo name="S_THROTTLE"          no="1" min="1090" neutral="1100" max="1900"/>
+    <servo name="S_AILERON_LEFT"      no="2" min="1100" neutral="1500" max="1900"/>
     <servo name="S_RUDDERVATOR_LEFT"  no="3" min="1100" neutral="1500" max="1900"/>
-    <servo name="S_RUDDERVATOR_RIGHT" no="4" min="1900" neutral="1500" max="1100"/>
+    <servo name="S_RUDDERVATOR_RIGHT" no="4" min="1100" neutral="1500" max="1900"/>
     <servo name="S_AILERON_RIGHT"     no="5" min="1100" neutral="1500" max="1900"/>
   </servos>
 
@@ -285,14 +296,6 @@
     <define name="RUDDERVATOR_YAW_FACTOR" value="0.9"/>
   </section>
 
-  <command_laws>
-    <set servo="S_THROTTLE" value="@THROTTLE"/>
-    <set servo="S_AILERON_LEFT" value="@ROLL"/>
-    <set servo="S_RUDDERVATOR_LEFT" value="@PITCH+@YAW"/>
-    <set servo="S_RUDDERVATOR_RIGHT" value="@PITCH-@YAW"/>
-    <set servo="S_AILERON_RIGHT" value="@ROLL"/>
-  </command_laws>
-
   <rc_commands>
     <set command="THROTTLE" value="@THROTTLE"/>
     <set command="ROLL" value="@ROLL"/>
@@ -311,15 +314,13 @@
     <axis name="YAW" failsafe_value="0"/>
   </commands>
 
-  <section name="AUTO1" prefix="AUTO1_">
-    <define name="MAX_ROLL" value="55" unit="deg"/>
-    <define name="MAX_PITCH" value="35" unit="deg"/>
-  </section>
-
-  <section name="TRIM" prefix="COMMAND_">
-    <define name="ROLL_TRIM" value="0.0"/>
-    <define name="PITCH_TRIM" value="0.0"/>
-  </section>
+  <command_laws>
+    <set servo="S_THROTTLE" value="@THROTTLE"/>
+    <set servo="S_AILERON_LEFT" value="@ROLL"/>
+    <set servo="S_RUDDERVATOR_LEFT" value="@PITCH+@YAW"/>
+    <set servo="S_RUDDERVATOR_RIGHT" value="@PITCH-@YAW"/>
+    <set servo="S_AILERON_RIGHT" value="@ROLL"/>
+  </command_laws>
 
   <section name="FAILSAFE" prefix="FAILSAFE_">
     <define name="DEFAULT_THROTTLE" value="0.25" unit="%"/> <!-- just below 28% cruise: gentle descent -->
@@ -329,6 +330,18 @@
     <define name="HOME_RADIUS" value="DEFAULT_CIRCLE_RADIUS" unit="m"/>
     <define name="KILL_MODE_DISTANCE" value="MAX_DIST_FROM_HOME*1.3+HOME_RADIUS" unit="m"/>
     <define name="DELAY_WITHOUT_GPS" value="5" unit="s"/>
+  </section>
+
+  <!-- ********************* End actuation related settings -->
+
+  <section name="AUTO1" prefix="AUTO1_">
+    <define name="MAX_ROLL" value="55" unit="deg"/>
+    <define name="MAX_PITCH" value="35" unit="deg"/>
+  </section>
+
+  <section name="TRIM" prefix="COMMAND_">
+    <define name="ROLL_TRIM" value="0.0"/>
+    <define name="PITCH_TRIM" value="0.0"/>
   </section>
 
   <section name="IMU" prefix="IMU_">
@@ -371,6 +384,7 @@
   </section>
 
   <section name="INS">
+  
     <define name="INS_BODY_TO_GPS_X" value="0.15" unit="m"/>
     <define name="INS_BODY_TO_GPS_Y" value="0.0" unit="m"/>
     <define name="INS_BODY_TO_GPS_Z" value="0.06" unit="m"/>
