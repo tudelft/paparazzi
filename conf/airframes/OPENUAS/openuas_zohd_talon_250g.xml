@@ -83,6 +83,13 @@
         <configure name="ACCEL_RANGE" default="8G"/>
         <configure name="GYRO_AAF" default="977"/>
         <configure name="ACCEL_AAF" default="213"/> -->
+        <!-- Set axis orientation and direction of IMU in body -->
+        <define name="IMU_ICM42688_CHAN_X" value="1"/>
+        <define name="IMU_ICM42688_CHAN_Y" value="0"/>
+        <define name="IMU_ICM42688_CHAN_Z" value="2"/>
+        <define name="IMU_ICM42688_X_SIGN" value="+"/>
+        <define name="IMU_ICM42688_Y_SIGN" value="-"/>
+        <define name="IMU_ICM42688_Z_SIGN" value="+"/>
       </module>
 
       <module name="baro" type="dps310">

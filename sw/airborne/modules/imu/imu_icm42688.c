@@ -39,6 +39,48 @@
 #define INVENSENSE3_ACCEL_AAF 213
 #endif
 
+#ifndef IMU_ICM42688_CHAN_X
+#define IMU_ICM42688_CHAN_X 0
+#endif
+#ifndef IMU_ICM42688_CHAN_Y
+#define IMU_ICM42688_CHAN_Y 1
+#endif
+#ifndef IMU_ICM42688_CHAN_Z
+#define IMU_ICM42688_CHAN_Z 2
+#endif
+#ifndef IMU_ICM42688_X_SIGN
+#define IMU_ICM42688_X_SIGN 1
+#endif
+#ifndef IMU_ICM42688_Y_SIGN
+#define IMU_ICM42688_Y_SIGN 1
+#endif
+#ifndef IMU_ICM42688_Z_SIGN
+#define IMU_ICM42688_Z_SIGN 1
+#endif
+
+/* Accept +, -, +1 and -1 as axis signs and normalize them to +/-1. */
+#define IMU_ICM42688_SIGN_VALUE(sign) (((sign + 1) > 0) ? 1 : -1)
+
+#if IMU_ICM42688_CHAN_X < 0 || IMU_ICM42688_CHAN_X > 2 || \
+  IMU_ICM42688_CHAN_Y < 0 || IMU_ICM42688_CHAN_Y > 2 || \
+  IMU_ICM42688_CHAN_Z < 0 || IMU_ICM42688_CHAN_Z > 2
+#error "IMU_ICM42688_CHAN_X/Y/Z must be 0, 1 or 2"
+#endif
+
+#if IMU_ICM42688_CHAN_X == IMU_ICM42688_CHAN_Y || \
+  IMU_ICM42688_CHAN_X == IMU_ICM42688_CHAN_Z || \
+  IMU_ICM42688_CHAN_Y == IMU_ICM42688_CHAN_Z
+#error "IMU_ICM42688_CHAN_X/Y/Z must form a permutation of 0, 1 and 2"
+#endif
+
+static const struct Int32RMat imu_icm42688_to_sensor = {
+  .m = {
+    [IMU_ICM42688_CHAN_X * 3] = IMU_ICM42688_SIGN_VALUE(IMU_ICM42688_X_SIGN) * (1 << INT32_TRIG_FRAC),
+    [IMU_ICM42688_CHAN_Y * 3 + 1] = IMU_ICM42688_SIGN_VALUE(IMU_ICM42688_Y_SIGN) * (1 << INT32_TRIG_FRAC),
+    [IMU_ICM42688_CHAN_Z * 3 + 2] = IMU_ICM42688_SIGN_VALUE(IMU_ICM42688_Z_SIGN) * (1 << INT32_TRIG_FRAC)
+  }
+};
+
 static struct invensense3_t imu_icm42688;
 
 void imu_icm42688_init(void)
@@ -61,6 +103,8 @@ void imu_icm42688_init(void)
   imu_icm42688.accel_aaf = INVENSENSE3_ACCEL_AAF; // Fixed
   
   invensense3_init(&imu_icm42688);
+  imu_set_defaults_gyro(IMU_ICM42688_ID, &imu_icm42688_to_sensor, NULL, NULL);
+  imu_set_defaults_accel(IMU_ICM42688_ID, &imu_icm42688_to_sensor, NULL, NULL);
 }
 
 void imu_icm42688_periodic(void)
