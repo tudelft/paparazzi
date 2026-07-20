@@ -25,6 +25,9 @@ PAPARAZZI_SRC ?= $(shell pwd)
 
 include conf/Makefile.local
 
+export PAPARAZZI_SRC
+export PAPARAZZI_HOME
+
 # main directory where the generated files and compilation results for an aircraft are stored
 AIRCRAFT_BUILD_DIR = $(PAPARAZZI_HOME)/var/aircrafts/$(AIRCRAFT)
 CONF=$(PAPARAZZI_HOME)/conf

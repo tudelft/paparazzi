@@ -15,6 +15,9 @@ $(TARGET).ARCHDIR = $(ARCH)
 
 RTOS=chibios
 
+# possibilities: DFU-UTIL, SWD, PX4/ArduPilot bootloader
+FLASH_MODE ?= PX4_BOOTLOADER
+
 ## FPU on F4
 USE_FPU=hard
 USE_FPU_OPT=-mfloat-abi=hard -mfpu=fpv4-sp-d16
@@ -31,8 +34,13 @@ PROJECT = $(TARGET)
 
 # Project specific files and paths (see Makefile.chibios for details)
 CHIBIOS_BOARD_PLATFORM = STM32F4xx/platform.mk
+ifeq ($(FLASH_MODE),PX4_BOOTLOADER)
+CHIBIOS_LINKER_DIR = $(PAPARAZZI_SRC)/sw/airborne/boards/$(BOARD_DIR)
+CHIBIOS_BOARD_LINKER = STM32F405xG_ap_bootloader.ld
+else
 CHIBIOS_LINKER_DIR = $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/ld
 CHIBIOS_BOARD_LINKER = STM32F405xG.ld
+endif
 CHIBIOS_BOARD_STARTUP = startup_stm32f4xx.mk
 
 ########################################################################
@@ -40,13 +48,10 @@ CHIBIOS_BOARD_STARTUP = startup_stm32f4xx.mk
 #
 MCU  = cortex-m4
 
-# default flash mode is the DFU
-# possibilities: DFU-UTIL, SWD, PX4, Ardupilot bootloader
-FLASH_MODE ?= PX4_BOOTLOADER
 #DFU_ADDR = 0x08004000
 PX4_TARGET = "ap"
 PX4_PROTOTYPE ?= "$(PAPARAZZI_HOME)/sw/tools/px4/matek_f405_te_sd.prototype"
-PX4_BL_PORT ?= "/dev/serial/by-id/*F4*,/dev/serial/by-id/*F4_*"
+PX4_BL_PORT ?= "/dev/serial/by-id/*MatekF405-TE-BL*,/dev/serial/by-id/*Matek*,/dev/serial/by-id/*ArduPilot*,/dev/ttyACM*"
 
 #
 # default LED configuration
