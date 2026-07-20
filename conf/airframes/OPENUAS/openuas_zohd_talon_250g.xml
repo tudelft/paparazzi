@@ -46,7 +46,7 @@
 
     <target name="ap" board="matek_f405_te_sd">
 
-      <!--<define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>-->
+      <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>
       <define name="DEBUG" value="0"/><!--Enable for debug output, e.g. ms5611-->
       <!--<define name="USE_PERIODIC_TELEMETRY_REPORT" value="TRUE"/> -->
 

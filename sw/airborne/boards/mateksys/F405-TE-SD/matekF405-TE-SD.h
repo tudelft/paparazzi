@@ -6,6 +6,11 @@
 
 #define BOARD_MATEK_F405_TE_SD
 
+/* AP_Bootloader preserves sectors 1 and 2 during application uploads.
+ * Paparazzi owns both sectors while this configuration is installed. */
+#define PERSISTENT_SETTINGS_PRIMARY_SECTOR 1
+#define PERSISTENT_SETTINGS_BACKUP_SECTOR 2
+
 #include "board.h"
 #include "mcuconf_board.h"
 

@@ -24,8 +24,10 @@
  * Flight safe persistent settings flash routines for ChibiOS,
  * supporting the STM32F1, STM32F4, STM32F7 and STM32H7 families.
  *
- * The settings live in the last flash sector as an append only
- * journal of self contained records:
+ * By default, settings live in the last flash sector as an append only
+ * journal of self contained records. Boards may define
+ * PERSISTENT_SETTINGS_PRIMARY_SECTOR and PERSISTENT_SETTINGS_BACKUP_SECTOR
+ * to keep mirrored journals in two dedicated sectors instead:
  *
  *   sector: | record | record | ... | erased space ...             |
  *   record: | magic, data size | data (padded) | crc32 (padded)   |
@@ -132,6 +134,21 @@ struct FlashInfo {
   uint32_t page_size; ///< size of the settings sector
   uint32_t snb;       ///< sector number encoding for the SNB register field (unused on F1)
 };
+
+#if defined(PERSISTENT_SETTINGS_PRIMARY_SECTOR) != defined(PERSISTENT_SETTINGS_BACKUP_SECTOR)
+#error "Persistent settings mirroring requires both primary and backup sectors"
+#endif
+
+#if defined(PERSISTENT_SETTINGS_PRIMARY_SECTOR) && \
+  (PERSISTENT_SETTINGS_PRIMARY_SECTOR == PERSISTENT_SETTINGS_BACKUP_SECTOR)
+#error "Persistent settings primary and backup sectors must be different"
+#endif
+
+#if defined(PERSISTENT_SETTINGS_PRIMARY_SECTOR) && \
+  ((PERSISTENT_SETTINGS_PRIMARY_SECTOR < 1) || (PERSISTENT_SETTINGS_PRIMARY_SECTOR > 3) || \
+   (PERSISTENT_SETTINGS_BACKUP_SECTOR < 1) || (PERSISTENT_SETTINGS_BACKUP_SECTOR > 3))
+#error "Persistent settings sectors must be in the reserved range 1..3"
+#endif
 
 /*
  * Family specific primitives:
@@ -317,6 +334,7 @@ static int32_t pflash_program_unit(const struct FlashInfo *flash __attribute__((
  *
  * @return 0 on success
  */
+#if !defined(PERSISTENT_SETTINGS_PRIMARY_SECTOR)
 static int32_t pflash_detect(struct FlashInfo *flash)
 {
   /* flash size in kBytes, from the factory programmed size register */
@@ -372,6 +390,19 @@ static int32_t pflash_detect(struct FlashInfo *flash)
 
   return 0;
 }
+#else
+/** Select one of the small, independently erasable F4 sectors. */
+static int32_t pflash_select_sector(struct FlashInfo *flash, uint32_t sector)
+{
+  uint32_t size_kb = *(volatile const uint16_t *)FLASHSIZE_BASE;
+  if ((size_kb < 256) || (size_kb > 2048) || (sector >= 4)) { return -1; }
+
+  flash->addr = PFLASH_BASE + sector * 0x4000UL;
+  flash->page_size = 0x4000UL;
+  flash->snb = sector;
+  return 0;
+}
+#endif
 
 /**
  * Busy-wait until the flash controller is idle.
@@ -791,7 +822,7 @@ static void pflash_scan(const struct FlashInfo *flash, struct PflashJournal *j)
  * size (the ChibiOS linker rules place .data, which also carries the
  * .ramtext programming routines, last in the flash image).
  */
-extern uint8_t __textdata_base__, __data_base__, __data_end__;
+extern uint8_t __vectors_base__, __textdata_base__, __data_base__, __data_end__;
 
 /**
  * Locate the settings sector and make sure the firmware image does
@@ -800,13 +831,25 @@ extern uint8_t __textdata_base__, __data_base__, __data_end__;
  * @param[out] flash filled with the settings sector location
  * @return 0 on success, -1 if unsupported geometry or unsafe overlap
  */
-static int32_t pflash_get(struct FlashInfo *flash)
+static int32_t pflash_get(struct FlashInfo *flash, bool backup)
 {
+#if defined(PERSISTENT_SETTINGS_PRIMARY_SECTOR)
+#if !defined(STM32F4XX)
+#error "Board-selected persistent settings sectors are currently supported only on STM32F4"
+#endif
+  uint32_t sector = backup ? PERSISTENT_SETTINGS_BACKUP_SECTOR :
+                             PERSISTENT_SETTINGS_PRIMARY_SECTOR;
+  if (pflash_select_sector(flash, sector)) { return -1; }
+#else
+  (void)backup;
   if (pflash_detect(flash)) { return -1; }
+#endif
 
+  uint32_t image_start = (uint32_t)&__vectors_base__;
   uint32_t image_end = (uint32_t)&__textdata_base__ +
                        ((uint32_t)&__data_end__ - (uint32_t)&__data_base__);
-  if (image_end > flash->addr) { return -1; }
+  uint32_t sector_end = flash->addr + flash->page_size;
+  if ((image_start < sector_end) && (image_end > flash->addr)) { return -1; }
 
   return 0;
 }
@@ -928,8 +971,38 @@ static int32_t pflash_append_record(const struct FlashInfo *flash,
   return PFLASH_OK;
 }
 
+/** Append to one journal, reclaiming it first when needed and safe. */
+static int32_t pflash_store_one(const struct FlashInfo *flash, void *ptr, uint32_t size)
+{
+  struct PflashJournal j;
+  pflash_scan(flash, &j);
+
+  uint32_t off = j.chain_off;
+  if ((j.free_off > off) || (PJRN_RECORD_SIZE(size) > (flash->page_size - off))) {
+    if (pflash_in_flight()) { return PFLASH_ERR_FULL; }
+    if (pflash_erase_verified(flash)) { return PFLASH_ERR_VERIFY; }
+    off = 0;
+  }
+
+  return pflash_append_record(flash, off, (uint32_t)ptr, size);
+}
+
+/** Load the newest valid record from one journal. */
+static int32_t pflash_read_one(const struct FlashInfo *flash, void *ptr, uint32_t size)
+{
+  struct PflashJournal j;
+  pflash_scan(flash, &j);
+  if ((j.last_off == UINT32_MAX) || (j.last_size != size)) { return PFLASH_ERR_NODATA; }
+
+  uint32_t data = flash->addr + j.last_off + PJRN_HDR;
+  for (uint32_t i = 0; i < size; i++) {
+    ((uint8_t *)ptr)[i] = *(volatile const uint8_t *)(data + i);
+  }
+  return PFLASH_OK;
+}
+
 /**
- * Store the settings as a new journal record in the last flash sector.
+ * Store the settings as a new journal record in the configured journal(s).
  *
  * Flight safe: appends into erased space without erasing (microsecond
  * interrupt masking per programmed unit only). When the journal is
@@ -945,44 +1018,37 @@ static int32_t pflash_append_record(const struct FlashInfo *flash,
  */
 int32_t persistent_write(void *ptr, uint32_t size)
 {
-  struct FlashInfo flash;
-  struct PflashJournal j;
+  struct FlashInfo primary;
+#if defined(PERSISTENT_SETTINGS_PRIMARY_SECTOR)
+  struct FlashInfo backup;
+#endif
 
-  if (pflash_get(&flash)) { return PFLASH_ERR_SECTOR; }
-  if ((size == 0) || (size > pflash_max_size(&flash))) { return PFLASH_ERR_SIZE; }
+  if (pflash_get(&primary, false)) { return PFLASH_ERR_SECTOR; }
+  if ((size == 0) || (size > pflash_max_size(&primary))) { return PFLASH_ERR_SIZE; }
+#if defined(PERSISTENT_SETTINGS_PRIMARY_SECTOR)
+  if (pflash_get(&backup, true) || (size > pflash_max_size(&backup))) {
+    return PFLASH_ERR_SECTOR;
+  }
+#endif
 
   chMtxLock(&pflash_mutex);
 
-  pflash_scan(&flash, &j);
-
-  /* append strictly at the end of the valid record chain, so the new
-   * record is always found by the boot time scan */
-  uint32_t off = j.chain_off;
-
-  if ((j.free_off > off) || (PJRN_RECORD_SIZE(size) > (flash.page_size - off))) {
-    /* the sector is full, or it holds torn/foreign data beyond the
-     * chain (power cut, legacy layout) which must never be programmed
-     * again and would make an appended record unreachable: reclaiming
-     * either state needs a sector erase, ground only */
-    if (pflash_in_flight()) {
-      chMtxUnlock(&pflash_mutex);
-      return PFLASH_ERR_FULL;
-    }
-    if (pflash_erase_verified(&flash)) {
-      chMtxUnlock(&pflash_mutex);
-      return PFLASH_ERR_VERIFY;
-    }
-    off = 0;
-  }
-
-  int32_t ret = pflash_append_record(&flash, off, (uint32_t)ptr, size);
+#if defined(PERSISTENT_SETTINGS_PRIMARY_SECTOR)
+  /* Commit the clone first. If power is lost, the primary still contains
+   * the previous complete settings record. */
+  int32_t ret = pflash_store_one(&backup, ptr, size);
+  if (ret == PFLASH_OK) { ret = pflash_store_one(&primary, ptr, size); }
+#else
+  int32_t ret = pflash_store_one(&primary, ptr, size);
+#endif
 
   chMtxUnlock(&pflash_mutex);
   return ret;
 }
 
 /**
- * Load the newest valid settings record from the journal.
+ * Load the newest committed settings record. Mirrored storage reads the
+ * primary first and restores its clone only when the primary is invalid.
  *
  * The record checksum (chained over size and data) guarantees that
  * stale, torn or corrupt data is never loaded; on any failure the
@@ -996,31 +1062,32 @@ int32_t persistent_write(void *ptr, uint32_t size)
  */
 int32_t persistent_read(void *ptr, uint32_t size)
 {
-  struct FlashInfo flash;
-  struct PflashJournal j;
+  struct FlashInfo primary;
+#if defined(PERSISTENT_SETTINGS_PRIMARY_SECTOR)
+  struct FlashInfo backup;
+#endif
 
-  if (pflash_get(&flash)) { return PFLASH_ERR_SECTOR; }
-  if ((size == 0) || (size > pflash_max_size(&flash))) { return PFLASH_ERR_SIZE; }
+  if (pflash_get(&primary, false)) { return PFLASH_ERR_SECTOR; }
+  if ((size == 0) || (size > pflash_max_size(&primary))) { return PFLASH_ERR_SIZE; }
+#if defined(PERSISTENT_SETTINGS_PRIMARY_SECTOR)
+  if (pflash_get(&backup, true) || (size > pflash_max_size(&backup))) {
+    return PFLASH_ERR_SECTOR;
+  }
+#endif
 
   chMtxLock(&pflash_mutex);
 
-  pflash_scan(&flash, &j);
-  if ((j.last_off == UINT32_MAX) || (j.last_size != size)) {
-    chMtxUnlock(&pflash_mutex);
-    return PFLASH_ERR_NODATA;
-  }
-
-  uint32_t data = flash.addr + j.last_off + PJRN_HDR;
-  for (uint32_t i = 0; i < size; i++) {
-    ((uint8_t *)ptr)[i] = *(volatile const uint8_t *)(data + i);
-  }
+  int32_t ret = pflash_read_one(&primary, ptr, size);
+#if defined(PERSISTENT_SETTINGS_PRIMARY_SECTOR)
+  if (ret != PFLASH_OK) { ret = pflash_read_one(&backup, ptr, size); }
+#endif
 
   chMtxUnlock(&pflash_mutex);
-  return PFLASH_OK;
+  return ret;
 }
 
 /**
- * Erase the settings sector, invalidating any stored settings
+ * Erase all configured settings journals, invalidating any stored settings
  * (a following persistent_read() will fail with PFLASH_ERR_NODATA).
  *
  * Ground only: the blocking erase is refused with PFLASH_ERR_INFLIGHT
@@ -1032,9 +1099,15 @@ int32_t persistent_read(void *ptr, uint32_t size)
  */
 int32_t persistent_clear(void)
 {
-  struct FlashInfo flash;
+  struct FlashInfo primary;
+#if defined(PERSISTENT_SETTINGS_PRIMARY_SECTOR)
+  struct FlashInfo backup;
+#endif
 
-  if (pflash_get(&flash)) { return PFLASH_ERR_SECTOR; }
+  if (pflash_get(&primary, false)) { return PFLASH_ERR_SECTOR; }
+#if defined(PERSISTENT_SETTINGS_PRIMARY_SECTOR)
+  if (pflash_get(&backup, true)) { return PFLASH_ERR_SECTOR; }
+#endif
 
   chMtxLock(&pflash_mutex);
 
@@ -1043,7 +1116,12 @@ int32_t persistent_clear(void)
     return PFLASH_ERR_INFLIGHT;
   }
 
-  int32_t ret = pflash_erase_verified(&flash) ? PFLASH_ERR_VERIFY : PFLASH_OK;
+#if defined(PERSISTENT_SETTINGS_PRIMARY_SECTOR)
+  int32_t ret = pflash_erase_verified(&backup) ? PFLASH_ERR_VERIFY : PFLASH_OK;
+  if ((ret == PFLASH_OK) && pflash_erase_verified(&primary)) { ret = PFLASH_ERR_VERIFY; }
+#else
+  int32_t ret = pflash_erase_verified(&primary) ? PFLASH_ERR_VERIFY : PFLASH_OK;
+#endif
 
   chMtxUnlock(&pflash_mutex);
   return ret;
