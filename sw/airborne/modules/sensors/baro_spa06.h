@@ -1,5 +1,6 @@
 /*
- * Florian Sansou florian.sansou@enac.fr
+ * Copyright (C) 2026 OpenUAS
+ * Thanks to Florian Sansou florian.sansou@enac.fr for initial implementation
  *
  * This file is part of paparazzi.
  *
