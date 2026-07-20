@@ -1,6 +1,6 @@
 <conf>
   <aircraft
-   name="Talon_A"
+   name="Adam"
    ac_id="129"
    airframe="airframes/OPENUAS/openuas_zohd_talon_250g.xml"
    radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
@@ -11,30 +11,8 @@
    gui_color="yellow"
   />
   <aircraft
-   name="QuadRotorcraftSim"
-   ac_id="42"
-   airframe="airframes/examples/quad_rotorcraft_sim.xml"
-   radio="radios/dummy.xml"
-   telemetry="telemetry/default_rotorcraft.xml"
-   flight_plan="flight_plans/rotorcraft_basic.xml"
-   settings="settings/rotorcraft_basic.xml settings/nps.xml"
-   settings_modules=""
-   gui_color="#00ff00"
-  />
-  <aircraft
-   name="Easystar_3"
-   ac_id="114"
-   airframe="airframes/OPENUAS/openuas_multiplex_easystar_3.xml"
-   radio="radios/OPENUAS/openuas_lite_2se_openrxsr_sbus_16_out.xml"
-   telemetry="telemetry/OPENUAS/openuas_fixedwing_imu_rc_9k6.xml"
-   flight_plan="flight_plans/basic.xml"
-   settings="settings/fixedwing_basic.xml settings/control/ctl_new.xml settings/nps.xml [settings/persistent_settings.xml]"
-   settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/airspeed_sdp3x.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_full_pid_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/nav_cube.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/rangefinder_i2c.xml modules/stabilization_adaptive_fw.xml modules/stabilization_float_quat.xml modules/tune_airspeed.xml"
-   gui_color="#f600d3002d00"
-  />
-  <aircraft
    name="Twisty"
-   ac_id="115"
+   ac_id="116"
    airframe="airframes/OPENUAS/openuas_kavan_twisty.xml"
    radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
    telemetry="telemetry/OPENUAS/openuas_fixedwing_imu_rc.xml"
@@ -42,17 +20,6 @@
    settings="settings/fixedwing_basic.xml settings/control/ctl_new.xml settings/nps.xml settings/persistent_settings.xml"
    settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_full_pid_fw.xml modules/imu_common.xml modules/imu_quality_assessment.xml modules/nav_basic_fw.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/rangefinder_i2c.xml modules/stabilization_adaptive_fw.xml modules/stabilization_float_quat.xml"
    gui_color="#ee00ee00ec00"
-  />
-  <aircraft
-   name="Corvix"
-   ac_id="116"
-   airframe="airframes/OPENUAS/openuas_sonicmodell_baby_ar_wing_pro.xml"
-   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
-   telemetry="telemetry/default_fixedwing_imu.xml"
-   flight_plan="flight_plans/basic.xml"
-   settings="settings/fixedwing_basic.xml"
-   settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/airspeed_sdp3x.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_full_pid_fw.xml modules/imu_common.xml modules/imu_quality_assessment.xml modules/nav_basic_fw.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/stabilization_adaptive_fw.xml modules/stabilization_float_quat.xml modules/tune_airspeed.xml"
-   gui_color="#f500c500ff00"
   />
   <aircraft
    name="Corax"
@@ -154,15 +121,15 @@
    gui_color="#ce005c000000"
   />
   <aircraft
-   name="Bixler_2"
+   name="Easystar_3"
    ac_id="135"
-   airframe="airframes/OPENUAS/openuas_hobbyking_bixler_2.xml"
-   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
-   telemetry="telemetry/OPENUAS/openuas_fixedwing_imu.xml"
+   airframe="airframes/OPENUAS/openuas_multiplex_easystar_3.xml"
+   radio="radios/OPENUAS/openuas_lite_2se_openrxsr_sbus_16_out.xml"
+   telemetry="telemetry/OPENUAS/openuas_fixedwing_imu_rc_9k6.xml"
    flight_plan="flight_plans/basic.xml"
-   settings="settings/fixedwing_basic.xml [settings/estimation/ac_char.xml] [settings/control/ctl_energy.xml] [settings/control/tune_agr_climb.xml] [settings/control/ctl_energyadaptive.xml]"
-   settings_modules="modules/ahrs_float_cmpl_quat.xml modules/air_data.xml modules/airspeed_ms45xx_i2c.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_full_pid_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/stabilization_adaptive_fw.xml modules/tune_airspeed.xml"
-   gui_color="#d300d700cf00"
+   settings="settings/fixedwing_basic.xml settings/control/ctl_new.xml settings/nps.xml [settings/persistent_settings.xml]"
+   settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/airspeed_sdp3x.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_full_pid_fw.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/nav_cube.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/rangefinder_i2c.xml modules/stabilization_adaptive_fw.xml modules/stabilization_float_quat.xml modules/tune_airspeed.xml"
+   gui_color="#f600d3002d00"
   />
   <aircraft
    name="Seal_EVO"
@@ -209,7 +176,7 @@
    gui_color="yellow"
   />
   <aircraft
-   name="Ranger"
+   name="Ranger_2400"
    ac_id="143"
    airframe="airframes/OPENUAS/openuas_volantexrc_ranger_2400.xml"
    radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"

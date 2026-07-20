@@ -521,7 +521,7 @@
 					 PIN_AFIO_AF(OSD_CS, 0) | \
 					 PIN_AFIO_AF(SPI2_SCK, 5) | \
 					 PIN_AFIO_AF(SERVO9, 9) | \
-					 PIN_AFIO_AF(SERVO3, 1))
+					 PIN_AFIO_AF(SERVO3, 9))
 
 #define VAL_GPIOC_MODER                 (PIN_MODE_ANALOG(PRESSURE_SENS) | \
 					 PIN_MODE_OUTPUT(SDCARD_CS) | \
@@ -1496,8 +1496,8 @@
 #define AF_LINE_SPI2_SCK                 5U
 #define AF_SERVO9                        9U
 #define AF_LINE_SERVO9                   9U
-#define AF_SERVO3                        1U
-#define AF_LINE_SERVO3                   1U
+#define AF_SERVO3                        9U
+#define AF_LINE_SERVO3                   9U
 #define AF_SPI2_MISO                     5U
 #define AF_LINE_SPI2_MISO                5U
 #define AF_SPI2_MOSI                     5U
@@ -1560,10 +1560,10 @@
 #define SERVO9_TIM_FN	 CH
 #define SERVO9_TIM_CH	 1
 #define SERVO9_TIM_AF	 9
-#define SERVO3_TIM	 1
+#define SERVO3_TIM	 12
 #define SERVO3_TIM_FN	 CH
-#define SERVO3_TIM_CH	 3
-#define SERVO3_TIM_AF	 1
+#define SERVO3_TIM_CH	 2
+#define SERVO3_TIM_AF	 9
 #define SERVO2_TIM	 8
 #define SERVO2_TIM_FN	 CH
 #define SERVO2_TIM_CH	 3

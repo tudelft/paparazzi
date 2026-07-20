@@ -31,12 +31,13 @@
     + C3 Chip as MCU for UWB only
     + Uploading of the firmware can be performed via ARDU bootloader flashed via USB, or boot button STM32
       Or USB DFU-UTIL after pressing the boot button on the FC
-    + On I2C port we have Baro and external Magnetometeer, Airspeed, Rangefinder
+    + On I2C port we have Barometer, In- and external Magnetometer, Airspeed and Rangefinder
     + GNSS set to ~19Hz update rate, 4 constelations, SBAS enabled
     + Advised battery for this airframe is a 3300mAh 2S LiIon min. 5C
     + ESC set to fixed endpoints 1100-1900us
     + Taking 100mA the ESP C3 and UWB powered via FC 3v3
     + RC RX powered via FC 5v
+    + On the R81 SBUS out channel 9 gives the RSSI value RX output ,can be used in FC for OSD
   </description>
 
   <firmware name="fixedwing">
@@ -66,9 +67,9 @@
 
       <!-- OSD CONFIGURATION -->
       <module name="osd_max7456">
-        <configure name="MAX7456_SPI_DEV" value="spi2"/>
-        <configure name="MAX7456_SLAVE_IDX" value="SPI_SLAVE1"/>
-        <define name="USE_MATEK_TYPE_OSD_CHIP" value="true"/>
+        <configure name="MAX7456_SPI_DEV" value="spi1"/>
+        <configure name="MAX7456_SLAVE_IDX" value="SPI_SLAVE2"/>
+        <!-- <define name="USE_MATEK_TYPE_OSD_CHIP" value="true"/> -->
         <define name="USE_PAL_FOR_OSD_VIDEO" value="true"/>
         <!-- <define name="BARO_ALTITUDE_VAR" value="200"/> --><!-- Correction -->
         <define name="BAT_CAPACITY" value="MAX_BAT_CAPACITY" unit="mAh"/>
@@ -88,7 +89,7 @@
         <define name="IMU_ICM42688_CHAN_Y" value="0"/>
         <define name="IMU_ICM42688_CHAN_Z" value="2"/>
         <define name="IMU_ICM42688_X_SIGN" value="+"/>
-        <define name="IMU_ICM42688_Y_SIGN" value="-"/>
+        <define name="IMU_ICM42688_Y_SIGN" value="+"/>
         <define name="IMU_ICM42688_Z_SIGN" value="+"/>
       </module>
 
@@ -98,12 +99,16 @@
         <!-- <define name="DPS310_SYNC_SEND" value="TRUE"/> -->
       </module>
 
-      <!-- Some of the board have no real DPS310 barometer but this SPA06. No baro, use this one then..-->
-      <!-- <module name="baro" type="spa06">
+      <!-- Some of the boards have no real DPS310 barometer but a SPA06 sensor 
+      if there is no baro data arriving, enable this SPA06, disable the DPS310.
+      Still no data? then remove the line with SPA06_I2C_ADDR_ALT-->
+      <!-- 
+      <module name="baro" type="spa06">
         <configure name="SPA06_I2C_PORT" value="i2c1"/>
         <define name="SPA06_SLAVE_ADDR" value="SPA06_I2C_ADDR_ALT"/>
         <define name="SPA06_SYNC_SEND" value="TRUE"/>
-      </module> -->
+      </module> 
+      -->
 
       <!-- Magnetometer chip on GNSS board instead of FC --> 
       <module name="mag" type="qmc5883l">
@@ -162,12 +167,14 @@
 
       <module name="gps"  type="ublox" >
         <configure name="GPS_BAUD" value="B460800"/>
-        <configure name="GPS_PORT" value="UART1"/>
+        <configure name="GPS_PORT" value="UART4"/>
         <!-- <configure name="GPS_LED"  value="2"/> -->
       </module>
 
       <module name="radio_control" type="sbus">
         <configure name="SBUS_PORT" value="UART2"/>
+        <define name="RADIO_HATCH" value="RADIO_AUX4"/>
+        <define name="RADIO_MANUALRELEASE" value="RADIO_AUX4"/>
       </module>
 
       <!-- Only enable with a module that supports v_ctl_auto_airspeed_setpoint-->
@@ -273,11 +280,12 @@
   <!-- ********************* Actuation related settings -->
 
   <servos driver="Pwm">
-    <servo name="S_THROTTLE"          no="1" min="1090" neutral="1100" max="1900"/>
+    <servo name="S_THROTTLE"          no="1" min="1092" neutral="1100" max="1900"/>
     <servo name="S_AILERON_LEFT"      no="2" min="1100" neutral="1500" max="1900"/>
     <servo name="S_RUDDERVATOR_LEFT"  no="3" min="1100" neutral="1500" max="1900"/>
     <servo name="S_RUDDERVATOR_RIGHT" no="4" min="1100" neutral="1500" max="1900"/>
     <servo name="S_AILERON_RIGHT"     no="5" min="1100" neutral="1500" max="1900"/>
+    <servo name="S_HATCH"             no="6" min="1100" neutral="1110" max="1900"/>
   </servos>
 
   <section name="ServoPositions">
@@ -301,6 +309,7 @@
     <define name="ASSIST_ROLL_WITH_RUDDER" value="0.0"/>
     <define name="RUDDERVATOR_PITCH_FACTOR" value="1.0"/>
     <define name="RUDDERVATOR_YAW_FACTOR" value="0.9"/>
+    <!-- <define name="RUDDERVATOR_ROLL_FACTOR" value="0.7"/> -->
   </section>
 
   <rc_commands>
@@ -308,10 +317,14 @@
     <set command="ROLL" value="@ROLL"/>
     <set command="PITCH" value="@PITCH"/>
     <set command="YAW" value="@YAW"/>
+    <set command="HATCH" value="@MANUALRELEASE"/>
+    <set command="CLICKSHUTTER" value="@MANUALRELEASE"/>
   </rc_commands>
 
   <auto_rc_commands>
-    <set command="YAW" value="@YAW*0.8"/>
+    <set command="YAW" value="@YAW*0.8"/><!-- can be disabled after all tuning-->
+    <!-- To determine best pitch for flare in auto2 one can add Pitch command temporary while landing-->
+    <!--WARNING only enable if you know why <set command="PITCH" value="@PITCH"/>-->
   </auto_rc_commands>
 
   <commands>
@@ -319,6 +332,8 @@
     <axis name="ROLL" failsafe_value="0"/>
     <axis name="PITCH" failsafe_value="0"/>
     <axis name="YAW" failsafe_value="0"/>
+    <axis name="HATCH" failsafe_value="-9599"/><!-- SERVO_HATCH_CLOSED -->
+    <axis name="CLICKSHUTTER" failsafe_value="-9599"/><!-- SERVO_HATCH_CLOSED -->
   </commands>
 
   <command_laws>
@@ -327,6 +342,7 @@
     <set servo="S_RUDDERVATOR_LEFT" value="@PITCH+@YAW"/>
     <set servo="S_RUDDERVATOR_RIGHT" value="@PITCH-@YAW"/>
     <set servo="S_AILERON_RIGHT" value="@ROLL"/>
+    <set servo="S_HATCH" value="(Or((autopilot.mode == AP_MODE_AUTO1), (autopilot.mode == AP_MODE_AUTO2)) ? MAX_PPRZ : @HATCH)"/>
   </command_laws>
 
   <section name="FAILSAFE" prefix="FAILSAFE_">
@@ -337,6 +353,7 @@
     <define name="HOME_RADIUS" value="DEFAULT_CIRCLE_RADIUS" unit="m"/>
     <define name="KILL_MODE_DISTANCE" value="MAX_DIST_FROM_HOME*1.3+HOME_RADIUS" unit="m"/>
     <define name="DELAY_WITHOUT_GPS" value="5" unit="s"/>
+    <!-- <define name="DEFAULT_RELEASE" value="1100"/> -->
   </section>
 
   <!-- ********************* End actuation related settings -->
