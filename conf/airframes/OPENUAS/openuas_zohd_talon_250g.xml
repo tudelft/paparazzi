@@ -22,22 +22,24 @@
 
     NOTES:
     + ServoPins on PCB point to tail of airframe
-    + The FC PCB is mounted with the F4 Processor towards the bottom of the airframe
+    + The FC (FlightController) PCB is mounted with the F4 MCU towards the bottom of the airframe
     + Battery voltage and current via onboard sensor
-    + 2nd motor current values via additional external sensor
+    + 2nd current sensor values via additional external sensor
     + Servos powered via BEC on FC
-    + Flightcontroller powered via FC Onboard BEC
-    + Telemetry powered via FC
+    + FC powered via BEC on FC
+    + Telemetry powered via FC MCU LDO 3v3 pin output
+    + GNSS powered via FC 5v pad
     + C3 Chip as MCU for UWB only
-    + Uploading of the firmware can be performed via ARDU bootloader flashed via USB, or boot button STM32
-      Or USB DFU-UTIL after pressing the boot button on the FC
-    + On I2C port we have Barometer, In- and external Magnetometer, Airspeed and Rangefinder
+    + Uploading of the firmware can be performed via USB using the availabe Bootloader
+      Also possible via USB DFU-UTIL after pressing the boot button on the FC
+    + On an I2C port we have Barometer, In- and external Magnetometer, Airspeed and Rangefinder
     + GNSS set to ~19Hz update rate, 4 constelations, SBAS enabled
     + Advised battery for this airframe is a 3300mAh 2S LiIon min. 5C
     + ESC set to fixed endpoints 1100-1900us
     + Taking 100mA the ESP C3 and UWB powered via FC 3v3
     + RC RX powered via FC 5v
     + On the R81 SBUS out channel 9 gives the RSSI value RX output ,can be used in FC for OSD
+    + Vision: added a JeVois "clone" created from RPI Zero 2W on UART1 TX/RX
   </description>
 
   <firmware name="fixedwing">
@@ -46,7 +48,7 @@
 
     <target name="ap" board="matek_f405_te_sd">
 
-      <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>
+      <!--<define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>-->
       <define name="DEBUG" value="0"/><!--Enable for debug output, e.g. ms5611-->
       <!--<define name="USE_PERIODIC_TELEMETRY_REPORT" value="TRUE"/> -->
 
@@ -67,7 +69,7 @@
 
       <!-- OSD CONFIGURATION -->
       <module name="osd_max7456">
-        <configure name="MAX7456_SPI_DEV" value="spi1"/>
+        <configure name="MAX7456_SPI_DEV" value="spi2"/>
         <configure name="MAX7456_SLAVE_IDX" value="SPI_SLAVE2"/>
         <!-- <define name="USE_MATEK_TYPE_OSD_CHIP" value="true"/> -->
         <define name="USE_PAL_FOR_OSD_VIDEO" value="true"/>
@@ -79,17 +81,19 @@
       <module name="imu" type="icm42688">
         <configure name="IMU_SPI_DEV" value="spi1"/>
         <configure name="IMU_SPI_SLAVE_IDX" value="SPI_SLAVE0"/>
-   <!-- <configure name="IMU_ODR" default="4KHZ"/>
-        <configure name="GYRO_RANGE" default="2000DPS"/>
-        <configure name="ACCEL_RANGE" default="8G"/>
-        <configure name="GYRO_AAF" default="977"/>
-        <configure name="ACCEL_AAF" default="213"/> -->
-        <!-- Set axis orientation and direction of IMU in body -->
+        <configure name="IMU_ODR" value="1KHZ"/>
+        <configure name="GYRO_RANGE" value="2000DPS"/>
+        <configure name="ACCEL_RANGE" value="16G"/>
+        <!-- The 500Hz module service forwards the last of two 1kHz FIFO samples.
+        Filter the 277-364Hz motor and 555-728Hz blade-pass bands before decimation. -->
+        <configure name="GYRO_AAF" value="126"/>
+        <configure name="ACCEL_AAF" value="84"/>
+        <!-- MATEKF405TE_SD sensor alignment: upside down and 180 degrees flip -->
         <define name="IMU_ICM42688_CHAN_X" value="1"/>
         <define name="IMU_ICM42688_CHAN_Y" value="0"/>
         <define name="IMU_ICM42688_CHAN_Z" value="2"/>
         <define name="IMU_ICM42688_X_SIGN" value="+"/>
-        <define name="IMU_ICM42688_Y_SIGN" value="+"/>
+        <define name="IMU_ICM42688_Y_SIGN" value="-"/>
         <define name="IMU_ICM42688_Z_SIGN" value="+"/>
       </module>
 
@@ -121,7 +125,7 @@
         <define name="QMC5883L_CHAN_X_SIGN" value="+"/>
         <define name="QMC5883L_CHAN_Y_SIGN" value="+"/>
         <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
-        <!-- <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/> -->
+        <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/><!-- for debugging -->
       </module> 
 
       <!-- We add another Magneto if on GNSS module does not satisfy-->
@@ -151,7 +155,7 @@
              ~1 Hz cutoff) is right for ETECS: the speed loop is much slower
              than 1 Hz, so extra smoothing is free (less throttle jitter).
              0.09 was LESS filtering than default - no benefit here. -->
-        <define name="SDP3X_LOWPASS_TAU" value="0.15"/>
+        <define name="SDP3X_LOWPASS_TAU" value="0.15"/><!-- tuned to this airframe airspeed -->
         <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
         <define name="USE_AIRSPEED" value="TRUE"/>
         <!-- <define name="USE_AIRSPEED_LOWPASS_FILTER" value="TRUE"/> --><!-- Already TRUE per default -->
@@ -160,9 +164,9 @@
       </module>
 
       <module name="telemetry" type="transparent">
-        <configure name="MODEM_PORT" value="usb_serial"/><!--USB Serial for easier benchtest only -->
-        <!-- <configure  name="MODEM_BAUD" value="B57600"/>
-        <configure  name="MODEM_PORT" value="UART6"/> -->
+        <!--<configure name="MODEM_PORT" value="usb_serial"/>--><!--USB Serial used for easier benchtest only -->
+        <configure  name="MODEM_BAUD" value="B57600"/>
+        <configure  name="MODEM_PORT" value="UART5"/>
       </module>
 
       <module name="gps"  type="ublox" >
@@ -236,19 +240,18 @@
     <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
     <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/>
 
+    <!-- Modules used for all targets, also for Simulation -->
     <module name="actuators" type="pwm"/>
 
     <module name="air_data"/>
 
     <module name="control" type="energyadaptive"/>
 
-    <module name="ahrs" type="float_dcm"/>
-    
+    <!-- Continuously estimates gyro bias, including unheated IMU warm-up drift. -->
+    <module name="ahrs" type="float_cmpl_quat"/>
+
     <!-- *** Common for all targets-->
-    <module name="ins" type="alt_float">
-      <define name="AHRS_USE_GPS_HEADING" value="true"/>
-      <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN"/>
-    </module>
+    <module name="ins" type="alt_float"/>
 
     <module name="navigation"/>
     <module name="nav" type="drop"/>
@@ -266,6 +269,39 @@
     <module name="photogrammetry_calculator"/>
     <module name="traffic_info"/>
     <module name="tcas"/>
+
+    <!--
+    <module name="tag_tracking">
+      <configure name="JEVOIS_UART" value="UART3"/>
+      <configure name="JEVOIS_BAUD" value="B115200"/>
+      <define name="JEVOIS_SEND_ALT"/>
+    </module>
+    -->
+
+    <!-- UART is value on which port Jevois camera is connected -->
+    <!--
+    <module name="jevois">
+      <configure name="JEVOIS_UART" value="UART1"/>
+      <configure name="JEVOIS_BAUD" value="B115200"/> -->
+      <!--<define name="JEVOIS_SEND_ALT"/> --><!-- enable for color rectangle tracking -->
+    <!-- </module> -->
+
+    <!-- Enable only for vision navigation functionality with external vision board -->
+    <!--
+    <module name="where_am_i">
+      <configure name="JEVOIS_UART" value="UART1"/>
+      <configure name="JEVOIS_BAUD" value="B115200"/>
+      <define name="JEVOIS_SEND_ALT"/>
+    </module>
+    -->
+
+    <!-- Enable only for vision navigation functionality with external vision board -->
+    <!-- <module name="do_i_see_a_fence"/>
+      <configure name="JEVOIS_UART" value="UART1"/>
+      <configure name="JEVOIS_BAUD" value="B115200"/>
+      <define name="JEVOIS_SEND_ALT"/>
+    </module>
+    -->
 
   </firmware>
 
@@ -387,9 +423,6 @@
     <define name="ACCEL_X_NEUTRAL" value="0"/>
     <define name="ACCEL_Y_NEUTRAL" value="0"/>
     <define name="ACCEL_Z_NEUTRAL" value="0"/>
-    <define name="ACCEL_X_SENS" value="4.90" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.90" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.93" integer="16"/>
 
     <define name="MAG_X_NEUTRAL" value="0"/>
     <define name="MAG_Y_NEUTRAL" value="0"/>
@@ -568,7 +601,7 @@
   </section>
 
   <section name="BAT">
-    <!-- <define name="MilliAmpereOfAdc(_adc)" value="((float)(_adc-35) * 9.89)"/>Like to set 0 to IDLE value we only interested in motor current -->
+    <!--39.2 <define name="MilliAmpereOfAdc(_adc)" value="((float)(_adc-35) * 9.89)"/>Like to set 0 to IDLE value we only interested in motor current -->
     <!-- <define name="VoltageOfAdc(_adc)" value="(_adc * 0.00837209302326)"/> -->
     <define name="MAX_BAT_CAPACITY" value="3500" unit="mAh"/>
     <define name="MILLIAMP_AT_IDLE_THROTTLE" value="220" unit="mA"/>
@@ -607,7 +640,7 @@
     <define name="LANDING_CIRCLE_RADIUS" value="25.0" unit="m"/>
     <define name="MIN_CIRCLE_RADIUS" value="25.0" unit="m"/>
 
-    <define name="CARROT" value="2.5" unit="s"/>
+    <define name="CARROT" value="2.5" unit="s"/><!-- Optimum for default radius -->
 
     <define name="UNLOCKED_HOME_MODE" value="TRUE"/>
     <define name="RC_LOST_MODE" value="AP_MODE_AUTO2"/>
@@ -641,10 +674,10 @@
   </section>
 
   <section name="TCAS" prefix="TCAS_">
-    <define name="TAU_TA" value="5." unit="s"/>
+    <define name="TAU_TA" value="4." unit="s"/>
     <define name="TAU_RA" value="3." unit="s"/>
-    <define name="ALIM" value="12." unit="m"/>
-    <define name="DMOD" value="14." unit="m"/>
+    <define name="ALIM" value="10." unit="m"/>
+    <define name="DMOD" value="12." unit="m"/>
     <define name="DT_MAX" value="1500" unit="ms"/>
   </section>
 
