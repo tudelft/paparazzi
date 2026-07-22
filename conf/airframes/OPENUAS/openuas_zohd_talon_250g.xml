@@ -420,12 +420,12 @@
 
   <section name="AHRS" prefix="AHRS_">
     <!-- AHRS filter tuning values, adjust when needed -->
-    <!--
-    <define name="ACCEL_OMEGA" value="0.063"/>
-    <define name="ACCEL_ZETA" value="0.9"/>
-    <define name="MAG_OMEGA" value="0.04"/>
-    <define name="MAG_ZETA" value="0.9"/>
-    -->
+
+    <define name="ACCEL_OMEGA" value="0.08"/>
+    <define name="ACCEL_ZETA" value="1.0"/>
+    <define name="MAG_OMEGA" value="0.03"/>
+    <define name="MAG_ZETA" value="1.0"/>
+
     <define name="GRAVITY_HEURISTIC_FACTOR" value="0.0"/>
     <define name="MAG_UPDATE_ALL_AXES" value="TRUE"/>
     <define name="GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>
