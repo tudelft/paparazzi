@@ -126,8 +126,7 @@ void mag_qmc5883l_module_event(void)
 
 void mag_qmc5883l_report(void)
 {
-  uint8_t id = 1;//MAG_QMC5883L_SENDER_ID;
-  //int32_t x_temp = 33;Derbug value to test downlink
+  uint8_t id = MAG_QMC5883L_SENDER_ID;
   struct Int32Vect3 mag = {
     QMC5883L_CHAN_X_SIGN(int32_t)(mag_qmc5883l.data.value[QMC5883L_CHAN_X]),
     QMC5883L_CHAN_Y_SIGN(int32_t)(mag_qmc5883l.data.value[QMC5883L_CHAN_Y]),
