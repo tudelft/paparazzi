@@ -749,6 +749,16 @@
       <program name="GCS"/>
       <program name="Messages"/>
     </session>
+    <session name="TEST FlyingRC board">
+      <program name="Data Link">
+        <arg flag="-d" constant="/dev/ttyUSB0"/>
+        <arg flag="-s" constant="57600"/>
+      </program>
+      <program name="Server"/>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS"/>
+    </session>
     <session name="USB: BlueTooth @ 57600">
       <program name="Data Link">
         <arg flag="-d" constant="/dev/rfcomm0"/>
@@ -828,16 +838,6 @@
         <arg flag="-no_confirm_kill"/>
         <arg flag="-srtm"/>
       </program>
-    </session>
-    <session name="TEST FlyingRC board">
-      <program name="Data Link">
-        <arg flag="-d" constant="/dev/ttyACM0"/>
-        <arg flag="-s" constant="57600"/>
-      </program>
-      <program name="Server"/>
-      <program name="Messages"/>
-      <program name="Real-time Plotter"/>
-      <program name="GCS"/>
     </session>
   </section>
 </control_panel>

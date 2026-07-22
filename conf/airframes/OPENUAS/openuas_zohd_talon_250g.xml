@@ -4,11 +4,11 @@
    + Small airframe to test UWB swarm behavior and ETECS control
 
     + MODEL:            ZoHD Talon 250G
-    + FLIGHTCONTROLLER: Mateksys F405-TE-SD (RCFlying F4 v1.5)
+    + FLIGHTCONTROLLER: Mateksys F405-TE-SD (FlyingRC F4 v1.5)
     + IMU:              ICM42688-P
     + ACTUATORS:        JX PDI-1143HB 4.3g
     + GNSS              uBlox M10 GNSS
-    + MAGNETOMETER      QMC5338L and RM3100
+    + MAGNETOMETER      QMC5338L
     + ESC:              32A 35A with AM32 firmware
     + RCRX:             OpenR-XSR
     + AIRSPEED:         Sensirion SDP33
@@ -49,7 +49,7 @@
     <target name="ap" board="matek_f405_te_sd">
 
       <!--<define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>-->
-      <define name="DEBUG" value="0"/><!--Enable for debug output, e.g. ms5611-->
+      <define name="DEBUG" value="0"/><!--Enable for debug output -->
       <!--<define name="USE_PERIODIC_TELEMETRY_REPORT" value="TRUE"/> -->
 
       <configure name="CPU_LED" value="1"/><!-- Multicolor -->
@@ -60,8 +60,7 @@
 
       <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
       <configure name="AHRS_CORRECT_FREQUENCY" value="500"/>
-      <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/>
-      <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="200"/> -->
+      <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="100"/>
       <configure name="NAVIGATION_FREQUENCY" value="20"/>
       <configure name="CONTROL_FREQUENCY" value="100"/>
       <configure name="TELEMETRY_FREQUENCY" value="50"/>
@@ -128,23 +127,6 @@
         <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/><!-- for debugging -->
       </module> 
 
-      <!-- We add another Magneto if on GNSS module does not satisfy-->
-      <!-- 
-      <module name="mag" type="rm3100">
-        <configure name="MAG_RM3100_I2C_DEV" value="i2c1"/>
-        <configure name="MAG_RM3100_PERIODIC_FREQUENCY" value="125"/>
-        <define name="RM3100_ADDR" value="RM3100_ADDR3"/>
-        <define name="RM3100_USE_MEDIAN_FILTER" value="TRUE"/>
-        <define name="RM3100_CHAN_X" value="1"/>
-        <define name="RM3100_CHAN_Y" value="0"/>
-        <define name="RM3100_CHAN_Z" value="2"/>
-        <define name="RM3100_CHAN_X_SIGN" value="-"/>
-        <define name="RM3100_CHAN_Y_SIGN" value="+"/>
-        <define name="RM3100_CHAN_Z_SIGN" value="-"/>
-        <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
-        <configure name="MODULE_RM3100_SYNC_SEND" value="TRUE"/>
-      </module> 
-      -->
      <module name="airspeed" type="sdp3x">
         <configure name="SDP3X_I2C_DEV" value="i2c1"/>
         <!-- <define name="SDP3X_I2C_ADDR" value="0x50"/> --> <!-- 0x50 is the deafault address -->
@@ -166,7 +148,7 @@
       <module name="telemetry" type="transparent">
         <!--<configure name="MODEM_PORT" value="usb_serial"/>--><!--USB Serial used for easier benchtest only -->
         <configure  name="MODEM_BAUD" value="B57600"/>
-        <configure  name="MODEM_PORT" value="UART5"/>
+        <configure  name="MODEM_PORT" value="UART1"/>
       </module>
 
       <module name="gps"  type="ublox" >
@@ -182,7 +164,6 @@
       </module>
 
       <!-- Only enable with a module that supports v_ctl_auto_airspeed_setpoint-->
-      <!--
       <module name="flight_benchmark">
         <define name="BENCHMARK_AIRSPEED" value="TRUE"/>
         <define name="BENCHMARK_ALTITUDE" value="TRUE"/>
@@ -191,7 +172,7 @@
         <define name="BENCHMARK_TOLERANCE_ALTITUDE" value="4" unit="m"/>
         <define name="BENCHMARK_TOLERANCE_POSITION" value="6" unit="m"/>
       </module>
-      -->
+
     </target>
 
     <!-- NPS simulation target: flies the validated JSBSim model
@@ -243,7 +224,8 @@
     <!-- If AHRS_MAG_CORRECT_FREQUENCY is set outside of target no need USE_MAGNETOMETER it is assumed TRUE -->
     <configure name="USE_MAGNETOMETER" value="TRUE"/>
 
-    <!-- Modules used for all targets, also for Simulation -->
+    <!-- *** Modules used for all targets, also simulation -->
+
     <module name="actuators" type="pwm"/>
 
     <module name="air_data"/>
@@ -253,7 +235,6 @@
     <!-- Continuously estimates gyro bias, including unheated IMU warm-up drift. -->
     <module name="ahrs" type="float_cmpl_quat"/>
 
-    <!-- *** Common for all targets-->
     <module name="ins" type="alt_float"/>
 
     <module name="navigation"/>
@@ -316,7 +297,7 @@
     </target>
   </firmware> -->
 
-  <!-- ********************* Actuation related settings -->
+  <!-- *** Actuation and related settings -->
 
   <servos driver="Pwm">
     <servo name="S_THROTTLE"          no="1" min="1092" neutral="1100" max="1900"/>
@@ -395,7 +376,7 @@
     <!-- <define name="DEFAULT_RELEASE" value="1100"/> -->
   </section>
 
-  <!-- ********************* End actuation related settings -->
+  <!-- *** End actuation related settings -->
 
   <section name="AUTO1" prefix="AUTO1_">
     <define name="MAX_ROLL" value="55" unit="deg"/>
@@ -446,15 +427,15 @@
     <define name="MAG_ZETA" value="0.9"/>
     -->
     <define name="GRAVITY_HEURISTIC_FACTOR" value="0.0"/>
-    <define name="AHRS_MAG_UPDATE_ALL_AXES" value="TRUE"/>
-    <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>
-    <!--<define name="AHRS_FC_IMU_ID" value="ABI_BROADCAST"/>--> <!-- ABI sender id of IMU to use Change if you change your AHRS type -->
+    <define name="MAG_UPDATE_ALL_AXES" value="TRUE"/>
+    <define name="GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>
+    <!--<define name="FC_IMU_ID" value="ABI_BROADCAST"/>--> <!-- ABI sender id of IMU to use Change if you change your AHRS type -->
     <!-- As ID choose MAG_CALIB_UKF_ID when using the mag_clib_ukf module change your AHRS type-->
-    <!--<define name="AHRS_FC_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>-->
-    <!--<define name="AHRS_FC_MAG_ID" value="MAG_IST8310_SENDER_ID" />-->
-    <define name="AHRS_FC_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
-    <!--<define name="AHRS_FC_MAG_ID" value="MAG_QMC5883P_SENDER_ID"/>-->
-    <!--<define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID"/>-->
+    <!--<define name="FC_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>-->
+    <!--<define name="FC_MAG_ID" value="MAG_IST8310_SENDER_ID" />-->
+    <define name="FC_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
+    <!--<define name="FC_MAG_ID" value="MAG_QMC5883P_SENDER_ID"/>-->
+    <!--<define name="FC_MAG_ID" value="MAG_RM3100_SENDER_ID"/>-->
 
     <!--
     <define name="PROPAGATE_LOW_PASS_RATES" value="TRUE"/>
@@ -637,7 +618,7 @@
   <section name="BAT">
     <!--39.2 <define name="MilliAmpereOfAdc(_adc)" value="((float)(_adc-35) * 9.89)"/>Like to set 0 to IDLE value we only interested in motor current -->
     <!-- <define name="VoltageOfAdc(_adc)" value="(_adc * 0.00837209302326)"/> -->
-    <define name="MAX_BAT_CAPACITY" value="3500" unit="mAh"/>
+    <define name="MAX_BAT_CAPACITY" value="3300" unit="mAh"/>
     <define name="MILLIAMP_AT_IDLE_THROTTLE" value="220" unit="mA"/>
     <define name="MILLIAMP_AT_FULL_THROTTLE" value="9000" unit="mA"/>
     <!-- <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.0"/> -->
@@ -700,9 +681,9 @@
   </section>
 
   <section name="GCS">
-    <!-- <define name="SPEECH_NAME" value="T250 Gee"/> -->
+    <!--Multiple so, realname is used not this <define name="SPEECH_NAME" value="T250 Gee"/> -->
     <define name="AC_ICON" value="fixedwing"/>
-    <define name="ALT_SHIFT_PLUS_PLUS" value="50"/>
+    <define name="ALT_SHIFT_PLUS_PLUS" value="30"/>
     <define name="ALT_SHIFT_PLUS" value="10"/>
     <define name="ALT_SHIFT_MINUS" value="-10"/>
   </section>
