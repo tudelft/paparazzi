@@ -60,7 +60,7 @@
 
       <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
       <configure name="AHRS_CORRECT_FREQUENCY" value="500"/>
-      <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="100"/>
+      <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="100"/> -->
       <configure name="NAVIGATION_FREQUENCY" value="20"/>
       <configure name="CONTROL_FREQUENCY" value="100"/>
       <configure name="TELEMETRY_FREQUENCY" value="50"/>
@@ -124,7 +124,7 @@
         <define name="QMC5883L_CHAN_X_SIGN" value="+"/>
         <define name="QMC5883L_CHAN_Y_SIGN" value="+"/>
         <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
-        <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/><!-- for debugging -->
+        <!--<define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/>--><!-- for debugging -->
       </module> 
 
      <module name="airspeed" type="sdp3x">
@@ -431,11 +431,7 @@
     <define name="GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>
     <!--<define name="FC_IMU_ID" value="ABI_BROADCAST"/>--> <!-- ABI sender id of IMU to use Change if you change your AHRS type -->
     <!-- As ID choose MAG_CALIB_UKF_ID when using the mag_clib_ukf module change your AHRS type-->
-    <!--<define name="FC_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>-->
-    <!--<define name="FC_MAG_ID" value="MAG_IST8310_SENDER_ID" />-->
     <define name="FC_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
-    <!--<define name="FC_MAG_ID" value="MAG_QMC5883P_SENDER_ID"/>-->
-    <!--<define name="FC_MAG_ID" value="MAG_RM3100_SENDER_ID"/>-->
 
     <!--
     <define name="PROPAGATE_LOW_PASS_RATES" value="TRUE"/>
