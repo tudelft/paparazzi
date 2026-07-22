@@ -62,7 +62,9 @@
       <configure name="AHRS_CORRECT_FREQUENCY" value="500"/>
       <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="100"/> -->
       <configure name="NAVIGATION_FREQUENCY" value="20"/>
-      <configure name="CONTROL_FREQUENCY" value="100"/>
+       <!-- Keep 100 Hz: the ETECS gains and time constants below were validated
+         in NPS with this value and the AHRS-triggered attitude loop. -->
+       <configure name="CONTROL_FREQUENCY" value="100"/>
       <configure name="TELEMETRY_FREQUENCY" value="50"/>
       <configure name="MODULES_FREQUENCY" value="500"/>
 
@@ -145,6 +147,23 @@
         <!--<define name="SDP3X_SYNC_SEND" value="TRUE"/>--> <!-- Only enable while debugging -->
       </module>
 
+      <!-- Build into the airframe is a rangfinder Surertech VB22A 0xA4 (0x52 7bit) -->
+      <module name="rangefinder_i2c"> 
+        <configure name="RANGEFINDER_I2C_PORT" value="i2c1"/>
+        <configure name="RANGEFINDER_I2C_ADDR" value="0xA4"/> <!-- 0x52 in 7 bit -->
+        <configure name="RANGEFINDER_I2C_USE_FOR_AGL" value="FALSE"/>
+        <configure name="RANGEFINDER_I2C_COMPENSATE_ROTATION" value="TRUE"/>
+        <configure name="RANGEFINDER_I2C_PERIODIC_FREQUENCY" value="100"/><!-- 200Hz possible according to datasheet -->
+        <define name="RANGEFINDER_I2C_USE_FILTER" value="FALSE"/><!-- no need VB22A filters internally quite well for our purposes -->
+        <define name="RANGEFINDER_I2C_MEDIAN_SIZE" value="5"/>
+        <define name="RANGEFINDER_I2C_MIN_RANGE" value="0.005" unit="m"/>
+        <define name="RANGEFINDER_I2C_MAX_RANGE" value="15.0" unit="m"/><!-- For e.g. VB22A Theoretically 20m at 90% reflectivity but in reality less -->
+        <define name="RANGEFINDER_I2C_OFFSET" value="0.0" unit="m"/>
+        <define name="RANGEFINDER_I2C_SCALE" value="0.001"/><!-- Since VB22A sensor is set to emit in millimeters per default-->
+        <define name="RANGEFINDER_I2C_READ_MODE_SINGLE" value="0x00"/><!-- Specifically to read for a VB22A sensor -->
+        <!-- <define name="RANGEFINDER_I2C_SYNC_SEND" value="TRUE"/> --><!-- Only enable while debugging via fast connetion, NOT mesh -->
+      </module>
+
       <module name="telemetry" type="transparent">
         <!--<configure name="MODEM_PORT" value="usb_serial"/>--><!--USB Serial used for easier benchtest only -->
         <configure  name="MODEM_BAUD" value="B57600"/>
@@ -163,6 +182,8 @@
         <define name="RADIO_MANUALRELEASE" value="RADIO_AUX4"/>
       </module>
 
+      <!-- <module name="imu_quality_assessment"/> -->
+
       <!-- Only enable with a module that supports v_ctl_auto_airspeed_setpoint-->
       <module name="flight_benchmark">
         <define name="BENCHMARK_AIRSPEED" value="TRUE"/>
@@ -172,6 +193,50 @@
         <define name="BENCHMARK_TOLERANCE_ALTITUDE" value="4" unit="m"/>
         <define name="BENCHMARK_TOLERANCE_POSITION" value="6" unit="m"/>
       </module>
+
+      <!-- If one want to use a Joystick over telemetry connection one can us this instead of sbus -->
+      <!--<module name="radio_control" type="datalink"/>-->
+
+      <!--
+      <module name="shell">
+        <configure name="SHELL_PORT" value="usb_serial_debug"/>
+      </module>
+      -->
+            <!-- An simple SD reader converter SD card slot connected over SPI bus to the MCU -->
+      <!-- For testflights this might come in handy to analyze flight data, when needed , enable it -->
+      <!-- 
+      <module name="tlsf"/>
+      <module name="pprzlog"/> 
+      <module name="logger" type="sd_chibios">
+        <configure name="SDLOG_LED" value="2"/>
+        <define naRM3100me="SDLOG_ENABLE_LOWBAT_FLUSH" value="FALSE"/>
+        <define name="SDLOG_START_DELAY" value="20" unit="s"/>
+      </module> 
+      -->
+
+      <!-- use the paprazzi/sd2log tool to convert log to be able to use in logplotter as normal -->
+      <!-- 
+      <module name="flight_recorder"/> 
+      -->
+
+      <!-- 
+      Below example of what to add to your telemetry_something.xml file
+      <process name="FlightRecorder">
+        <mode name="default">
+          <message name="FBW_STATUS"          period="1.2"/>
+          <message name="DL_VALUE"            period="0.5"/>
+          <message name="IMU_ACCEL"           period="0.05"/>
+          <message name="IMU_GYRO"            period="0.05"/>
+          <message name="IMU_MAG"             period="0.1"/>
+          <message name="IMU_ACCEL_RAW"       period="0.002"/>
+          <message name="IMU_GYRO_RAW"        period="0.002"/>
+          <message name="IMU_MAG_RAW"         period="0.002"/>
+          <message name="COMMANDS"            period=".002"/>
+        </mode>
+      </process>
+      -->
+
+      <module name="sys_mon"/>
 
     </target>
 
@@ -188,6 +253,7 @@
       <configure name="MODULES_FREQUENCY" value="500"/>
       <module name="fdm" type="jsbsim"/>
       <module name="radio_control" type="ppm"/>
+      <define name="RADIO_MANUALRELEASE" value="RADIO_AUX4"/>
       <!-- <module name="telemetry" type="transparent">
         <configure name="MODEM_PORT" value="/dev/ttyUSB0"/>
       </module> -->
@@ -203,8 +269,6 @@
     <define name="USE_ADC_3"/>
     <define name="USE_ADC_4"/>
 
-    <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
-
     <define name="STRONG_WIND"/>
     <define name="WIND_INFO"/>
     <define name="WIND_INFO_RET"/>
@@ -218,9 +282,11 @@
     <define name="BAT_CHECKER_DELAY" value="80"/>
     <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="410"/>
 
+              <!-- Run attitude control on each gyro update. ETECS tuning was validated
+                with CONTROL_FREQUENCY=100; changing it requires complete retuning. -->
     <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
-    <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/><!-- TRUE per default, to make sure! Forward acceleration compensation from GPS speed -->
-    <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/><!--  only used if float_dcm Use magnetic compensation before takeoff only while GPS course not good -->
+          <!-- float_cmpl_quat enables GPS coordinated-turn compensation by default
+            for fixed-wing firmware; the old DCM-only defines do not apply. -->
     <!-- If AHRS_MAG_CORRECT_FREQUENCY is set outside of target no need USE_MAGNETOMETER it is assumed TRUE -->
     <configure name="USE_MAGNETOMETER" value="TRUE"/>
 
@@ -249,8 +315,33 @@
     <module name="nav" type="smooth"/>
     <module name="nav" type="vertical_raster"/>
     <module name="nav" type="flower"/>
+    <module name="nav" type="spiral_3D"/>
+    <module name="nav" type="cube"/>
+    <module name="nav" type="drop">
+      <define name="TRIGGER_DELAY" value="3.0" unit="s"/> <!--TODO get correct value;  time it take from shoot command till actual release of payload -->
+      <define name="VELOCITY_AT_RELEASE" value="14" unit="m/s"/><!-- TODO not implemented - to set to min airspeed -->
+      <define name="ALPHA" value="44.18e-4"/><!-- TODO: adjust it for your specific payload -->
+      <define name="MASS" value="5.00e-3" unit="KG"/>
+      <define name="SAFE_CLIMB" value="10" unit="m"/>
+      <define name="CLIMB_TIME" value="3" unit="s"/>
+    </module>
+    <!-- <module name="nav" type="launcher"/> -->
+    <!-- <module name="nav" type="skid_landing"/> -->
+    <!-- <module name="nav" type="bungee_takeoff"/> -->
+    <!-- <module name="nav" type="shakestart"/> -->
 
     <module name="photogrammetry_calculator"/>
+
+    <!-- <module name="digital_cam_video">
+      <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="5.0"/>
+    </module> -->
+
+    <!-- When a compute board is connected -->
+    <!-- <module name="digital_cam_uart">
+      <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/>
+      <configure name="CAMERA_PORT" value="UART5"/>
+    </module> -->
+
     <module name="traffic_info"/>
     <module name="tcas"/>
 
@@ -389,20 +480,6 @@
   </section>
 
   <section name="IMU" prefix="IMU_">
-    <!-- <define name="GYRO_P_SIGN" value="1"/>
-    <define name="GYRO_Q_SIGN" value="1"/>
-    <define name="GYRO_R_SIGN" value="1"/>
-
-    <define name="ACCEL_X_SIGN" value="1"/>
-    <define name="ACCEL_Y_SIGN" value="1"/>
-    <define name="ACCEL_Z_SIGN" value="1"/> -->
-
-    <!-- <define name="GYRO_P_SENS" value=" 1.01" integer="16"/> -->
-    <!-- <define name="GYRO_Q_SENS" value=" 1.01" integer="16"/> -->
-    <!-- <define name="GYRO_R_SENS" value=" 1.01" integer="16"/> -->
-    <!-- <define name="GYRO_P_NEUTRAL" value="0"/> -->
-    <!-- <define name="GYRO_Q_NEUTRAL" value="0"/> -->
-    <!-- <define name="GYRO_R_NEUTRAL" value="0"/> -->
 
     <define name="ACCEL_X_NEUTRAL" value="0"/>
     <define name="ACCEL_Y_NEUTRAL" value="0"/>
@@ -419,25 +496,21 @@
   </section>
 
   <section name="AHRS" prefix="AHRS_">
-    <!-- AHRS filter tuning values, adjust when needed -->
-
+    <!-- AHRS filter tuning values -->
     <define name="ACCEL_OMEGA" value="0.08"/>
     <define name="ACCEL_ZETA" value="1.0"/>
     <define name="MAG_OMEGA" value="0.03"/>
     <define name="MAG_ZETA" value="1.0"/>
 
+    <!-- Keep full accelerometer authority: coordinated-turn compensation removes
+    centrifugal acceleration, while norm weighting mistakes motor vibration
+    for sustained acceleration and can suppress gyro-bias correction. -->
     <define name="GRAVITY_HEURISTIC_FACTOR" value="0.0"/>
-    <define name="MAG_UPDATE_ALL_AXES" value="TRUE"/>
+    <!-- The external compass is an absolute yaw reference only. This normalized
+    2D update prevents motor-current magnetic errors from tilting roll/pitch. -->
+    <define name="MAG_UPDATE_ALL_AXES" value="FALSE"/>
     <define name="GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>
-    <!--<define name="FC_IMU_ID" value="ABI_BROADCAST"/>--> <!-- ABI sender id of IMU to use Change if you change your AHRS type -->
-    <!-- As ID choose MAG_CALIB_UKF_ID when using the mag_clib_ukf module change your AHRS type-->
     <define name="FC_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
-
-    <!--
-    <define name="PROPAGATE_LOW_PASS_RATES" value="TRUE"/>
-    <define name="PROPAGATE_LOW_PASS_RATES_MUL" value="19"/>
-    <define name="PROPAGATE_LOW_PASS_RATES_DIV" value="20"/>
-    -->
 
     <!-- Local Magnetic field DE2026 -->
     <define name="H_X" value="0.413550"/>
@@ -598,6 +671,8 @@
     <!-- groundspeed floor: guarantee progress against wind (STRONG_WIND set) -->
     <define name="AUTO_GROUNDSPEED_SETPOINT" value="5.0" unit="m/s"/>
     <define name="AUTO_GROUNDSPEED_PGAIN" value="0.75"/>
+    <!-- Legacy per-invocation integrator: CONTROL_FREQUENCY does not enter its
+         equation, so retain the flight-tested gain when correcting loop dt. -->
     <define name="AUTO_GROUNDSPEED_IGAIN" value="0.25"/>
 
     <!-- full-range throttle change takes 0.25 s (motor lag is ~0.1 s):
