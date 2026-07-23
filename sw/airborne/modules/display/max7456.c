@@ -236,7 +236,6 @@ void mag_compass(void)
 }
 #endif
 
-
 //*******************************************************************
 //   function name:   vSubtractVectors
 //   description:     subtracts two vectors a = b - c
