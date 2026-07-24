@@ -81,6 +81,31 @@ PRINT_CONFIG_VAR(MIN_BAT_LEVEL)
 #endif
 PRINT_CONFIG_VAR(CURRENT_ESTIMATION_NONLINEARITY)
 
+/* Optional ADC correction from one simultaneous firmware/reference reading.
+ * CURRENT_ADC_CALIBRATION_ACCURATE_TO may preserve an accurate low range. */
+#if defined CURRENT_ADC_CALIBRATION_REPORTED && !defined CURRENT_ADC_CALIBRATION_ACTUAL
+#error "CURRENT_ADC_CALIBRATION_REPORTED requires CURRENT_ADC_CALIBRATION_ACTUAL"
+#elif !defined CURRENT_ADC_CALIBRATION_REPORTED && defined CURRENT_ADC_CALIBRATION_ACTUAL
+#error "CURRENT_ADC_CALIBRATION_ACTUAL requires CURRENT_ADC_CALIBRATION_REPORTED"
+#elif defined CURRENT_ADC_CALIBRATION_REPORTED && defined CURRENT_ADC_CALIBRATION_ACTUAL
+#define USE_CURRENT_ADC_CALIBRATION
+#endif
+#ifndef CURRENT_ADC_CALIBRATION_ACCURATE_TO
+#define CURRENT_ADC_CALIBRATION_ACCURATE_TO 0.f
+#endif
+#ifdef USE_CURRENT_ADC_CALIBRATION
+PRINT_CONFIG_VAR(CURRENT_ADC_CALIBRATION_ACCURATE_TO)
+PRINT_CONFIG_VAR(CURRENT_ADC_CALIBRATION_REPORTED)
+PRINT_CONFIG_VAR(CURRENT_ADC_CALIBRATION_ACTUAL)
+#endif
+
+#ifdef MILLIAMP_AT_FULL_THROTTLE_VOLTAGE
+#ifndef CURRENT_ESTIMATION_MIN_VALID_VOLTAGE
+#define CURRENT_ESTIMATION_MIN_VALID_VOLTAGE 1.f
+#endif
+PRINT_CONFIG_VAR(MILLIAMP_AT_FULL_THROTTLE_VOLTAGE)
+#endif
+
 #if defined MILLIAMP_AT_FULL_THROTTLE && !defined MILLIAMP_AT_IDLE_THROTTLE
   PRINT_CONFIG_MSG("Assuming 0 mA at idle throttle")
   #define MILLIAMP_AT_IDLE_THROTTLE 0
@@ -90,6 +115,33 @@ PRINT_CONFIG_VAR(MILLIAMP_AT_IDLE_THROTTLE)
 
 /* Main external structure */
 struct Electrical electrical;
+
+#if defined ADC_CHANNEL_CURRENT && !defined SITL && defined USE_CURRENT_ADC_CALIBRATION
+static float electrical_calibrate_adc_current(float current)
+{
+  const float calibration_span = CURRENT_ADC_CALIBRATION_REPORTED - CURRENT_ADC_CALIBRATION_ACCURATE_TO;
+  if (current <= CURRENT_ADC_CALIBRATION_ACCURATE_TO || calibration_span <= 0.f ||
+      CURRENT_ADC_CALIBRATION_ACTUAL <= CURRENT_ADC_CALIBRATION_ACCURATE_TO) {
+    return current;
+  }
+  const float correction_gain = (CURRENT_ADC_CALIBRATION_ACTUAL - CURRENT_ADC_CALIBRATION_ACCURATE_TO) /
+                                calibration_span;
+  return CURRENT_ADC_CALIBRATION_ACCURATE_TO +
+         correction_gain * (current - CURRENT_ADC_CALIBRATION_ACCURATE_TO);
+}
+#endif
+
+#if defined MILLIAMP_AT_FULL_THROTTLE && defined MILLIAMP_AT_FULL_THROTTLE_VOLTAGE && \
+  !defined ADC_CHANNEL_CURRENT && defined COMMAND_CURRENT_ESTIMATION
+static float electrical_estimation_voltage_scale(void)
+{
+  if (electrical.vsupply >= CURRENT_ESTIMATION_MIN_VALID_VOLTAGE &&
+      MILLIAMP_AT_FULL_THROTTLE_VOLTAGE > 0.f) {
+    return electrical.vsupply / MILLIAMP_AT_FULL_THROTTLE_VOLTAGE;
+  }
+  return 1.f;
+}
+#endif
 
 #if defined ADC_CHANNEL_VSUPPLY || (defined ADC_CHANNEL_CURRENT && !defined SITL) || defined MILLIAMP_AT_FULL_THROTTLE
 static struct {
@@ -183,6 +235,9 @@ void electrical_periodic(void)
 #ifndef SITL
   int32_t current_adc = electrical_priv.current_adc_buf.sum / electrical_priv.current_adc_buf.av_nb_sample;
   electrical.current = MilliAmpereOfAdc(current_adc) / 1000.f;
+#ifdef USE_CURRENT_ADC_CALIBRATION
+  electrical.current = electrical_calibrate_adc_current(electrical.current);
+#endif
 
 #ifdef ADC_CHANNEL_CURRENT2
   current_adc = electrical_priv.current2_adc_buf.sum / electrical_priv.current2_adc_buf.av_nb_sample;
@@ -200,8 +255,14 @@ void electrical_periodic(void)
    *
    * define CURRENT_ESTIMATION_NONLINEARITY in your airframe file to change the default nonlinearity factor of 1.2
    */
-  static float full_current = (float)MILLIAMP_AT_FULL_THROTTLE / 1000.f;
-  static float idle_current = (float)MILLIAMP_AT_IDLE_THROTTLE / 1000.f;
+  const float nominal_full_current = (float)MILLIAMP_AT_FULL_THROTTLE / 1000.f;
+  const float idle_current = (float)MILLIAMP_AT_IDLE_THROTTLE / 1000.f;
+  float full_current = nominal_full_current;
+
+#ifdef MILLIAMP_AT_FULL_THROTTLE_VOLTAGE
+  full_current = idle_current + (nominal_full_current - idle_current) *
+                 electrical_estimation_voltage_scale();
+#endif
 
   float x = ((float)commands[COMMAND_CURRENT_ESTIMATION]) / ((float)MAX_PPRZ);
 

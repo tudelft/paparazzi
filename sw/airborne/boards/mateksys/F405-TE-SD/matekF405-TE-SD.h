@@ -85,8 +85,8 @@
 #define ADC_CHANNEL_CURRENT ADC_2
 #endif
 
-#define DefaultVoltageOfAdc(adc) ((3.3f/4096.0f)*20.9318f*(adc))
-#define DefaultMilliAmpereOfAdc(adc) ((3.3f/4096.0f)*(1000.0f/0.0317f)*(adc))
+#define DefaultVoltageOfAdc(adc) ((3.3f/4096.0f)*21.15f*(adc))
+#define DefaultMilliAmpereOfAdc(adc) ((3.3f/4096.0f)*(1000.0f/0.038f)*(adc))
 
 #ifndef USE_PWM_TIM1
 #define USE_PWM_TIM1 1
