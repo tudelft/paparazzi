@@ -9,7 +9,7 @@
     + ACTUATORS:        JX PDI-1143HB 4.3g
     + GNSS              uBlox M10 GNSS
     + MAGNETOMETER      QMC5338L
-    + ESC:              32A 35A with AM32 firmware
+    + ESC:              32A 35A with AM32 firmware v2.20
     + RCRX:             OpenR-XSR
     + AIRSPEED:         Sensirion SDP33
     + TELEMETRY:        Mesh 433mHz LoRa
@@ -40,6 +40,7 @@
     + RC RX powered via FC 5v
     + On the R81 SBUS out channel 9 gives the RSSI value RX output ,can be used in FC for OSD
     + Vision: added a JeVois "clone" created from RPI Zero 2W on UART1 TX/RX
+    + The kV of the motor is set to 1580kV due to bug in firmware
   </description>
 
   <firmware name="fixedwing">
@@ -391,7 +392,7 @@
   <!-- *** Actuation and related settings -->
 
   <servos driver="Pwm">
-    <servo name="S_THROTTLE"          no="1" min="1092" neutral="1100" max="1900"/>
+    <servo name="S_THROTTLE"          no="1" min="1096" neutral="1104" max="1900"/>
     <servo name="S_AILERON_LEFT"      no="2" min="1100" neutral="1500" max="1900"/>
     <servo name="S_RUDDERVATOR_LEFT"  no="3" min="1100" neutral="1500" max="1900"/>
     <servo name="S_RUDDERVATOR_RIGHT" no="4" min="1100" neutral="1500" max="1900"/>
@@ -690,7 +691,7 @@
     <!--39.2 <define name="MilliAmpereOfAdc(_adc)" value="((float)(_adc-35) * 9.89)"/>Like to set 0 to IDLE value we only interested in motor current -->
     <!-- <define name="VoltageOfAdc(_adc)" value="(_adc * 0.00837209302326)"/> -->
     <define name="MAX_BAT_CAPACITY" value="3300" unit="mAh"/>
-    <define name="MILLIAMP_AT_IDLE_THROTTLE" value="220" unit="mA"/>
+    <define name="MILLIAMP_AT_IDLE_THROTTLE" value="200" unit="mA"/><!-- With ESPC3 and UWB likely 300mA-->
     <define name="MILLIAMP_AT_FULL_THROTTLE" value="9000" unit="mA"/>
     <!-- <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.0"/> -->
 
@@ -699,7 +700,7 @@
     <define name="BAT_NB_CELLS" value="2"/>
     <define name="LOW_BAT_LEVEL" value="6.8" unit="V"/>
     <define name="CRITIC_BAT_LEVEL" value="6.4" unit="V"/>
-    <define name="CATASTROPHIC_BAT_LEVEL" value="5.6" unit="V"/>
+    <define name="CATASTROPHIC_BAT_LEVEL" value="5.6" unit="V"/><!-- determine -->
   </section>
 
   <section name="MISC">
