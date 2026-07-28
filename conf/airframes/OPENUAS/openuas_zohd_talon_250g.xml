@@ -9,7 +9,7 @@
     + ACTUATORS:        JX PDI-1143HB 4.3g
     + GNSS              uBlox M10 GNSS
     + MAGNETOMETER      QMC5338L
-    + ESC:              32A 35A with AM32 firmware v2.20
+    + ESC:              HAKRC 32A 35A
     + RCRX:             OpenR-XSR
     + AIRSPEED:         Sensirion SDP33
     + TELEMETRY:        Mesh 433mHz LoRa
@@ -40,7 +40,7 @@
     + RC RX powered via FC 5v
     + On the R81 SBUS out channel 9 gives the RSSI value RX output ,can be used in FC for OSD
     + Vision: added a JeVois "clone" created from RPI Zero 2W on UART1 TX/RX
-    + The kV of the motor is set to 1580kV due to bug in firmware
+    + HAKRC 32A 35A with AM32 firmware v2.21 patched to fix kV value bug in v2.20 firmware
   </description>
 
   <firmware name="fixedwing">
@@ -167,7 +167,7 @@
 
       <module name="telemetry" type="transparent">
         <!--<configure name="MODEM_PORT" value="usb_serial"/>--><!--USB Serial used for easier benchtest only -->
-        <configure  name="MODEM_BAUD" value="B57600"/>
+        <configure  name="MODEM_BAUD" value="B57600"/><!-- B460800 -->
         <configure  name="MODEM_PORT" value="UART1"/>
       </module>
 
@@ -688,42 +688,37 @@
   </section>
 
   <section name="BAT">
-    <!-- <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f)*21.1f*(adc))"/>
-    <define name="MilliAmpereOfAdc(adc)" value="((3.3f/4096.0f)*(1000.0f/0.0362f)*(adc))"/> -->
 
-        <!-- Current calibration: readings are accurate through 0.5 A. At the
-          high bench point, electrical.current showed 3.30 A while the
-              reference meter showed 4.60 A. Higher readings continue along
-              the same straight correction line. -->
-            <define name="CURRENT_ADC_CALIBRATION_ACCURATE_TO" value="0.50" unit="A"/>
-            <define name="CURRENT_ADC_CALIBRATION_REPORTED" value="3.30" unit="A"/>
-            <define name="CURRENT_ADC_CALIBRATION_ACTUAL" value="4.60" unit="A"/>
-
-        <!-- Used only when no current ADC is present. Full-throttle current was
-          measured at 8.0 V; electrical.c applies simple linear voltage scaling. -->
-            <define name="MILLIAMP_AT_FULL_THROTTLE_VOLTAGE" value="8.0" unit="V"/>
+    <!-- <define name="CURRENT_ADC_CALIBRATION_ACCURATE_TO" value="0.50" unit="A"/> -->
+    <define name="CURRENT_ADC_CALIBRATION_REPORTED" value="3.30" unit="A"/>
+    <define name="CURRENT_ADC_CALIBRATION_ACTUAL" value="4.60" unit="A"/>
+    <!-- Used only when no current ADC is present in airframe. 
+         Full-throttle current was measured at 8.0 V; electrical.c applies simple 
+         linear voltage scaling. -->
+    <define name="MILLIAMP_AT_FULL_THROTTLE_VOLTAGE" value="8.0" unit="V"/>
 
     <define name="MAX_BAT_CAPACITY" value="3300" unit="mAh"/>
     <define name="MILLIAMP_AT_IDLE_THROTTLE" value="220" unit="mA"/><!-- With ESPC3 and UWB likely 300mA-->
     <define name="MILLIAMP_AT_FULL_THROTTLE" value="4900" unit="mA"/>
+    <!-- <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.06"/> --><!-- unused if CURRENT_ADC_CALIBRATION_REPORTED is used-->
 
     <!-- 2S Li-Ion 2x4.2V = 8.4V full; cell floor 2.5V = 5.0V hard minimum -->
     <define name="MAX_BAT_LEVEL" value="8.4" unit="V"/> 
     <define name="BAT_NB_CELLS" value="2"/>
     <define name="LOW_BAT_LEVEL" value="6.8" unit="V"/> <!-- for Li-Ion OK -->
     <define name="CRITIC_BAT_LEVEL" value="6.0" unit="V"/> <!-- 3.0V per cell, after that a very quick drop in voltage-->
-    <define name="CATASTROPHIC_BAT_LEVEL" value="5.0" unit="V"/><!-- 2.5V per cell, although only at 3.6v the FC stops working -->
+    <define name="CATASTROPHIC_BAT_LEVEL" value="5.0" unit="V"/><!-- 2.5V per cell x 2 is 5V, although only at real 3.6v the FC stops working -->
   </section>
 
   <section name="MISC">
     <!-- All from the validated JSBSim model with 2 blade 5x5 pusher prop -->
-    <define name="MINIMUM_AIRSPEED" value="8.0" unit="m/s"/> <!-- 1.23 x stall -->
+    <define name="MINIMUM_AIRSPEED" value="8.0" unit="m/s"/>  <!-- 1.23 x stall -->
     <define name="NOMINAL_AIRSPEED" value="12.0" unit="m/s"/> <!-- ~30% throttle -->
     <define name="MAXIMUM_AIRSPEED" value="15.0" unit="m/s"/> <!-- Vmax level is 16 -->
-    <define name="CLIMB_AIRSPEED" value="10.0" unit="m/s"/> <!-- best climb, 4.3 m/s avail -->
+    <define name="CLIMB_AIRSPEED" value="10.0" unit="m/s"/>   <!-- best climb, 4.3 m/s avail -->
     <define name="TRACKING_AIRSPEED" value="13.0" unit="m/s"/>
-    <define name="GLIDE_AIRSPEED" value="10.0" unit="m/s"/> <!-- best L/D ~9 -->
-    <define name="STALL_AIRSPEED" value="6.7" unit="m/s"/> <!-- 1g, power off -->
+    <define name="GLIDE_AIRSPEED" value="10.0" unit="m/s"/>   <!-- best L/D ~9 -->
+    <define name="STALL_AIRSPEED" value="6.7" unit="m/s"/>    <!-- 1g, power off -->
     <define name="RACE_AIRSPEED" value="15.0" unit="m/s"/>
     <define name="MIN_SPEED_FOR_TAKEOFF" value="8.5" unit="m/s"/> <!-- firm hand toss -->
     <define name="AIRSPEED_SETPOINT_SLEW" value="0.3" unit="m/s/s"/>
@@ -739,7 +734,7 @@
     <define name="LANDING_CIRCLE_RADIUS" value="25.0" unit="m"/>
     <define name="MIN_CIRCLE_RADIUS" value="25.0" unit="m"/>
 
-    <define name="CARROT" value="2.5" unit="s"/><!-- Optimum for default radius -->
+    <define name="CARROT" value="2.5" unit="s"/><!-- Optimum for DEFAULT_CIRCLE_RADIUS radius of 30m -->
 
     <define name="UNLOCKED_HOME_MODE" value="TRUE"/>
     <define name="RC_LOST_MODE" value="AP_MODE_AUTO2"/>
