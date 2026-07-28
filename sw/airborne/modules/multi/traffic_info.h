@@ -40,6 +40,206 @@
 #define NB_ACS 24
 #endif
 
+/** Returned by ::ti_acs_slot when an aircraft is neither known nor insertable.
+ *  Never a valid index into ::ti_acs (which has at most #NB_ACS entries).
+ */
+#define TI_ACS_NONE 0xFF
+
+/**
+ * @defgroup mesh_state MESH_STATE broadcast over a narrowband LoRa MESH
+ *
+ * MESH_STATE is a 17 byte (25 bytes on the wire) replacement for ACINFO_LLA,
+ * designed for the EByte E52-xxxNWxxS class of LoRa MESH modems running in
+ * broadcast mode.  See the message definition in messages.xml for the exact
+ * bit layout.
+ *
+ * Two mechanisms protect the modem's 5-frame transmit cache:
+ *
+ *  1. a GPS time-of-week synchronised TDMA slot, so that at most one node in
+ *     the whole mesh originates a broadcast at any instant.  Without it, k
+ *     simultaneous originations put k relay frames into *every* node's cache
+ *     at once, which is exactly how "OUT OF CACHE" (and the resulting global
+ *     buffer flush) happens;
+ *  2. a leaky-bucket governor that tracks how many frames are estimated to be
+ *     still inside the modem and refuses to hand over a new one above the high
+ *     water mark.
+ *
+ * Both are O(1), branch-light and use only statically allocated storage.
+ * @{
+ */
+
+/** Length of one TDMA superframe in ms.
+ *
+ *  Fixed and identical on every node. It is NOT tied to the node count: with
+ *  nodes joining and leaving freely there is no fixed count to tie it to. */
+#ifndef MESH_TDMA_SUPERFRAME_MS
+#define MESH_TDMA_SUPERFRAME_MS 1000
+#endif
+
+/** Slots per superframe, i.e. the maximum number of nodes the mesh can carry
+ *  at full membership. Sized well above the expected population so that
+ *  arrivals always find a free slot. */
+#ifndef MESH_TDMA_NB_SLOTS
+#define MESH_TDMA_NB_SLOTS 16
+#endif
+
+/** Maximum slots one node may occupy when the mesh is sparsely populated.
+ *  This is what converts spare membership into update rate: with N slots and
+ *  k nodes present each node claims up to N/k of them, so the position rate
+ *  rises automatically as nodes leave and falls back as they return. Channel
+ *  occupancy stays constant either way - the frame is always full. */
+#ifndef MESH_TDMA_MAX_REUSE
+#define MESH_TDMA_MAX_REUSE 4
+#endif
+
+/** Superframes a node listens before claiming more than its primary slot.
+ *
+ *  Network entry. Without it a fleet powering up together would each see an
+ *  empty map, each conclude it was alone, each grab the maximum share, and
+ *  collide on every slot - and since a collision delivers nothing, none of
+ *  them would ever discover the others. AIS solves it the same way. */
+#ifndef MESH_ENTRY_FRAMES
+#define MESH_ENTRY_FRAMES 3
+#endif
+
+/** Lease on the PRIMARY slot, in superframes. Long: it exists only to break a
+ *  primary-versus-primary deadlock, where the two nodes are mutually deaf and
+ *  no evidence of the clash is available to anybody. In a healthy mesh a node
+ *  keeps its slot across the whole flight. */
+#ifndef MESH_PRIMARY_HOLD_MIN
+#define MESH_PRIMARY_HOLD_MIN 120
+#endif
+#ifndef MESH_PRIMARY_HOLD_SPAN
+#define MESH_PRIMARY_HOLD_SPAN 120
+#endif
+
+/** Lease on an opportunistic (secondary) slot, in superframes: held for
+ *  MIN..MIN+SPAN-1 and then surrendered. Randomised per node so that two nodes
+ *  which ended up sharing a slot - the one collision nobody can observe,
+ *  because a collision is silent to everybody - lapse at different times and
+ *  diverge. The same mechanism AIS uses to time out slot reservations. */
+#ifndef MESH_SLOT_HOLD_MIN
+#define MESH_SLOT_HOLD_MIN 6
+#endif
+#ifndef MESH_SLOT_HOLD_SPAN
+#define MESH_SLOT_HOLD_SPAN 8
+#endif
+
+/** Superframes a slot stays reserved after its owner was last heard.
+ *  Long enough to ride out a few lost frames, short enough that a landed or
+ *  departed node releases its slot promptly. */
+#ifndef MESH_SLOT_AGE_FRAMES
+#define MESH_SLOT_AGE_FRAMES 4
+#endif
+
+/** Nominal slot length in ms. Informational only: it can be fractional, so the
+ *  slot index is computed by exact integer scaling in traffic_info.c rather
+ *  than by dividing through this. */
+#define MESH_TDMA_SLOT_MS (MESH_TDMA_SUPERFRAME_MS / MESH_TDMA_NB_SLOTS)
+
+/** First slot this node will try to claim.
+ *
+ * Only a *preference*, not an assignment. The node keeps it if nobody else is
+ * using it and moves elsewhere if somebody is - see ::mesh_slot_maintain. The
+ * spread by AC_ID simply means a cold start rarely collides in the first place.
+ */
+/** Marker for "no node owns this slot".
+ *
+ * NOT zero. Zero is the ground station's AC_ID, a real and needed identity, and
+ * a node that used 0 for "empty" would be unable to represent the ground
+ * station in the slot map at all - it would read every slot the GCS occupies as
+ * free and transmit straight over it.
+ *
+ * 0xFF is safe because PPRZLink reserves it as PPRZLINK_MSG_BROADCAST, so it
+ * can never be a real sender.
+ */
+#define MESH_SLOT_FREE 0xFFu
+
+#ifndef MESH_TDMA_SLOT_HINT
+#define MESH_TDMA_SLOT_HINT ((AC_ID) % MESH_TDMA_NB_SLOTS)
+#endif
+
+#if MESH_TDMA_SUPERFRAME_MS < MESH_TDMA_NB_SLOTS
+#error "MESH_TDMA_SUPERFRAME_MS is too short for MESH_TDMA_NB_SLOTS"
+#endif
+#if MESH_TDMA_MAX_REUSE < 1
+#error "MESH_TDMA_MAX_REUSE must be at least 1"
+#endif
+
+/** Estimated time for one frame to leave the modem transmit cache, in ms.
+ *  Air time of the longest frame plus the worst case CSMA back-off plus one
+ *  relay of a neighbour's frame. */
+#ifndef MESH_MODEM_DRAIN_MS
+#define MESH_MODEM_DRAIN_MS 60
+#endif
+
+/** Never hand a frame to the modem when this many are estimated to be still
+ *  queued inside it. The hardware limit is 5. */
+#ifndef MESH_CACHE_HIGH_WATER
+#define MESH_CACHE_HIGH_WATER 3
+#endif
+
+#if MESH_CACHE_HIGH_WATER >= 5
+#error "MESH_CACHE_HIGH_WATER must stay below the 5 frame hardware cache"
+#endif
+
+/** Unified, firmware independent flight mode carried in MESH_STATE::flags. */
+#define MESH_MODE_MANUAL    0u
+#define MESH_MODE_ASSISTED  1u
+#define MESH_MODE_AUTO      2u
+#define MESH_MODE_HOME      3u
+#define MESH_MODE_NOGPS     4u
+#define MESH_MODE_FAILSAFE  5u
+#define MESH_MODE_KILL      6u
+#define MESH_MODE_UNKNOWN   7u
+
+#define MESH_FLAG_MODE_MASK  0x07u
+#define MESH_FLAG_ROTORCRAFT 0x08u
+#define MESH_FLAG_POS_VALID  0x10u
+#define MESH_FLAG_AIRBORNE   0x20u
+#define MESH_FLAG_ALERT      0x40u
+#define MESH_FLAG_EMERGENCY  0x80u
+
+/** One TDMA slot's observed owner.
+ *
+ * Ownership is *learned*, never configured: a frame's slot is implied by its
+ * arrival time, which every node agrees on because the frame is GPS aligned.
+ * So the occupancy map costs zero bytes on air.
+ */
+struct MeshSlot {
+  uint8_t  ac_id;        ///< observed owner, 0 = free
+  uint16_t last_frame;   ///< superframe index when last heard
+};
+
+/** Health and back-pressure state of the mesh link.
+ *  Statically allocated, updated only from the module task and the telemetry
+ *  callback, both of which run in the main loop context.
+ */
+struct MeshLinkState {
+  uint32_t modem_free_ms;    ///< sys time at which the modem cache is expected to be empty
+  uint32_t last_emit_key;    ///< superframe*NB_SLOTS + slot of the last origination
+  uint16_t tx_count;         ///< MESH_STATE frames handed to the modem
+  uint16_t defer_ticks;      ///< module task iterations spent waiting for a slot
+  uint16_t throttled_count;  ///< frames held back by the cache governor
+  uint16_t reselect_count;   ///< times this node had to move to a different slot
+  uint8_t  slot;             ///< own primary slot
+  uint8_t  reuse;            ///< slots this node currently claims (1..MESH_TDMA_MAX_REUSE)
+  uint8_t  neighbours;       ///< distinct nodes heard in the last age window
+  bool     ready;            ///< the telemetry transport is known
+  bool     synced;           ///< GPS time of week is usable for slotting
+};
+
+extern struct MeshLinkState mesh_link;
+
+/** Note that ``sender`` transmitted at ``net_ms``, claiming the slot that time
+ *  falls in. Called for every received MESH_STATE. */
+extern void mesh_slot_observe(uint8_t sender, uint32_t net_ms);
+
+/** Periodic task driving the mesh transmit slot. Call at 20 Hz or faster. */
+extern void traffic_info_mesh_periodic(void);
+
+/** @} */
+
 /**
  * @defgroup ac_info Aircraft data availability representations
  * @{
@@ -126,6 +326,37 @@ extern struct acInfo ti_acs[];
 extern void traffic_info_init(void);
 
 /**
+ * Resolve an aircraft id to its slot in ::ti_acs, inserting it if needed.
+ *
+ * Replaces the open coded `if (ti_acs_idx < NB_ACS) { ... }` guard that used
+ * to wrap every setter. That guard also blocked *updates to already known*
+ * aircraft once the table was full, which silently froze the whole traffic
+ * picture instead of only refusing the new arrival.
+ *
+ * @param[in] id aircraft id, 0 is the GCS and always maps to slot 0
+ * @return slot index in ::ti_acs, or #TI_ACS_NONE when the aircraft is unknown
+ *         and the table is full
+ */
+static inline uint8_t ti_acs_slot(uint8_t id)
+{
+#if NB_ACS_ID < 256
+  if (id >= NB_ACS_ID) {
+    return TI_ACS_NONE;
+  }
+#endif
+  uint8_t slot = ti_acs_id[id];
+  if (slot == 0 && id != 0) {         /* not registered yet */
+    if (ti_acs_idx >= NB_ACS) {
+      return TI_ACS_NONE;             /* table full, refuse the new arrival */
+    }
+    slot = ti_acs_idx++;
+    ti_acs_id[id] = slot;
+    ti_acs[slot].ac_id = id;
+  }
+  return slot;
+}
+
+/**
  * Parse all datalink or telemetry messages that contain global position of other acs
  * Messages currently handled:
  * Telemetry (vehicle -> ground or vehicle -> vehicle): GPS_SMALL, GPS, GPS_LLA
@@ -170,16 +401,14 @@ extern void set_ac_info_lla(uint8_t id, int32_t lat, int32_t lon, int32_t alt,
 */
 static inline void acInfoSetPositionUtm_i(uint8_t ac_id, struct UtmCoor_i *utm_pos)
 {
-  if (ti_acs_idx < NB_ACS) {
-    if (ac_id > 0 && ti_acs_id[ac_id] == 0) {    // new aircraft id
-      ti_acs_id[ac_id] = ti_acs_idx++;
-      ti_acs[ti_acs_id[ac_id]].ac_id = ac_id;
-    }
-    UTM_COPY(ti_acs[ti_acs_id[ac_id]].utm_pos_i, *utm_pos);
-    /* clear bits for all position representations and only set the new one */
-    ti_acs[ti_acs_id[ac_id]].status = (1 << AC_INFO_POS_UTM_I);
-    ti_acs[ti_acs_id[ac_id]].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  const uint8_t slot = ti_acs_slot(ac_id);
+  if (slot == TI_ACS_NONE) {
+    return;
   }
+  UTM_COPY(ti_acs[slot].utm_pos_i, *utm_pos);
+  /* clear bits for all position representations and only set the new one */
+  ti_acs[slot].status = (1 << AC_INFO_POS_UTM_I);
+  ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
 }
 
 /** Set position from LLA coordinates (int).
@@ -188,16 +417,14 @@ static inline void acInfoSetPositionUtm_i(uint8_t ac_id, struct UtmCoor_i *utm_p
 */
 static inline void acInfoSetPositionLla_i(uint8_t ac_id, struct LlaCoor_i *lla_pos)
 {
-  if (ti_acs_idx < NB_ACS) {
-    if (ac_id > 0 && ti_acs_id[ac_id] == 0) {    // new aircraft id
-      ti_acs_id[ac_id] = ti_acs_idx++;
-      ti_acs[ti_acs_id[ac_id]].ac_id = ac_id;
-    }
-    LLA_COPY(ti_acs[ti_acs_id[ac_id]].lla_pos_i, *lla_pos);
-    /* clear bits for all position representations and only set the new one */
-    ti_acs[ti_acs_id[ac_id]].status = (1 << AC_INFO_POS_LLA_I);
-    ti_acs[ti_acs_id[ac_id]].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  const uint8_t slot = ti_acs_slot(ac_id);
+  if (slot == TI_ACS_NONE) {
+    return;
   }
+  LLA_COPY(ti_acs[slot].lla_pos_i, *lla_pos);
+  /* clear bits for all position representations and only set the new one */
+  ti_acs[slot].status = (1 << AC_INFO_POS_LLA_I);
+  ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
 }
 
 /** Set position from ENU coordinates (int).
@@ -206,16 +433,14 @@ static inline void acInfoSetPositionLla_i(uint8_t ac_id, struct LlaCoor_i *lla_p
 */
 static inline void acInfoSetPositionEnu_i(uint8_t ac_id, struct EnuCoor_i *enu_pos)
 {
-  if (ti_acs_idx < NB_ACS) {
-    if (ac_id > 0 && ti_acs_id[ac_id] == 0) {    // new aircraft id
-      ti_acs_id[ac_id] = ti_acs_idx++;
-      ti_acs[ti_acs_id[ac_id]].ac_id = ac_id;
-    }
-    VECT3_COPY(ti_acs[ti_acs_id[ac_id]].enu_pos_i, *enu_pos);
-    /* clear bits for all position representations and only set the new one */
-    ti_acs[ti_acs_id[ac_id]].status = (1 << AC_INFO_POS_ENU_I);
-    ti_acs[ti_acs_id[ac_id]].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  const uint8_t slot = ti_acs_slot(ac_id);
+  if (slot == TI_ACS_NONE) {
+    return;
   }
+  VECT3_COPY(ti_acs[slot].enu_pos_i, *enu_pos);
+  /* clear bits for all position representations and only set the new one */
+  ti_acs[slot].status = (1 << AC_INFO_POS_ENU_I);
+  ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
 }
 
 /** Set position from UTM coordinates (float).
@@ -224,16 +449,14 @@ static inline void acInfoSetPositionEnu_i(uint8_t ac_id, struct EnuCoor_i *enu_p
 */
 static inline void acInfoSetPositionUtm_f(uint8_t ac_id, struct UtmCoor_f *utm_pos)
 {
-  if (ti_acs_idx < NB_ACS) {
-    if (ac_id > 0 && ti_acs_id[ac_id] == 0) {    // new aircraft id
-      ti_acs_id[ac_id] = ti_acs_idx++;
-      ti_acs[ti_acs_id[ac_id]].ac_id = ac_id;
-    }
-    UTM_COPY(ti_acs[ti_acs_id[ac_id]].utm_pos_f, *utm_pos);
-    /* clear bits for all position representations and only set the new one */
-    ti_acs[ti_acs_id[ac_id]].status = (1 << AC_INFO_POS_UTM_F);
-    ti_acs[ti_acs_id[ac_id]].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  const uint8_t slot = ti_acs_slot(ac_id);
+  if (slot == TI_ACS_NONE) {
+    return;
   }
+  UTM_COPY(ti_acs[slot].utm_pos_f, *utm_pos);
+  /* clear bits for all position representations and only set the new one */
+  ti_acs[slot].status = (1 << AC_INFO_POS_UTM_F);
+  ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
 }
 
 /** Set position from LLA coordinates (float).
@@ -242,16 +465,14 @@ static inline void acInfoSetPositionUtm_f(uint8_t ac_id, struct UtmCoor_f *utm_p
 */
 static inline void acInfoSetPositionLla_f(uint8_t ac_id, struct LlaCoor_f *lla_pos)
 {
-  if (ti_acs_idx < NB_ACS) {
-    if (ac_id > 0 && ti_acs_id[ac_id] == 0) {    // new aircraft id
-      ti_acs_id[ac_id] = ti_acs_idx++;
-      ti_acs[ti_acs_id[ac_id]].ac_id = ac_id;
-    }
-    LLA_COPY(ti_acs[ti_acs_id[ac_id]].lla_pos_i, *lla_pos);
-    /* clear bits for all position representations and only set the new one */
-    ti_acs[ti_acs_id[ac_id]].status = (1 << AC_INFO_POS_LLA_F);
-    ti_acs[ti_acs_id[ac_id]].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  const uint8_t slot = ti_acs_slot(ac_id);
+  if (slot == TI_ACS_NONE) {
+    return;
   }
+  LLA_COPY(ti_acs[slot].lla_pos_f, *lla_pos);
+  /* clear bits for all position representations and only set the new one */
+  ti_acs[slot].status = (1 << AC_INFO_POS_LLA_F);
+  ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
 }
 
 /** Set position from ENU coordinates (float).
@@ -260,16 +481,14 @@ static inline void acInfoSetPositionLla_f(uint8_t ac_id, struct LlaCoor_f *lla_p
 */
 static inline void acInfoSetPositionEnu_f(uint8_t ac_id, struct EnuCoor_f *enu_pos)
 {
-  if (ti_acs_idx < NB_ACS) {
-    if (ac_id > 0 && ti_acs_id[ac_id] == 0) {    // new aircraft id
-      ti_acs_id[ac_id] = ti_acs_idx++;
-      ti_acs[ti_acs_id[ac_id]].ac_id = ac_id;
-    }
-    VECT3_COPY(ti_acs[ti_acs_id[ac_id]].enu_pos_f, *enu_pos);
-    /* clear bits for all position representations and only set the new one */
-    ti_acs[ti_acs_id[ac_id]].status = (1 << AC_INFO_POS_ENU_F);
-    ti_acs[ti_acs_id[ac_id]].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  const uint8_t slot = ti_acs_slot(ac_id);
+  if (slot == TI_ACS_NONE) {
+    return;
   }
+  VECT3_COPY(ti_acs[slot].enu_pos_f, *enu_pos);
+  /* clear bits for all position representations and only set the new one */
+  ti_acs[slot].status = (1 << AC_INFO_POS_ENU_F);
+  ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
 }
 
 /** Set velocity from ENU coordinates (int).
@@ -278,16 +497,14 @@ static inline void acInfoSetPositionEnu_f(uint8_t ac_id, struct EnuCoor_f *enu_p
 */
 static inline void acInfoSetVelocityEnu_i(uint8_t ac_id, struct EnuCoor_i *enu_vel)
 {
-  if (ti_acs_idx < NB_ACS) {
-    if (ac_id > 0 && ti_acs_id[ac_id] == 0) {    // new aircraft id
-      ti_acs_id[ac_id] = ti_acs_idx++;
-      ti_acs[ti_acs_id[ac_id]].ac_id = ac_id;
-    }
-    VECT3_COPY(ti_acs[ti_acs_id[ac_id]].enu_vel_i, *enu_vel);
-    /* clear bits for all position representations and only set the new one */
-    ti_acs[ti_acs_id[ac_id]].status = (1 << AC_INFO_VEL_ENU_I);
-    ti_acs[ti_acs_id[ac_id]].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  const uint8_t slot = ti_acs_slot(ac_id);
+  if (slot == TI_ACS_NONE) {
+    return;
   }
+  VECT3_COPY(ti_acs[slot].enu_vel_i, *enu_vel);
+  /* clear bits for all position representations and only set the new one */
+  ti_acs[slot].status = (1 << AC_INFO_VEL_ENU_I);
+  ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
 }
 
 /** Set velocity from ENU coordinates (float).
@@ -296,16 +513,14 @@ static inline void acInfoSetVelocityEnu_i(uint8_t ac_id, struct EnuCoor_i *enu_v
  */
 static inline void acInfoSetVelocityEnu_f(uint8_t ac_id, struct EnuCoor_f *enu_vel)
 {
-  if (ti_acs_idx < NB_ACS) {
-    if (ac_id > 0 && ti_acs_id[ac_id] == 0) {    // new aircraft id
-      ti_acs_id[ac_id] = ti_acs_idx++;
-      ti_acs[ti_acs_id[ac_id]].ac_id = ac_id;
-    }
-    VECT3_COPY(ti_acs[ti_acs_id[ac_id]].enu_vel_i, *enu_vel);
-    /* clear bits for all position representations and only set the new one */
-    ti_acs[ti_acs_id[ac_id]].status = (1 << AC_INFO_VEL_ENU_F);
-    ti_acs[ti_acs_id[ac_id]].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  const uint8_t slot = ti_acs_slot(ac_id);
+  if (slot == TI_ACS_NONE) {
+    return;
   }
+  VECT3_COPY(ti_acs[slot].enu_vel_f, *enu_vel);
+  /* clear bits for all position representations and only set the new one */
+  ti_acs[slot].status = (1 << AC_INFO_VEL_ENU_F);
+  ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
 }
 
 

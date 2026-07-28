@@ -1018,8 +1018,8 @@
 
   <section name="SIMULATOR" prefix="NPS_">
     <define name="JSBSIM_LAUNCHSPEED" value="MIN_SPEED_FOR_TAKEOFF"/>
-    <define name="JSBSIM_MODEL" value="YardStik" type="string"/>
-    <!-- <define name="JSBSIM_MODEL" value="Easystar3" type="string"/> -->
+    <!-- <define name="JSBSIM_MODEL" value="YardStik" type="string"/> -->
+    <define name="JSBSIM_MODEL" value="Easystar3" type="string"/>
     <!-- <define name="JSBSIM_MODEL" value="AGGIEAIR/minion" type="string"/> -->
     <define name="COMMANDS_NB" value="4"/>
     <define name="ACTUATOR_NAMES" value="throttle-cmd-norm, aileron-cmd-norm, elevator-cmd-norm, rudder-cmd-norm" type="string[]"/>

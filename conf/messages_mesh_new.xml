@@ -238,9 +238,9 @@
     </message>
 
     <message name="RANGEFINDER" id="29">
-      <description>Return measured rangefinder sensor data</description>
+      <description>Return measured distance of rangefinder sensors</description>
       <field name="id" type="uint8">Sensor ID</field>
-      <field name="raw" type="uint16"/>
+      <field name="raw" type="uint16">Uncompensated nor adjusted raw distance value from sensor</field>
       <field name="distance" type="float" unit="m"/>
     </message>
 
@@ -431,17 +431,7 @@
       <field name="cycle_time" type="uint32" unit="ms"/>
     </message>
 
-    <message name="UWB_SWARM" id="51">
-      <description>Relative localization data from current aircraft to be picked up by other Aircrafts in a swarm</description>
-      <field name="id_tracked"    type="uint8" unit="">ID of the MAV this data refers to</field>
-      <field name="r_tracked"     type="float" unit="m">Distance of other MAV</field>
-      <field name="vx_tracked"    type="float" unit="m/s">X speed of other MAV</field>
-      <field name="vy_tracked"    type="float" unit="m/s">Y speed of other MAV</field>
-      <field name="z_tracked"     type="float" unit="m">Height position of other MAV</field>
-      <field name="ax_tracked"    type="float" unit="m/s^2">X acceleration of other MAV</field>
-      <field name="ay_tracked"    type="float" unit="m/s^2">Y acceleration of other MAV</field>
-      <field name="yawr_tracked"  type="float" unit="rad/s">Yaw rate of other MAV</field>
-    </message>
+    <!-- 51 is free -->
 
     <message name="MPPT" id="52">
       <field name="values" type="int16[]" alt_unit_coef="1e-3"/>
@@ -1136,6 +1126,7 @@
       <field name="array_temp" type="float" unit="deg_celsius" format="%.2f">Imager sensor temperature, NaN if not measured</field>
     </message>
 
+    <!-- Do we need this? -->
     <message name="TIMESTAMP" id="129">
       <field name="timestamp" type="uint32"/>
     </message>
@@ -1781,7 +1772,6 @@
       <field name="G1_roll"   type="float[]" unit="none"/>
       <field name="G1_pitch"  type="float[]" unit="none"/>
       <field name="G1_yaw"    type="float[]" unit="none"/>
-      <field name="G1_thrust" type="float[]" unit="none"/>
       <field name="G2"        type="float[]" unit="none"/>
     </message>
 
@@ -1888,7 +1878,11 @@
       <field name="actuators_t4_rolling_msg_out_id" type="uint8">T4 output Rolling message ID</field>
      </message>
   
-    <!-- 192 is free -->
+    <message name="EFF_MAT_STAB_THRUST" id="192">
+      <field name="G1_x" type="float[]" unit="none"></field>
+      <field name="G1_y" type="float[]" unit="none"></field>
+      <field name="G1_z" type="float[]" unit="none"></field>
+    </message>
 
     <message name="AHRS_LKF" id="193">
       <field name="phi"   type="float" unit="rad"   alt_unit="deg"   alt_unit_coef="57.29578" />
@@ -2057,7 +2051,32 @@
       <field name="commands" type="int32[]">Commands send to actuators</field>
     </message>
 
-    <!-- 212 is free -->
+    <message name="DRAW" id="212">
+      <description>
+        The DRAW message is sent to the ground server to be resent as a SHAPE message.
+
+        Id, shape, status, radois, latarr, lonarr and text are retransmitted as is.
+        Color is reinterpreted as follows: aa lll fff
+        - aa: Two top bits for fill opacity, with 0 = Transparent, 1 = Light, 2 = Medium and 3 = Opaque
+        - lll, fff: An index to the colormap, with the following mapping:
+          - 0 : "black"
+          - 1 : "red"
+          - 2 : "green"
+          - 3 : "yellow"
+          - 4 : "blue"
+          - 5 : "magenta"
+          - 6 : "cyan"
+          - 7 : "white"
+      </description>
+      <field name="id" type="uint8"/>
+      <field name="color"  type="uint8">2 bits for opacity, 3 bits for line color, 3 bits for fill color</field>
+      <field name="shape"  type="uint8" values="Circle|Polygon|Line"/>
+      <field name="status" type="uint8"  values="create|delete"/>
+      <field name="radius" type="float" unit="m"/>
+      <field name="latarr" type="int32[]"  unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="lonarr" type="int32[]"  unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="text"   type="char[]"/>
+    </message>
 
     <message name="TUNE_VERT" id="213">
       <field name="z_sp"      type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
@@ -2169,6 +2188,7 @@
       <field name="front_divergence" type="float"> divergence from front cam </field>
     </message>
 
+    <!-- Do we need this? -->
     <message name="VIDEO_SYNC" id="225">
       <field name="id" type="uint8"/>
     </message>
@@ -2187,10 +2207,10 @@
       <field name="fps"         type="float"/>
       <field name="corner_cnt"  type="uint16"/>
       <field name="tracked_cnt" type="uint16"/>
-      <field name="flow_x"      type="int16" unit="subpixels"/>
-      <field name="flow_y"      type="int16" unit="subpixels"/>
-      <field name="flow_der_x"  type="int16" unit="subpixels"/>
-      <field name="flow_der_y"  type="int16" unit="subpixels"/>
+      <field name="flow_x"      type="int32" unit="subpixels"/>
+      <field name="flow_y"      type="int32" unit="subpixels"/>
+      <field name="flow_der_x"  type="int32" unit="subpixels"/>
+      <field name="flow_der_y"  type="int32" unit="subpixels"/>
       <field name="vel_x"       type="float" unit="m/s"/>
       <field name="vel_y"       type="float" unit="m/s"/>
       <field name="vel_z"       type="float" unit="m/s"/>
@@ -2413,7 +2433,18 @@
       <field name="Crc1087"      type="uint32"  />
     </message>
 
-    <!-- 250 is free -->
+    <message name="GROUND_DETECT" id="250">
+      <description>
+        Ground detection status.
+      </description>
+      <field name="ground_detected" type="uint8" values="FALSE|TRUE">Bool whether ground is detected or not</field>
+      <field name="speed_down" type="float" unit="m/s">Vertical speed in NED frame</field>
+      <field name="spec_thrust_down" type="float" unit="N">Specific thrust down</field>
+      <field name="accel_filt_down" type="float" unit="m/s^2">Filtered vertical acceleration</field>
+      <field name="agl_dist_filt" type="float" unit="m">Filtered AGL distance</field>
+      <field name="force_sensor" type="int32[]">Measurement of a force sensor</field>
+      <field name="triggers" type="uint16">Bitmask containing status information on the different ground detect triggers</field>
+    </message>
 
     <message name="GPS_RELPOS" id="251">
       <field name="reference_id"  type="uint16">Reference station identification</field>
@@ -3054,7 +3085,54 @@
       <field name="fd" type="uint8" values="ALL|FLIGHT_RECORDER|PPRZLOG">where the message will be logged</field>
       <field name="msg" type="char[]"/>
     </message>
-    
+
+    <message name="MESH_STATE" id="200" link="broadcasted">
+      <description>
+        Compact air-to-air state vector for narrowband broadcast meshes
+        (e.g. EByte E52-xxxNWxxS LoRa MESH at 62.5 kbps).
+
+        Replaces ACINFO_LLA / GPS_SMALL for vehicle-to-vehicle traffic exchange:
+        17 payload bytes (25 bytes on the wire with the PPRZLink v2.0 framing)
+        instead of 23 (31) for ACINFO_LLA.
+
+        Design notes:
+        - The originating aircraft is NOT carried in the payload: the PPRZLink
+          v2.0 header already carries sender_id. This saves one byte and removes
+          the ac_id / sender_id spoofing ambiguity of ACINFO / ACINFO_LLA.
+        - No GPS time of week is carried: the receiver time-stamps on arrival
+          (same approach as GPS_SMALL). This saves four bytes; over a mesh whose
+          one-way latency is bounded by the slot time this is more accurate than
+          a stale transmitter time stamp.
+        - Position is WGS84 geodetic so it is valid worldwide with no shared
+          reference frame, UTM zone or LTP origin. Resolution is 1e-7 deg
+          (1.11 cm in latitude, 1.11 cm * cos(lat) in longitude) and 1 cm in
+          altitude, i.e. centimetre level everywhere on Earth.
+
+        multiplex_speed bit layout (MSB first):
+          bits 31-20 (12 bits, unsigned) course over ground, unit 0.1 deg,
+                     range 0 .. 3599 (values &gt;= 3600 are invalid)
+          bits 19-9  (11 bits, unsigned) ground speed, unit dm/s,
+                     range 0 .. 2047 dm/s (0 .. 204.7 m/s)
+          bits  8-0  ( 9 bits, signed two's complement) climb rate, unit dm/s,
+                     range -256 .. +255 dm/s (-25.6 .. +25.5 m/s)
+
+        flags bit layout:
+          bits 2-0   autopilot mode (0=MANUAL 1=AUTO1 2=AUTO2 3=HOME 4=NOGPS
+                     5=FAILSAFE 6=KILL 7=OTHER)
+          bit  3     vehicle class (0 = fixedwing, 1 = rotorcraft/hybrid)
+          bit  4     position valid (3D GPS fix and INS converged)
+          bit  5     airborne (takeoff detected / motors armed)
+          bit  6     low battery or other non fatal system alert
+          bit  7     emergency: this vehicle is not following its flight plan
+                     (kill, failsafe, geofence) - give it right of way
+      </description>
+      <field name="flags"           type="uint8">see description</field>
+      <field name="lat"             type="int32"  unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="lon"             type="int32"  unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="alt"             type="int32"  unit="cm"     alt_unit="m"   alt_unit_coef="0.01">height above the WGS84 ellipsoid</field>
+      <field name="multiplex_speed" type="uint32">bits 31-20 course in 0.1deg : bits 19-9 ground speed in dm/s : bits 8-0 climb rate in dm/s</field>
+    </message>
+
   </msg_class>
 
 

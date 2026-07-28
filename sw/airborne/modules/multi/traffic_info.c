@@ -29,6 +29,7 @@
 #include "generated/airframe.h"     // AC_ID
 #include "generated/flight_plan.h"  // NAV_MSL0
 
+#include "autopilot.h"
 #include "modules/datalink/datalink.h"
 #include "modules/datalink/telemetry.h"
 #include "pprzlink/dl_protocol.h"   // datalink messages
@@ -37,6 +38,10 @@
 #include "state.h"
 #include "math/pprz_geodetic_utm.h"
 #include "math/pprz_geodetic_wgs84.h"
+
+#ifdef LOW_BAT_LEVEL
+#include "modules/energy/electrical.h"
+#endif
 
 #if TRAFFIC_INFO_USE_LOG
 #include "modules/loggers/logger_utils.h"
@@ -97,6 +102,653 @@ static void send_acinfo_lla(struct transport_tx *trans, struct link_device *dev)
 #endif
 }
 
+/* ------------------------------------------------------------------------- *
+ * MESH_STATE: compact broadcast state vector for narrowband LoRa MESH links
+ *
+ * Everything below is statically allocated and O(1). The only mutable state is
+ * ::mesh_link plus two pointers to the transport and device objects owned by
+ * the telemetry subsystem, captured on the first telemetry callback.
+ * ------------------------------------------------------------------------- */
+
+struct MeshLinkState mesh_link;
+
+/* The MESH_STATE period in the telemetry file is what the bandwidth budget was
+ * computed from; the superframe and reuse cap are what the node will actually
+ * do. A node emits once per owned slot, so its ceiling is MESH_TDMA_MAX_REUSE
+ * frames per superframe. If the declared period is longer than that interval
+ * the budget understates the real channel load - the mesh would be provisioned
+ * for less traffic than it generates, which is the failure mode that shows up
+ * as OUT OF CACHE in flight rather than as anything visible on a bench.
+ *
+ * gen_periodic emits PERIOD_<MSG>_<process>_<mode index> for every scheduled
+ * message, so the two files can be forced to agree at build time. Compared in
+ * whole milliseconds because a cast of a parenthesised floating constant is an
+ * integer constant expression while a floating multiply is not.
+ */
+#if defined(PERIOD_MESH_STATE_Ap_0)
+/* The gate can only send what the telemetry scheduler offers it. To use up to
+ * MESH_TDMA_MAX_REUSE slots per superframe the request has to arrive at least
+ * that often, so the MESH_STATE period must be superframe / MAX_REUSE.
+ * Compared in milliseconds; a cast of a parenthesised floating constant is an
+ * integer constant expression, a floating multiply is a GCC extension that all
+ * supported toolchains accept. */
+_Static_assert((MESH_TDMA_SUPERFRAME_MS / MESH_TDMA_MAX_REUSE) ==
+                 (unsigned)(PERIOD_MESH_STATE_Ap_0 * 1000.0 + 0.5),
+               "The MESH_STATE telemetry period must equal "
+               "MESH_TDMA_SUPERFRAME_MS / MESH_TDMA_MAX_REUSE, otherwise the "
+               "bandwidth budget is computed for a different rate than the "
+               "node will actually emit. 1000 ms over 4 gives 0.25 s.");
+#endif
+
+#if defined(TRAFFIC_INFO_MESH_PERIODIC_FREQ)
+/* The transmit gate samples the clock; it is not interrupt driven. A slot is
+ * only ever used if at least one run of the periodic task falls inside it, so
+ * the task period must be strictly shorter than one slot. At 20 Hz and 16
+ * slots per second that is 50 ms against 62.5 ms and every slot is sampled -
+ * but raising MESH_TDMA_NB_SLOTS to 32 would shrink the slot to 31.25 ms and
+ * the node would silently skip roughly a third of the slots it owns, losing
+ * position updates for no visible reason. Cross-multiplied to stay in integers.
+ */
+_Static_assert(MESH_TDMA_NB_SLOTS * 1000u <
+                 MESH_TDMA_SUPERFRAME_MS *
+                   (unsigned)(TRAFFIC_INFO_MESH_PERIODIC_FREQ),
+               "traffic_info_mesh_periodic() runs more slowly than one TDMA "
+               "slot, so some owned slots would never be sampled. Raise the "
+               "periodic frequency in conf/modules/traffic_info.xml or reduce "
+               "MESH_TDMA_NB_SLOTS.");
+#endif
+
+/* Transport and device the periodic telemetry dispatcher handed us. They point
+ * at statically allocated singletons (DefaultChannel / DefaultDevice); we only
+ * cache them so that the deferred emission can reuse the same downlink. */
+static struct transport_tx *mesh_trans;
+static struct link_device *mesh_dev;
+
+/** GPS time of week in ms when the receiver is synchronised, otherwise the
+ *  local monotonic clock. All nodes that hold a 3D fix therefore agree on the
+ *  slot boundaries to within the GPS time transfer error (well under 1 ms),
+ *  and nodes without a fix still spread themselves out by AC_ID. */
+static uint32_t mesh_network_time_ms(void)
+{
+  if (gps.fix >= GPS_FIX_3D) {
+    mesh_link.synced = true;
+    return gps_tow_from_sys_ticks(sys_time.nb_tick);
+  }
+  mesh_link.synced = false;
+  return get_sys_time_msec();
+}
+
+/** Pack course, ground speed and climb rate into the 32 bit multiplex field.
+ * @param[in] course_ddeg course over ground in decidegrees, any range
+ * @param[in] gspeed_cms  ground speed in cm/s, saturated at 204.7 m/s
+ * @param[in] climb_cms   climb rate in cm/s, saturated at +/- 25.5 m/s
+ */
+static uint32_t mesh_multiplex_encode(int32_t course_ddeg, int32_t gspeed_cms, int32_t climb_cms)
+{
+  int32_t course = course_ddeg % 3600;
+  if (course < 0) {
+    course += 3600;
+  }
+
+  /* cm/s -> dm/s. Eleven bits of cm/s would saturate at 20.47 m/s, and this
+   * airframe is set up for AIRSPEED_MAX 16 m/s, so any useful tailwind puts the
+   * ground speed over the clip and a conflicting aircraft reads a neighbour as
+   * slower than it really is - the one error a collision-avoidance input must
+   * not make. Decimetres per second reach 204.7 m/s, and 0.1 m/s is still finer
+   * than the GPS ground-speed noise. */
+  int32_t gspeed = (gspeed_cms + 5) / 10;
+  if (gspeed < 0) { gspeed = 0; }
+  if (gspeed > 2047) { gspeed = 2047; }
+
+  /* cm/s -> dm/s, rounded away from zero so that a slow climb never reads as
+   * level flight to a conflicting aircraft */
+  int32_t climb_dms = (climb_cms >= 0) ? (climb_cms + 5) / 10 : (climb_cms - 5) / 10;
+  if (climb_dms > 255) { climb_dms = 255; }
+  if (climb_dms < -256) { climb_dms = -256; }
+
+  return (((uint32_t)course & 0x0FFFu) << 20)
+         | (((uint32_t)gspeed & 0x07FFu) << 9)
+         | ((uint32_t)climb_dms & 0x01FFu);
+}
+
+/** Inverse of ::mesh_multiplex_encode. Outputs use the units of
+ *  ::set_ac_info_lla, i.e. decidegrees and cm/s. */
+static void mesh_multiplex_decode(uint32_t multiplex, int16_t *course_ddeg,
+                                  uint16_t *gspeed_cms, int16_t *climb_cms)
+{
+  const uint32_t course = (multiplex >> 20) & 0x0FFFu;
+  const uint32_t gspeed = (multiplex >> 9) & 0x07FFu;
+  /* branch free sign extension of a 9 bit two's complement field */
+  const int32_t climb_dms = (int32_t)((multiplex & 0x01FFu) ^ 0x0100u) - 0x0100;
+
+  *course_ddeg = (int16_t)((course < 3600u) ? course : 0u);
+  *gspeed_cms = (uint16_t)(gspeed * 10);      /* dm/s on the wire -> cm/s */
+  *climb_cms = (int16_t)(climb_dms * 10);
+}
+
+/** Map the firmware specific autopilot mode onto the unified 3 bit mesh mode,
+ *  so that a fixedwing and a rotorcraft describe themselves identically. */
+static uint8_t mesh_unified_mode(void)
+{
+  if (autopilot_throttle_killed()) {
+    return MESH_MODE_KILL;
+  }
+
+  switch (autopilot_get_mode()) {
+#ifdef AP_MODE_FAILSAFE
+    case AP_MODE_FAILSAFE:          return MESH_MODE_FAILSAFE;
+#endif
+#ifdef AP_MODE_KILL
+    case AP_MODE_KILL:              return MESH_MODE_KILL;
+#endif
+#ifdef AP_MODE_HOME
+    case AP_MODE_HOME:              return MESH_MODE_HOME;
+#endif
+#ifdef AP_MODE_NOGPS
+    case AP_MODE_NOGPS:             return MESH_MODE_NOGPS;
+#endif
+#if FIXEDWING_FIRMWARE
+#ifdef AP_MODE_MANUAL
+    case AP_MODE_MANUAL:            return MESH_MODE_MANUAL;
+#endif
+#ifdef AP_MODE_AUTO1
+    case AP_MODE_AUTO1:             return MESH_MODE_ASSISTED;
+#endif
+#ifdef AP_MODE_AUTO2
+    case AP_MODE_AUTO2:             return MESH_MODE_AUTO;
+#endif
+#else /* rotorcraft and hybrid */
+#ifdef AP_MODE_NAV
+    case AP_MODE_NAV:               return MESH_MODE_AUTO;
+#endif
+#ifdef AP_MODE_GUIDED
+    case AP_MODE_GUIDED:            return MESH_MODE_AUTO;
+#endif
+#ifdef AP_MODE_RATE_DIRECT
+    case AP_MODE_RATE_DIRECT:       return MESH_MODE_MANUAL;
+#endif
+#ifdef AP_MODE_ATTITUDE_DIRECT
+    case AP_MODE_ATTITUDE_DIRECT:   return MESH_MODE_MANUAL;
+#endif
+#ifdef AP_MODE_RC_DIRECT
+    case AP_MODE_RC_DIRECT:         return MESH_MODE_MANUAL;
+#endif
+#endif
+    default:                        return MESH_MODE_UNKNOWN;
+  }
+}
+
+static uint8_t mesh_state_flags(void)
+{
+  uint8_t flags = mesh_unified_mode() & MESH_FLAG_MODE_MASK;
+
+#if !FIXEDWING_FIRMWARE
+  flags |= MESH_FLAG_ROTORCRAFT;
+#endif
+
+  if (gps.fix >= GPS_FIX_3D && state.pos_status != 0) {
+    flags |= MESH_FLAG_POS_VALID;
+  }
+  if (autopilot_in_flight()) {
+    flags |= MESH_FLAG_AIRBORNE;
+  }
+  if ((flags & MESH_FLAG_MODE_MASK) >= MESH_MODE_NOGPS) {
+    /* NOGPS, FAILSAFE and KILL all mean "not following the flight plan" */
+    flags |= MESH_FLAG_EMERGENCY;
+  }
+#ifdef LOW_BAT_LEVEL
+  if (electrical.vsupply < LOW_BAT_LEVEL) {
+    flags |= MESH_FLAG_ALERT;
+  }
+#endif
+
+  return flags;
+}
+
+/** Hand one MESH_STATE frame to the modem. Snapshots the state at call time,
+ *  not at request time, so the deferral introduced by the TDMA slot costs
+ *  latency but never accuracy. */
+static void mesh_state_emit(void)
+{
+  const struct LlaCoor_i *lla = stateGetPositionLla_i();
+
+  uint8_t flags = mesh_state_flags();
+  int32_t lat = lla->lat;
+  int32_t lon = lla->lon;
+  int32_t alt = lla->alt / 10;                 /* mm above ellipsoid -> cm */
+  uint32_t multiplex = mesh_multiplex_encode(
+                         (int32_t)DeciDegOfRad(stateGetHorizontalSpeedDir_f()),
+                         (int32_t)(stateGetHorizontalSpeedNorm_f() * 100.f),
+                         (int32_t)(stateGetSpeedEnu_f()->z * 100.f));
+
+  struct pprzlink_msg msg;
+  msg.trans = mesh_trans;
+  msg.dev = mesh_dev;
+  msg.sender_id = AC_ID;
+  msg.receiver_id = PPRZLINK_MSG_BROADCAST;
+  msg.component_id = 0;
+  pprzlink_msg_send_MESH_STATE(&msg, &flags, &lat, &lon, &alt, &multiplex);
+}
+
+/** Periodic telemetry callback for MESH_STATE.
+ *
+ * It does *not* transmit. The periodic telemetry counters are free running
+ * from boot and are therefore uncorrelated between aircraft; transmitting here
+ * would let several nodes originate at the same instant, which floods every
+ * modem cache in the mesh with simultaneous relay frames. Instead the request
+ * is latched and ::traffic_info_mesh_periodic releases it inside this node's
+ * own GPS synchronised slot.
+ */
+static void request_mesh_state(struct transport_tx *trans, struct link_device *dev)
+{
+  /* This callback exists only to learn which transport and device the telemetry
+   * subsystem wants us to use. It deliberately does not transmit and does not
+   * pace anything.
+   *
+   * An earlier version latched a "pending" flag here and let the transmit gate
+   * consume it. That silently threw away transmit opportunities: the telemetry
+   * scheduler fires on a counter that starts at boot, whereas slots are aligned
+   * to GPS time, so the two clocks have an arbitrary and drifting offset. A
+   * node owning four slots per superframe would find the flag already consumed
+   * on some of them and skip. Emission is now driven purely by slot ownership,
+   * which is the only clock that matters here. */
+  mesh_trans = trans;
+  mesh_dev = dev;
+  mesh_link.ready = true;
+}
+
+/** Estimated number of frames still queued inside the modem.
+ *  Leaky bucket: every handover pushes the "cache empty" instant one drain
+ *  time further into the future. */
+static uint8_t mesh_modem_in_flight(uint32_t now_ms)
+{
+  const int32_t remaining = (int32_t)(mesh_link.modem_free_ms - now_ms);
+  if (remaining <= 0) {
+    return 0;
+  }
+  return (uint8_t)Min(255, ((uint32_t)remaining + MESH_MODEM_DRAIN_MS - 1) / MESH_MODEM_DRAIN_MS);
+}
+
+/* ------------------------------------------------------------------------- *
+ * Self-organising slot allocation
+ *
+ * The mesh has no coordinator, nodes join and leave at will, and the ground
+ * station is just another mobile member. A slot map fixed at compile time
+ * cannot survive that, so slots are claimed, defended and released at run time
+ * - the approach marine AIS and VDL Mode 4 use for exactly this problem
+ * (many mobile peers, no central authority, periodic position broadcast).
+ *
+ * Three properties make it cheap here:
+ *
+ *  1. a frame's slot is implied by its GPS-aligned arrival time, so the
+ *     occupancy map is learned from ordinary MESH_STATE traffic and costs
+ *     nothing on air - no reservation protocol, no extra message, no bytes;
+ *  2. collisions are resolved by a deterministic rule (higher AC_ID yields),
+ *     so the two nodes involved never both move and never both stay;
+ *  3. spare membership is converted into update rate: with N slots and k nodes
+ *     present each node claims up to N/k of them. Channel occupancy is
+ *     therefore constant - the frame is always full - while the position rate
+ *     rises as nodes leave and falls back as they return.
+ *
+ * All state is static: one MeshSlot per slot, nothing allocated, no recursion.
+ * ------------------------------------------------------------------------- */
+
+static struct MeshSlot mesh_slots[MESH_TDMA_NB_SLOTS];
+
+/** Slots this node currently claims. Index 0 is the primary, which it always
+ *  holds; the rest are opportunistic and are surrendered the moment a real
+ *  owner appears. */
+static uint8_t mesh_owned[MESH_TDMA_MAX_REUSE];
+static uint16_t mesh_owned_until[MESH_TDMA_MAX_REUSE];
+static uint8_t mesh_owned_n;
+
+/** Superframes observed since boot. Used for network entry: a node listens
+ *  before it expands beyond its primary slot. */
+static uint16_t mesh_frames_seen;
+static uint16_t mesh_last_frame;
+static bool mesh_entered;          ///< network entry slot choice has been made
+
+/** Superframe index of a network timestamp. Wraps harmlessly in 16 bits. */
+static inline uint16_t mesh_frame_of(uint32_t net_ms)
+{
+  return (uint16_t)(net_ms / MESH_TDMA_SUPERFRAME_MS);
+}
+
+/** Slot index of a network timestamp.
+ *
+ * Scaling up before dividing keeps this exact for any superframe length: the
+ * slot need not be a whole number of milliseconds (1000 ms over 16 slots is
+ * 62.5 ms), and truncating the slot length first would map a sliver of every
+ * superframe to a slot nobody owns.
+ */
+static inline uint8_t mesh_slot_of(uint32_t net_ms)
+{
+  const uint32_t frame_ms = net_ms % MESH_TDMA_SUPERFRAME_MS;
+  return (uint8_t)((frame_ms * MESH_TDMA_NB_SLOTS) / MESH_TDMA_SUPERFRAME_MS);
+}
+
+static inline bool mesh_slot_is_stale(uint8_t s, uint16_t frame)
+{
+  return (uint16_t)(frame - mesh_slots[s].last_frame) > MESH_SLOT_AGE_FRAMES;
+}
+
+static inline bool mesh_slot_free(uint8_t s, uint16_t frame)
+{
+  return mesh_slots[s].ac_id == MESH_SLOT_FREE || mesh_slots[s].ac_id == AC_ID
+         || mesh_slot_is_stale(s, frame);
+}
+
+/** Has ``s`` been silent long enough to be safe to claim opportunistically?
+ *
+ * Twice the ageing window. A slot whose owner has only just aged out, or which
+ * a newly entered node has claimed but whose first transmission we have not
+ * processed yet, still reads as free in the map. Claiming it immediately is
+ * how an expanding node lands on top of a newcomer's primary - and once they
+ * are transmitting together neither can hear the other. Requiring a longer
+ * quiet period than the ageing window closes that race.
+ *
+ * The primary is exempt: it is chosen from a genuinely free slot at entry and
+ * defended by the AC_ID rule thereafter.
+ */
+static bool mesh_slot_quiet(uint8_t s, uint16_t frame)
+{
+  return mesh_slots[s].ac_id == MESH_SLOT_FREE
+         && (uint16_t)(frame - mesh_slots[s].last_frame) > (2 * MESH_SLOT_AGE_FRAMES);
+}
+
+static bool mesh_owns(uint8_t slot)
+{
+  /* Silent during network entry. A node that starts transmitting on its AC_ID
+   * hint before it has heard anybody will sooner or later land on a slot that
+   * is already in use, and the two are then mutually deaf - neither can apply
+   * the "higher AC_ID yields" rule because neither can hear the other. So:
+   * listen for a few complete superframes, build the map, and only then pick a
+   * slot that is demonstrably free. Costs a few seconds of silence at power up
+   * and removes the entire class of join-time collisions. */
+  if (mesh_frames_seen < MESH_ENTRY_FRAMES) {
+    return false;
+  }
+  for (uint8_t i = 0; i < mesh_owned_n; i++) {
+    if (mesh_owned[i] == slot) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Record that ``sender`` was heard transmitting, and in which slot.
+ *
+ * Called for every received MESH_STATE. A node that reappears after a landing
+ * or a dropout simply starts being heard again and reclaims a slot; nothing
+ * has to notice that it left.
+ */
+void mesh_slot_observe(uint8_t sender, uint32_t net_ms)
+{
+  /* Sender 0 is the ground station, a legitimate member of this mesh, not a
+   * null value. Only our own relayed frames are discarded. */
+  if (sender == AC_ID) {
+    return;
+  }
+  const uint8_t s = mesh_slot_of(net_ms);
+  const uint16_t frame = mesh_frame_of(net_ms);
+
+  if (mesh_slots[s].ac_id == MESH_SLOT_FREE || mesh_slots[s].ac_id == sender
+      || mesh_slot_is_stale(s, frame)) {
+    mesh_slots[s].ac_id = sender;
+    mesh_slots[s].last_frame = frame;
+  }
+}
+
+/** Pick a free slot for the primary, biased by AC_ID so that two nodes
+ *  reselecting in the same frame rarely land on the same one. */
+static uint8_t mesh_pick_slot(uint16_t frame)
+{
+  const uint8_t start = (uint8_t)((AC_ID * 7u + mesh_link.reselect_count * 3u)
+                                  % MESH_TDMA_NB_SLOTS);
+  for (uint8_t k = 0; k < MESH_TDMA_NB_SLOTS; k++) {
+    const uint8_t s = (uint8_t)((start + k) % MESH_TDMA_NB_SLOTS);
+    if (mesh_slot_free(s, frame) && !mesh_owns(s)) {
+      return s;
+    }
+  }
+  return start;   /* mesh full: keep transmitting, the modem CSMA copes */
+}
+
+/** Randomised lease length for an opportunistic slot.
+ *
+ * A secondary slot is held for MESH_SLOT_HOLD_MIN..+SPAN superframes and then
+ * surrendered, exactly as an AIS station times out its slot reservations.
+ *
+ * This is what breaks the one deadlock the occupancy map cannot see. If node A
+ * is using a slot as a secondary and node B claims the same slot as its
+ * primary, the two transmit on top of each other; neither can hear the other,
+ * and no third party can decode the collision either, so the "higher AC_ID
+ * yields" rule never fires and both sit there forever. Because the leases are
+ * seeded per node they expire at different frames: whichever secondary lapses
+ * first leaves the slot, the other node becomes audible, and the map repairs
+ * itself.
+ */
+static uint16_t mesh_lease_expiry(uint16_t frame)
+{
+  /* cheap deterministic scatter, distinct per node and per claim */
+  const uint32_t r = (uint32_t)(AC_ID * 2654435761u
+                                + frame * 40503u
+                                + mesh_link.reselect_count * 97u);
+  return (uint16_t)(frame + MESH_SLOT_HOLD_MIN
+                    + (uint16_t)(r % MESH_SLOT_HOLD_SPAN));
+}
+
+/** Randomised lease length for the primary slot. Much longer than a
+ *  secondary's: this exists only to break a mutual-deafness deadlock, not to
+ *  share capacity, so it should almost never fire in a healthy mesh. */
+static uint16_t mesh_primary_expiry(uint16_t frame)
+{
+  const uint32_t r = (uint32_t)(AC_ID * 1103515245u
+                                + frame * 12345u
+                                + mesh_link.reselect_count * 7919u);
+  return (uint16_t)(frame + MESH_PRIMARY_HOLD_MIN
+                    + (uint16_t)(r % MESH_PRIMARY_HOLD_SPAN));
+}
+
+/** May this node take an extra slot in this superframe?
+ *
+ * Expansion is serialised round-robin over the known membership: a node may
+ * only grow on frames where ``frame mod nodes`` equals its rank in the sorted
+ * list of live AC_IDs.
+ *
+ * This is not tidiness, it is necessary. A node cannot hear a collision in a
+ * slot it is transmitting in, and neither can anyone else - a collision
+ * delivers nothing to anybody. So if two nodes claim the same free slot in the
+ * same frame, they can sit on top of each other indefinitely with no evidence
+ * available to either. Serialising expansion means the first claimant is heard
+ * and recorded by everyone else before the next node gets its turn, so the
+ * second never picks that slot in the first place.
+ */
+static bool mesh_expansion_turn(uint16_t frame, uint8_t nodes)
+{
+  uint8_t rank = 0;
+  for (uint8_t s = 0; s < MESH_TDMA_NB_SLOTS; s++) {
+    const uint8_t id = mesh_slots[s].ac_id;
+    if (id != MESH_SLOT_FREE && id != AC_ID && id < AC_ID) {
+      bool dup = false;
+      for (uint8_t t = 0; t < s; t++) {
+        if (mesh_slots[t].ac_id == id) { dup = true; break; }
+      }
+      if (!dup) { rank++; }
+    }
+  }
+  return (uint8_t)(frame % (nodes ? nodes : 1)) == rank;
+}
+
+/** Age the map, defend the primary slot, and size this node's share.
+ *
+ * Two rules keep this stable, and the churn simulation in
+ * sw/tools/mesh/mesh_slot_sim.py exists because getting them wrong is not
+ * obvious from reading the code:
+ *
+ *  * **Listen before claiming.** A node that has just booted sees an empty map
+ *    and would otherwise conclude it is alone and grab the maximum share. If
+ *    every node does that simultaneously they collide on every slot, and
+ *    because a collision delivers nothing, none of them ever learns the others
+ *    exist - a permanent deadlock. So the share stays at one slot until the
+ *    node has watched a couple of complete superframes.
+ *
+ *  * **Expand slowly, contract immediately.** At most one extra slot is taken
+ *    per superframe, and only one that has been observed free; any slot a real
+ *    owner appears in is surrendered at once. Growth is therefore always
+ *    slower than the detection of a conflict.
+ */
+static void mesh_slot_maintain(uint16_t frame)
+{
+  /* --- age the map, count distinct live nodes ---------------------------- */
+  uint8_t nodes = 1;                                   /* ourselves */
+  uint8_t seen[MESH_TDMA_NB_SLOTS];
+  uint8_t seen_n = 0;
+  for (uint8_t s = 0; s < MESH_TDMA_NB_SLOTS; s++) {
+    if (mesh_slots[s].ac_id == MESH_SLOT_FREE) {
+      continue;
+    }
+    if (mesh_slot_is_stale(s, frame)) {
+      mesh_slots[s].ac_id = MESH_SLOT_FREE;            /* owner left or landed */
+      continue;   /* last_frame is deliberately kept: see mesh_slot_quiet() */
+    }
+    if (mesh_slots[s].ac_id == AC_ID) {
+      continue;
+    }
+    bool dup = false;
+    for (uint8_t i = 0; i < seen_n; i++) {
+      if (seen[i] == mesh_slots[s].ac_id) { dup = true; break; }
+    }
+    if (!dup) {
+      seen[seen_n++] = mesh_slots[s].ac_id;            /* one node, many slots */
+      nodes++;
+    }
+  }
+  mesh_link.neighbours = (uint8_t)(nodes - 1);
+
+  /* --- network entry: listen first, then choose a slot that is really free */
+  if (mesh_frames_seen == MESH_ENTRY_FRAMES && !mesh_entered) {
+    mesh_entered = true;
+    mesh_owned[0] = mesh_pick_slot(frame);
+    mesh_owned_until[0] = mesh_primary_expiry(frame);
+    mesh_owned_n = 1;
+  }
+
+  /* --- the primary has a lease too --------------------------------------- *
+   * Two nodes whose PRIMARY slots coincide are the one case that nothing else
+   * can resolve: they are mutually deaf, so the "higher AC_ID yields" rule
+   * never fires, and no third party can decode the collision to report it
+   * either. Leaving the primary permanent therefore leaves a genuine deadlock.
+   * A long randomised lease removes it - the two lapse at different frames,
+   * whichever re-picks first becomes audible, and the map repairs. Long enough
+   * (tens of superframes) that a healthy node effectively keeps its slot. */
+  if ((int16_t)(frame - mesh_owned_until[0]) >= 0) {
+    mesh_owned[0] = mesh_pick_slot(frame);
+    mesh_owned_until[0] = mesh_primary_expiry(frame);
+    mesh_link.reselect_count++;
+  }
+
+  /* --- defend the primary ------------------------------------------------ */
+  const uint8_t owner = mesh_slots[mesh_owned[0]].ac_id;
+  if (owner != 0 && owner != AC_ID && !mesh_slot_is_stale(mesh_owned[0], frame)
+      && AC_ID > owner) {
+    mesh_owned[0] = mesh_pick_slot(frame);             /* higher AC_ID yields */
+    mesh_link.reselect_count++;
+  }
+  mesh_link.slot = mesh_owned[0];
+
+  /* --- drop secondaries that a real owner took, or whose lease expired ---- */
+  uint8_t keep = 1;
+  for (uint8_t i = 1; i < mesh_owned_n; i++) {
+    const uint8_t s = mesh_owned[i];
+    const bool expired = (int16_t)(frame - mesh_owned_until[i]) >= 0;
+    if (mesh_slot_free(s, frame) && !expired) {
+      mesh_owned[keep] = s;
+      mesh_owned_until[keep] = mesh_owned_until[i];
+      keep++;
+    }
+  }
+  mesh_owned_n = keep;
+
+  /* --- size the fair share ----------------------------------------------- */
+  uint8_t target = (uint8_t)(MESH_TDMA_NB_SLOTS / nodes);
+  if (target < 1) { target = 1; }
+  if (target > MESH_TDMA_MAX_REUSE) { target = MESH_TDMA_MAX_REUSE; }
+  if (mesh_frames_seen < MESH_ENTRY_FRAMES) {
+    target = 1;                                        /* listen before claiming */
+  }
+
+  if (mesh_owned_n > target) {
+    mesh_owned_n = target;                             /* contract immediately */
+  } else if (mesh_owned_n < target && mesh_expansion_turn(frame, nodes)) {
+    /* Expand by at most one slot, and only on this node's turn - see
+     * ::mesh_expansion_turn for why that serialisation is essential. */
+    const uint8_t start = (uint8_t)((mesh_owned[0] + MESH_TDMA_NB_SLOTS / 2u)
+                                    % MESH_TDMA_NB_SLOTS);
+    for (uint8_t k = 0; k < MESH_TDMA_NB_SLOTS; k++) {
+      const uint8_t s = (uint8_t)((start + k) % MESH_TDMA_NB_SLOTS);
+      if (mesh_slot_quiet(s, frame) && !mesh_owns(s)) {
+        mesh_owned[mesh_owned_n] = s;
+        mesh_owned_until[mesh_owned_n] = mesh_lease_expiry(frame);
+        mesh_owned_n++;
+        break;
+      }
+    }
+  }
+
+  mesh_link.reuse = mesh_owned_n;
+}
+
+void traffic_info_mesh_periodic(void)
+{
+  const uint32_t net_ms = mesh_network_time_ms();
+  const uint16_t frame = mesh_frame_of(net_ms);
+  const uint8_t slot = mesh_slot_of(net_ms);
+
+  /* Slot bookkeeping is a per-SUPERFRAME activity, not a per-tick one.
+   *
+   * This task runs at 20 Hz, so a superframe covers about twenty calls. Running
+   * the maintenance on every one of them would let a node take its whole share
+   * of slots inside a single frame: mesh_expansion_turn() is a function of the
+   * frame number alone, so it stays true for every tick of that frame, and the
+   * "expand by at most one slot per superframe" rule - which is what keeps two
+   * nodes from claiming the same free slot before either has been heard -
+   * would be defeated twenty times over. */
+  if (frame != mesh_last_frame) {
+    mesh_last_frame = frame;
+    if (mesh_frames_seen < 0xFFFF) {
+      mesh_frames_seen++;
+    }
+    mesh_slot_maintain(frame);
+  }
+
+  if (!mesh_link.ready || mesh_trans == NULL || mesh_dev == NULL) {
+    return;
+  }
+  if (!mesh_owns(slot)) {
+    mesh_link.defer_ticks++;
+    return;
+  }
+
+  /* One origination per (superframe, slot) pair. */
+  const uint32_t key = (uint32_t)frame * MESH_TDMA_NB_SLOTS + slot;
+  if (key == mesh_link.last_emit_key) {
+    return;
+  }
+
+  const uint32_t now_ms = get_sys_time_msec();
+  if (mesh_modem_in_flight(now_ms) >= MESH_CACHE_HIGH_WATER) {
+    mesh_link.throttled_count++;
+    return;
+  }
+
+  mesh_state_emit();
+
+  mesh_link.last_emit_key = key;
+  mesh_link.tx_count++;
+  mesh_link.modem_free_ms = Max(mesh_link.modem_free_ms, now_ms) + MESH_MODEM_DRAIN_MS;
+}
+
 void traffic_info_init(void)
 {
   memset(ti_acs_id, 0, NB_ACS_ID);
@@ -108,8 +760,23 @@ void traffic_info_init(void)
 
   geoid_height = NAV_MSL0;
 
+  for (uint8_t s = 0; s < MESH_TDMA_NB_SLOTS; s++) {
+    mesh_slots[s].ac_id = MESH_SLOT_FREE;   /* not 0: that is the GCS */
+    mesh_slots[s].last_frame = 0;
+  }
+  mesh_owned[0] = (uint8_t)(MESH_TDMA_SLOT_HINT % MESH_TDMA_NB_SLOTS);
+  mesh_owned_until[0] = MESH_PRIMARY_HOLD_MIN;
+  mesh_owned_n = 1;
+  mesh_entered = false;
+  mesh_frames_seen = 0;
+  mesh_link.slot = mesh_owned[0];
+  mesh_link.reuse = 1;
+  mesh_link.modem_free_ms = get_sys_time_msec();
+  mesh_link.last_emit_key = UINT32_MAX;
+
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACINFO_LLA, send_acinfo_lla);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MESH_STATE, request_mesh_state);
 #endif
 }
 
@@ -133,6 +800,13 @@ bool parse_acinfo_dl(uint8_t *buf)
   uint8_t msg_id = IdOfPprzMsg(buf);
   uint8_t class_id = pprzlink_get_msg_class_id(buf);
   uint32_t itow = 0;
+
+  /* In a flooded broadcast mesh every routing node relays every frame, so our
+   * own transmissions come back to us. Never let them overwrite our own
+   * ti_acs entry, which is maintained from the local state estimate. */
+  if (sender_id == AC_ID) {
+    return TRUE;
+  }
 
   /* handle telemetry message */
 #if PPRZLINK_DEFAULT_VER == 2
@@ -232,6 +906,32 @@ bool parse_acinfo_dl(uint8_t *buf)
   /* handle datalink message */
   } else if (class_id == DL_datalink_CLASS_ID) {
     switch (msg_id) {
+      case DL_MESH_STATE: {
+        int16_t course;
+        uint16_t gspeed;
+        int16_t climb;
+        mesh_multiplex_decode(DL_MESH_STATE_multiplex_speed(buf), &course, &gspeed, &climb);
+
+        /* The originator is the PPRZLink sender, not a payload field: there is
+         * no ac_id in MESH_STATE, so a relayed frame cannot claim to be from
+         * someone else without also rewriting the frame header. */
+        itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+
+        /* The arrival time also tells us which slot the sender is using, which
+         * is how the occupancy map is built without spending a single byte on
+         * a reservation protocol. */
+        mesh_slot_observe(sender_id, mesh_network_time_ms());
+
+        set_ac_info_lla(sender_id,
+                        DL_MESH_STATE_lat(buf),
+                        DL_MESH_STATE_lon(buf),
+                        DL_MESH_STATE_alt(buf) * 10,   /* cm -> mm */
+                        course,
+                        gspeed,
+                        climb,
+                        itow);
+      }
+      break;
       case DL_ACINFO: {
         sender_id = DL_ACINFO_ac_id(buf); // may overwrite GCS id
         itow = DL_ACINFO_itow(buf);
@@ -283,75 +983,71 @@ bool parse_acinfo_dl(uint8_t *buf)
 void set_ac_info_utm(uint8_t id, uint32_t utm_east, uint32_t utm_north, uint32_t alt, uint8_t utm_zone, uint16_t course,
                  uint16_t gspeed, uint16_t climb, uint32_t itow)
 {
-  if (ti_acs_idx < NB_ACS) {
-    if (id > 0 && ti_acs_id[id] == 0) {    // new aircraft id
-      ti_acs_id[id] = ti_acs_idx++;
-      ti_acs[ti_acs_id[id]].ac_id = id;
-    }
-
-    if (itow < ti_acs[ti_acs_id[id]].itow) {
-      return; // don't update on old data
-    }
-
-    ti_acs[ti_acs_id[id]].status = 0;
-
-    uint16_t my_zone = stateGetUtmOrigin_f()->zone;
-    if (utm_zone == my_zone) {
-      ti_acs[ti_acs_id[id]].utm_pos_i.east = utm_east;
-      ti_acs[ti_acs_id[id]].utm_pos_i.north = utm_north;
-      ti_acs[ti_acs_id[id]].utm_pos_i.alt = alt;
-      ti_acs[ti_acs_id[id]].utm_pos_i.zone = utm_zone;
-      SetBit(ti_acs[ti_acs_id[id]].status, AC_INFO_POS_UTM_I);
-
-    } else { // store other uav in utm extended zone
-      struct UtmCoor_i utm = {.east = utm_east, .north = utm_north, .alt = alt, .zone = utm_zone};
-      struct LlaCoor_i lla;
-      lla_of_utm_i(&lla, &utm);
-      LLA_COPY(ti_acs[ti_acs_id[id]].lla_pos_i, lla);
-      SetBit(ti_acs[ti_acs_id[id]].status, AC_INFO_POS_LLA_I);
-
-      utm.zone = my_zone;
-      utm_of_lla_i(&utm, &lla);
-
-      UTM_COPY(ti_acs[ti_acs_id[id]].utm_pos_i, utm);
-      SetBit(ti_acs[ti_acs_id[id]].status, AC_INFO_POS_UTM_I);
-    }
-
-    ti_acs[ti_acs_id[id]].course = RadOfDeciDeg(course);
-    ti_acs[ti_acs_id[id]].gspeed = MOfCm(gspeed);
-    ti_acs[ti_acs_id[id]].climb = MOfCm(climb);
-    SetBit(ti_acs[ti_acs_id[id]].status, AC_INFO_VEL_LOCAL_F);
-
-    ti_acs[ti_acs_id[id]].itow = itow;
+  const uint8_t slot = ti_acs_slot(id);
+  if (slot == TI_ACS_NONE) {
+    return;
   }
+
+  if (itow < ti_acs[slot].itow) {
+    return; // don't update on old data
+  }
+
+  ti_acs[slot].status = 0;
+
+  uint16_t my_zone = stateGetUtmOrigin_f()->zone;
+  if (utm_zone == my_zone) {
+    ti_acs[slot].utm_pos_i.east = utm_east;
+    ti_acs[slot].utm_pos_i.north = utm_north;
+    ti_acs[slot].utm_pos_i.alt = alt;
+    ti_acs[slot].utm_pos_i.zone = utm_zone;
+    SetBit(ti_acs[slot].status, AC_INFO_POS_UTM_I);
+
+  } else { // store other uav in utm extended zone
+    struct UtmCoor_i utm = {.east = utm_east, .north = utm_north, .alt = alt, .zone = utm_zone};
+    struct LlaCoor_i lla;
+    lla_of_utm_i(&lla, &utm);
+    LLA_COPY(ti_acs[slot].lla_pos_i, lla);
+    SetBit(ti_acs[slot].status, AC_INFO_POS_LLA_I);
+
+    utm.zone = my_zone;
+    utm_of_lla_i(&utm, &lla);
+
+    UTM_COPY(ti_acs[slot].utm_pos_i, utm);
+    SetBit(ti_acs[slot].status, AC_INFO_POS_UTM_I);
+  }
+
+  ti_acs[slot].course = RadOfDeciDeg(course);
+  ti_acs[slot].gspeed = MOfCm(gspeed);
+  ti_acs[slot].climb = MOfCm(climb);
+  SetBit(ti_acs[slot].status, AC_INFO_VEL_LOCAL_F);
+
+  ti_acs[slot].itow = itow;
 }
 
 void set_ac_info_lla(uint8_t id, int32_t lat, int32_t lon, int32_t alt,
                      int16_t course, uint16_t gspeed, int16_t climb, uint32_t itow)
 {
-  if (ti_acs_idx < NB_ACS) {
-    if (id > 0 && ti_acs_id[id] == 0) {
-      ti_acs_id[id] = ti_acs_idx++;
-      ti_acs[ti_acs_id[id]].ac_id = id;
-    }
-
-    if (itow < ti_acs[ti_acs_id[id]].itow) {
-      return; // don't update on old data
-    }
-
-    ti_acs[ti_acs_id[id]].status = 0;
-
-    struct LlaCoor_i lla = {.lat = lat, .lon = lon, .alt = alt};
-    LLA_COPY(ti_acs[ti_acs_id[id]].lla_pos_i, lla);
-    SetBit(ti_acs[ti_acs_id[id]].status, AC_INFO_POS_LLA_I);
-
-    ti_acs[ti_acs_id[id]].course = RadOfDeciDeg(course);
-    ti_acs[ti_acs_id[id]].gspeed = MOfCm(gspeed);
-    ti_acs[ti_acs_id[id]].climb = MOfCm(climb);
-    SetBit(ti_acs[ti_acs_id[id]].status, AC_INFO_VEL_LOCAL_F);
-
-    ti_acs[ti_acs_id[id]].itow = itow;
+  const uint8_t slot = ti_acs_slot(id);
+  if (slot == TI_ACS_NONE) {
+    return;
   }
+
+  if (itow < ti_acs[slot].itow) {
+    return; // don't update on old data
+  }
+
+  ti_acs[slot].status = 0;
+
+  struct LlaCoor_i lla = {.lat = lat, .lon = lon, .alt = alt};
+  LLA_COPY(ti_acs[slot].lla_pos_i, lla);
+  SetBit(ti_acs[slot].status, AC_INFO_POS_LLA_I);
+
+  ti_acs[slot].course = RadOfDeciDeg(course);
+  ti_acs[slot].gspeed = MOfCm(gspeed);
+  ti_acs[slot].climb = MOfCm(climb);
+  SetBit(ti_acs[slot].status, AC_INFO_VEL_LOCAL_F);
+
+  ti_acs[slot].itow = itow;
 }
 
 /* Conversion funcitons for computing ac position in requested reference frame from

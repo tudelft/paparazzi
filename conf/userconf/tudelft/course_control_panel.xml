@@ -94,5 +94,26 @@
       <program name="Optitrack Distance Counter"/>
     </session>
 
+    <!-- Airborne LoRa MESH: aircraft + a mobile GCS peer.
+         See doc/mesh/mesh_network_design.md.
+
+         460800 matches MODEM_BAUD on the aircraft and AT+UART on every modem.
+         This needed a fix to sw/lib/ocaml/serial.ml, which had no 460800 entry
+         in speed_of_baudrate and raised Invalid_argument at startup.
+
+         NOTE the device path MUST start with /dev: link only applies the baud
+         rate on that branch (link.ml, "on_serial_device"). Point it at a
+         /tmp symlink and the -s argument is silently ignored. -->
+    <session name="Flight LoRa MESH">
+      <program name="Data Link">
+        <arg flag="-d" constant="/dev/ttyUSB0"/>
+        <arg flag="-s" constant="460800"/>
+        <arg flag="-transport" constant="pprz"/>
+      </program>
+      <program name="Server"/>
+      <program name="PprzGCS"/>
+      <program name="Messages"/>
+    </session>
+
   </section>
 </control_panel>
