@@ -18,10 +18,15 @@
  * <http://www.gnu.org/licenses/>.
  */
 /**
- * @file "modules/multi/traffic_info.c"
+ * @file modules/multi/traffic_info.c
+ * @brief Maintains traffic-aircraft state and optional MESH_STATE exchange.
+ * @author Pascal Brisset
+ * @author Antoine Drouin
  * @author Kirk Scheper
- * Information relative to the other aircrafts.
- * Keeps track of other aircraft in airspace
+ *
+ * The legacy path parses and stores standard traffic messages. When
+ * TRAFFIC_INFO_USE_MESH is enabled, the same table also receives compact
+ * MESH_STATE frames and originates local state through self-organising TDMA.
  */
 
 #include "modules/multi/traffic_info.h"
@@ -29,17 +34,20 @@
 #include "generated/airframe.h"     // AC_ID
 #include "generated/flight_plan.h"  // NAV_MSL0
 
-#include "autopilot.h"
 #include "modules/datalink/datalink.h"
 #include "modules/datalink/telemetry.h"
 #include "pprzlink/dl_protocol.h"   // datalink messages
-#include "pprzlink/messages.h"	    // telemetry messages
+#include "pprzlink/messages.h"     // telemetry messages
 
 #include "state.h"
 #include "math/pprz_geodetic_utm.h"
 #include "math/pprz_geodetic_wgs84.h"
 
-#ifdef LOW_BAT_LEVEL
+#if TRAFFIC_INFO_USE_MESH
+#include "autopilot.h"
+#endif
+
+#if TRAFFIC_INFO_USE_MESH && defined(LOW_BAT_LEVEL)
 #include "modules/energy/electrical.h"
 #endif
 
@@ -56,11 +64,11 @@ static FILE* pprzLogFile = NULL;
 #endif // !USE_CHIBIOS_RTOS
 #endif // TRAFFIC_INFO_USE_LOG
 
-/* number of ac being tracked */
+/* Number of occupied entries in ti_acs, including GCS and this aircraft. */
 uint8_t ti_acs_idx;
-/* index of ac in the list of traffic info aircraft (ti_acs) */
+/* AC_ID-to-ti_acs index map; zero means unknown except for GCS AC_ID 0. */
 uint8_t ti_acs_id[NB_ACS_ID];
-/* container for available traffic info */
+/* Fixed-capacity state table shared by legacy and optional mesh messages. */
 struct acInfo ti_acs[NB_ACS];
 
 /* Geoid height (msl) over ellipsoid [mm] */
@@ -102,6 +110,7 @@ static void send_acinfo_lla(struct transport_tx *trans, struct link_device *dev)
 #endif
 }
 
+#if TRAFFIC_INFO_USE_MESH
 /* ------------------------------------------------------------------------- *
  * MESH_STATE: compact broadcast state vector for narrowband LoRa MESH links
  *
@@ -491,7 +500,7 @@ static inline bool mesh_slot_free(uint8_t s, uint16_t frame)
          || mesh_slot_is_stale(s, frame);
 }
 
-/** Has ``s`` been silent long enough to be safe to claim opportunistically?
+/** Check whether @p slot has been silent long enough for a secondary claim.
  *
  * Twice the ageing window. A slot whose owner has only just aged out, or which
  * a newly entered node has claimed but whose first transmission we have not
@@ -503,10 +512,10 @@ static inline bool mesh_slot_free(uint8_t s, uint16_t frame)
  * The primary is exempt: it is chosen from a genuinely free slot at entry and
  * defended by the AC_ID rule thereafter.
  */
-static bool mesh_slot_quiet(uint8_t s, uint16_t frame)
+static bool mesh_slot_quiet(uint8_t slot, uint16_t frame)
 {
-  return mesh_slots[s].ac_id == MESH_SLOT_FREE
-         && (uint16_t)(frame - mesh_slots[s].last_frame) > (2 * MESH_SLOT_AGE_FRAMES);
+  return mesh_slots[slot].ac_id == MESH_SLOT_FREE
+         && (uint16_t)(frame - mesh_slots[slot].last_frame) > (2 * MESH_SLOT_AGE_FRAMES);
 }
 
 static bool mesh_owns(uint8_t slot)
@@ -529,7 +538,7 @@ static bool mesh_owns(uint8_t slot)
   return false;
 }
 
-/** Record that ``sender`` was heard transmitting, and in which slot.
+/** Record the slot in which @p sender was heard transmitting.
  *
  * Called for every received MESH_STATE. A node that reappears after a landing
  * or a dropout simply starts being heard again and reclaims a slot; nothing
@@ -606,7 +615,7 @@ static uint16_t mesh_primary_expiry(uint16_t frame)
 /** May this node take an extra slot in this superframe?
  *
  * Expansion is serialised round-robin over the known membership: a node may
- * only grow on frames where ``frame mod nodes`` equals its rank in the sorted
+ * only grow when @c frame modulo @p nodes equals its rank in the sorted
  * list of live AC_IDs.
  *
  * This is not tidiness, it is necessary. A node cannot hear a collision in a
@@ -800,6 +809,7 @@ void traffic_info_mesh_periodic(void)
   mesh_link.tx_count++;
   mesh_link.modem_free_ms = Max(mesh_link.modem_free_ms, now_ms) + MESH_MODEM_DRAIN_MS;
 }
+#endif /* TRAFFIC_INFO_USE_MESH */
 
 void traffic_info_init(void)
 {
@@ -812,6 +822,7 @@ void traffic_info_init(void)
 
   geoid_height = NAV_MSL0;
 
+#if TRAFFIC_INFO_USE_MESH
   for (uint8_t s = 0; s < MESH_TDMA_NB_SLOTS; s++) {
     mesh_slots[s].ac_id = MESH_SLOT_FREE;   /* not 0: that is the GCS */
     mesh_slots[s].last_frame = 0;
@@ -825,10 +836,13 @@ void traffic_info_init(void)
   mesh_link.reuse = 1;
   mesh_link.modem_free_ms = get_sys_time_msec();
   mesh_link.last_emit_key = UINT32_MAX;
+#endif
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACINFO_LLA, send_acinfo_lla);
+#if TRAFFIC_INFO_USE_MESH
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MESH_STATE, request_mesh_state);
+#endif
 #endif
 }
 
@@ -852,13 +866,6 @@ bool parse_acinfo_dl(uint8_t *buf)
   uint8_t msg_id = IdOfPprzMsg(buf);
   uint8_t class_id = pprzlink_get_msg_class_id(buf);
   uint32_t itow = 0;
-
-  /* In a flooded broadcast mesh every routing node relays every frame, so our
-   * own transmissions come back to us. Never let them overwrite our own
-   * ti_acs entry, which is maintained from the local state estimate. */
-  if (sender_id == AC_ID) {
-    return TRUE;
-  }
 
   /* handle telemetry message */
 #if PPRZLINK_DEFAULT_VER == 2
@@ -958,7 +965,13 @@ bool parse_acinfo_dl(uint8_t *buf)
   /* handle datalink message */
   } else if (class_id == DL_datalink_CLASS_ID) {
     switch (msg_id) {
+#if TRAFFIC_INFO_USE_MESH
       case DL_MESH_STATE: {
+        /* Flooded broadcasts return to their originator. Keep the local
+         * estimator, rather than a relayed copy, as this aircraft's state. */
+        if (sender_id == AC_ID) {
+          return TRUE;
+        }
         int16_t course;
         uint16_t gspeed;
         int16_t climb;
@@ -984,6 +997,7 @@ bool parse_acinfo_dl(uint8_t *buf)
                         itow);
       }
       break;
+    #endif
       case DL_ACINFO: {
         sender_id = DL_ACINFO_ac_id(buf); // may overwrite GCS id
         itow = DL_ACINFO_itow(buf);
@@ -1102,9 +1116,8 @@ void set_ac_info_lla(uint8_t id, int32_t lat, int32_t lon, int32_t alt,
   ti_acs[slot].itow = itow;
 }
 
-/* Conversion funcitons for computing ac position in requested reference frame from
- * any other available reference frame
- */
+/* Lazy reference-frame conversions. Each function computes only a missing
+ * representation and marks it valid in the aircraft's status bit field. */
 
 /* compute UTM position of aircraft with ac_id (int) */
 void acInfoCalcPositionUtm_i(uint8_t ac_id)
@@ -1267,7 +1280,7 @@ void acInfoCalcPositionLla_f(uint8_t ac_id)
   SetBit(ti_acs[ac_nr].status, AC_INFO_POS_LLA_F);
 }
 
-/* compute ENU position of aircraft with ac_id (float) */
+/* Compute ENU velocity of aircraft with ac_id (float). */
 void acInfoCalcPositionEnu_f(uint8_t ac_id)
 {
   uint8_t ac_nr = ti_acs_id[ac_id];

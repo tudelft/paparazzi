@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Pascal Brisset, Antoine Drouin (2008), Kirk Scheper (2016)
+ * Copyright (C) Pascal Brisset, Antoine Drouin (2008), Kirk Scheper (2016), (OpenUAS 2026)
  *
  * This file is part of paparazzi.
  *
@@ -20,9 +20,15 @@
  */
 
 /**
- * @file "modules/multi/traffic_info.h"
+ * @file modules/multi/traffic_info.h
+ * @brief Traffic-aircraft state storage, conversion, and optional mesh exchange.
+ * @author Pascal Brisset
+ * @author Antoine Drouin
  * @author Kirk Scheper
- * Keeps track of other aircraft in airspace
+ *
+ * The legacy API stores positions and velocities received through ACINFO and
+ * GPS-family messages. Define TRAFFIC_INFO_USE_MESH to add compact MESH_STATE
+ * reception and self-organising TDMA transmission without changing that API.
  */
 
 #ifndef TRAFFIC_INFO_H
@@ -33,6 +39,10 @@
 #include "math/pprz_geodetic_float.h"
 #include "modules/gps/gps.h"
 
+#ifndef TRAFFIC_INFO_USE_MESH
+#define TRAFFIC_INFO_USE_MESH 0
+#endif
+
 #ifndef NB_ACS_ID
 #define NB_ACS_ID 256
 #endif
@@ -40,13 +50,17 @@
 #define NB_ACS 24
 #endif
 
-/** Returned by ::ti_acs_slot when an aircraft is neither known nor insertable.
- *  Never a valid index into ::ti_acs (which has at most #NB_ACS entries).
+/** Invalid traffic-table index returned when a new aircraft cannot be stored.
+ *
+ * This value is never a valid index into @ref ti_acs, which has at most
+ * @ref NB_ACS entries.
  */
 #define TI_ACS_NONE 0xFF
 
+#if TRAFFIC_INFO_USE_MESH
 /**
- * @defgroup mesh_state MESH_STATE broadcast over a narrowband LoRa MESH
+ * @defgroup mesh_state Optional MESH_STATE transport
+ * @brief Compact state exchange for narrowband broadcast mesh radios.
  *
  * MESH_STATE is a 17 byte (25 bytes on the wire) replacement for ACINFO_LLA,
  * designed for the EByte E52-xxxNWxxS class of LoRa MESH modems running in
@@ -64,7 +78,8 @@
  *     still inside the modem and refuses to hand over a new one above the high
  *     water mark.
  *
- * Both are O(1), branch-light and use only statically allocated storage.
+ * Enable this group with @c TRAFFIC_INFO_USE_MESH. Both mechanisms are O(1),
+ * branch-light, and use only statically allocated storage.
  * @{
  */
 
@@ -137,12 +152,6 @@
  *  than by dividing through this. */
 #define MESH_TDMA_SLOT_MS (MESH_TDMA_SUPERFRAME_MS / MESH_TDMA_NB_SLOTS)
 
-/** First slot this node will try to claim.
- *
- * Only a *preference*, not an assignment. The node keeps it if nobody else is
- * using it and moves elsewhere if somebody is - see ::mesh_slot_maintain. The
- * spread by AC_ID simply means a cold start rarely collides in the first place.
- */
 /** Marker for "no node owns this slot".
  *
  * NOT zero. Zero is the ground station's AC_ID, a real and needed identity, and
@@ -155,6 +164,11 @@
  */
 #define MESH_SLOT_FREE 0xFFu
 
+/** First slot this node prefers when selecting a primary slot.
+ *
+ * This is a starting hint, not a static assignment. Runtime observation and
+ * conflict resolution decide which slot is ultimately owned.
+ */
 #ifndef MESH_TDMA_SLOT_HINT
 #define MESH_TDMA_SLOT_HINT ((AC_ID) % MESH_TDMA_NB_SLOTS)
 #endif
@@ -183,7 +197,7 @@
 #error "MESH_CACHE_HIGH_WATER must stay below the 5 frame hardware cache"
 #endif
 
-/** Unified, firmware independent flight mode carried in MESH_STATE::flags. */
+/** Unified, firmware-independent mode stored in the MESH_STATE flags field. */
 #define MESH_MODE_MANUAL    0u
 #define MESH_MODE_ASSISTED  1u
 #define MESH_MODE_AUTO      2u
@@ -207,7 +221,7 @@
  * So the occupancy map costs zero bytes on air.
  */
 struct MeshSlot {
-  uint8_t  ac_id;        ///< observed owner, 0 = free
+  uint8_t  ac_id;        ///< Observed owner, or MESH_SLOT_FREE when unowned.
   uint16_t last_frame;   ///< superframe index when last heard
 };
 
@@ -231,17 +245,21 @@ struct MeshLinkState {
 
 extern struct MeshLinkState mesh_link;
 
-/** Note that ``sender`` transmitted at ``net_ms``, claiming the slot that time
- *  falls in. Called for every received MESH_STATE. */
+/** Record a received MESH_STATE in the inferred TDMA slot map.
+ * @param[in] sender Originating aircraft ID; AC_ID 0 is the GCS.
+ * @param[in] net_ms GPS-aligned network timestamp in milliseconds.
+ */
 extern void mesh_slot_observe(uint8_t sender, uint32_t net_ms);
 
 /** Periodic task driving the mesh transmit slot. Call at 20 Hz or faster. */
 extern void traffic_info_mesh_periodic(void);
 
 /** @} */
+#endif /* TRAFFIC_INFO_USE_MESH */
 
 /**
- * @defgroup ac_info Aircraft data availability representations
+ * @defgroup ac_info Traffic-aircraft state representations
+ * @brief Storage and lazy conversion of traffic positions and velocities.
  * @{
  */
 #define AC_INFO_POS_UTM_I 0
@@ -273,18 +291,18 @@ struct acInfo {
   /**
    * Position in Latitude, Longitude and Altitude.
    * Units lat,lon: degrees*1e7
-   * Units alt: milimeters above reference ellipsoid
+  * Units alt: millimeters above reference ellipsoid
    */
   struct LlaCoor_i lla_pos_i;
 
   /**
-   * Position in North East Down coordinates.
+  * Position in East-North-Up coordinates.
    * Units: m in BFP with #INT32_POS_FRAC
    */
   struct EnuCoor_i enu_pos_i;
 
   /**
-   * Velocity in North East Down coordinates.
+  * Velocity in East-North-Up coordinates.
    * Units: m/s in BFP with #INT32_SPEED_FRAC
    */
   struct EnuCoor_i enu_vel_i;
@@ -304,12 +322,12 @@ struct acInfo {
   struct LlaCoor_f lla_pos_f;
 
   /**
-   * Position in North East Down coordinates
+  * Position in East-North-Up coordinates
    * Units: m */
   struct EnuCoor_f enu_pos_f;
 
   /**
-   * @brief speed in North East Down coordinates
+  * @brief Velocity in East-North-Up coordinates.
    * @details Units: m/s */
   struct EnuCoor_f enu_vel_f;
 
@@ -344,6 +362,14 @@ static inline uint8_t ti_acs_slot(uint8_t id)
     return TI_ACS_NONE;
   }
 #endif
+#if !TRAFFIC_INFO_USE_MESH
+  /* Preserve master's behavior exactly: once the table is full, even known
+   * aircraft stop updating. Mesh mode keeps known entries current because a
+   * stale traffic picture is more dangerous than refusing only new arrivals. */
+  if (ti_acs_idx >= NB_ACS) {
+    return TI_ACS_NONE;
+  }
+#endif
   uint8_t slot = ti_acs_id[id];
   if (slot == 0 && id != 0) {         /* not registered yet */
     if (ti_acs_idx >= NB_ACS) {
@@ -357,10 +383,13 @@ static inline uint8_t ti_acs_slot(uint8_t id)
 }
 
 /**
- * Parse all datalink or telemetry messages that contain global position of other acs
- * Messages currently handled:
- * Telemetry (vehicle -> ground or vehicle -> vehicle): GPS_SMALL, GPS, GPS_LLA
- * Datalink (ground -> vehicle): ACINFO, ACINFO_LLA
+ * Parse a supported traffic-position message.
+ *
+ * Legacy mode handles GPS_SMALL, GPS, GPS_LLA, GPS_INT, ACINFO, and
+ * ACINFO_LLA. Mesh mode additionally handles MESH_STATE.
+ *
+ * @param[in] buf Encoded PPRZLink message buffer.
+ * @return @c true when the message was handled, otherwise @c false.
  */
 extern bool parse_acinfo_dl(uint8_t *buf);
 
@@ -374,8 +403,8 @@ extern bool parse_acinfo_dl(uint8_t *buf);
  * @param[in] alt Altitude in mm above MSL
  * @param[in] utm_zone UTM zone
  * @param[in] course Course in decideg (CW)
- * @param[in] gspeed Ground speed in m/s
- * @param[in] climb Climb rate in m/s
+ * @param[in] gspeed Ground speed in cm/s
+ * @param[in] climb Climb rate in cm/s
  * @param[in] itow GPS time of week in ms
  */
 extern void set_ac_info_utm(uint8_t id, uint32_t utm_east, uint32_t utm_north, uint32_t alt, uint8_t utm_zone,
@@ -603,7 +632,7 @@ static inline struct EnuCoor_f *acInfoGetPositionEnu_f(uint8_t ac_id)
   return &ti_acs[ti_acs_id[ac_id]].enu_pos_f;
 }
 
-/** Get position from ENU coordinates (int).
+/** Get velocity in local ENU coordinates (integer BFP).
  * @param[in] ac_id aircraft id of aircraft info to get
  */
 static inline struct EnuCoor_i *acInfoGetVelocityEnu_i(uint8_t ac_id)
@@ -614,7 +643,7 @@ static inline struct EnuCoor_i *acInfoGetVelocityEnu_i(uint8_t ac_id)
   return &ti_acs[ti_acs_id[ac_id]].enu_vel_i;
 }
 
-/** Get position from ENU coordinates (float).
+/** Get velocity in local ENU coordinates (float).
  * @param[in] ac_id aircraft id of aircraft info to get
  */
 static inline struct EnuCoor_f *acInfoGetVelocityEnu_f(uint8_t ac_id)
@@ -662,6 +691,6 @@ static inline uint32_t acInfoGetItow(uint8_t ac_id)
 extern void traffic_info_log_start(void);
 extern void traffic_info_log_stop(void);
 
-/** @}*/
+/** @} */
 
 #endif
