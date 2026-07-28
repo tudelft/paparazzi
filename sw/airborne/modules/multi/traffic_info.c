@@ -137,17 +137,15 @@ _Static_assert((MESH_TDMA_SUPERFRAME_MS / MESH_TDMA_MAX_REUSE) ==
                "The MESH_STATE telemetry period must equal "
                "MESH_TDMA_SUPERFRAME_MS / MESH_TDMA_MAX_REUSE, otherwise the "
                "bandwidth budget is computed for a different rate than the "
-               "node will actually emit. 1000 ms over 4 gives 0.25 s.");
+               "node will actually emit.");
 #endif
 
 #if defined(TRAFFIC_INFO_MESH_PERIODIC_FREQ)
 /* The transmit gate samples the clock; it is not interrupt driven. A slot is
  * only ever used if at least one run of the periodic task falls inside it, so
- * the task period must be strictly shorter than one slot. At 20 Hz and 16
- * slots per second that is 50 ms against 62.5 ms and every slot is sampled -
- * but raising MESH_TDMA_NB_SLOTS to 32 would shrink the slot to 31.25 ms and
- * the node would silently skip roughly a third of the slots it owns, losing
- * position updates for no visible reason. Cross-multiplied to stay in integers.
+ * the task period must be strictly shorter than one slot. The delivered 20 Hz
+ * task and 12 s / 32-slot profile give 50 ms sampling inside a 375 ms slot.
+ * Cross-multiplied to stay in integers if either profile value changes.
  */
 _Static_assert(MESH_TDMA_NB_SLOTS * 1000u <
                  MESH_TDMA_SUPERFRAME_MS *
@@ -163,6 +161,8 @@ _Static_assert(MESH_TDMA_NB_SLOTS * 1000u <
  * cache them so that the deferred emission can reuse the same downlink. */
 static struct transport_tx *mesh_trans;
 static struct link_device *mesh_dev;
+
+static uint8_t mesh_modem_in_flight(uint32_t now_ms);
 
 /** GPS time of week in ms when the receiver is synchronised, otherwise the
  *  local monotonic clock. All nodes that hold a 3D fix therefore agree on the
@@ -305,6 +305,58 @@ static uint8_t mesh_state_flags(void)
   return flags;
 }
 
+/** How often this node should originate its own state.
+ *
+ * The base share still comes from the live population size, but the mesh now
+ * biases the claim count with state that already exists onboard:
+ *
+ *  - a synchronized, airborne node with a valid position can use spare slots;
+ *  - landed or unsynchronized nodes keep one heartbeat slot;
+ *  - emergency, HOME and low-battery states get the available spare slots;
+ *  - modem-cache pressure contracts the share before the E52 can overflow.
+ *
+ * This is traffic shaping, not relay election. Every E52 is provisioned as a
+ * routing node and performs forwarding below Paparazzi. The application only
+ * controls when it originates a fresh MESH_STATE frame.
+ */
+static uint8_t mesh_redundancy_target(uint8_t nodes, uint32_t now_ms)
+{
+  const uint8_t flags = mesh_state_flags();
+  uint8_t target = (uint8_t)(MESH_TDMA_NB_SLOTS / Max(nodes, 1u));
+  if (target < 1) {
+    target = 1;
+  }
+  if (target > MESH_TDMA_MAX_REUSE) {
+    target = MESH_TDMA_MAX_REUSE;
+  }
+
+  /* A node which cannot contribute a current position is a poor source of
+   * repeated state. Keep one heartbeat slot so it remains discoverable, but
+   * let healthy peers use the spare capacity. A landed aircraft behaves the
+   * same way; AC_ID 0 is exempt because the GCS is a real stationary peer. */
+  if (!mesh_link.synced || (flags & MESH_FLAG_POS_VALID) == 0
+      || (AC_ID != 0 && (flags & MESH_FLAG_AIRBORNE) == 0)) {
+    return 1;
+  }
+
+  /* Emergency, failsafe and low-battery states are the frames the rest of the
+   * swarm must see first. Give them one extra slot, not the whole reuse cap:
+   * several aircraft can enter HOME together, and a 1->4 jump by all of them
+   * creates needless claim churn even though expansion itself is serialized. */
+  if ((flags & (MESH_FLAG_EMERGENCY | MESH_FLAG_ALERT)) != 0
+      || (flags & MESH_FLAG_MODE_MASK) == MESH_MODE_HOME) {
+    return Min(MESH_TDMA_MAX_REUSE, target + 1u);
+  }
+
+  /* Back-pressure outranks update rate. The E52 force-clears all five cached
+   * frames on overflow, so a node seeing a busy local cache contracts before
+   * it asks for another opportunistic slot. */
+  if (mesh_modem_in_flight(now_ms) >= MESH_CACHE_HIGH_WATER && target > 1) {
+    target--;
+  }
+  return target;
+}
+
 /** Hand one MESH_STATE frame to the modem. Snapshots the state at call time,
  *  not at request time, so the deferral introduced by the TDMA slot costs
  *  latency but never accuracy. */
@@ -385,10 +437,11 @@ static uint8_t mesh_modem_in_flight(uint32_t now_ms)
  *     nothing on air - no reservation protocol, no extra message, no bytes;
  *  2. collisions are resolved by a deterministic rule (higher AC_ID yields),
  *     so the two nodes involved never both move and never both stay;
- *  3. spare membership is converted into update rate: with N slots and k nodes
- *     present each node claims up to N/k of them. Channel occupancy is
- *     therefore constant - the frame is always full - while the position rate
- *     rises as nodes leave and falls back as they return.
+ *  3. spare membership is converted into update rate, but now with a state
+ *     bias: the base claim count still scales with N/k, then the node uses its
+ *     own flight state and local cache pressure to decide whether it is healthy
+ *     enough to originate extra state. This never changes modem forwarding:
+ *     every routing E52 still forwards each newly received broadcast once.
  *
  * All state is static: one MeshSlot per slot, nothing allocated, no recursion.
  * ------------------------------------------------------------------------- */
@@ -598,7 +651,7 @@ static bool mesh_expansion_turn(uint16_t frame, uint8_t nodes)
  *    owner appears in is surrendered at once. Growth is therefore always
  *    slower than the detection of a conflict.
  */
-static void mesh_slot_maintain(uint16_t frame)
+static void mesh_slot_maintain(uint16_t frame, uint32_t now_ms)
 {
   /* --- age the map, count distinct live nodes ---------------------------- */
   uint8_t nodes = 1;                                   /* ourselves */
@@ -650,7 +703,8 @@ static void mesh_slot_maintain(uint16_t frame)
 
   /* --- defend the primary ------------------------------------------------ */
   const uint8_t owner = mesh_slots[mesh_owned[0]].ac_id;
-  if (owner != 0 && owner != AC_ID && !mesh_slot_is_stale(mesh_owned[0], frame)
+    if (owner != MESH_SLOT_FREE && owner != AC_ID
+      && !mesh_slot_is_stale(mesh_owned[0], frame)
       && AC_ID > owner) {
     mesh_owned[0] = mesh_pick_slot(frame);             /* higher AC_ID yields */
     mesh_link.reselect_count++;
@@ -671,9 +725,7 @@ static void mesh_slot_maintain(uint16_t frame)
   mesh_owned_n = keep;
 
   /* --- size the fair share ----------------------------------------------- */
-  uint8_t target = (uint8_t)(MESH_TDMA_NB_SLOTS / nodes);
-  if (target < 1) { target = 1; }
-  if (target > MESH_TDMA_MAX_REUSE) { target = MESH_TDMA_MAX_REUSE; }
+  uint8_t target = mesh_redundancy_target(nodes, now_ms);
   if (mesh_frames_seen < MESH_ENTRY_FRAMES) {
     target = 1;                                        /* listen before claiming */
   }
@@ -702,6 +754,7 @@ static void mesh_slot_maintain(uint16_t frame)
 void traffic_info_mesh_periodic(void)
 {
   const uint32_t net_ms = mesh_network_time_ms();
+  const uint32_t now_ms = get_sys_time_msec();
   const uint16_t frame = mesh_frame_of(net_ms);
   const uint8_t slot = mesh_slot_of(net_ms);
 
@@ -719,7 +772,7 @@ void traffic_info_mesh_periodic(void)
     if (mesh_frames_seen < 0xFFFF) {
       mesh_frames_seen++;
     }
-    mesh_slot_maintain(frame);
+    mesh_slot_maintain(frame, now_ms);
   }
 
   if (!mesh_link.ready || mesh_trans == NULL || mesh_dev == NULL) {
@@ -736,7 +789,6 @@ void traffic_info_mesh_periodic(void)
     return;
   }
 
-  const uint32_t now_ms = get_sys_time_msec();
   if (mesh_modem_in_flight(now_ms) >= MESH_CACHE_HIGH_WATER) {
     mesh_link.throttled_count++;
     return;

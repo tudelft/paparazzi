@@ -360,9 +360,10 @@ class LinkBudget:
 # Bounded operating area                                                        #
 # --------------------------------------------------------------------------- #
 
-def print_operating_area(lb: LinkBudget, side_m: float, gcs_corner: bool,
+def print_operating_area(lb: LinkBudget, width_m: float, height_m: float,
+                         gcs_corner: bool,
                          alt_lo_m: float, alt_hi_m: float) -> bool:
-    """Analyse a bounded square operating area.
+    """Analyse a bounded rectangular operating area.
 
     When the area is known and bounded, the design question stops being "how
     far can we reach" and becomes "how much margin do we hold at the worst
@@ -373,13 +374,14 @@ def print_operating_area(lb: LinkBudget, side_m: float, gcs_corner: bool,
 
     Returns True when the flat, single-hop topology is supported by the numbers.
     """
-    diag = side_m * math.sqrt(2.0)
+    diag = math.hypot(width_m, height_m)
     gcs_worst = diag if gcs_corner else diag / 2.0
 
     print("=" * 78)
     print("BOUNDED OPERATING AREA")
     print("=" * 78)
-    print(f"  square side                     : {side_m/1000.0:8.3f} km")
+    print(f"  area width x height             : {width_m/1000.0:8.3f} x "
+          f"{height_m/1000.0:.3f} km")
     print(f"  diagonal (worst drone to drone) : {diag/1000.0:8.3f} km")
     print(f"  GCS position                    : "
           f"{'corner' if gcs_corner else 'centre':>8}")
@@ -423,22 +425,28 @@ def print_operating_area(lb: LinkBudget, side_m: float, gcs_corner: bool,
     print("  " + "-" * 60)
     print()
 
-    flat_ok = left >= 3.0
-    print(f"  >>> Every node reaches every other node directly at "
-          f"{diag/1000.0:.2f} km, so the mesh")
-    print( "      does not NEED multi-hop to be connected in nominal conditions.")
-    if flat_ok:
+    direct_ok = worst >= 0.0
+    robust_flat_ok = left >= 3.0
+    if not direct_ok:
+        print(f"  >>> The {diag/1000.0:.2f} km corner geometry does NOT close as a")
+        print(f"      direct link ({worst:.1f} dB worst margin). Multi-hop placement")
+        print( "      is required; all-router capability alone cannot bridge an empty gap.")
+    elif robust_flat_ok:
+        print(f"  >>> Every modeled corner link closes directly at "
+              f"{diag/1000.0:.2f} km.")
         print( "      The margin also survives a pessimistic interference budget, so a")
         print( "      flat single-hop mesh would be defensible.")
     else:
-        print(f"      But the spare margin does NOT survive a pessimistic")
-        print(f"      interference budget ({left:.1f} dB left of {worst:.1f} dB).")
-        print( "      -> KEEP at least one routing node. Its value here is not reach,")
-        print( "         it is SPATIAL DIVERSITY: a second copy of every frame sent")
-        print( "         from a different point in the sky, which is the only thing")
-        print( "         that defeats a null or a local interferer.")
+        print(f"  >>> Every modeled corner link closes directly at "
+              f"{diag/1000.0:.2f} km in")
+        print( "      nominal conditions, but the reserve does NOT survive the")
+        print(f"      pessimistic interference budget ({left:.1f} dB remaining).")
+        print( "      All-router flooding adds spatial diversity: copies transmitted")
+        print( "      from different positions can bypass a null or local interferer.")
+    if direct_ok and not robust_flat_ok:
+        print( "      Treat direct coverage as nominal, not guaranteed.")
     print()
-    return flat_ok
+    return robust_flat_ok
 
 
 # --------------------------------------------------------------------------- #
@@ -456,7 +464,7 @@ def duty_cycle(frames_per_s_per_node: float, air_time_s: float,
     own = frames_per_s_per_node * air_time_s
     relayed = 0.0
     if n_relay_nodes > 1:
-        relayed = (n_aircraft - 1) * frames_per_s_per_node * air_time_s
+        relayed = n_aircraft * frames_per_s_per_node * air_time_s
     return own, own + relayed
 
 
@@ -614,7 +622,9 @@ def report(args: argparse.Namespace) -> int:
         print(f"  {g:<9}{_fmt_km(b.design_range_m(100.0, args.gcs_antenna_height))}")
     print()
 
-    print_operating_area(lb, args.area_side, not args.gcs_centre,
+    width = args.area_width if args.area_width is not None else args.area_side
+    height = args.area_height if args.area_height is not None else args.area_side
+    print_operating_area(lb, width, height, not args.gcs_centre,
                          args.alt_low, args.alt_high)
 
     print("=" * 78)
@@ -655,21 +665,23 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     help="GCS mast height in metres")
     ap.add_argument("--area-side", type=float, default=3000.0,
                     help="side of the square operating area in metres")
+    ap.add_argument("--area-width", type=float, default=None,
+                    help="rectangular area width in metres (overrides --area-side)")
+    ap.add_argument("--area-height", type=float, default=None,
+                    help="rectangular area height in metres (overrides --area-side)")
     ap.add_argument("--gcs-centre", action="store_true",
                     help="GCS sits in the middle of the area rather than a corner")
     ap.add_argument("--alt-low", type=float, default=50.0,
                     help="lowest operating altitude AGL")
     ap.add_argument("--alt-high", type=float, default=120.0,
                     help="highest operating altitude AGL")
-    ap.add_argument("--frame-rate", type=float, default=0.703,
+    ap.add_argument("--frame-rate", type=float, default=1.0 / 6.0,
                     help="originated frames per second per node")
     ap.add_argument("--air-time-ms", type=float, default=6.86,
                     help="air time of one frame per hop")
-    ap.add_argument("--aircraft", type=int, default=8)
-    # One relay, matching RELAY_AC_IDS in sw/tools/mesh/e52_provision.py and
-    # the --relay-nodes the deployed telemetry profile was generated with. A
-    # higher figure here would quote a flood tax this mesh does not pay.
-    ap.add_argument("--relay-nodes", type=int, default=1)
+    ap.add_argument("--aircraft", type=int, default=12)
+    ap.add_argument("--relay-nodes", type=int, default=13,
+                    help="routing radios including the GCS (default 13)")
     return report(ap.parse_args(argv))
 
 

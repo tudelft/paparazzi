@@ -58,14 +58,15 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set
 
 SLOT_FREE = 0xFF          # not 0: 0 is the GCS AC_ID, a real node
-NB_SLOTS = 16
+NB_SLOTS = 32
 MAX_REUSE = 4
 AGE_FRAMES = 4
+SUPERFRAME_S = 12.0
 
 
 ENTRY_FRAMES = 3
 HOLD_MIN, HOLD_SPAN = 6, 8
-PRI_MIN, PRI_SPAN = 120, 120
+PRI_MIN, PRI_SPAN = 10, 10
 
 
 @dataclass
@@ -77,6 +78,11 @@ class Node:
     until: List[int] = field(default_factory=list)
     reselect_count: int = 0
     neighbours: int = 0
+    synced: bool = True
+    position_valid: bool = True
+    airborne: bool = True
+    priority: bool = False
+    cache_busy: bool = False
     frames_seen: int = 0
     last_frame: int = -1
     slots: Dict[int, tuple] = field(default_factory=dict)
@@ -160,7 +166,7 @@ class Node:
             self.reselect_count += 1
 
         owner = self.slots[self.owned[0]][0]
-        if (owner != 0 and owner != self.ac_id
+        if (owner != SLOT_FREE and owner != self.ac_id
                 and not self._stale(self.owned[0], frame)
                 and self.ac_id > owner):
             self.owned[0] = self._pick(frame)
@@ -174,6 +180,13 @@ class Node:
         self.owned, self.until = keep_o, keep_u
 
         target = max(1, min(MAX_REUSE, NB_SLOTS // nodes))
+        if (not self.synced or not self.position_valid
+                or (self.ac_id != 0 and not self.airborne)):
+            target = 1
+        elif self.priority:
+            target = min(MAX_REUSE, target + 1)
+        elif self.cache_busy and target > 1:
+            target -= 1
         if self.frames_seen < ENTRY_FRAMES:
             target = 1
 
@@ -199,7 +212,9 @@ class Node:
 
 def run(args: argparse.Namespace) -> int:
     rng = random.Random(args.seed)
-    all_ids = [122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132]
+    # AC_IDs are deliberately irregular. Zero is the GCS, a real peer; 0xFF
+    # remains reserved as SLOT_FREE and is never generated.
+    all_ids = [0, 3, 19, 42, 58, 77, 101, 125, 140, 168, 203, 222, 251]
     live: Dict[int, Node] = {}
     failures: List[str] = []
     rate_log: List[tuple] = []
@@ -208,19 +223,30 @@ def run(args: argparse.Namespace) -> int:
         if ac not in live:
             live[ac] = Node(ac)
 
-    for ac in all_ids[:8]:
+    for ac in all_ids[:9]:             # GCS + nominal eight aircraft
         join(ac)
 
     for frame in range(args.frames):
         # ---- membership churn -------------------------------------------- #
         if frame > 20 and rng.random() < args.churn:
-            if len(live) > 2 and rng.random() < 0.5:
-                victim = rng.choice(list(live))
+            airborne_live = [i for i in live if i != 0]
+            if len(airborne_live) > 2 and rng.random() < 0.5:
+                victim = rng.choice(airborne_live)
                 del live[victim]                 # landed / lost link
             else:
                 cand = [a for a in all_ids if a not in live]
                 if cand:
                     join(rng.choice(cand))       # arrived / regained link
+
+                # Exercise the application policy independently of topology churn.
+                # The GCS remains a valid stationary peer; airborne nodes occasionally
+                # lose sync/position, land, enter an emergency, or see cache pressure.
+                for node in live.values():
+                    node.synced = rng.random() >= args.state_fault
+                    node.position_valid = rng.random() >= args.state_fault
+                    node.airborne = node.ac_id == 0 or rng.random() >= args.state_fault
+                    node.priority = rng.random() < args.priority
+                    node.cache_busy = rng.random() < args.cache_busy
 
         # ---- every node maintains its view ------------------------------- #
         for n in live.values():
@@ -280,9 +306,9 @@ def run(args: argparse.Namespace) -> int:
     for pop in sorted(by_pop):
         mean = sum(by_pop[pop]) / len(by_pop[pop])
         print(f"  {pop:>6}{mean:>12.1f}{mean/pop:>10.2f}"
-              f"{mean/pop:>11.2f} Hz")
+              f"{mean/pop/SUPERFRAME_S:>11.2f} Hz")
     print("  " + "-" * 44)
-    print("  (superframe is 1 s, so slots per node == update rate in Hz)")
+    print(f"  (superframe is {SUPERFRAME_S:.0f} s; update rate = slots/{SUPERFRAME_S:.0f})")
     print()
 
     hard = [f for f in failures if "holds no slot" in f or "exceeded" in f]
@@ -292,12 +318,15 @@ def run(args: argparse.Namespace) -> int:
     pct = 100.0 * len(shared) / slot_frames
 
     # how long does any one collision persist?
-    runs: Dict[str, int] = {}
+    runs: Dict[str, Tuple[int, int]] = {}
     longest = 0
     for f in shared:
+        frame = int(f.split("frame ", 1)[1].split(":", 1)[0])
         key = f.split(": ", 1)[1]
-        runs[key] = runs.get(key, 0) + 1
-        longest = max(longest, runs[key])
+        last_frame, length = runs.get(key, (-2, 0))
+        length = length + 1 if frame == last_frame + 1 else 1
+        runs[key] = (frame, length)
+        longest = max(longest, length)
 
     print("  collision behaviour")
     print("  " + "-" * 44)
@@ -340,6 +369,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--settle", type=int, default=30,
                     help="frames to allow for initial convergence")
+    ap.add_argument("--state-fault", type=float, default=0.01,
+                    help="per-frame probability of sync/position/airborne loss")
+    ap.add_argument("--priority", type=float, default=0.01,
+                    help="per-frame probability of HOME/emergency/alert priority")
+    ap.add_argument("--cache-busy", type=float, default=0.02,
+                    help="per-frame probability of cache back-pressure")
     ap.add_argument("-v", "--verbose", action="store_true")
     return run(ap.parse_args(argv))
 

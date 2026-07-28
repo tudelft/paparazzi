@@ -73,14 +73,14 @@
  *  Fixed and identical on every node. It is NOT tied to the node count: with
  *  nodes joining and leaving freely there is no fixed count to tie it to. */
 #ifndef MESH_TDMA_SUPERFRAME_MS
-#define MESH_TDMA_SUPERFRAME_MS 1000
+#define MESH_TDMA_SUPERFRAME_MS 12000
 #endif
 
 /** Slots per superframe, i.e. the maximum number of nodes the mesh can carry
  *  at full membership. Sized well above the expected population so that
  *  arrivals always find a free slot. */
 #ifndef MESH_TDMA_NB_SLOTS
-#define MESH_TDMA_NB_SLOTS 16
+#define MESH_TDMA_NB_SLOTS 32
 #endif
 
 /** Maximum slots one node may occupy when the mesh is sparsely populated.
@@ -107,10 +107,10 @@
  *  no evidence of the clash is available to anybody. In a healthy mesh a node
  *  keeps its slot across the whole flight. */
 #ifndef MESH_PRIMARY_HOLD_MIN
-#define MESH_PRIMARY_HOLD_MIN 120
+#define MESH_PRIMARY_HOLD_MIN 10
 #endif
 #ifndef MESH_PRIMARY_HOLD_SPAN
-#define MESH_PRIMARY_HOLD_SPAN 120
+#define MESH_PRIMARY_HOLD_SPAN 10
 #endif
 
 /** Lease on an opportunistic (secondary) slot, in superframes: held for

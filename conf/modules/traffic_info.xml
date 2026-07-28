@@ -5,8 +5,8 @@
     <description>Keeps track of other aircraft in airspace</description>
     <define name="TRAFFIC_INFO_USE_LOG" value="FALSE|TRUE" description="Enable traffic info logging"/>
     <define name="NB_ACS" value="24" description="Size of the tracked aircraft table"/>
-    <define name="MESH_TDMA_SUPERFRAME_MS" value="4000" description="TDMA superframe length in ms, must equal the MESH_STATE telemetry period"/>
-    <define name="MESH_TDMA_NB_SLOTS" value="16" description="Number of TDMA slots per superframe, power of two, at least the mesh node count"/>
+    <define name="MESH_TDMA_SUPERFRAME_MS" value="12000" description="TDMA superframe length in ms; MESH_STATE period is this divided by MESH_TDMA_MAX_REUSE"/>
+    <define name="MESH_TDMA_NB_SLOTS" value="32" description="Number of TDMA slots per superframe, power of two, with churn headroom above the mesh node count"/>
     <define name="MESH_MODEM_DRAIN_MS" value="60" description="Estimated time for one frame to leave the modem transmit cache"/>
     <define name="MESH_CACHE_HIGH_WATER" value="3" description="Refuse to hand over a frame above this estimated modem cache depth (hardware limit 5)"/>
   </doc>
@@ -18,9 +18,8 @@
   </header>
   <init fun="traffic_info_init()"/>
   <periodic fun="traffic_info_log()" start="traffic_info_log_start()" stop="traffic_info_log_stop()" autorun="FALSE"/>
-  <!-- Releases the latched MESH_STATE broadcast inside this node's GPS
-       synchronised TDMA slot. 20 Hz gives a 50 ms alignment error on a slot
-       that is 250 ms long in the nominal 9 node configuration. -->
+    <!-- Releases MESH_STATE inside this node's GPS-synchronised TDMA slot.
+      20 Hz gives a 50 ms sampling interval on a 375 ms slot. -->
   <periodic fun="traffic_info_mesh_periodic()" freq="20" autorun="TRUE"/>
 
   <datalink message="ACINFO"      fun="parse_acinfo_dl(buf)"/>
