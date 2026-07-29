@@ -20,22 +20,35 @@
  *
  */
 
-/** \file tcas.c
- *  \brief Collision avoidance library
+/**
+ * @file modules/multi/tcas.c
+ * @brief Shared traffic alert and collision-avoidance implementation.
  *
+ * This file owns traffic-track evaluation, TA/RA state transitions, advisory
+ * coordination, and the firmware-neutral MSL altitude command. Fixed-wing and
+ * rotorcraft use the same surveillance and resolution logic; only application
+ * of the resulting altitude command is firmware specific.
+ *
+ * Surveillance fails closed. Missing, stale, unconvertible, or non-finite
+ * geometry produces #TCAS_UNAVAILABLE or a bounded hold of an existing
+ * advisory, never a synthetic no-conflict result. A finite zero velocity is a
+ * valid observation and is deliberately not treated as missing data.
  */
 
 #include "multi/tcas.h"
 #include "multi/tcas_policy.h"
 #include "state.h"
-#include "firmwares/fixedwing/nav.h"
 #include "generated/flight_plan.h"  // SECURITY_HEIGHT
+
+#if FIXEDWING_FIRMWARE
+#include "firmwares/fixedwing/nav.h"
+#endif
 
 #include "modules/datalink/downlink.h"
 #include <math.h>
 
-#if !FIXEDWING_FIRMWARE
-#error "The TCAS command backend is currently implemented only for fixed-wing firmware"
+#if !FIXEDWING_FIRMWARE && !ROTORCRAFT_FIRMWARE
+#error "TCAS requires fixed-wing or rotorcraft firmware"
 #endif
 
 float tcas_alt_setpoint;
@@ -45,8 +58,13 @@ uint8_t tcas_status;
 enum tcas_resolve tcas_resolve;
 uint8_t tcas_ac_RA;
 struct tcas_ac_status tcas_acs_status[NB_ACS];
+/** Whether the cached RA boundary can produce an altitude command. */
 static bool tcas_command_valid;
+/** Cached intruder altitude in the ownship MSL frame, in meters. */
+static float tcas_intruder_altitude;
+/** Whether a peer resolution has been received for each compact traffic slot. */
 static bool tcas_resolve_received[NB_ACS];
+/** Local receipt time of each peer resolution, in monotonic milliseconds. */
 static uint32_t tcas_resolve_received_ms[NB_ACS];
 
 #ifndef TCAS_TAU_TA     // Traffic Advisory
@@ -94,40 +112,86 @@ _Static_assert(TCAS_MESH_DROP_MS > TCAS_MESH_FRESH_MS,
 
 #define TCAS_HUGE_TAU 100*TCAS_TAU_TA
 
+/** Result of acquiring a complete traffic snapshot for geometry evaluation. */
 enum tcas_track_quality {
   TCAS_TRACK_VALID,
   TCAS_TRACK_INVALID
 };
 
+/** Return the firmware's ground reference in meters MSL. */
+static float tcas_backend_ground_altitude_msl(void)
+{
+#if FIXEDWING_FIRMWARE
+  return ground_alt;
+#else
+  return stateGetHmslOrigin_f();
+#endif
+}
+
+/**
+ * Check whether ownship position and velocity support TCAS geometry.
+ *
+ * Velocity validity is status- and finiteness-based. In particular, a finite
+ * zero vector remains valid for hover or a fixed-wing stationary over ground.
+ *
+ * @return @c true when all required ownship geometry is available and finite.
+ */
 static bool tcas_ownship_geometry_valid(void)
 {
-  return stateIsGlobalCoordinateValid()
+  const struct UtmCoor_f *utm = stateGetPositionUtm_f();
+  return bit_is_set(state.pos_status, POS_UTM_F)
          && stateIsLocalCoordinateValid()
          && (state.speed_status & SPEED_LOCAL_COORD) != 0
-         && isfinite(stateGetPositionUtm_f()->alt)
+         && isfinite(utm->alt)
          && isfinite(stateGetPositionEnu_f()->x)
          && isfinite(stateGetPositionEnu_f()->y)
          && isfinite(stateGetPositionEnu_f()->z)
          && tcas_velocity_is_usable(stateGetSpeedEnu_f()->x,
                                     stateGetSpeedEnu_f()->y,
-                                    stateGetSpeedEnu_f()->z)
-         && isfinite(nav_altitude);
+                                    stateGetSpeedEnu_f()->z);
+}
+
+bool tcas_get_altitude_command(float nominal_altitude_msl, float *altitude_msl)
+{
+  if (tcas_status != TCAS_RA || !tcas_ownship_geometry_valid()) {
+    return false;
+  }
+  const bool resolved = tcas_resolve_altitude_msl(
+                          (enum tcas_resolution)tcas_resolve,
+                          tcas_command_valid,
+                          nominal_altitude_msl,
+                          tcas_intruder_altitude,
+                          tcas_alim,
+                          tcas_backend_ground_altitude_msl() + SECURITY_HEIGHT,
+                          altitude_msl);
+  if (resolved) {
+    tcas_alt_setpoint = *altitude_msl;
+  }
+  return resolved;
 }
 
 void callTCAS(void)
 {
-  if (tcas_status == TCAS_RA && tcas_command_valid
-      && tcas_ownship_geometry_valid()) {
-    v_ctl_altitude_setpoint = tcas_alt_setpoint;
+#if FIXEDWING_FIRMWARE
+  float altitude_msl;
+  if (!autopilot.kill_throttle && v_ctl_mode == V_CTL_MODE_AUTO_ALT
+      && tcas_get_altitude_command(flight_altitude, &altitude_msl)) {
+    v_ctl_altitude_setpoint = altitude_msl;
   }
+#endif
 }
 
-/* AC is inside the horizontol dmod area and twice the vertical alim separation */
-#define TCAS_IsInside() ( (ddh < Square(tcas_dmod) && ddv < Square(2*tcas_alim)) ? 1 : 0 )
+/** Test whether the current relative geometry penetrates the protected volume.
+ *
+ * The macro uses the squared horizontal and vertical distances calculated in
+ * the surrounding track-evaluation loop. The vertical gate is twice ALIM.
+ */
+#define TCAS_IsInside() ((ddh < tcas_dmod * tcas_dmod \
+                         && ddv < 4.f * tcas_alim * tcas_alim) ? 1 : 0)
 
 void tcas_init(void)
 {
-  tcas_alt_setpoint = ground_alt + SECURITY_HEIGHT;
+  tcas_alt_setpoint = tcas_backend_ground_altitude_msl() + SECURITY_HEIGHT;
   tcas_tau_ta = TCAS_TAU_TA;
   tcas_tau_ra = TCAS_TAU_RA;
   tcas_dmod = TCAS_DMOD;
@@ -136,6 +200,7 @@ void tcas_init(void)
   tcas_resolve = RA_NONE;
   tcas_ac_RA = AC_ID;
   tcas_command_valid = false;
+  tcas_intruder_altitude = tcas_backend_ground_altitude_msl() + SECURITY_HEIGHT;
   uint8_t i;
   for (i = 0; i < NB_ACS; i++) {
     tcas_acs_status[i].status = TCAS_NO_ALARM;
@@ -189,6 +254,22 @@ void parseTcasRA(uint8_t *buf)
   }
 }
 
+/**
+ * Acquire a complete traffic track in the ownship local ENU frame.
+ *
+ * Mesh observations are projected with a bounded constant-velocity model.
+ * Legacy observations are copied without prediction. Both paths require
+ * explicit observation-validity state and finite position and velocity;
+ * velocity magnitude is not a validity test.
+ *
+ * @param[in] id Aircraft ID to query.
+ * @param[out] position ENU position in meters, predicted for mesh tracks.
+ * @param[out] velocity ENU velocity in meters per second.
+ * @param[out] age_ms Monotonic observation age in milliseconds.
+ * @param[out] is_mesh Whether the authoritative observation is MESH_STATE.
+ * @return #TCAS_TRACK_VALID when all outputs are usable, otherwise
+ *         #TCAS_TRACK_INVALID.
+ */
 static enum tcas_track_quality tcas_get_track(uint8_t id,
                                                struct EnuCoor_f *position,
                                                struct EnuCoor_f *velocity,
@@ -210,39 +291,26 @@ static enum tcas_track_quality tcas_get_track(uint8_t id,
   }
 #endif
   *is_mesh = false;
-  if (!traffic_info_get_age(id, age_ms)) {
+  if (!traffic_info_get_snapshot(id, position, velocity, age_ms)) {
     *age_ms = UINT32_MAX;
     return TCAS_TRACK_INVALID;
   }
-  const uint8_t slot = ti_acs_id[id];
-  const uint16_t position_mask = (1u << AC_INFO_POS_UTM_I)
-                                 | (1u << AC_INFO_POS_LLA_I)
-                                 | (1u << AC_INFO_POS_ENU_I)
-                                 | (1u << AC_INFO_POS_UTM_F)
-                                 | (1u << AC_INFO_POS_LLA_F)
-                                 | (1u << AC_INFO_POS_ENU_F);
-  const uint16_t velocity_mask = (1u << AC_INFO_VEL_ENU_I)
-                                 | (1u << AC_INFO_VEL_ENU_F)
-                                 | (1u << AC_INFO_VEL_LOCAL_F);
-  if ((ti_acs[slot].status & position_mask) == 0
-      || (ti_acs[slot].status & velocity_mask) == 0) {
-    return TCAS_TRACK_INVALID;
-  }
-  const bool enu_position_available = bit_is_set(ti_acs[slot].status, AC_INFO_POS_ENU_I)
-                                      || bit_is_set(ti_acs[slot].status, AC_INFO_POS_ENU_F);
-  if (!enu_position_available
-      && !(state.ned_initialized_i || state.ned_initialized_f || state.utm_initialized_f)) {
-    return TCAS_TRACK_INVALID;
-  }
-  *position = *acInfoGetPositionEnu_f(id);
-  *velocity = *acInfoGetVelocityEnu_f(id);
-    if (!isfinite(position->x) || !isfinite(position->y) || !isfinite(position->z)
-      || !tcas_velocity_is_usable(velocity->x, velocity->y, velocity->z)) {
+  if (!tcas_velocity_is_usable(velocity->x, velocity->y, velocity->z)) {
     return TCAS_TRACK_INVALID;
   }
   return TCAS_TRACK_VALID;
 }
 
+/**
+ * Select an initial complementary vertical resolution for one intruder.
+ *
+ * Vertical separation decides when it is unambiguous. Near co-altitude, the
+ * lower aircraft ID descends so independently evaluating peers choose
+ * complementary directions. Invalid geometry uses the same ID tie-break.
+ *
+ * @param[in] id Conflicting aircraft ID.
+ * @return The selected climb or descend resolution.
+ */
 static inline enum tcas_resolve tcas_test_direction(uint8_t id)
 {
   struct EnuCoor_f position;
@@ -265,7 +333,17 @@ static inline enum tcas_resolve tcas_test_direction(uint8_t id)
   }
 }
 
-/** Add an existing advisory to the stale-track candidate set. */
+/**
+ * Add an existing advisory to the stale-track candidate set.
+ *
+ * A stale track may preserve an already active advisory for a bounded time,
+ * but may never open a new advisory or claim that separation exists.
+ *
+ * @param[in] slot Compact traffic-table slot containing the advisory.
+ * @param[in,out] held_ra Selected held RA aircraft ID.
+ * @param[in,out] held_ta Selected held TA aircraft ID.
+ * @return @c true when the slot contains an advisory that can be held.
+ */
 static bool tcas_hold_advisory(uint8_t slot, uint8_t *held_ra, uint8_t *held_ta)
 {
   const uint8_t id = ti_acs[slot].ac_id;
@@ -286,7 +364,7 @@ static bool tcas_hold_advisory(uint8_t slot, uint8_t *held_ra, uint8_t *held_ta)
 }
 
 
-/* conflicts detection and monitoring */
+/** Evaluate traffic tracks and update TA/RA state at 1 Hz. */
 void tcas_periodic_task_1Hz(void)
 {
   if (!tcas_ownship_geometry_valid()) {
@@ -296,8 +374,8 @@ void tcas_periodic_task_1Hz(void)
     tcas_command_valid = false;
     return;
   }
-  // no TCAS under security_height
-  if (stateGetPositionUtm_f()->alt <= ground_alt + SECURITY_HEIGHT) {
+  /* TCAS does not command below the configured security-height floor. */
+  if (stateGetPositionUtm_f()->alt <= tcas_backend_ground_altitude_msl() + SECURITY_HEIGHT) {
     uint8_t i;
     for (i = 0; i < NB_ACS; i++) {
       tcas_acs_status[i].status = TCAS_NO_ALARM;
@@ -307,16 +385,17 @@ void tcas_periodic_task_1Hz(void)
     tcas_status = TCAS_UNAVAILABLE;
     tcas_resolve = RA_NONE;
     tcas_ac_RA = AC_ID;
-    tcas_alt_setpoint = nav_altitude;
+    tcas_alt_setpoint = stateGetPositionUtm_f()->alt;
     tcas_command_valid = false;
     return;
   }
-  // test possible conflicts
+  /* Select the highest-priority fresh or bounded-held advisory. */
 #ifdef TCAS_DEBUG
   float tau_min = TCAS_HUGE_TAU;
 #endif
   float fresh_ra_score = TCAS_HUGE_TAU;
   float fresh_ta_score = TCAS_HUGE_TAU;
+  float fresh_ra_vertical_speed = 0.f;
   uint8_t fresh_ra = AC_ID;
   uint8_t held_ra = AC_ID;
   uint8_t fresh_ta = AC_ID;
@@ -377,7 +456,7 @@ void tcas_periodic_task_1Hz(void)
     float ddv = dz * dz;
     float tau = TCAS_HUGE_TAU;
     if (scal > 0.) { tau = (ddh + ddv) / scal; }
-    // monitor conflicts
+    /* Advance this track's advisory state from the current geometry. */
     uint8_t inside = TCAS_IsInside();
     //enum tcas_resolve test_dir = RA_NONE;
     if (tcas_acs_status[i].status == TCAS_UNAVAILABLE) {
@@ -398,7 +477,8 @@ void tcas_periodic_task_1Hz(void)
           tcas_acs_status[i].status = TCAS_RA; // TA -> RA
           // Downlink alert
           //test_dir = tcas_test_direction(ti_acs[i].ac_id);
-          //DOWNLINK_SEND_TCAS_RA(DefaultChannel, DefaultDevice,&(ti_acs[i].ac_id),&test_dir);// FIXME only one closest AC ???
+          // DOWNLINK_SEND_TCAS_RA(DefaultChannel, DefaultDevice,
+          //                       &(ti_acs[i].ac_id), &test_dir);
           break;
         }
         if (tau > tcas_tau_ta && !inside) {
@@ -434,6 +514,7 @@ void tcas_periodic_task_1Hz(void)
             || (score == fresh_ra_score && ti_acs[i].ac_id == tcas_ac_RA))) {
       fresh_ra = ti_acs[i].ac_id;
       fresh_ra_score = score;
+      fresh_ra_vertical_speed = velocity.z;
     } else if (tcas_acs_status[i].status == TCAS_TA
                && (fresh_ta == AC_ID || score < fresh_ta_score)) {
       fresh_ta = ti_acs[i].ac_id;
@@ -483,7 +564,7 @@ void tcas_periodic_task_1Hz(void)
     }
     return;
   }
-  // at least one in conflict, deal with closest one
+  /* At least one conflict remains; coordinate the selected RA direction. */
   if (tcas_status == TCAS_RA) {
     const uint8_t previous_ra = tcas_ac_RA;
     const enum tcas_resolve previous_resolve = tcas_resolve;
@@ -499,9 +580,9 @@ void tcas_periodic_task_1Hz(void)
       }
     } else {
       tcas_resolve_received[ra_slot] = false;
-      if (tcas_resolve == RA_CLIMB && ti_acs[ra_slot].climb > 1.0) {
+      if (tcas_resolve == RA_CLIMB && fresh_ra_vertical_speed > 1.0f) {
         tcas_resolve = RA_DESCEND;
-      } else if (tcas_resolve == RA_DESCEND && ti_acs[ra_slot].climb < -1.0) {
+      } else if (tcas_resolve == RA_DESCEND && fresh_ra_vertical_speed < -1.0f) {
         tcas_resolve = RA_CLIMB;
       }
     }
@@ -522,7 +603,7 @@ void tcas_periodic_task_1Hz(void)
 }
 
 
-/* altitude control loop */
+/** Refresh the active RA altitude boundary at 4 Hz. */
 void tcas_periodic_task_4Hz(void)
 {
   if (!tcas_ownship_geometry_valid()) {
@@ -530,7 +611,8 @@ void tcas_periodic_task_4Hz(void)
     return;
   }
   // set alt setpoint
-  if (stateGetPositionUtm_f()->alt > ground_alt + SECURITY_HEIGHT && tcas_status == TCAS_RA) {
+  if (stateGetPositionUtm_f()->alt > tcas_backend_ground_altitude_msl() + SECURITY_HEIGHT
+      && tcas_status == TCAS_RA) {
     struct EnuCoor_f position;
     struct EnuCoor_f velocity;
     uint32_t age_ms;
@@ -553,29 +635,13 @@ void tcas_periodic_task_4Hz(void)
     if (action != TCAS_SURVEILLANCE_EVALUATE) {
       return; // preserve the last command until the 1 Hz task holds or drops it
     }
-    const float intruder_altitude = tcas_intruder_altitude_msl(
-                      stateGetPositionUtm_f()->alt,
-                      position.z,
-                      stateGetPositionEnu_f()->z);
-    switch (tcas_resolve) {
-      case RA_CLIMB :
-        tcas_alt_setpoint = Max(nav_altitude, intruder_altitude + tcas_alim);
-        break;
-      case RA_DESCEND :
-        tcas_alt_setpoint = Min(nav_altitude, intruder_altitude - tcas_alim);
-        break;
-      case RA_LEVEL :
-      case RA_NONE :
-        tcas_alt_setpoint = nav_altitude;
-        break;
-      default:
-        break;
-    }
-    // Bound alt
-    tcas_alt_setpoint = Max(ground_alt + SECURITY_HEIGHT, tcas_alt_setpoint);
-    tcas_command_valid = isfinite(tcas_alt_setpoint);
+    tcas_intruder_altitude = tcas_intruder_altitude_msl(
+                               stateGetPositionUtm_f()->alt,
+                               position.z,
+                               stateGetPositionEnu_f()->z);
+    tcas_command_valid = isfinite(tcas_intruder_altitude);
   } else {
-    tcas_alt_setpoint = nav_altitude;
+    tcas_alt_setpoint = stateGetPositionUtm_f()->alt;
     tcas_resolve = RA_NONE;
     tcas_command_valid = false;
   }

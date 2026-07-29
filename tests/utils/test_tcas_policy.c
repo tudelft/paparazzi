@@ -26,7 +26,7 @@ static enum tcas_surveillance_action action(bool valid, bool mesh,
 
 int main(void)
 {
-  puts("1..22");
+  puts("1..29");
   expect_action("mesh fresh-1", action(true, true, false, FRESH_MS - 1u),
                 TCAS_SURVEILLANCE_EVALUATE);
   expect_action("mesh fresh exact", action(true, true, false, FRESH_MS),
@@ -93,7 +93,34 @@ int main(void)
     return EXIT_FAILURE;
   }
 
-  for (unsigned test = 1; test <= 22; test++) {
+  float resolved_msl = 0.f;
+  if (!tcas_resolve_altitude_msl(TCAS_RESOLUTION_CLIMB, true, 100.f, 95.f, 15.f, 25.f, &resolved_msl)
+      || resolved_msl != 110.f) {
+    fputs("climb resolution did not preserve fixed-wing behavior\n", stderr);
+    return EXIT_FAILURE;
+  }
+  if (!tcas_resolve_altitude_msl(TCAS_RESOLUTION_DESCEND, true, 100.f, 105.f, 15.f, 25.f, &resolved_msl)
+      || resolved_msl != 90.f) {
+    fputs("descend resolution did not preserve fixed-wing behavior\n", stderr);
+    return EXIT_FAILURE;
+  }
+  if (!tcas_resolve_altitude_msl(TCAS_RESOLUTION_DESCEND, true, 30.f, 20.f, 15.f, 25.f, &resolved_msl)
+      || resolved_msl != 25.f) {
+    fputs("security floor was not applied\n", stderr);
+    return EXIT_FAILURE;
+  }
+    if (tcas_resolve_altitude_msl(TCAS_RESOLUTION_NONE, true, 100.f, 95.f, 15.f, 25.f, &resolved_msl)
+      || tcas_resolve_altitude_msl(TCAS_RESOLUTION_CLIMB, false, 100.f, 95.f, 15.f, 25.f, &resolved_msl)
+      || tcas_resolve_altitude_msl(TCAS_RESOLUTION_CLIMB, true, NAN, 95.f, 15.f, 25.f, &resolved_msl)) {
+    fputs("inactive or invalid altitude resolution was accepted\n", stderr);
+    return EXIT_FAILURE;
+  }
+  if (tcas_altitude_local_from_msl(138.f, 23.f) != 115.f) {
+    fputs("MSL-to-local altitude conversion failed\n", stderr);
+    return EXIT_FAILURE;
+  }
+
+  for (unsigned test = 1; test <= 29; test++) {
     printf("ok %u - TCAS policy boundary\n", test);
   }
   return EXIT_SUCCESS;

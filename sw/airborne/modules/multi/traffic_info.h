@@ -435,15 +435,6 @@ static inline uint8_t ti_acs_slot(uint8_t id)
   if (!traffic_info_id_valid(id)) {
     return TI_ACS_NONE;
   }
-#if !TRAFFIC_INFO_USE_MESH
-  /* Preserve master's behavior exactly: once the table is full, even known
-   * aircraft stop updating. Mesh mode keeps known entries current because a
-   * stale traffic picture is more dangerous than refusing only new arrivals. */
-  if (ti_acs_idx >= NB_ACS) {
-    traffic_info_capacity_exceeded = true;
-    return TI_ACS_NONE;
-  }
-#endif
   uint8_t slot = ti_acs_id[id];
   if (slot == 0 && id != 0) {         /* not registered yet */
     if (ti_acs_idx >= NB_ACS) {
@@ -453,6 +444,19 @@ static inline uint8_t ti_acs_slot(uint8_t id)
     slot = ti_acs_idx++;
     ti_acs_id[id] = slot;
     ti_acs[slot].ac_id = id;
+  }
+  return slot;
+}
+
+/** Resolve an already registered traffic ID without inserting a new record. */
+static inline uint8_t ti_acs_registered_slot(uint8_t id)
+{
+  if (!traffic_info_id_valid(id)) {
+    return TI_ACS_NONE;
+  }
+  const uint8_t slot = ti_acs_id[id];
+  if (slot >= ti_acs_idx || ti_acs[slot].ac_id != id) {
+    return TI_ACS_NONE;
   }
   return slot;
 }
@@ -479,6 +483,23 @@ extern bool parse_acinfo_dl(uint8_t *buf);
  * @return @c true when the traffic record has an accepted observation.
  */
 extern bool traffic_info_get_age(uint8_t ac_id, uint32_t *age_ms);
+
+/** Copy a complete traffic observation in local ENU coordinates.
+ *
+ * Unlike the legacy pointer getters, this checked API reports failed or
+ * unavailable coordinate conversions explicitly. It is intended for
+ * safety-critical consumers that must fail closed on incomplete data.
+ *
+ * @param[in] ac_id Traffic ID to query.
+ * @param[out] position Local ENU position in meters.
+ * @param[out] velocity Local ENU velocity in meters per second.
+ * @param[out] age_ms Local monotonic age of the observation in milliseconds.
+ * @return @c true for a complete finite observation, otherwise @c false.
+ */
+extern bool traffic_info_get_snapshot(uint8_t ac_id,
+                                      struct EnuCoor_f *position,
+                                      struct EnuCoor_f *velocity,
+                                      uint32_t *age_ms);
 
 /** Mark a traffic-table slot as having received complete position/velocity. */
 extern void traffic_info_touch(uint8_t slot);
@@ -518,6 +539,13 @@ extern bool traffic_info_get_mesh_snapshot(uint8_t ac_id, uint32_t max_predictio
  * @return @c true when this mesh track has had a valid observation.
  */
 extern bool traffic_info_get_mesh_valid_age(uint8_t ac_id, uint32_t *age_ms);
+
+/** Return the latest raw MESH_STATE flags for a mesh peer.
+ *
+ * The rotorcraft bit is retained for mixed-fleet observability. TCAS does not
+ * branch on aircraft type; all avoidance geometry and advisories remain shared.
+ */
+extern bool traffic_info_get_mesh_flags(uint8_t ac_id, uint8_t *flags);
 
 /** Return whether the latest observation for an aircraft came from MESH_STATE. */
 extern bool traffic_info_is_mesh_track(uint8_t ac_id);

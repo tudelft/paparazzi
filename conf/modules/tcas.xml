@@ -3,10 +3,12 @@
 <module name="tcas" dir="multi">
   <doc>
     <description>
-      TCAS collision avoidance for fixed-wing firmware.
+      TCAS collision avoidance for fixed-wing and rotorcraft firmware.
       NO_ALARM means represented surveillance was evaluated without an advisory.
       UNAVAILABLE means surveillance cannot support a no-conflict conclusion.
       RA_NONE disables vertical avoidance control but does not itself prove separation.
+      Fixed-wing executes RAs in automatic altitude control; rotorcraft executes them in NAV altitude mode.
+      Climb-rate, guided, hover, manual-throttle, failsafe, and kill modes are never overridden.
       Operational use requires scenario, scheduler, loss-burst, and hardware-in-the-loop qualification.
     </description>
   </doc>
@@ -16,12 +18,12 @@
   <header>
     <file name="tcas.h"/>
   </header>
-  <init fun="tcas_init()" cond="FIXEDWING_FIRMWARE"/>
-  <periodic fun="tcas_periodic_task_1Hz()" freq="1" cond="FIXEDWING_FIRMWARE"/>
-  <periodic fun="tcas_periodic_task_4Hz()" freq="4" cond="FIXEDWING_FIRMWARE"/>
-  <datalink message="TCAS_RESOLVE" fun="parseTcasResolve(buf)" cond="FIXEDWING_FIRMWARE"/>
-  <datalink message="TCAS_RA" fun="parseTcasRA(buf)" cond="FIXEDWING_FIRMWARE"/>
-  <makefile firmware="fixedwing">
+  <init fun="tcas_init()"/>
+  <periodic fun="tcas_periodic_task_1Hz()" freq="1"/>
+  <periodic fun="tcas_periodic_task_4Hz()" freq="4"/>
+  <datalink message="TCAS_RESOLVE" fun="parseTcasResolve(buf)"/>
+  <datalink message="TCAS_RA" fun="parseTcasRA(buf)"/>
+  <makefile>
     <file name="tcas.c"/>
     <define name="TCAS"/>
   </makefile>

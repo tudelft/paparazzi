@@ -43,6 +43,7 @@
 #include "state.h"
 #include "math/pprz_geodetic_utm.h"
 #include "math/pprz_geodetic_wgs84.h"
+#include <math.h>
 
 #if AC_ID < 1 || AC_ID > TRAFFIC_INFO_MAX_AC_ID
 #error "Airborne AC_ID must be in 1 through 254; 0 is GCS and 255 is broadcast"
@@ -50,6 +51,10 @@
 
 #if TRAFFIC_INFO_USE_MESH
 #include "autopilot.h"
+#endif
+
+#if TRAFFIC_INFO_USE_MESH && PPRZLINK_DEFAULT_VER != 2
+#error "TRAFFIC_INFO_USE_MESH requires PPRZLink v2 sender and class headers"
 #endif
 
 #if TRAFFIC_INFO_USE_MESH && defined(LOW_BAT_LEVEL)
@@ -198,6 +203,8 @@ static struct transport_tx *mesh_trans;
 static struct link_device *mesh_dev;
 static uint64_t mesh_received_ms[NB_ACS];
 static bool mesh_has_valid_observation[NB_ACS];
+static uint8_t mesh_received_flags[NB_ACS];
+static bool mesh_flags_observed[NB_ACS];
 static bool mesh_last_clock_synced;
 static bool mesh_clock_sample_valid;
 static uint64_t mesh_last_network_ms;
@@ -340,7 +347,17 @@ static uint8_t mesh_state_flags(void)
   flags |= MESH_FLAG_ROTORCRAFT;
 #endif
 
-  if (gps.fix >= GPS_FIX_3D && state.pos_status != 0) {
+  const struct LlaCoor_i *position = stateGetPositionLla_i();
+  const struct EnuCoor_f *velocity = stateGetSpeedEnu_f();
+  const bool position_valid = bit_is_set(state.pos_status, POS_LLA_I);
+  const bool velocity_valid = (state.speed_status & SPEED_LOCAL_COORD) != 0
+                              && isfinite(stateGetHorizontalSpeedDir_f())
+                              && isfinite(stateGetHorizontalSpeedNorm_f())
+                              && isfinite(velocity->x)
+                              && isfinite(velocity->y)
+                              && isfinite(velocity->z);
+  if (gps.fix >= GPS_FIX_3D && position_valid && velocity_valid
+      && position != NULL) {
     flags |= MESH_FLAG_POS_VALID;
   }
   if (autopilot_in_flight()) {
@@ -431,13 +448,19 @@ static void mesh_state_emit(void)
   const struct LlaCoor_i *lla = stateGetPositionLla_i();
 
   uint8_t flags = mesh_state_flags();
-  int32_t lat = lla->lat;
-  int32_t lon = lla->lon;
-  int32_t alt = lla->alt / 10;                 /* mm above ellipsoid -> cm */
-  uint32_t multiplex = mesh_multiplex_encode(
-                         (int32_t)DeciDegOfRad(stateGetHorizontalSpeedDir_f()),
-                         (int32_t)(stateGetHorizontalSpeedNorm_f() * 100.f),
-                         (int32_t)(stateGetSpeedEnu_f()->z * 100.f));
+  int32_t lat = 0;
+  int32_t lon = 0;
+  int32_t alt = 0;
+  uint32_t multiplex = 0;
+  if ((flags & MESH_FLAG_POS_VALID) != 0) {
+    lat = lla->lat;
+    lon = lla->lon;
+    alt = lla->alt / 10;                       /* mm above ellipsoid -> cm */
+    multiplex = mesh_multiplex_encode(
+                  (int32_t)DeciDegOfRad(stateGetHorizontalSpeedDir_f()),
+                  (int32_t)(stateGetHorizontalSpeedNorm_f() * 100.f),
+                  (int32_t)(stateGetSpeedEnu_f()->z * 100.f));
+  }
 
   struct pprzlink_msg msg;
   msg.trans = mesh_trans;
@@ -937,6 +960,8 @@ void traffic_info_init(void)
   mesh_slot_reset(0);
   memset(mesh_received_ms, 0, sizeof(mesh_received_ms));
   memset(mesh_has_valid_observation, 0, sizeof(mesh_has_valid_observation));
+  memset(mesh_received_flags, 0, sizeof(mesh_received_flags));
+  memset(mesh_flags_observed, 0, sizeof(mesh_flags_observed));
   mesh_last_clock_synced = false;
   mesh_clock_sample_valid = false;
   mesh_last_network_ms = 0;
@@ -1095,6 +1120,8 @@ bool parse_acinfo_dl(uint8_t *buf)
         if (slot == TI_ACS_NONE) {
           break;
         }
+        mesh_received_flags[slot] = flags;
+        mesh_flags_observed[slot] = true;
         if ((flags & MESH_FLAG_POS_VALID) != 0) {
           mesh_received_ms[slot] = traffic_monotonic_time_ms();
           mesh_has_valid_observation[slot] = true;
@@ -1174,7 +1201,7 @@ bool parse_acinfo_dl(uint8_t *buf)
 #if TRAFFIC_INFO_USE_LOG
   struct LlaCoor_f* lla_f = acInfoGetPositionLla_f(sender_id);
   struct EnuCoor_f* enu_f = acInfoGetPositionEnu_f(sender_id);
-  if (LogFileIsOpen(pprzLogFile)) {
+  if (lla_f != NULL && enu_f != NULL && LogFileIsOpen(pprzLogFile)) {
     LogWrite(pprzLogFile, "R,%d,%d,%.7f,%.7f,%.3f,%.3f,%.3f,%.3f,%d,%d\n",
         sender_id, AC_ID,
         DegOfRad(lla_f->lat), DegOfRad(lla_f->lon), lla_f->alt,
@@ -1201,6 +1228,52 @@ bool traffic_info_get_age(uint8_t ac_id, uint32_t *age_ms)
   const uint64_t age = traffic_monotonic_time_ms() - received_ms;
   *age_ms = age > UINT32_MAX ? UINT32_MAX : (uint32_t)age;
   return true;
+}
+
+bool traffic_info_get_snapshot(uint8_t ac_id,
+                               struct EnuCoor_f *position,
+                               struct EnuCoor_f *velocity,
+                               uint32_t *age_ms)
+{
+  if (position == NULL || velocity == NULL || age_ms == NULL
+      || !traffic_info_get_age(ac_id, age_ms)) {
+    return false;
+  }
+
+  const uint8_t slot = ti_acs_registered_slot(ac_id);
+  const uint16_t position_mask = (1u << AC_INFO_POS_UTM_I)
+                                 | (1u << AC_INFO_POS_LLA_I)
+                                 | (1u << AC_INFO_POS_ENU_I)
+                                 | (1u << AC_INFO_POS_UTM_F)
+                                 | (1u << AC_INFO_POS_LLA_F)
+                                 | (1u << AC_INFO_POS_ENU_F);
+  const uint16_t velocity_mask = (1u << AC_INFO_VEL_ENU_I)
+                                 | (1u << AC_INFO_VEL_ENU_F)
+                                 | (1u << AC_INFO_VEL_LOCAL_F);
+  if (slot == TI_ACS_NONE
+      || (ti_acs[slot].status & position_mask) == 0
+      || (ti_acs[slot].status & velocity_mask) == 0) {
+    return false;
+  }
+
+  const bool enu_position_available = bit_is_set(ti_acs[slot].status, AC_INFO_POS_ENU_I)
+                                      || bit_is_set(ti_acs[slot].status, AC_INFO_POS_ENU_F);
+  if (!enu_position_available
+      && !(state.ned_initialized_i || state.ned_initialized_f || state.utm_initialized_f)) {
+    return false;
+  }
+
+  *position = *acInfoGetPositionEnu_f(ac_id);
+  if (!bit_is_set(ti_acs[slot].status, AC_INFO_POS_ENU_F)) {
+    return false;
+  }
+  *velocity = *acInfoGetVelocityEnu_f(ac_id);
+  if (!bit_is_set(ti_acs[slot].status, AC_INFO_VEL_ENU_F)) {
+    return false;
+  }
+
+  return isfinite(position->x) && isfinite(position->y) && isfinite(position->z)
+         && isfinite(velocity->x) && isfinite(velocity->y) && isfinite(velocity->z);
 }
 
 void traffic_info_touch(uint8_t slot)
@@ -1286,14 +1359,17 @@ bool traffic_info_get_mesh_snapshot(uint8_t ac_id, uint32_t max_prediction_ms,
   if (!traffic_info_id_valid(ac_id)) {
     return false;
   }
-    const uint8_t slot = ti_acs_id[ac_id];
-    if (!traffic_info_is_mesh_track(ac_id)
+  const uint8_t slot = ti_acs_id[ac_id];
+  if (!traffic_info_is_mesh_track(ac_id)
       || !bit_is_set(ti_acs[slot].status, AC_INFO_POS_LLA_I)
       || !bit_is_set(ti_acs[slot].status, AC_INFO_VEL_LOCAL_F)) {
     return false;
   }
 
   *position = *acInfoGetPositionEnu_f(ac_id);
+  if (!bit_is_set(ti_acs[slot].status, AC_INFO_POS_ENU_F)) {
+    return false;
+  }
   *velocity = *acInfoGetVelocityEnu_f(ac_id);
   if (!isfinite(position->x) || !isfinite(position->y) || !isfinite(position->z)
       || !isfinite(velocity->x) || !isfinite(velocity->y) || !isfinite(velocity->z)) {
@@ -1322,6 +1398,20 @@ bool traffic_info_get_mesh_valid_age(uint8_t ac_id, uint32_t *age_ms)
   *age_ms = age > UINT32_MAX ? UINT32_MAX : (uint32_t)age;
   return true;
 }
+
+bool traffic_info_get_mesh_flags(uint8_t ac_id, uint8_t *flags)
+{
+  if (flags == NULL || !traffic_info_id_valid(ac_id)) {
+    return false;
+  }
+  const uint8_t slot = ti_acs_id[ac_id];
+  if (slot >= ti_acs_idx || ti_acs[slot].ac_id != ac_id
+      || !mesh_flags_observed[slot]) {
+    return false;
+  }
+  *flags = mesh_received_flags[slot];
+  return true;
+}
 #endif
 
 
@@ -1345,8 +1435,9 @@ void set_ac_info_utm(uint8_t id, int32_t utm_east, int32_t utm_north, int32_t al
 
   ti_acs[slot].status = 0;
 
-  uint16_t my_zone = stateGetUtmOrigin_f()->zone;
-  if (utm_zone == my_zone) {
+  const struct UtmCoor_f *utm_origin = stateGetUtmOrigin_f();
+  const uint8_t my_zone = utm_origin != NULL ? utm_origin->zone : utm_zone;
+  if (utm_origin == NULL || utm_zone == my_zone) {
     ti_acs[slot].utm_pos_i.east = utm_east;
     ti_acs[slot].utm_pos_i.north = utm_north;
     ti_acs[slot].utm_pos_i.alt = alt;
@@ -1357,11 +1448,14 @@ void set_ac_info_utm(uint8_t id, int32_t utm_east, int32_t utm_north, int32_t al
     struct UtmCoor_i utm = {.east = utm_east, .north = utm_north, .alt = alt, .zone = utm_zone};
     struct LlaCoor_i lla;
     lla_of_utm_i(&lla, &utm);
+    update_geoid_height();
+    lla.alt += geoid_height; /* incoming UTM altitude is MSL; LLA is ellipsoid */
     LLA_COPY(ti_acs[slot].lla_pos_i, lla);
     SetBit(ti_acs[slot].status, AC_INFO_POS_LLA_I);
 
     utm.zone = my_zone;
     utm_of_lla_i(&utm, &lla);
+    utm.alt = alt; /* preserve the source MSL altitude across zone reprojection */
 
     UTM_COPY(ti_acs[slot].utm_pos_i, utm);
     SetBit(ti_acs[slot].status, AC_INFO_POS_UTM_I);
@@ -1442,43 +1536,71 @@ void set_ac_info_lla_arrival(uint8_t id, int32_t lat, int32_t lon, int32_t alt,
 /* Lazy reference-frame conversions. Each function computes only a missing
  * representation and marks it valid in the aircraft's status bit field. */
 
+/** Copy UTM traffic into the current ownship UTM zone. */
+static bool traffic_info_utm_in_origin_zone(uint8_t ac_id, struct UtmCoor_f *utm)
+{
+  const struct UtmCoor_f *source = acInfoGetPositionUtm_f(ac_id);
+  const struct UtmCoor_f *origin = stateGetUtmOrigin_f();
+  if (source == NULL || origin == NULL) { return false; }
+
+  *utm = *source;
+  if (utm->zone != origin->zone) {
+    struct LlaCoor_f lla;
+    lla_of_utm_f(&lla, utm);
+    utm->zone = origin->zone;
+    utm_of_lla_f(utm, &lla);
+  }
+  return true;
+}
+
 /* compute UTM position of aircraft with ac_id (int) */
 void acInfoCalcPositionUtm_i(uint8_t ac_id)
 {
-  uint8_t ac_nr = ti_acs_id[ac_id];
+  const uint8_t ac_nr = ti_acs_registered_slot(ac_id);
+  if (ac_nr == TI_ACS_NONE) { return; }
+  bool converted = false;
   if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_UTM_I))
   {
     return;
   }
 
   /* LLA_i -> UTM_i is more accurate than from UTM_f */
-  if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_LLA_I))
+  if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_LLA_I)
+      && state.utm_initialized_f)
   {
     // use my zone as reference, i.e zone extend
     ti_acs[ac_nr].utm_pos_i.zone = stateGetUtmOrigin_f()->zone;
     utm_of_lla_i(&ti_acs[ac_nr].utm_pos_i, &ti_acs[ac_nr].lla_pos_i);
     update_geoid_height();
     ti_acs[ac_nr].utm_pos_i.alt -= geoid_height;
+    converted = true;
   } else if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_UTM_F))
   {
     UTM_BFP_OF_REAL(ti_acs[ac_nr].utm_pos_i, ti_acs[ac_nr].utm_pos_f);
-  } else if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_LLA_F))
+    converted = true;
+  } else if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_LLA_F)
+             && state.utm_initialized_f)
   {
     // use my zone as reference, i.e zone extend
-    ti_acs[ac_nr].utm_pos_i.zone = stateGetUtmOrigin_f()->zone;
+    ti_acs[ac_nr].utm_pos_f.zone = stateGetUtmOrigin_f()->zone;
     utm_of_lla_f(&ti_acs[ac_nr].utm_pos_f, &ti_acs[ac_nr].lla_pos_f);
     update_geoid_height();
     ti_acs[ac_nr].utm_pos_f.alt -= geoid_height/1000.;
     SetBit(ti_acs[ac_nr].status, AC_INFO_POS_UTM_F);
     UTM_BFP_OF_REAL(ti_acs[ac_nr].utm_pos_i, ti_acs[ac_nr].utm_pos_f);
+    converted = true;
   }
-  SetBit(ti_acs[ac_nr].status, AC_INFO_POS_UTM_I);
+  if (converted) {
+    SetBit(ti_acs[ac_nr].status, AC_INFO_POS_UTM_I);
+  }
 }
 
 /* compute LLA position of aircraft with ac_id (int) */
 void acInfoCalcPositionLla_i(uint8_t ac_id)
 {
-  uint8_t ac_nr = ti_acs_id[ac_id];
+  const uint8_t ac_nr = ti_acs_registered_slot(ac_id);
+  if (ac_nr == TI_ACS_NONE) { return; }
+  bool converted = false;
   if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_LLA_I))
   {
     return;
@@ -1487,11 +1609,13 @@ void acInfoCalcPositionLla_i(uint8_t ac_id)
   if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_LLA_F))
   {
     LLA_BFP_OF_REAL(ti_acs[ac_nr].lla_pos_i, ti_acs[ac_nr].lla_pos_f);
+    converted = true;
   } else if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_UTM_I))
   {
     lla_of_utm_i(&ti_acs[ac_nr].lla_pos_i, &ti_acs[ac_nr].utm_pos_i);
     update_geoid_height();
     ti_acs[ac_nr].lla_pos_i.alt += geoid_height;
+    converted = true;
   } else if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_UTM_F))
   {
     lla_of_utm_f(&ti_acs[ac_nr].lla_pos_f, &ti_acs[ac_nr].utm_pos_f);
@@ -1499,14 +1623,19 @@ void acInfoCalcPositionLla_i(uint8_t ac_id)
     ti_acs[ac_nr].lla_pos_f.alt += geoid_height/1000.;
     SetBit(ti_acs[ac_nr].status, AC_INFO_POS_LLA_F);
     LLA_BFP_OF_REAL(ti_acs[ac_nr].lla_pos_i, ti_acs[ac_nr].lla_pos_f);
+    converted = true;
   }
-  SetBit(ti_acs[ac_nr].status, AC_INFO_POS_LLA_I);
+  if (converted) {
+    SetBit(ti_acs[ac_nr].status, AC_INFO_POS_LLA_I);
+  }
 }
 
 /* compute ENU position of aircraft with ac_id (int) */
 void acInfoCalcPositionEnu_i(uint8_t ac_id)
 {
-  uint8_t ac_nr = ti_acs_id[ac_id];
+  const uint8_t ac_nr = ti_acs_registered_slot(ac_id);
+  if (ac_nr == TI_ACS_NONE) { return; }
+  bool converted = false;
   if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_ENU_I))
   {
     return;
@@ -1515,38 +1644,62 @@ void acInfoCalcPositionEnu_i(uint8_t ac_id)
   if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_ENU_F))
   {
     ENU_BFP_OF_REAL(ti_acs[ac_nr].enu_pos_i, ti_acs[ac_nr].enu_pos_f);
+    converted = true;
   }
   else if (state.ned_initialized_i)
   {
-    if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_LLA_I) || bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_UTM_I))
+    if ((ti_acs[ac_nr].status & AC_INFO_POSITION_MASK) != 0)
     {
-      struct EnuCoor_i enu;
-      enu_of_lla_point_i(&enu, stateGetNedOrigin_i(), acInfoGetPositionLla_i(ac_id));
-      // convert ENU pos from cm to BFP with INT32_POS_FRAC
-      enu.x = POS_BFP_OF_REAL(enu.x) / 100;
-      enu.y = POS_BFP_OF_REAL(enu.y) / 100;
-      enu.z = POS_BFP_OF_REAL(enu.z) / 100;
-      ti_acs[ac_nr].enu_pos_i = enu;
-    } else if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_LLA_F) || bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_UTM_F))
-    {
-      enu_of_lla_point_f(&ti_acs[ac_nr].enu_pos_f, stateGetNedOrigin_f(), acInfoGetPositionLla_f(ac_id));
-      SetBit(ti_acs[ac_nr].status, AC_INFO_POS_ENU_F);
-      ENU_BFP_OF_REAL(ti_acs[ac_nr].enu_pos_i, ti_acs[ac_nr].enu_pos_f)
+      const struct LlaCoor_i *lla = acInfoGetPositionLla_i(ac_id);
+      if (lla != NULL) {
+        struct EnuCoor_i enu;
+        struct LlaCoor_i lla_copy = *lla;
+        enu_of_lla_point_i(&enu, stateGetNedOrigin_i(), &lla_copy);
+        // convert ENU pos from cm to BFP with INT32_POS_FRAC
+        enu.x = POS_BFP_OF_REAL(enu.x) / 100;
+        enu.y = POS_BFP_OF_REAL(enu.y) / 100;
+        enu.z = POS_BFP_OF_REAL(enu.z) / 100;
+        ti_acs[ac_nr].enu_pos_i = enu;
+        converted = true;
+      }
     }
-  } else if (state.utm_initialized_f)
+  } else if (state.ned_initialized_f) {
+    if ((ti_acs[ac_nr].status & AC_INFO_POSITION_MASK) != 0) {
+      const struct LlaCoor_f *lla = acInfoGetPositionLla_f(ac_id);
+      if (lla != NULL) {
+        struct LlaCoor_f lla_copy = *lla;
+        enu_of_lla_point_f(&ti_acs[ac_nr].enu_pos_f,
+                           stateGetNedOrigin_f(), &lla_copy);
+        SetBit(ti_acs[ac_nr].status, AC_INFO_POS_ENU_F);
+        ENU_BFP_OF_REAL(ti_acs[ac_nr].enu_pos_i, ti_acs[ac_nr].enu_pos_f);
+        converted = true;
+      }
+    }
+  } else if (state.utm_initialized_f
+             && (ti_acs[ac_nr].status
+                 & ((1u << AC_INFO_POS_UTM_I) | (1u << AC_INFO_POS_UTM_F)
+                    | (1u << AC_INFO_POS_LLA_I) | (1u << AC_INFO_POS_LLA_F))) != 0)
   {
     /* if utm origin is initialized we use the ENU = UTM - UTM_ORIGIN as in state to facilitate comparison */
-    ENU_OF_UTM_DIFF(ti_acs[ac_nr].enu_pos_f, *acInfoGetPositionUtm_f(ac_id), *stateGetUtmOrigin_f());
-    SetBit(ti_acs[ac_nr].status, AC_INFO_POS_ENU_F);
-    ENU_BFP_OF_REAL(ti_acs[ac_nr].enu_pos_i, ti_acs[ac_nr].enu_pos_f);
+    struct UtmCoor_f utm;
+    if (traffic_info_utm_in_origin_zone(ac_id, &utm)) {
+      ENU_OF_UTM_DIFF(ti_acs[ac_nr].enu_pos_f, utm, *stateGetUtmOrigin_f());
+      SetBit(ti_acs[ac_nr].status, AC_INFO_POS_ENU_F);
+      ENU_BFP_OF_REAL(ti_acs[ac_nr].enu_pos_i, ti_acs[ac_nr].enu_pos_f);
+      converted = true;
+    }
   }
-  SetBit(ti_acs[ac_nr].status, AC_INFO_POS_ENU_I);
+  if (converted) {
+    SetBit(ti_acs[ac_nr].status, AC_INFO_POS_ENU_I);
+  }
 }
 
 /* compute UTM position of aircraft with ac_id (float) */
 void acInfoCalcPositionUtm_f(uint8_t ac_id)
 {
-  uint8_t ac_nr = ti_acs_id[ac_id];
+  const uint8_t ac_nr = ti_acs_registered_slot(ac_id);
+  if (ac_nr == TI_ACS_NONE) { return; }
+  bool converted = false;
   if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_UTM_F))
   {
     return;
@@ -1555,7 +1708,9 @@ void acInfoCalcPositionUtm_f(uint8_t ac_id)
   if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_UTM_I))
   {
     UTM_FLOAT_OF_BFP(ti_acs[ac_nr].utm_pos_f, ti_acs[ac_nr].utm_pos_i);
-  } else if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_LLA_I))
+    converted = true;
+  } else if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_LLA_I)
+             && state.utm_initialized_f)
   {
     // use my zone as reference, i.e zone extend
     ti_acs[ac_nr].utm_pos_i.zone = stateGetUtmOrigin_f()->zone;
@@ -1564,21 +1719,28 @@ void acInfoCalcPositionUtm_f(uint8_t ac_id)
     ti_acs[ac_nr].utm_pos_i.alt -= geoid_height;
     SetBit(ti_acs[ac_nr].status, AC_INFO_POS_UTM_I);
     UTM_FLOAT_OF_BFP(ti_acs[ac_nr].utm_pos_f, ti_acs[ac_nr].utm_pos_i);
-  } else if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_LLA_F))
+    converted = true;
+  } else if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_LLA_F)
+             && state.utm_initialized_f)
   {
     /* not very accurate with float ~5cm */
     ti_acs[ac_nr].utm_pos_f.zone = stateGetUtmOrigin_f()->zone;
     utm_of_lla_f(&ti_acs[ac_nr].utm_pos_f, &ti_acs[ac_nr].lla_pos_f);
     update_geoid_height();
     ti_acs[ac_nr].utm_pos_f.alt -= geoid_height/1000.;
+    converted = true;
   }
-  SetBit(ti_acs[ac_nr].status, AC_INFO_POS_UTM_F);
+  if (converted) {
+    SetBit(ti_acs[ac_nr].status, AC_INFO_POS_UTM_F);
+  }
 }
 
 /* compute LLA position of aircraft with ac_id (float) */
 void acInfoCalcPositionLla_f(uint8_t ac_id)
 {
-  uint8_t ac_nr = ti_acs_id[ac_id];
+  const uint8_t ac_nr = ti_acs_registered_slot(ac_id);
+  if (ac_nr == TI_ACS_NONE) { return; }
+  bool converted = false;
   if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_LLA_F))
   {
     return;
@@ -1587,6 +1749,7 @@ void acInfoCalcPositionLla_f(uint8_t ac_id)
   if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_LLA_I))
   {
     LLA_FLOAT_OF_BFP(ti_acs[ac_nr].lla_pos_f, ti_acs[ac_nr].lla_pos_i);
+    converted = true;
   } else if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_UTM_I))
   {
     lla_of_utm_i(&ti_acs[ac_nr].lla_pos_i, &ti_acs[ac_nr].utm_pos_i);
@@ -1594,19 +1757,25 @@ void acInfoCalcPositionLla_f(uint8_t ac_id)
     ti_acs[ac_nr].lla_pos_i.alt += geoid_height;
     SetBit(ti_acs[ac_nr].status, AC_INFO_POS_LLA_I);
     LLA_FLOAT_OF_BFP(ti_acs[ac_nr].lla_pos_f, ti_acs[ac_nr].lla_pos_i);
+    converted = true;
   } else if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_UTM_F))
   {
     lla_of_utm_f(&ti_acs[ac_nr].lla_pos_f, &ti_acs[ac_nr].utm_pos_f);
     update_geoid_height();
     ti_acs[ac_nr].lla_pos_f.alt += geoid_height/1000.;
+    converted = true;
   }
-  SetBit(ti_acs[ac_nr].status, AC_INFO_POS_LLA_F);
+  if (converted) {
+    SetBit(ti_acs[ac_nr].status, AC_INFO_POS_LLA_F);
+  }
 }
 
 /* Compute ENU position of aircraft with ac_id (float). */
 void acInfoCalcPositionEnu_f(uint8_t ac_id)
 {
-  uint8_t ac_nr = ti_acs_id[ac_id];
+  const uint8_t ac_nr = ti_acs_registered_slot(ac_id);
+  if (ac_nr == TI_ACS_NONE) { return; }
+  bool converted = false;
   if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_ENU_F))
   {
     return;
@@ -1615,36 +1784,69 @@ void acInfoCalcPositionEnu_f(uint8_t ac_id)
   if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_ENU_I))
   {
     ENU_FLOAT_OF_BFP(ti_acs[ac_nr].enu_pos_f, ti_acs[ac_nr].enu_pos_i);
+    converted = true;
   }
-  else if (state.ned_initialized_i)
+  else if (state.ned_initialized_f)
   {
     if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_LLA_F) || bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_UTM_F))
     {
-      enu_of_lla_point_f(&ti_acs[ac_nr].enu_pos_f, stateGetNedOrigin_f(), acInfoGetPositionLla_f(ac_id));
+      const struct LlaCoor_f *lla = acInfoGetPositionLla_f(ac_id);
+      if (lla != NULL) {
+        struct LlaCoor_f lla_copy = *lla;
+        enu_of_lla_point_f(&ti_acs[ac_nr].enu_pos_f,
+                           stateGetNedOrigin_f(), &lla_copy);
+        converted = true;
+      }
     } else if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_LLA_I) || bit_is_set(ti_acs[ac_nr].status, AC_INFO_POS_UTM_I))
     {
-      struct EnuCoor_i enu;
-      enu_of_lla_point_i(&enu, stateGetNedOrigin_i(), acInfoGetPositionLla_i(ac_id));
-      // convert ENU pos from cm to BFP with INT32_POS_FRAC
-      enu.x = POS_BFP_OF_REAL(enu.x) / 100;
-      enu.y = POS_BFP_OF_REAL(enu.y) / 100;
-      enu.z = POS_BFP_OF_REAL(enu.z) / 100;
-      ti_acs[ac_nr].enu_pos_i = enu;
-      SetBit(ti_acs[ac_nr].status, AC_INFO_POS_ENU_I);
-      ENU_FLOAT_OF_BFP(ti_acs[ac_nr].enu_pos_f, ti_acs[ac_nr].enu_pos_i);
+      const struct LlaCoor_i *lla_i = acInfoGetPositionLla_i(ac_id);
+      if (lla_i != NULL) {
+        struct LlaCoor_f lla;
+        LLA_FLOAT_OF_BFP(lla, *lla_i);
+        enu_of_lla_point_f(&ti_acs[ac_nr].enu_pos_f, stateGetNedOrigin_f(), &lla);
+        converted = true;
+      }
     }
-  } else if (state.utm_initialized_f)
+  } else if (state.ned_initialized_i) {
+    if ((ti_acs[ac_nr].status & AC_INFO_POSITION_MASK) != 0) {
+      const struct LlaCoor_i *lla = acInfoGetPositionLla_i(ac_id);
+      if (lla != NULL) {
+        struct EnuCoor_i enu;
+        struct LlaCoor_i lla_copy = *lla;
+        enu_of_lla_point_i(&enu, stateGetNedOrigin_i(), &lla_copy);
+        // convert ENU pos from cm to BFP with INT32_POS_FRAC
+        enu.x = POS_BFP_OF_REAL(enu.x) / 100;
+        enu.y = POS_BFP_OF_REAL(enu.y) / 100;
+        enu.z = POS_BFP_OF_REAL(enu.z) / 100;
+        ti_acs[ac_nr].enu_pos_i = enu;
+        SetBit(ti_acs[ac_nr].status, AC_INFO_POS_ENU_I);
+        ENU_FLOAT_OF_BFP(ti_acs[ac_nr].enu_pos_f, ti_acs[ac_nr].enu_pos_i);
+        converted = true;
+      }
+    }
+  } else if (state.utm_initialized_f
+             && (ti_acs[ac_nr].status
+                 & ((1u << AC_INFO_POS_UTM_I) | (1u << AC_INFO_POS_UTM_F)
+                    | (1u << AC_INFO_POS_LLA_I) | (1u << AC_INFO_POS_LLA_F))) != 0)
   {
     /* if utm origin is initialized we use the ENU = UTM - UTM_ORIGIN as in state to facilitate comparison */
-    ENU_OF_UTM_DIFF(ti_acs[ac_nr].enu_pos_f, *acInfoGetPositionUtm_f(ac_id), *stateGetUtmOrigin_f());
+    struct UtmCoor_f utm;
+    if (traffic_info_utm_in_origin_zone(ac_id, &utm)) {
+      ENU_OF_UTM_DIFF(ti_acs[ac_nr].enu_pos_f, utm, *stateGetUtmOrigin_f());
+      converted = true;
+    }
   }
-  SetBit(ti_acs[ac_nr].status, AC_INFO_POS_ENU_F);
+  if (converted) {
+    SetBit(ti_acs[ac_nr].status, AC_INFO_POS_ENU_F);
+  }
 }
 
 /* compute ENU velocity of aircraft with ac_id (int) */
 void acInfoCalcVelocityEnu_i(uint8_t ac_id)
 {
-  uint8_t ac_nr = ti_acs_id[ac_id];
+  const uint8_t ac_nr = ti_acs_registered_slot(ac_id);
+  if (ac_nr == TI_ACS_NONE) { return; }
+  bool converted = false;
   if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_VEL_ENU_I))
   {
     return;
@@ -1653,20 +1855,26 @@ void acInfoCalcVelocityEnu_i(uint8_t ac_id)
   if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_VEL_ENU_F))
   {
     SPEEDS_BFP_OF_REAL(ti_acs[ac_nr].enu_vel_i, ti_acs[ac_nr].enu_vel_f);
-  } else {
+    converted = true;
+  } else if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_VEL_LOCAL_F)) {
     ti_acs[ac_nr].enu_vel_f.x = ti_acs[ac_nr].gspeed * sinf(ti_acs[ac_nr].course);
     ti_acs[ac_nr].enu_vel_f.y = ti_acs[ac_nr].gspeed * cosf(ti_acs[ac_nr].course);
     ti_acs[ac_nr].enu_vel_f.z = ti_acs[ac_nr].climb;
     SetBit(ti_acs[ac_nr].status, AC_INFO_VEL_ENU_F);
     SPEEDS_BFP_OF_REAL(ti_acs[ac_nr].enu_vel_i, ti_acs[ac_nr].enu_vel_f);
+    converted = true;
   }
-  SetBit(ti_acs[ac_nr].status, AC_INFO_VEL_ENU_I);
+  if (converted) {
+    SetBit(ti_acs[ac_nr].status, AC_INFO_VEL_ENU_I);
+  }
 }
 
 /* compute ENU position of aircraft with ac_id (float) */
 void acInfoCalcVelocityEnu_f(uint8_t ac_id)
 {
-  uint8_t ac_nr = ti_acs_id[ac_id];
+  const uint8_t ac_nr = ti_acs_registered_slot(ac_id);
+  if (ac_nr == TI_ACS_NONE) { return; }
+  bool converted = false;
   if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_VEL_ENU_F))
   {
     return;
@@ -1675,12 +1883,16 @@ void acInfoCalcVelocityEnu_f(uint8_t ac_id)
   if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_VEL_ENU_I))
   {
     SPEEDS_FLOAT_OF_BFP(ti_acs[ac_nr].enu_vel_f, ti_acs[ac_nr].enu_vel_i);
+    converted = true;
   } else if (bit_is_set(ti_acs[ac_nr].status, AC_INFO_VEL_LOCAL_F)) {
     ti_acs[ac_nr].enu_vel_f.x = ti_acs[ac_nr].gspeed * sinf(ti_acs[ac_nr].course);
     ti_acs[ac_nr].enu_vel_f.y = ti_acs[ac_nr].gspeed * cosf(ti_acs[ac_nr].course);
     ti_acs[ac_nr].enu_vel_f.z = ti_acs[ac_nr].climb;
+    converted = true;
   }
-  SetBit(ti_acs[ac_nr].status, AC_INFO_VEL_ENU_F);
+  if (converted) {
+    SetBit(ti_acs[ac_nr].status, AC_INFO_VEL_ENU_F);
+  }
 }
 
 void traffic_info_log_start(void)

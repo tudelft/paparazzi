@@ -38,6 +38,9 @@
 
 #include "math/pprz_algebra_int.h"
 
+#ifdef TCAS
+#include "modules/multi/tcas.h"
+#endif
 
 #ifndef GUIDANCE_V_NOMINAL_HOVER_THROTTLE
 #define GUIDANCE_V_NOMINAL_HOVER_THROTTLE 0.4
@@ -305,7 +308,16 @@ struct ThrustSetpoint guidance_v_from_nav(bool in_flight)
   struct ThrustSetpoint sp;
   THRUST_SP_SET_ZERO(sp);
   if (nav.vertical_mode == NAV_VERTICAL_MODE_ALT) {
-    guidance_v.z_sp = -POS_BFP_OF_REAL(nav.nav_altitude);
+    float altitude_sp = nav.nav_altitude;
+#ifdef TCAS
+    const float hmsl_origin = stateGetHmslOrigin_f();
+    float tcas_altitude_msl;
+    if (tcas_get_altitude_command(altitude_sp + hmsl_origin,
+                                  &tcas_altitude_msl)) {
+      altitude_sp = tcas_altitude_local_from_msl(tcas_altitude_msl, hmsl_origin);
+    }
+#endif
+    guidance_v.z_sp = -POS_BFP_OF_REAL(altitude_sp);
     guidance_v.zd_sp = 0;
     guidance_v.zdd_sp = 0;
     gv_update_ref_from_z_sp(guidance_v.z_sp);

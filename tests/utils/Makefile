@@ -54,7 +54,9 @@ test: build_tests
 
 test_framed_ring_buffer.run: $(PAPARAZZI_SRC)/sw/airborne/utils/framed_ring_buffer.c
 
-test_tcas_policy.run: test_tcas_policy.c
+test_tcas_policy.run: test_tcas_policy.c \
+	$(PAPARAZZI_SRC)/sw/airborne/modules/multi/tcas_policy.h \
+	$(PAPARAZZI_SRC)/sw/airborne/modules/multi/traffic_info_time.h
 	@echo BUILD $@
 	$(Q)$(CC) $(FLAGS) -Wextra -Werror -I$(PAPARAZZI_SRC)/sw/airborne $< -o $@
 
