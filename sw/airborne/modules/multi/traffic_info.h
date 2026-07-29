@@ -38,6 +38,7 @@
 #include "math/pprz_geodetic_int.h"
 #include "math/pprz_geodetic_float.h"
 #include "modules/gps/gps.h"
+#include "modules/multi/traffic_info_mesh_clock.h"
 
 #ifndef TRAFFIC_INFO_USE_MESH
 #define TRAFFIC_INFO_USE_MESH 0
@@ -97,7 +98,7 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
  * @defgroup mesh_state Optional MESH_STATE transport
  * @brief Compact state exchange for narrowband broadcast mesh radios.
  *
- * MESH_STATE is a 17 byte (25 bytes on the wire) replacement for ACINFO_LLA,
+ * MESH_STATE is a 22 byte (30 bytes on the wire) replacement for ACINFO_LLA,
  * designed for the EByte E52-xxxNWxxS class of LoRa MESH modems running in
  * broadcast mode.  See the message definition in messages.xml for the exact
  * bit layout.
@@ -243,6 +244,68 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
 #define MESH_CLOCK_STEP_MAX_MS 10
 #endif
 
+/** Maximum bounded TDMA holdover after losing GPS time. */
+#ifndef MESH_CLOCK_HOLDOVER_MAX_MS
+#define MESH_CLOCK_HOLDOVER_MAX_MS 60000u
+#endif
+
+/** Continuous valid-GPS interval required before entering GPS TDMA. */
+#ifndef MESH_CLOCK_ACQUIRE_MS
+#define MESH_CLOCK_ACQUIRE_MS 2000u
+#endif
+
+/** Randomized origination interval when no bounded network clock exists. */
+#ifndef MESH_ASYNC_MIN_INTERVAL_MS
+#define MESH_ASYNC_MIN_INTERVAL_MS 16000u
+#endif
+#ifndef MESH_ASYNC_MAX_INTERVAL_MS
+#define MESH_ASYNC_MAX_INTERVAL_MS 24000u
+#endif
+
+/** Keep fleet-wide fallback active after the last GPS-denied advertisement. */
+#ifndef MESH_ASYNC_PEER_HOLD_MS
+#define MESH_ASYNC_PEER_HOLD_MS \
+  (2u * MESH_ASYNC_MAX_INTERVAL_MS + MESH_TDMA_SUPERFRAME_MS)
+#endif
+
+/** Fixed GPS-frame epoch used by all peers to select one recovery target. */
+#ifndef MESH_RECOVERY_EPOCH_FRAMES
+#define MESH_RECOVERY_EPOCH_FRAMES 8u
+#endif
+
+/** Minimum target lead, including one frame beyond the fallback lease. */
+#ifndef MESH_RECOVERY_MIN_LEAD_FRAMES
+#define MESH_RECOVERY_MIN_LEAD_FRAMES \
+  (MESH_ASYNC_PEER_HOLD_MS / MESH_TDMA_SUPERFRAME_MS + 2u)
+#endif
+
+#if MESH_CLOCK_HOLDOVER_MAX_MS == 0
+#error "MESH_CLOCK_HOLDOVER_MAX_MS must be positive"
+#endif
+#if MESH_CLOCK_HOLDOVER_MAX_MS <= MESH_TDMA_SUPERFRAME_MS
+#error "MESH_CLOCK_HOLDOVER_MAX_MS must exceed one complete superframe"
+#endif
+#if MESH_CLOCK_ACQUIRE_MS == 0
+#error "MESH_CLOCK_ACQUIRE_MS must be positive"
+#endif
+#if MESH_ASYNC_MIN_INTERVAL_MS == 0
+#error "MESH_ASYNC_MIN_INTERVAL_MS must be positive"
+#endif
+#if MESH_ASYNC_MAX_INTERVAL_MS < MESH_ASYNC_MIN_INTERVAL_MS
+#error "MESH_ASYNC_MAX_INTERVAL_MS must be at least MESH_ASYNC_MIN_INTERVAL_MS"
+#endif
+#if MESH_ASYNC_PEER_HOLD_MS <= MESH_ASYNC_MAX_INTERVAL_MS
+#error "MESH_ASYNC_PEER_HOLD_MS must exceed one maximum fallback interval"
+#endif
+#if MESH_RECOVERY_EPOCH_FRAMES <= \
+  (MESH_ASYNC_PEER_HOLD_MS / MESH_TDMA_SUPERFRAME_MS)
+#error "MESH_RECOVERY_EPOCH_FRAMES must exceed the denied-peer lease"
+#endif
+#if MESH_RECOVERY_MIN_LEAD_FRAMES <= \
+  (MESH_ASYNC_PEER_HOLD_MS / MESH_TDMA_SUPERFRAME_MS)
+#error "MESH_RECOVERY_MIN_LEAD_FRAMES must exceed the denied-peer lease"
+#endif
+
 /** Estimated time for one frame to leave the modem transmit cache, in ms.
  *  Air time of the longest frame plus the worst case CSMA back-off plus one
  *  relay of a neighbour's frame. */
@@ -280,8 +343,8 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
 /** One TDMA slot's observed owner.
  *
  * Ownership is *learned*, never configured: a frame's slot is implied by its
- * arrival time, which every node agrees on because the frame is GPS aligned.
- * So the occupancy map costs zero bytes on air.
+ * arrival time while peers share GPS or bounded-holdover time. Asynchronous
+ * frames do not update this map. The occupancy map costs zero bytes on air.
  */
 struct MeshSlot {
   uint8_t  ac_id;        ///< Observed owner, or MESH_SLOT_FREE when unowned.
@@ -293,24 +356,25 @@ struct MeshSlot {
  *  callback, both of which run in the main loop context.
  */
 struct MeshLinkState {
-  uint32_t modem_free_ms;    ///< sys time at which the modem cache is expected to be empty
+  uint64_t local_tx_free_ms; ///< monotonic estimate for locally submitted frames only
   uint32_t last_emit_key;    ///< superframe*NB_SLOTS + slot of the last origination
   uint16_t tx_count;         ///< MESH_STATE frames handed to the modem
   uint16_t defer_ticks;      ///< module task iterations spent waiting for a slot
   uint16_t throttled_count;  ///< frames held back by the cache governor
   uint16_t reselect_count;   ///< times this node had to move to a different slot
   uint8_t  slot;             ///< own primary slot
-  uint8_t  reuse;            ///< slots this node currently claims (1..MESH_TDMA_MAX_REUSE)
+  uint8_t  reuse;            ///< TDMA slots currently claimed; ignored in ASYNC.
   uint8_t  neighbours;       ///< distinct nodes heard in the last age window
+  enum MeshClockMode clock_mode; ///< Current transmission timing authority.
   bool     ready;            ///< the telemetry transport is known
-  bool     synced;           ///< GPS time of week is usable for slotting
+  bool     synced;           ///< GPS or bounded holdover time is safe for TDMA.
 };
 
 extern struct MeshLinkState mesh_link;
 
 /** Record a received MESH_STATE in the inferred TDMA slot map.
  * @param[in] sender Originating aircraft ID; AC_ID 0 is the GCS.
- * @param[in] net_ms GPS-aligned absolute network timestamp in milliseconds.
+ * @param[in] net_ms GPS or bounded-holdover network time in milliseconds.
  */
 extern void mesh_slot_observe(uint8_t sender, uint64_t net_ms);
 

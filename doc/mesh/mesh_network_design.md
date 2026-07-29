@@ -12,7 +12,7 @@ numbering is assumed.
 state update rate that fits the E52 channel and five-frame transmit cache.
 
 **Modeled and build-validated envelope:** 13 routing peers, 32 self-organised
-slots, 12 s superframe, 3 s base `MESH_STATE` period, 36.0% modeled channel
+slots, 12 s superframe, 3 s base `MESH_STATE` period, 38.3% modeled channel
 utilisation. This is a software acceptance baseline, not a substitute for
 thirteen-modem bench testing or flight qualification.
 
@@ -89,12 +89,12 @@ margin; “all nodes route” does not make an out-of-range edge exist.
 
 ### 1.3 The bandwidth cost
 
-All-router broadcast is expensive. One 25-byte `MESH_STATE` frame occupies
-6.86 ms per RF transmission. The conservative capacity model charges one
+All-router broadcast is expensive. One 30-byte `MESH_STATE` frame occupies
+7.50 ms per RF transmission. The conservative capacity model charges one
 transmission at every one of the 13 routing peers for each originated
 broadcast:
 
-$$13 \times 6.86\ \text{ms} = 89.2\ \text{ms of charged channel time}$$
+$$13 \times 7.50\ \text{ms} = 97.5\ \text{ms of charged channel time}$$
 
 An individual flood can use fewer transmissions when some peers are
 unreachable or receive only duplicates, but capacity is not budgeted on that
@@ -113,9 +113,9 @@ designed around the flood cost and cache behavior, not around the nominal
 | --- | ---: |
 | Nodes / routing nodes | 13 / 13 |
 | Flood tax | 13 transmissions |
-| Channel utilisation | 36.0% (40% ceiling) |
-| Flood span, mean + 3 sigma | 281.7 ms |
-| Slot length | 375.0 ms (+33%) |
+| Channel utilisation | 38.3% (40% ceiling) |
+| Flood span, mean + 3 sigma | 290.0 ms |
+| Slot length | 375.0 ms (+29%) |
 | Peak E52 cache depth | 1 of 5 |
 | Cache overflow events | 0 |
 
@@ -141,8 +141,8 @@ flowchart LR
   Q --> N["Next TDMA origination"]
 ```
 
-The optimizer's mean-plus-three-sigma flood span is 281.7 ms. A 375 ms slot
-leaves about 93.3 ms, or 33%, beyond that modeled bound. This is statistical
+The optimizer's mean-plus-three-sigma flood span is 290.0 ms. A 375 ms slot
+leaves 85.0 ms, or 29%, beyond that modeled bound. This is statistical
 engineering headroom, not a hard proof that an RF flood can never run longer.
 
 ---
@@ -189,20 +189,44 @@ stateDiagram-v2
 ```
 
 There is no reservation packet. Each receiver infers the sender's slot from
-GPS-aligned arrival time. Listen-before-claim avoids cold-start over-allocation;
+GPS-aligned or bounded-holdover arrival time. Listen-before-claim avoids cold-start over-allocation;
 round-robin expansion prevents two nodes from grabbing the same apparently
 free slot in one superframe; leases eventually break collisions that are
 otherwise invisible because collided frames cannot be decoded.
+
+When GPS time disappears, the node retains the last GPS-to-monotonic anchor for
+up to 60 seconds instead of jumping to boot-relative time. The primary
+reservation and absolute superframe phase therefore survive a short outage;
+position-invalid policy contracts opportunistic slots. The bound
+assumes at most 100 ppm error per node: two worst-case clocks separate by about
+12 ms in one minute, leaving margin inside the 375 ms slot after the modeled
+290.0 ms flood span and 50 ms scheduler sampling interval.
+
+One superframe before that bound, the denied node and peers which hear its
+`HOLDOVER` advertisements clear slot authority and enter `MESH_CLOCK_ASYNC`.
+This fleet-wide downgrade prevents synchronized and asynchronous MACs from
+competing indefinitely during partial GPS loss. Each peer then originates one
+frame at an independently randomized 16-24 second interval; asynchronous frames
+remain valid traffic but never reserve a TDMA slot. GPS-ready fallback peers
+advertise `RECOVERY` without extending the denied-peer lease. `RECOVERY` carries
+a deterministic absolute GPS-frame target: every peer selects the same next
+eight-frame epoch at least seven frames ahead and adopts any later target it
+receives. This lets rebooted and late-joining peers converge before TDMA resumes.
+At that target, two seconds of continuous valid GPS and the normal
+listen-before-claim cycle are required before transmission. Coherent recovery
+during early holdover preserves slots, while a correction over 10 ms clears
+them.
 
 ### 2.2 State-aware origination
 
 All radios route continuously at the E52 layer. Paparazzi adapts only the rate
 at which a node originates its own state:
 
-* a healthy airborne node with GPS sync and valid position receives its fair
-  share of available slots;
-* a landed, unsynchronised, or position-invalid node keeps one heartbeat slot
-  so it remains discoverable without consuming spare capacity;
+* a healthy airborne node with GPS or bounded holdover and valid position
+  receives its fair share of available slots;
+* a landed or position-invalid node keeps one heartbeat slot;
+* a node without bounded network time uses low-rate randomized access instead
+  of pretending that boot-relative slots are synchronized;
 * HOME, emergency, failsafe, and low-battery states request one extra slot;
 * when the estimated modem cache reaches the high-water mark, the node gives
   up one opportunistic slot before the E52 can overflow;
@@ -242,6 +266,10 @@ period remains 3 s.
 | Primary lease | 10-19 frames | preserve a 2-4 minute recovery window with a 12 s frame |
 | Slot age | 4 frames | tolerate loss, reclaim departed nodes |
 | Remainder epoch | 81 frames | rotate one rank after ageing and serialized expansion settle |
+| Holdover | 60 s | preserve GPS epoch while worst-case relative drift stays bounded |
+| GPS acquisition | 2 s | reject fix flapping before entering TDMA |
+| Asynchronous interval | 16-24 s | bounded degraded-mode load below the track-drop horizon |
+| Recovery epoch | 8 frames | deterministic common target beyond all fallback leases |
 | Cache high water | 3 of 5 | leave two E52 cache entries as hard margin |
 
 The static assert in `traffic_info.c` forces the generated `MESH_STATE` period
@@ -449,13 +477,15 @@ channel interference, terrain blockage, UART faults, or antenna installation.
 
 ### 5.1 `MESH_STATE`
 
-The compact datalink message is 17 payload bytes and 25 PPRZLink wire bytes:
+The compact datalink message is 22 payload bytes and 30 PPRZLink wire bytes:
 
 * flags: unified flight mode, rotorcraft, valid position, airborne, alert,
   emergency;
+* clock mode: GPS, bounded holdover, or asynchronous fallback;
 * latitude and longitude at 1e-7 degree;
 * ellipsoid altitude in centimeters;
 * packed course, ground speed, and climb rate.
+* absolute recovery frame, zero outside `RECOVERY`.
 
 The PPRZLink sender header is the source of truth for AC_ID. The payload does
 not duplicate it, so a relayed frame cannot claim a different aircraft without
@@ -469,7 +499,9 @@ and the active `conf/messages.xml` resolves to the mesh definition.
 
 No parallel estimator or flight-mode model was invented. `traffic_info` uses:
 
-* `gps.fix` and `gps_tow_from_sys_ticks()` for network time;
+* current `gps.fix` and `gps_tow_from_sys_ticks()` for GPS time; configured
+  fix-grace time is deliberately excluded from clock authority;
+* an anchored monotonic clock for bounded holdover;
 * `state.pos_status` and `stateGetPositionLla_i()` for position validity/state;
 * `stateGetHorizontalSpeedDir_f()`, `stateGetHorizontalSpeedNorm_f()`, and
   `stateGetSpeedEnu_f()` for motion;
@@ -481,12 +513,21 @@ No parallel estimator or flight-mode model was invented. `traffic_info` uses:
 All mesh storage is static. There is no heap allocation, recursion, or
 variable-length array in the new path.
 
+Clock validity and kinematic validity are separate. Losing GPS time does not
+immediately end TDMA because holdover preserves the epoch, but the current
+position contract still requires a valid 3D GPS fix. A future vision, UWB, or
+SLAM source may set position valid only after it provides a globally shared
+frame and bounded uncertainty; local coordinates must never be encoded as LLA.
+
 ### 5.3 Hardware back-pressure
 
-`mesh_modem_in_flight()` is a leaky-bucket estimate of E52 cache occupancy.
-`traffic_info_mesh_periodic()` refuses a new origination at depth three and
-increments `throttled_count`. State-aware reuse also contracts by one slot when
-the cache is busy. This leaves two physical cache entries of margin.
+`mesh_local_tx_in_flight()` is a leaky-bucket estimate of locally submitted
+frames which may not yet have drained. `traffic_info_mesh_periodic()` refuses a
+new origination at depth three and increments `throttled_count`; state-aware
+reuse also contracts by one. E52-internal relay frames are not observable on
+the UART API, so this is local admission control, not a physical cache-depth
+measurement. Worst-case relay load remains an optimizer and HIL acceptance
+constraint.
 
 ### 5.4 Predicted traffic snapshots and TCAS freshness
 
@@ -536,6 +577,12 @@ for seed in 1 3 5 7 11; do
   python3 sw/tools/mesh/mesh_slot_sim.py \
     --frames 4000 --churn 0.05 --seed "$seed" || exit 1
 done
+
+# 2b. Independent clocks, bounded holdover, and randomized fallback
+python3 sw/tools/mesh/mesh_gps_denied_sim.py \
+  --seeds 100 --duration 3600 --stress-ppm 100 --denied-nodes 13
+python3 sw/tools/mesh/mesh_gps_denied_sim.py \
+  --seeds 100 --duration 3600 --stress-ppm 100 --denied-nodes 6
 
 # 3. RF geometry and moving multi-hop delivery
 python3 sw/tools/mesh/mesh_link_budget.py \
@@ -591,8 +638,13 @@ cache flushing, or a topology partition.
    A future high-rate uplink needs a reserved slot or directed unicast design.
 5. **The RF model is terrain-agnostic.** The 10 dB fade reserve covers generic
    shadowing, not a ridge, building, or forest wall. Survey the real site.
-6. **All nodes must share protocol constants.** A mixed 16-slot/32-slot fleet
-   will collide. Rebuild and reprovision the whole fleet together.
+6. **All nodes must share protocol constants and message layout.** The clock
+  clock and recovery fields change `MESH_STATE` to 30 bytes on wire. Mixed old/new firmware
+  can decode shifted fields incorrectly, so rebuild and deploy the whole fleet
+  atomically. A mixed 16-slot/32-slot fleet will also collide.
+7. **Asynchronous fallback is degraded operation.** It preserves low-rate
+  discovery without false TDMA authority; it does not guarantee collision-free
+  delivery. The 100-seed software gate must be followed by thirteen-modem HIL.
 
 The design preference is explicit: when speed and redundancy conflict, keep
 the all-routing topology and reduce originated telemetry first. The optimizer

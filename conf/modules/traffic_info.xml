@@ -13,7 +13,8 @@
       Set TRAFFIC_INFO_USE_MESH to TRUE to add compact MESH_STATE reception and self-organising TDMA transmission.
       Mesh mode is intended for low-bandwidth broadcast radios such as the EByte E52 LoRa mesh family.
       It requires a telemetry profile containing MESH_STATE and identical TDMA constants on every mesh peer.
-      The periodic mesh task runs at 20 Hz and releases state only inside slots learned from GPS-aligned traffic.
+      The periodic mesh task runs at 20 Hz, retains the GPS epoch during bounded holdover,
+      and uses low-rate randomized access when no safe network clock remains.
       Modem-cache back-pressure limits new state traffic before a five-frame E52 transmit cache can overflow.
       Mesh mode changes state transport only; the normal traffic table and public access functions stay available.
       See doc/mesh/mesh_network_design.md before changing timing, slot count, radio settings, or fleet size.
@@ -26,6 +27,20 @@
       description="TDMA superframe in ms; MESH_STATE period is this divided by MESH_TDMA_MAX_REUSE"/>
     <define name="MESH_TDMA_NB_SLOTS" value="32"
       description="TDMA slots per superframe, including headroom for membership churn"/>
+    <define name="MESH_CLOCK_HOLDOVER_MAX_MS" value="60000"
+      description="Maximum bounded GPS-epoch holdover before asynchronous fallback"/>
+    <define name="MESH_CLOCK_ACQUIRE_MS" value="2000"
+      description="Continuous valid-GPS interval required before GPS TDMA entry"/>
+    <define name="MESH_ASYNC_MIN_INTERVAL_MS" value="16000"
+      description="Minimum randomized MESH_STATE interval without bounded time"/>
+    <define name="MESH_ASYNC_MAX_INTERVAL_MS" value="24000"
+      description="Maximum randomized MESH_STATE interval without bounded time"/>
+    <define name="MESH_ASYNC_PEER_HOLD_MS" value="60000"
+      description="Fleet fallback lease after the latest GPS-denied peer advertisement"/>
+    <define name="MESH_RECOVERY_EPOCH_FRAMES" value="8"
+      description="Fixed GPS-frame epoch used to select a common TDMA recovery target"/>
+    <define name="MESH_RECOVERY_MIN_LEAD_FRAMES" value="7"
+      description="Minimum recovery-target lead beyond all fallback leases"/>
     <define name="MESH_MODEM_DRAIN_MS" value="60"
       description="Estimated time for one frame to leave the modem transmit cache"/>
     <define name="MESH_CACHE_HIGH_WATER" value="3"

@@ -3092,7 +3092,7 @@
         (e.g. EByte E52-xxxNWxxS LoRa MESH at 62.5 kbps).
 
         Replaces ACINFO_LLA / GPS_SMALL for vehicle-to-vehicle traffic exchange:
-        17 payload bytes (25 bytes on the wire with the PPRZLink v2.0 framing)
+        22 payload bytes (30 bytes on the wire with the PPRZLink v2.0 framing)
         instead of 23 (31) for ACINFO_LLA.
 
         Design notes:
@@ -3127,10 +3127,12 @@
                      (kill, failsafe, geofence) - give it right of way
       </description>
       <field name="flags"           type="uint8">see description</field>
+      <field name="clock_mode"      type="uint8" values="GPS|HOLDOVER|ASYNC|RECOVERY">transmission timing authority; ASYNC means GPS denied, RECOVERY means GPS ready but fleet fallback remains active</field>
       <field name="lat"             type="int32"  unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
       <field name="lon"             type="int32"  unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
       <field name="alt"             type="int32"  unit="cm"     alt_unit="m"   alt_unit_coef="0.01">height above the WGS84 ellipsoid</field>
       <field name="multiplex_speed" type="uint32">bits 31-20 course in 0.1deg : bits 19-9 ground speed in dm/s : bits 8-0 climb rate in dm/s</field>
+      <field name="recovery_frame"  type="uint32">absolute 12-second TDMA frame selected by RECOVERY peers; zero in other modes</field>
     </message>
 
   </msg_class>

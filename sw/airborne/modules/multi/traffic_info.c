@@ -205,31 +205,96 @@ static uint64_t mesh_received_ms[NB_ACS];
 static bool mesh_has_valid_observation[NB_ACS];
 static uint8_t mesh_received_flags[NB_ACS];
 static bool mesh_flags_observed[NB_ACS];
-static bool mesh_last_clock_synced;
+static uint8_t mesh_peer_clock_mode[NB_ACS];
+static uint64_t mesh_peer_clock_received_ms[NB_ACS];
+static uint64_t mesh_peer_holdover_started_ms[NB_ACS];
+static struct MeshClockState mesh_clock;
 static bool mesh_clock_sample_valid;
 static uint64_t mesh_last_network_ms;
 static uint64_t mesh_last_local_ms;
+static uint64_t mesh_async_next_emit_ms;
+static uint64_t mesh_async_peer_until_ms;
+static uint64_t mesh_async_self_until_ms;
+static uint32_t mesh_async_prng;
+static uint32_t mesh_recovery_frame;
+static bool mesh_async_announcement_required;
+static bool mesh_recovery_required;
 
-static uint8_t mesh_modem_in_flight(uint32_t now_ms);
+static uint8_t mesh_local_tx_in_flight(uint64_t now_ms);
 
-/** Absolute GPS time in ms when synchronized, otherwise monotonic local time.
- *
- * gps_tow_from_sys_ticks() may wrap before the next GPS message increments
- * gps.week. Correct that boundary here so slot, frame, and fairness epoch all
- * derive from one coherent timestamp. */
-static uint64_t mesh_network_time_ms(uint64_t local_ms)
+/** Current absolute GPS time, including a coherent week rollover. */
+static uint64_t mesh_gps_time_ms(void)
 {
-  if (gps.fix >= GPS_FIX_3D) {
-    mesh_link.synced = true;
-    const uint32_t tow_ms = gps_tow_from_sys_ticks(sys_time.nb_tick);
-    uint32_t week = gps.week;
-    if (tow_ms < gps.tow && gps.tow - tow_ms > 302400000u) {
-      week++;
-    }
-    return (uint64_t)week * 604800000ULL + tow_ms;
+  const uint32_t tow_ms = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  uint32_t week = gps.week;
+  if (tow_ms < gps.tow && gps.tow - tow_ms > 302400000u) {
+    week++;
   }
-  mesh_link.synced = false;
-  return local_ms;
+  return (uint64_t)week * 604800000ULL + tow_ms;
+}
+
+/** Project the current network epoch without changing clock-mode state. */
+static uint64_t mesh_clock_project_ms(uint64_t local_ms)
+{
+  return mesh_clock.mode == MESH_CLOCK_ASYNC ? local_ms
+                                             : mesh_clock_project(&mesh_clock, local_ms);
+}
+
+/** Small module-local PRNG used only to decorrelate fallback deadlines. */
+static uint32_t mesh_async_random(void)
+{
+  uint32_t value = mesh_async_prng;
+  value ^= value << 13;
+  value ^= value >> 17;
+  value ^= value << 5;
+  mesh_async_prng = value;
+  return value;
+}
+
+/** Mix transition timing into the fallback sequence without global RNG state. */
+static void mesh_async_remix(uint64_t local_ms)
+{
+  mesh_async_prng ^= (uint32_t)local_ms ^ (uint32_t)(local_ms >> 32)
+                     ^ (uint32_t)mesh_clock.anchor_network_ms
+                     ^ (uint32_t)(mesh_clock.anchor_network_ms >> 32);
+  if (mesh_async_prng == 0) {
+    mesh_async_prng = 1;
+  }
+  (void)mesh_async_random();
+}
+
+/** Schedule one asynchronous origination in the configured closed interval. */
+static void mesh_async_schedule_next(uint64_t local_ms)
+{
+  const uint64_t span = (uint64_t)MESH_ASYNC_MAX_INTERVAL_MS
+                        - MESH_ASYNC_MIN_INTERVAL_MS + 1u;
+  const uint64_t offset = ((uint64_t)mesh_async_random() * span) >> 32;
+  mesh_async_next_emit_ms = local_ms + MESH_ASYNC_MIN_INTERVAL_MS + offset;
+}
+
+/** Whether a continuously heard peer requires fleet-wide fallback. */
+static bool mesh_peer_requires_async(uint64_t local_ms)
+{
+  if (local_ms < mesh_async_peer_until_ms
+      || local_ms < mesh_async_self_until_ms) {
+    return true;
+  }
+  for (uint8_t slot = 0; slot < ti_acs_idx; slot++) {
+    if (mesh_peer_clock_mode[slot] != MESH_CLOCK_HOLDOVER) {
+      continue;
+    }
+    if (local_ms - mesh_peer_clock_received_ms[slot]
+      > MESH_ASYNC_PEER_HOLD_MS) {
+      mesh_peer_clock_mode[slot] = MESH_CLOCK_RECOVERY;
+      mesh_peer_holdover_started_ms[slot] = 0;
+      continue;
+    }
+    if (local_ms - mesh_peer_holdover_started_ms[slot]
+        >= MESH_CLOCK_HOLDOVER_MAX_MS - MESH_TDMA_SUPERFRAME_MS) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /** Signed elapsed milliseconds without relying on unsigned-wrap conversion. */
@@ -391,7 +456,7 @@ static uint8_t mesh_state_flags(void)
  * controls when it originates a fresh MESH_STATE frame.
  */
 static uint8_t mesh_redundancy_target(uint8_t nodes, uint8_t rank,
-                                      uint32_t frame, uint32_t now_ms)
+                                      uint32_t frame, uint64_t now_ms)
 {
   const uint8_t flags = mesh_state_flags();
   nodes = Max(nodes, 1u);
@@ -434,7 +499,7 @@ static uint8_t mesh_redundancy_target(uint8_t nodes, uint8_t rank,
   /* Back-pressure outranks update rate. The E52 force-clears all five cached
    * frames on overflow, so a node seeing a busy local cache contracts before
    * it asks for another opportunistic slot. */
-  if (mesh_modem_in_flight(now_ms) >= MESH_CACHE_HIGH_WATER && target > 1) {
+  if (mesh_local_tx_in_flight(now_ms) >= MESH_CACHE_HIGH_WATER && target > 1) {
     target--;
   }
   return target;
@@ -448,6 +513,14 @@ static void mesh_state_emit(void)
   const struct LlaCoor_i *lla = stateGetPositionLla_i();
 
   uint8_t flags = mesh_state_flags();
+  uint8_t clock_mode = (uint8_t)mesh_link.clock_mode;
+  uint32_t recovery_frame = 0;
+  if (mesh_link.clock_mode == MESH_CLOCK_ASYNC
+      && gps.fix >= GPS_FIX_3D
+      && !mesh_async_announcement_required) {
+    clock_mode = MESH_CLOCK_RECOVERY;
+    recovery_frame = mesh_recovery_frame;
+  }
   int32_t lat = 0;
   int32_t lon = 0;
   int32_t alt = 0;
@@ -468,7 +541,15 @@ static void mesh_state_emit(void)
   msg.sender_id = AC_ID;
   msg.receiver_id = PPRZLINK_MSG_BROADCAST;
   msg.component_id = 0;
-  pprzlink_msg_send_MESH_STATE(&msg, &flags, &lat, &lon, &alt, &multiplex);
+  pprzlink_msg_send_MESH_STATE(&msg, &flags, &clock_mode,
+                               &lat, &lon, &alt, &multiplex,
+                               &recovery_frame);
+  if (clock_mode == MESH_CLOCK_ASYNC) {
+    mesh_async_self_until_ms = traffic_monotonic_time_ms()
+                               + MESH_ASYNC_PEER_HOLD_MS;
+    mesh_async_announcement_required = false;
+    mesh_recovery_required = true;
+  }
 }
 
 /** Periodic telemetry callback for MESH_STATE.
@@ -498,16 +579,20 @@ static void request_mesh_state(struct transport_tx *trans, struct link_device *d
   mesh_link.ready = true;
 }
 
-/** Estimated number of frames still queued inside the modem.
- *  Leaky bucket: every handover pushes the "cache empty" instant one drain
- *  time further into the future. */
-static uint8_t mesh_modem_in_flight(uint32_t now_ms)
+/** Estimated locally submitted frames not yet drained by the modem.
+ *
+ * E52-internal relay frames are not observable on the UART API, so this is a
+ * local admission guard rather than a measurement of physical cache depth.
+ */
+static uint8_t mesh_local_tx_in_flight(uint64_t now_ms)
 {
-  const int32_t remaining = (int32_t)(mesh_link.modem_free_ms - now_ms);
-  if (remaining <= 0) {
+  if (mesh_link.local_tx_free_ms <= now_ms) {
     return 0;
   }
-  return (uint8_t)Min(255, ((uint32_t)remaining + MESH_MODEM_DRAIN_MS - 1) / MESH_MODEM_DRAIN_MS);
+  const uint64_t remaining = mesh_link.local_tx_free_ms - now_ms;
+  return (uint8_t)Min(UINT64_C(255),
+                      (remaining + MESH_MODEM_DRAIN_MS - 1u)
+                      / MESH_MODEM_DRAIN_MS);
 }
 
 /* ------------------------------------------------------------------------- *
@@ -565,6 +650,7 @@ static void mesh_slot_reset(uint32_t frame)
   mesh_last_frame = frame;
   mesh_link.slot = mesh_owned[0];
   mesh_link.reuse = 1;
+  mesh_link.neighbours = 0;
 }
 
 /** Superframe index of an absolute network timestamp. */
@@ -755,7 +841,7 @@ static bool mesh_expansion_turn(uint32_t frame, uint8_t nodes)
  *    owner appears in is surrendered at once. Growth is therefore always
  *    slower than the detection of a conflict.
  */
-static void mesh_slot_maintain(uint32_t frame, uint32_t now_ms)
+static void mesh_slot_maintain(uint32_t frame, uint64_t now_ms)
 {
   /* --- age the map, count distinct live nodes ---------------------------- */
   uint8_t nodes = 1;                                   /* ourselves */
@@ -862,18 +948,64 @@ static void mesh_slot_maintain(uint32_t frame, uint32_t now_ms)
 void traffic_info_mesh_periodic(void)
 {
   const uint64_t local_ms = traffic_monotonic_time_ms();
-  const uint64_t net_ms = mesh_network_time_ms(local_ms);
-  const uint32_t now_ms = get_sys_time_msec();
+  const enum MeshClockMode previous_mode = mesh_clock.mode;
+  const bool gps_valid = gps.fix >= GPS_FIX_3D;
+  const uint32_t gps_frame = gps_valid
+    ? mesh_frame_of(mesh_gps_time_ms()) : 0;
+  const bool local_holdover_expiring = mesh_clock_holdover_expiring(
+    &mesh_clock, local_ms, MESH_CLOCK_HOLDOVER_MAX_MS,
+    MESH_TDMA_SUPERFRAME_MS);
+  const bool denied_fallback = local_holdover_expiring
+                               || mesh_peer_requires_async(local_ms)
+                               || mesh_async_announcement_required;
+  if (mesh_clock.mode == MESH_CLOCK_ASYNC && gps_valid
+      && !mesh_async_announcement_required && mesh_recovery_frame == 0) {
+    if (mesh_recovery_required) {
+      mesh_recovery_frame = mesh_clock_next_recovery_frame(
+        gps_frame + MESH_RECOVERY_MIN_LEAD_FRAMES,
+        MESH_RECOVERY_EPOCH_FRAMES);
+    }
+  }
+  if (denied_fallback && (local_holdover_expiring || !gps_valid)) {
+    mesh_recovery_frame = 0;
+  }
+  const bool recovery_pending = mesh_recovery_frame != 0
+                                && !mesh_clock_frame_reached(
+                                     gps_frame, mesh_recovery_frame);
+  const bool force_async = denied_fallback || recovery_pending;
+  bool reset_slots = false;
+  const uint64_t net_ms = mesh_clock_update(
+                            &mesh_clock, local_ms, gps_valid,
+                            gps_valid ? mesh_gps_time_ms() : 0,
+                            force_async,
+                            MESH_CLOCK_HOLDOVER_MAX_MS,
+                            MESH_CLOCK_ACQUIRE_MS,
+                            MESH_CLOCK_STEP_MAX_MS,
+                            &reset_slots);
   const uint32_t frame = mesh_frame_of(net_ms);
   const uint8_t slot = mesh_slot_of(net_ms);
 
-  if (mesh_link.synced != mesh_last_clock_synced) {
-    mesh_last_clock_synced = mesh_link.synced;
+  mesh_link.clock_mode = mesh_clock.mode;
+  mesh_link.synced = mesh_clock.mode != MESH_CLOCK_ASYNC;
+  if (mesh_clock.mode != previous_mode) {
     mesh_clock_sample_valid = false;
+    if (mesh_clock.mode == MESH_CLOCK_ASYNC) {
+      mesh_async_announcement_required = true;
+      mesh_async_remix(local_ms);
+      mesh_async_schedule_next(local_ms);
+    } else if (mesh_clock.mode == MESH_CLOCK_GPS) {
+      mesh_recovery_frame = 0;
+      mesh_recovery_required = false;
+    }
+  }
+  if (reset_slots) {
     mesh_slot_reset(frame);
+    if (mesh_clock.mode == MESH_CLOCK_ASYNC) {
+      mesh_link.reuse = 0;
+    }
     return;
   }
-  if (mesh_link.synced && mesh_clock_sample_valid) {
+  if (mesh_clock.mode == MESH_CLOCK_GPS && mesh_clock_sample_valid) {
     const int64_t network_elapsed = mesh_time_delta_ms(net_ms, mesh_last_network_ms);
     const int64_t local_elapsed = mesh_time_delta_ms(local_ms, mesh_last_local_ms);
     const int64_t correction = network_elapsed - local_elapsed;
@@ -886,8 +1018,9 @@ void traffic_info_mesh_periodic(void)
   }
   mesh_last_network_ms = net_ms;
   mesh_last_local_ms = local_ms;
-  mesh_clock_sample_valid = true;
-  if (mesh_frames_seen > 0 && frame != mesh_last_frame
+  mesh_clock_sample_valid = mesh_clock.mode == MESH_CLOCK_GPS;
+  if (mesh_clock.mode != MESH_CLOCK_ASYNC && mesh_frames_seen > 0
+      && frame != mesh_last_frame
       && frame != mesh_last_frame + 1u) {
     mesh_slot_reset(frame);
     return;
@@ -902,15 +1035,32 @@ void traffic_info_mesh_periodic(void)
    * "expand by at most one slot per superframe" rule - which is what keeps two
    * nodes from claiming the same free slot before either has been heard -
    * would be defeated twenty times over. */
-  if (frame != mesh_last_frame) {
+  if (mesh_clock.mode != MESH_CLOCK_ASYNC && frame != mesh_last_frame) {
     mesh_last_frame = frame;
     if (mesh_frames_seen < 0xFFFF) {
       mesh_frames_seen++;
     }
-    mesh_slot_maintain(frame, now_ms);
+    mesh_slot_maintain(frame, local_ms);
   }
 
   if (!mesh_link.ready || mesh_trans == NULL || mesh_dev == NULL) {
+    return;
+  }
+  if (mesh_clock.mode == MESH_CLOCK_ASYNC) {
+    if (local_ms < mesh_async_next_emit_ms) {
+      mesh_link.defer_ticks++;
+      return;
+    }
+    if (mesh_local_tx_in_flight(local_ms) >= MESH_CACHE_HIGH_WATER) {
+      mesh_link.throttled_count++;
+      mesh_async_schedule_next(local_ms);
+      return;
+    }
+    mesh_state_emit();
+    mesh_link.tx_count++;
+    mesh_link.local_tx_free_ms = Max(mesh_link.local_tx_free_ms, local_ms)
+                   + MESH_MODEM_DRAIN_MS;
+    mesh_async_schedule_next(local_ms);
     return;
   }
   if (!mesh_owns(slot)) {
@@ -924,7 +1074,7 @@ void traffic_info_mesh_periodic(void)
     return;
   }
 
-  if (mesh_modem_in_flight(now_ms) >= MESH_CACHE_HIGH_WATER) {
+  if (mesh_local_tx_in_flight(local_ms) >= MESH_CACHE_HIGH_WATER) {
     mesh_link.throttled_count++;
     return;
   }
@@ -933,7 +1083,8 @@ void traffic_info_mesh_periodic(void)
 
   mesh_link.last_emit_key = key;
   mesh_link.tx_count++;
-  mesh_link.modem_free_ms = Max(mesh_link.modem_free_ms, now_ms) + MESH_MODEM_DRAIN_MS;
+  mesh_link.local_tx_free_ms = Max(mesh_link.local_tx_free_ms, local_ms)
+                               + MESH_MODEM_DRAIN_MS;
 }
 #endif /* TRAFFIC_INFO_USE_MESH */
 
@@ -962,11 +1113,30 @@ void traffic_info_init(void)
   memset(mesh_has_valid_observation, 0, sizeof(mesh_has_valid_observation));
   memset(mesh_received_flags, 0, sizeof(mesh_received_flags));
   memset(mesh_flags_observed, 0, sizeof(mesh_flags_observed));
-  mesh_last_clock_synced = false;
+    memset(mesh_peer_clock_mode, MESH_CLOCK_RECOVERY,
+      sizeof(mesh_peer_clock_mode));
+    memset(mesh_peer_clock_received_ms, 0,
+      sizeof(mesh_peer_clock_received_ms));
+    memset(mesh_peer_holdover_started_ms, 0,
+      sizeof(mesh_peer_holdover_started_ms));
+  mesh_clock_init(&mesh_clock);
   mesh_clock_sample_valid = false;
   mesh_last_network_ms = 0;
   mesh_last_local_ms = 0;
-  mesh_link.modem_free_ms = get_sys_time_msec();
+  mesh_async_prng = 0x9E3779B9u ^ ((uint32_t)AC_ID * 2654435761u);
+  if (mesh_async_prng == 0) {
+    mesh_async_prng = 1;
+  }
+  mesh_async_schedule_next(traffic_monotonic_time_ms());
+  mesh_async_peer_until_ms = 0;
+  mesh_async_self_until_ms = 0;
+  mesh_recovery_frame = 0;
+  mesh_async_announcement_required = false;
+  mesh_recovery_required = false;
+  mesh_link.clock_mode = MESH_CLOCK_ASYNC;
+  mesh_link.synced = false;
+  mesh_link.reuse = 0;
+  mesh_link.local_tx_free_ms = traffic_monotonic_time_ms();
   mesh_link.last_emit_key = UINT32_MAX;
 #endif
 
@@ -1109,16 +1279,50 @@ bool parse_acinfo_dl(uint8_t *buf)
          * someone else without also rewriting the frame header. */
         itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
 
-        /* The arrival time also tells us which slot the sender is using, which
-         * is how the occupancy map is built without spending a single byte on
-         * a reservation protocol. */
-        const uint64_t local_ms = traffic_monotonic_time_ms();
-        mesh_slot_observe(sender_id, mesh_network_time_ms(local_ms));
-
         const uint8_t flags = DL_MESH_STATE_flags(buf);
+        const uint8_t clock_mode = DL_MESH_STATE_clock_mode(buf);
+        const uint32_t recovery_frame = DL_MESH_STATE_recovery_frame(buf);
+        const uint64_t local_ms = traffic_monotonic_time_ms();
+        /* Only bounded-clock peers contribute TDMA reservations. An
+         * asynchronous heartbeat remains valid traffic, but its arrival phase
+         * is randomized and must never claim a slot in a synchronized map. */
+        if (mesh_clock.mode != MESH_CLOCK_ASYNC
+            && clock_mode <= MESH_CLOCK_HOLDOVER) {
+          mesh_slot_observe(sender_id, mesh_clock_project_ms(local_ms));
+        }
         const uint8_t slot = ti_acs_slot(sender_id);
         if (slot == TI_ACS_NONE) {
           break;
+        }
+        if (clock_mode <= MESH_CLOCK_RECOVERY) {
+          if (clock_mode == MESH_CLOCK_ASYNC) {
+            mesh_async_peer_until_ms = local_ms + MESH_ASYNC_PEER_HOLD_MS;
+            mesh_recovery_frame = 0;
+            mesh_recovery_required = true;
+          } else if (clock_mode == MESH_CLOCK_RECOVERY
+                     && gps.fix >= GPS_FIX_3D) {
+            const uint32_t current_frame = mesh_frame_of(mesh_gps_time_ms());
+            const uint32_t safe_recovery_frame =
+              mesh_clock_sanitize_recovery_frame(
+                current_frame, recovery_frame,
+                MESH_RECOVERY_EPOCH_FRAMES,
+                MESH_RECOVERY_MIN_LEAD_FRAMES);
+            if (mesh_clock_frame_is_later(safe_recovery_frame,
+                                          mesh_recovery_frame)) {
+              mesh_recovery_frame = safe_recovery_frame;
+              mesh_recovery_required = true;
+            }
+          }
+          if (clock_mode == MESH_CLOCK_HOLDOVER
+              && mesh_peer_clock_mode[slot] != MESH_CLOCK_HOLDOVER) {
+            mesh_peer_holdover_started_ms[slot] = local_ms;
+            mesh_recovery_frame = 0;
+            mesh_recovery_required = true;
+          } else if (clock_mode != MESH_CLOCK_HOLDOVER) {
+            mesh_peer_holdover_started_ms[slot] = 0;
+          }
+          mesh_peer_clock_mode[slot] = clock_mode;
+          mesh_peer_clock_received_ms[slot] = local_ms;
         }
         mesh_received_flags[slot] = flags;
         mesh_flags_observed[slot] = true;
