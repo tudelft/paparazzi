@@ -37,9 +37,25 @@
 extern float tcas_alt_setpoint;
 extern float tcas_tau_ta, tcas_tau_ra, tcas_dmod, tcas_alim;
 
+/** Represented surveillance was evaluated and requires no advisory. */
 #define TCAS_NO_ALARM 0
+/** A represented track requires a traffic advisory. */
 #define TCAS_TA 1
+/** A represented track requires an active resolution advisory. */
 #define TCAS_RA 2
+/** Surveillance cannot support a no-conflict conclusion.
+ *
+ * This includes missing/invalid ownship state, absent surveillance history,
+ * traffic-table overflow, and expired or unusable tracks. It must never be
+ * interpreted as equivalent to TCAS_NO_ALARM.
+ */
+#define TCAS_UNAVAILABLE 3
+
+/** Vertical resolution command.
+ *
+ * RA_NONE means no vertical TCAS command is authorized. It does not prove
+ * that separation exists; the accompanying TCAS status carries that meaning.
+ */
 enum tcas_resolve { RA_NONE, RA_LEVEL, RA_CLIMB, RA_DESCEND };
 
 extern uint8_t tcas_status;

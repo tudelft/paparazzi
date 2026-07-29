@@ -7,7 +7,7 @@
       Load this module when navigation, formation, TCAS, or another feature needs nearby aircraft state.
       The traditional mode is the default: it accepts ACINFO, ACINFO_LLA, GPS_SMALL, GPS, GPS_LLA, and GPS_INT.
       Existing airframes need no changes and retain the original traffic_info behavior when mesh is disabled.
-      NB_ACS sets the number of aircraft records stored onboard; AC_ID values remain valid across their full range.
+      NB_ACS sets the record count and must not exceed 255; aircraft AC_ID values are limited to 1 through 254.
       Legacy mode keeps master's table-full behavior; mesh mode rejects new records but keeps known aircraft current.
       Set TRAFFIC_INFO_USE_LOG to TRUE only when traffic logging is required.
       Set TRAFFIC_INFO_USE_MESH to TRUE to add compact MESH_STATE reception and self-organising TDMA transmission.

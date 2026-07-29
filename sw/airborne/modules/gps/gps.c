@@ -423,7 +423,7 @@ uint32_t gps_tow_from_sys_ticks(uint32_t sys_ticks)
   uint32_t itow_now;
 
   if (sys_ticks < gps_time_sync.t0_ticks) {
-    clock_delta = (0xFFFFFFFF - sys_ticks) + gps_time_sync.t0_ticks + 1;
+    clock_delta = (0xFFFFFFFF - gps_time_sync.t0_ticks) + sys_ticks + 1;
   } else {
     clock_delta = sys_ticks - gps_time_sync.t0_ticks;
   }
@@ -431,7 +431,7 @@ uint32_t gps_tow_from_sys_ticks(uint32_t sys_ticks)
   time_delta = msec_of_sys_time_ticks(clock_delta);
 
   itow_now = gps_time_sync.t0_tow + time_delta;
-  if (itow_now > MSEC_PER_WEEK) {
+  if (itow_now >= MSEC_PER_WEEK) {
     itow_now %= MSEC_PER_WEEK;
   }
 

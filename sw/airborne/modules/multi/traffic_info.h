@@ -43,12 +43,47 @@
 #define TRAFFIC_INFO_USE_MESH 0
 #endif
 
+/** PPRZLink aircraft-ID domain used by traffic information.
+ *
+ * ID 0 is reserved for the ground control station. Airborne aircraft use
+ * IDs 1 through 254. ID 255 is reserved for protocol broadcast and internal
+ * sentinels, so it must never identify an aircraft or a message sender.
+ */
+#define TRAFFIC_INFO_GCS_ID 0u
+#define TRAFFIC_INFO_MAX_AC_ID 254u
+#define TRAFFIC_INFO_RESERVED_ID 255u
+
 #ifndef NB_ACS_ID
-#define NB_ACS_ID 256
+#define NB_ACS_ID (TRAFFIC_INFO_MAX_AC_ID + 1u)
 #endif
 #ifndef NB_ACS
 #define NB_ACS 24
 #endif
+
+#if NB_ACS_ID <= TRAFFIC_INFO_MAX_AC_ID
+#error "NB_ACS_ID must contain every traffic ID from 0 through 254"
+#endif
+#if NB_ACS_ID > 255
+#error "NB_ACS_ID must fit the supported 0 through 254 traffic-ID domain"
+#endif
+#if NB_ACS > 255
+#error "NB_ACS must fit the byte-sized traffic-table index"
+#endif
+#if NB_ACS < 2
+#error "NB_ACS must provide slots for the GCS and local aircraft"
+#endif
+
+/** Return whether @p id is a supported GCS or airborne traffic ID. */
+static inline bool traffic_info_id_valid(uint8_t id)
+{
+  return id <= TRAFFIC_INFO_MAX_AC_ID;
+}
+
+/** Return whether @p id identifies an airborne aircraft rather than the GCS. */
+static inline bool traffic_info_aircraft_id_valid(uint8_t id)
+{
+  return id != TRAFFIC_INFO_GCS_ID && traffic_info_id_valid(id);
+}
 
 /** Invalid traffic-table index returned when a new aircraft cannot be stored.
  *
@@ -147,10 +182,26 @@
 #define MESH_SLOT_AGE_FRAMES 4
 #endif
 
+/** Superframes between one-rank rotations of remainder-slot entitlement.
+ *
+ * The interval exceeds quiet-slot ageing plus a serialized expansion turn for
+ * every possible member. Only one rank enters and one leaves the winner set at
+ * each boundary, avoiding fleet-wide claim churn. */
+#ifndef MESH_REMAINDER_EPOCH_FRAMES
+#define MESH_REMAINDER_EPOCH_FRAMES \
+  (4 * MESH_SLOT_AGE_FRAMES + 2 * MESH_TDMA_NB_SLOTS + 1)
+#endif
+
 /** Nominal slot length in ms. Informational only: it can be fractional, so the
  *  slot index is computed by exact integer scaling in traffic_info.c rather
  *  than by dividing through this. */
 #define MESH_TDMA_SLOT_MS (MESH_TDMA_SUPERFRAME_MS / MESH_TDMA_NB_SLOTS)
+
+/** Maximum age of valid mesh kinematics before another source may take over. */
+#ifndef TRAFFIC_INFO_MESH_DROP_MS
+#define TRAFFIC_INFO_MESH_DROP_MS \
+  (2u * MESH_TDMA_SUPERFRAME_MS + MESH_TDMA_SLOT_MS + 1000u)
+#endif
 
 /** Marker for "no node owns this slot".
  *
@@ -159,10 +210,11 @@
  * station in the slot map at all - it would read every slot the GCS occupies as
  * free and transmit straight over it.
  *
- * 0xFF is safe because PPRZLink reserves it as PPRZLINK_MSG_BROADCAST, so it
- * can never be a real sender.
+ * This module's enforced ID policy reserves 0xFF for PPRZLink broadcast and
+ * internal sentinels. The aircraft generator and airborne compile guard both
+ * reject AC_ID 255, so it can never be a valid mesh sender or slot owner.
  */
-#define MESH_SLOT_FREE 0xFFu
+#define MESH_SLOT_FREE TRAFFIC_INFO_RESERVED_ID
 
 /** First slot this node prefers when selecting a primary slot.
  *
@@ -176,8 +228,19 @@
 #if MESH_TDMA_SUPERFRAME_MS < MESH_TDMA_NB_SLOTS
 #error "MESH_TDMA_SUPERFRAME_MS is too short for MESH_TDMA_NB_SLOTS"
 #endif
+#if MESH_TDMA_NB_SLOTS > 255
+#error "MESH_TDMA_NB_SLOTS must fit in uint8_t"
+#endif
 #if MESH_TDMA_MAX_REUSE < 1
 #error "MESH_TDMA_MAX_REUSE must be at least 1"
+#endif
+#if MESH_REMAINDER_EPOCH_FRAMES <= (2 * MESH_SLOT_AGE_FRAMES + MESH_TDMA_NB_SLOTS)
+#error "MESH_REMAINDER_EPOCH_FRAMES is too short for safe remainder rotation"
+#endif
+
+/** Maximum GPS-to-monotonic clock correction tolerated without relearning slots. */
+#ifndef MESH_CLOCK_STEP_MAX_MS
+#define MESH_CLOCK_STEP_MAX_MS 10
 #endif
 
 /** Estimated time for one frame to leave the modem transmit cache, in ms.
@@ -222,7 +285,7 @@
  */
 struct MeshSlot {
   uint8_t  ac_id;        ///< Observed owner, or MESH_SLOT_FREE when unowned.
-  uint16_t last_frame;   ///< superframe index when last heard
+  uint32_t last_frame;   ///< superframe index when last heard
 };
 
 /** Health and back-pressure state of the mesh link.
@@ -247,9 +310,9 @@ extern struct MeshLinkState mesh_link;
 
 /** Record a received MESH_STATE in the inferred TDMA slot map.
  * @param[in] sender Originating aircraft ID; AC_ID 0 is the GCS.
- * @param[in] net_ms GPS-aligned network timestamp in milliseconds.
+ * @param[in] net_ms GPS-aligned absolute network timestamp in milliseconds.
  */
-extern void mesh_slot_observe(uint8_t sender, uint32_t net_ms);
+extern void mesh_slot_observe(uint8_t sender, uint64_t net_ms);
 
 /** Periodic task driving the mesh transmit slot. Call at 20 Hz or faster. */
 extern void traffic_info_mesh_periodic(void);
@@ -271,6 +334,16 @@ extern void traffic_info_mesh_periodic(void);
 #define AC_INFO_VEL_ENU_I 6
 #define AC_INFO_VEL_ENU_F 7
 #define AC_INFO_VEL_LOCAL_F 8
+#define AC_INFO_SOURCE_MESH 9
+
+/* Velocity validity is represented by status bits, not vector magnitude.
+ * A measured (0, 0, 0) velocity is a valid stationary traffic track. */
+
+#define AC_INFO_POSITION_MASK ((1u << AC_INFO_POS_UTM_I) | (1u << AC_INFO_POS_LLA_I) \
+                               | (1u << AC_INFO_POS_ENU_I) | (1u << AC_INFO_POS_UTM_F) \
+                               | (1u << AC_INFO_POS_LLA_F) | (1u << AC_INFO_POS_ENU_F))
+#define AC_INFO_VELOCITY_MASK ((1u << AC_INFO_VEL_ENU_I) | (1u << AC_INFO_VEL_ENU_F) \
+                               | (1u << AC_INFO_VEL_LOCAL_F))
 
 struct acInfo {
   uint8_t ac_id;
@@ -340,6 +413,8 @@ struct acInfo {
 extern uint8_t ti_acs_idx;
 extern uint8_t ti_acs_id[];
 extern struct acInfo ti_acs[];
+extern bool traffic_info_capacity_exceeded;
+extern bool traffic_info_surveillance_established;
 
 extern void traffic_info_init(void);
 
@@ -357,22 +432,22 @@ extern void traffic_info_init(void);
  */
 static inline uint8_t ti_acs_slot(uint8_t id)
 {
-#if NB_ACS_ID < 256
-  if (id >= NB_ACS_ID) {
+  if (!traffic_info_id_valid(id)) {
     return TI_ACS_NONE;
   }
-#endif
 #if !TRAFFIC_INFO_USE_MESH
   /* Preserve master's behavior exactly: once the table is full, even known
    * aircraft stop updating. Mesh mode keeps known entries current because a
    * stale traffic picture is more dangerous than refusing only new arrivals. */
   if (ti_acs_idx >= NB_ACS) {
+    traffic_info_capacity_exceeded = true;
     return TI_ACS_NONE;
   }
 #endif
   uint8_t slot = ti_acs_id[id];
   if (slot == 0 && id != 0) {         /* not registered yet */
     if (ti_acs_idx >= NB_ACS) {
+      traffic_info_capacity_exceeded = true;
       return TI_ACS_NONE;             /* table full, refuse the new arrival */
     }
     slot = ti_acs_idx++;
@@ -393,11 +468,66 @@ static inline uint8_t ti_acs_slot(uint8_t id)
  */
 extern bool parse_acinfo_dl(uint8_t *buf);
 
+/** Return local monotonic age of the latest accepted traffic observation.
+ *
+ * This age is independent of GPS time-of-week rollover and is suitable for
+ * safety freshness decisions. It is updated only when a setter accepts the
+ * observation, not when an out-of-order packet is rejected.
+ *
+ * @param[in] ac_id Traffic ID to query.
+ * @param[out] age_ms Age in milliseconds, saturated at UINT32_MAX.
+ * @return @c true when the traffic record has an accepted observation.
+ */
+extern bool traffic_info_get_age(uint8_t ac_id, uint32_t *age_ms);
+
+/** Mark a traffic-table slot as having received complete position/velocity. */
+extern void traffic_info_touch(uint8_t slot);
+
+/** Mark only the position component of a traffic observation as current. */
+extern void traffic_info_touch_position(uint8_t slot);
+
+/** Mark only the velocity component of a traffic observation as current. */
+extern void traffic_info_touch_velocity(uint8_t slot);
+
+#if TRAFFIC_INFO_USE_MESH
+/** Copy a mesh observation and project it forward at constant velocity.
+ *
+ * The stored observation is never modified. Prediction starts from the latest
+ * valid MESH_STATE position on every call and is clamped to @p max_prediction_ms.
+ *
+ * @param[in] ac_id Aircraft ID to query.
+ * @param[in] max_prediction_ms Maximum constant-velocity projection interval.
+ * @param[out] position Predicted local ENU position in meters.
+ * @param[out] velocity Observed local ENU velocity in meters per second.
+ * @param[out] age_ms Local monotonic age of the observation in milliseconds.
+ * @return @c true for a valid mesh observation, otherwise @c false.
+ */
+extern bool traffic_info_get_mesh_snapshot(uint8_t ac_id, uint32_t max_prediction_ms,
+                                           struct EnuCoor_f *position,
+                                           struct EnuCoor_f *velocity,
+                                           uint32_t *age_ms);
+
+/** Return the age of an aircraft's last valid MESH_STATE observation.
+ *
+ * Unlike heartbeat reception age, this timestamp is not refreshed by an
+ * invalid-position frame. Safety consumers can therefore distinguish a short
+ * sensor outage from a track whose last usable kinematics have expired.
+ *
+ * @param[in] ac_id Aircraft ID to query.
+ * @param[out] age_ms Local monotonic age of the last valid observation.
+ * @return @c true when this mesh track has had a valid observation.
+ */
+extern bool traffic_info_get_mesh_valid_age(uint8_t ac_id, uint32_t *age_ms);
+
+/** Return whether the latest observation for an aircraft came from MESH_STATE. */
+extern bool traffic_info_is_mesh_track(uint8_t ac_id);
+#endif
+
 /************************ Set functions ****************************/
 
 /**
  * Set Aircraft info.
- * @param[in] id aircraft id, 0 is reserved for GCS, 1 for this aircraft (id=AC_ID)
+ * @param[in] id traffic ID; 0 is the GCS and the local aircraft uses AC_ID
  * @param[in] utm_east UTM east in cm
  * @param[in] utm_north UTM north in cm
  * @param[in] alt Altitude in mm above MSL
@@ -407,12 +537,12 @@ extern bool parse_acinfo_dl(uint8_t *buf);
  * @param[in] climb Climb rate in cm/s
  * @param[in] itow GPS time of week in ms
  */
-extern void set_ac_info_utm(uint8_t id, uint32_t utm_east, uint32_t utm_north, uint32_t alt, uint8_t utm_zone,
-                        uint16_t course, uint16_t gspeed, uint16_t climb, uint32_t itow);
+extern void set_ac_info_utm(uint8_t id, int32_t utm_east, int32_t utm_north, int32_t alt, uint8_t utm_zone,
+                            int16_t course, uint16_t gspeed, int16_t climb, uint32_t itow);
 
 /**
  * Set Aircraft info.
- * @param[in] id aircraft id, 0 is reserved for GCS, 1 for this aircraft (id=AC_ID)
+ * @param[in] id traffic ID; 0 is the GCS and the local aircraft uses AC_ID
  * @param[in] lat Latitude in 1e7deg
  * @param[in] lon Longitude in 1e7deg
  * @param[in] alt Altitude in mm above ellipsoid
@@ -423,6 +553,13 @@ extern void set_ac_info_utm(uint8_t id, uint32_t utm_east, uint32_t utm_north, u
  */
 extern void set_ac_info_lla(uint8_t id, int32_t lat, int32_t lon, int32_t alt,
                             int16_t course, uint16_t gspeed, int16_t climb, uint32_t itow);
+
+/** Set LLA traffic received without a source timestamp.
+ *
+ * Arrival-stamped observations never replace a source-TOW ordered stream.
+ */
+extern void set_ac_info_lla_arrival(uint8_t id, int32_t lat, int32_t lon, int32_t alt,
+                                    int16_t course, uint16_t gspeed, int16_t climb);
 
 /** Set position from UTM coordinates (int).
 * @param[in] ac_id aircraft id of aircraft info to set
@@ -436,8 +573,10 @@ static inline void acInfoSetPositionUtm_i(uint8_t ac_id, struct UtmCoor_i *utm_p
   }
   UTM_COPY(ti_acs[slot].utm_pos_i, *utm_pos);
   /* clear bits for all position representations and only set the new one */
-  ti_acs[slot].status = (1 << AC_INFO_POS_UTM_I);
+  ti_acs[slot].status = (ti_acs[slot].status & ~AC_INFO_POSITION_MASK)
+                        | (1u << AC_INFO_POS_UTM_I);
   ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  traffic_info_touch_position(slot);
 }
 
 /** Set position from LLA coordinates (int).
@@ -452,8 +591,10 @@ static inline void acInfoSetPositionLla_i(uint8_t ac_id, struct LlaCoor_i *lla_p
   }
   LLA_COPY(ti_acs[slot].lla_pos_i, *lla_pos);
   /* clear bits for all position representations and only set the new one */
-  ti_acs[slot].status = (1 << AC_INFO_POS_LLA_I);
+  ti_acs[slot].status = (ti_acs[slot].status & ~AC_INFO_POSITION_MASK)
+                        | (1u << AC_INFO_POS_LLA_I);
   ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  traffic_info_touch_position(slot);
 }
 
 /** Set position from ENU coordinates (int).
@@ -468,8 +609,10 @@ static inline void acInfoSetPositionEnu_i(uint8_t ac_id, struct EnuCoor_i *enu_p
   }
   VECT3_COPY(ti_acs[slot].enu_pos_i, *enu_pos);
   /* clear bits for all position representations and only set the new one */
-  ti_acs[slot].status = (1 << AC_INFO_POS_ENU_I);
+  ti_acs[slot].status = (ti_acs[slot].status & ~AC_INFO_POSITION_MASK)
+                        | (1u << AC_INFO_POS_ENU_I);
   ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  traffic_info_touch_position(slot);
 }
 
 /** Set position from UTM coordinates (float).
@@ -484,8 +627,10 @@ static inline void acInfoSetPositionUtm_f(uint8_t ac_id, struct UtmCoor_f *utm_p
   }
   UTM_COPY(ti_acs[slot].utm_pos_f, *utm_pos);
   /* clear bits for all position representations and only set the new one */
-  ti_acs[slot].status = (1 << AC_INFO_POS_UTM_F);
+  ti_acs[slot].status = (ti_acs[slot].status & ~AC_INFO_POSITION_MASK)
+                        | (1u << AC_INFO_POS_UTM_F);
   ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  traffic_info_touch_position(slot);
 }
 
 /** Set position from LLA coordinates (float).
@@ -500,8 +645,10 @@ static inline void acInfoSetPositionLla_f(uint8_t ac_id, struct LlaCoor_f *lla_p
   }
   LLA_COPY(ti_acs[slot].lla_pos_f, *lla_pos);
   /* clear bits for all position representations and only set the new one */
-  ti_acs[slot].status = (1 << AC_INFO_POS_LLA_F);
+  ti_acs[slot].status = (ti_acs[slot].status & ~AC_INFO_POSITION_MASK)
+                        | (1u << AC_INFO_POS_LLA_F);
   ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  traffic_info_touch_position(slot);
 }
 
 /** Set position from ENU coordinates (float).
@@ -516,8 +663,10 @@ static inline void acInfoSetPositionEnu_f(uint8_t ac_id, struct EnuCoor_f *enu_p
   }
   VECT3_COPY(ti_acs[slot].enu_pos_f, *enu_pos);
   /* clear bits for all position representations and only set the new one */
-  ti_acs[slot].status = (1 << AC_INFO_POS_ENU_F);
+  ti_acs[slot].status = (ti_acs[slot].status & ~AC_INFO_POSITION_MASK)
+                        | (1u << AC_INFO_POS_ENU_F);
   ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  traffic_info_touch_position(slot);
 }
 
 /** Set velocity from ENU coordinates (int).
@@ -532,8 +681,10 @@ static inline void acInfoSetVelocityEnu_i(uint8_t ac_id, struct EnuCoor_i *enu_v
   }
   VECT3_COPY(ti_acs[slot].enu_vel_i, *enu_vel);
   /* clear bits for all position representations and only set the new one */
-  ti_acs[slot].status = (1 << AC_INFO_VEL_ENU_I);
+  ti_acs[slot].status = (ti_acs[slot].status & ~AC_INFO_VELOCITY_MASK)
+                        | (1u << AC_INFO_VEL_ENU_I);
   ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  traffic_info_touch_velocity(slot);
 }
 
 /** Set velocity from ENU coordinates (float).
@@ -548,8 +699,10 @@ static inline void acInfoSetVelocityEnu_f(uint8_t ac_id, struct EnuCoor_f *enu_v
   }
   VECT3_COPY(ti_acs[slot].enu_vel_f, *enu_vel);
   /* clear bits for all position representations and only set the new one */
-  ti_acs[slot].status = (1 << AC_INFO_VEL_ENU_F);
+  ti_acs[slot].status = (ti_acs[slot].status & ~AC_INFO_VELOCITY_MASK)
+                        | (1u << AC_INFO_VEL_ENU_F);
   ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  traffic_info_touch_velocity(slot);
 }
 
 

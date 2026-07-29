@@ -60,15 +60,22 @@ let check_unique_id_and_name = fun conf conf_xml ->
     (fun x ->
       let id = ExtXml.attrib x "ac_id"
       and name = ExtXml.attrib x "name" in
-      if Hashtbl.mem ids id then begin
-        let other_name = Hashtbl.find ids id in
+      let numeric_id =
+        try int_of_string id
+        with Failure _ ->
+          failwith (sprintf "Error: A/C Id '%s' for %s is not an integer" id name)
+      in
+      if numeric_id < 1 || numeric_id > 254 then
+        failwith (sprintf "Error: A/C Id '%s' for %s is outside 1..254 (0 is GCS, 255 is broadcast)" id name);
+      if Hashtbl.mem ids numeric_id then begin
+        let other_name = Hashtbl.find ids numeric_id in
         failwith (sprintf "Error: A/C Id '%s' duplicated in %s (%s and %s)" id conf_xml name other_name)
       end;
       if Hashtbl.mem names name then begin
         let other_id = Hashtbl.find names name in
         failwith (sprintf "Error: A/C name '%s' duplicated in %s (ids %s and %s)" name conf_xml id other_id)
       end;
-      Hashtbl.add ids id name;
+      Hashtbl.add ids numeric_id name;
       Hashtbl.add names name id
     ) conf
 

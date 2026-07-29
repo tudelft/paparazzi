@@ -30,6 +30,7 @@
  */
 
 #include "modules/multi/traffic_info.h"
+#include "modules/multi/traffic_info_time.h"
 
 #include "generated/airframe.h"     // AC_ID
 #include "generated/flight_plan.h"  // NAV_MSL0
@@ -42,6 +43,10 @@
 #include "state.h"
 #include "math/pprz_geodetic_utm.h"
 #include "math/pprz_geodetic_wgs84.h"
+
+#if AC_ID < 1 || AC_ID > TRAFFIC_INFO_MAX_AC_ID
+#error "Airborne AC_ID must be in 1 through 254; 0 is GCS and 255 is broadcast"
+#endif
 
 #if TRAFFIC_INFO_USE_MESH
 #include "autopilot.h"
@@ -70,6 +75,27 @@ uint8_t ti_acs_idx;
 uint8_t ti_acs_id[NB_ACS_ID];
 /* Fixed-capacity state table shared by legacy and optional mesh messages. */
 struct acInfo ti_acs[NB_ACS];
+bool traffic_info_capacity_exceeded;
+bool traffic_info_surveillance_established;
+static uint64_t traffic_position_received_ms[NB_ACS];
+static uint64_t traffic_velocity_received_ms[NB_ACS];
+static bool traffic_has_position_observation[NB_ACS];
+static bool traffic_has_velocity_observation[NB_ACS];
+static uint32_t traffic_source_itow[NB_ACS];
+static bool traffic_has_source_itow[NB_ACS];
+static uint64_t traffic_monotonic_epoch_ms;
+static uint32_t traffic_monotonic_last_ms;
+
+/** Extend the wrapping 32-bit system clock into a monotonic 64-bit timestamp. */
+static uint64_t traffic_monotonic_time_ms(void)
+{
+  const uint32_t now_ms = get_sys_time_msec();
+  if (now_ms < traffic_monotonic_last_ms) {
+    traffic_monotonic_epoch_ms += (UINT64_C(1) << 32);
+  }
+  traffic_monotonic_last_ms = now_ms;
+  return traffic_monotonic_epoch_ms + now_ms;
+}
 
 /* Geoid height (msl) over ellipsoid [mm] */
 int32_t geoid_height;
@@ -170,21 +196,40 @@ _Static_assert(MESH_TDMA_NB_SLOTS * 1000u <
  * cache them so that the deferred emission can reuse the same downlink. */
 static struct transport_tx *mesh_trans;
 static struct link_device *mesh_dev;
+static uint64_t mesh_received_ms[NB_ACS];
+static bool mesh_has_valid_observation[NB_ACS];
+static bool mesh_last_clock_synced;
+static bool mesh_clock_sample_valid;
+static uint64_t mesh_last_network_ms;
+static uint64_t mesh_last_local_ms;
 
 static uint8_t mesh_modem_in_flight(uint32_t now_ms);
 
-/** GPS time of week in ms when the receiver is synchronised, otherwise the
- *  local monotonic clock. All nodes that hold a 3D fix therefore agree on the
- *  slot boundaries to within the GPS time transfer error (well under 1 ms),
- *  and nodes without a fix still spread themselves out by AC_ID. */
-static uint32_t mesh_network_time_ms(void)
+/** Absolute GPS time in ms when synchronized, otherwise monotonic local time.
+ *
+ * gps_tow_from_sys_ticks() may wrap before the next GPS message increments
+ * gps.week. Correct that boundary here so slot, frame, and fairness epoch all
+ * derive from one coherent timestamp. */
+static uint64_t mesh_network_time_ms(uint64_t local_ms)
 {
   if (gps.fix >= GPS_FIX_3D) {
     mesh_link.synced = true;
-    return gps_tow_from_sys_ticks(sys_time.nb_tick);
+    const uint32_t tow_ms = gps_tow_from_sys_ticks(sys_time.nb_tick);
+    uint32_t week = gps.week;
+    if (tow_ms < gps.tow && gps.tow - tow_ms > 302400000u) {
+      week++;
+    }
+    return (uint64_t)week * 604800000ULL + tow_ms;
   }
   mesh_link.synced = false;
-  return get_sys_time_msec();
+  return local_ms;
+}
+
+/** Signed elapsed milliseconds without relying on unsigned-wrap conversion. */
+static inline int64_t mesh_time_delta_ms(uint64_t now_ms, uint64_t previous_ms)
+{
+  return now_ms >= previous_ms ? (int64_t)(now_ms - previous_ms)
+                               : -(int64_t)(previous_ms - now_ms);
 }
 
 /** Pack course, ground speed and climb rate into the 32 bit multiplex field.
@@ -328,15 +373,27 @@ static uint8_t mesh_state_flags(void)
  * routing node and performs forwarding below Paparazzi. The application only
  * controls when it originates a fresh MESH_STATE frame.
  */
-static uint8_t mesh_redundancy_target(uint8_t nodes, uint32_t now_ms)
+static uint8_t mesh_redundancy_target(uint8_t nodes, uint8_t rank,
+                                      uint32_t frame, uint32_t now_ms)
 {
   const uint8_t flags = mesh_state_flags();
-  uint8_t target = (uint8_t)(MESH_TDMA_NB_SLOTS / Max(nodes, 1u));
+  nodes = Max(nodes, 1u);
+  uint8_t target = (uint8_t)(MESH_TDMA_NB_SLOTS / nodes);
   if (target < 1) {
     target = 1;
   }
   if (target > MESH_TDMA_MAX_REUSE) {
     target = MESH_TDMA_MAX_REUSE;
+  } else if (nodes <= MESH_TDMA_NB_SLOTS && target < MESH_TDMA_MAX_REUSE) {
+    const uint8_t remainder = MESH_TDMA_NB_SLOTS % nodes;
+    const uint8_t first = (uint8_t)((frame / MESH_REMAINDER_EPOCH_FRAMES) % nodes);
+    const uint8_t relative_rank = (uint8_t)((rank + nodes - first) % nodes);
+    if (relative_rank < remainder) {
+      /* Divide the remainder by a slowly rotating sorted-rank window. Every
+       * node derives the same quotas, which differ by one and sum to the slot
+       * count. One winner changes per epoch, avoiding fleet-wide claim churn. */
+      target++;
+    }
   }
 
   /* A node which cannot contribute a current position is a poor source of
@@ -344,7 +401,7 @@ static uint8_t mesh_redundancy_target(uint8_t nodes, uint32_t now_ms)
    * let healthy peers use the spare capacity. A landed aircraft behaves the
    * same way; AC_ID 0 is exempt because the GCS is a real stationary peer. */
   if (!mesh_link.synced || (flags & MESH_FLAG_POS_VALID) == 0
-      || (AC_ID != 0 && (flags & MESH_FLAG_AIRBORNE) == 0)) {
+      || (AC_ID != TRAFFIC_INFO_GCS_ID && (flags & MESH_FLAG_AIRBORNE) == 0)) {
     return 1;
   }
 
@@ -461,19 +518,36 @@ static struct MeshSlot mesh_slots[MESH_TDMA_NB_SLOTS];
  *  holds; the rest are opportunistic and are surrendered the moment a real
  *  owner appears. */
 static uint8_t mesh_owned[MESH_TDMA_MAX_REUSE];
-static uint16_t mesh_owned_until[MESH_TDMA_MAX_REUSE];
+static uint32_t mesh_owned_until[MESH_TDMA_MAX_REUSE];
 static uint8_t mesh_owned_n;
 
 /** Superframes observed since boot. Used for network entry: a node listens
  *  before it expands beyond its primary slot. */
 static uint16_t mesh_frames_seen;
-static uint16_t mesh_last_frame;
+static uint32_t mesh_last_frame;
 static bool mesh_entered;          ///< network entry slot choice has been made
 
-/** Superframe index of a network timestamp. Wraps harmlessly in 16 bits. */
-static inline uint16_t mesh_frame_of(uint32_t net_ms)
+/** Reset learned ownership after changing between GPS and local clock domains. */
+static void mesh_slot_reset(uint32_t frame)
 {
-  return (uint16_t)(net_ms / MESH_TDMA_SUPERFRAME_MS);
+  for (uint8_t slot = 0; slot < MESH_TDMA_NB_SLOTS; slot++) {
+    mesh_slots[slot].ac_id = MESH_SLOT_FREE;
+    mesh_slots[slot].last_frame = frame;
+  }
+  mesh_owned[0] = (uint8_t)(MESH_TDMA_SLOT_HINT % MESH_TDMA_NB_SLOTS);
+  mesh_owned_until[0] = frame + MESH_PRIMARY_HOLD_MIN;
+  mesh_owned_n = 1;
+  mesh_entered = false;
+  mesh_frames_seen = 0;
+  mesh_last_frame = frame;
+  mesh_link.slot = mesh_owned[0];
+  mesh_link.reuse = 1;
+}
+
+/** Superframe index of an absolute network timestamp. */
+static inline uint32_t mesh_frame_of(uint64_t net_ms)
+{
+  return (uint32_t)(net_ms / MESH_TDMA_SUPERFRAME_MS);
 }
 
 /** Slot index of a network timestamp.
@@ -483,18 +557,18 @@ static inline uint16_t mesh_frame_of(uint32_t net_ms)
  * 62.5 ms), and truncating the slot length first would map a sliver of every
  * superframe to a slot nobody owns.
  */
-static inline uint8_t mesh_slot_of(uint32_t net_ms)
+static inline uint8_t mesh_slot_of(uint64_t net_ms)
 {
-  const uint32_t frame_ms = net_ms % MESH_TDMA_SUPERFRAME_MS;
+  const uint32_t frame_ms = (uint32_t)(net_ms % MESH_TDMA_SUPERFRAME_MS);
   return (uint8_t)((frame_ms * MESH_TDMA_NB_SLOTS) / MESH_TDMA_SUPERFRAME_MS);
 }
 
-static inline bool mesh_slot_is_stale(uint8_t s, uint16_t frame)
+static inline bool mesh_slot_is_stale(uint8_t s, uint32_t frame)
 {
-  return (uint16_t)(frame - mesh_slots[s].last_frame) > MESH_SLOT_AGE_FRAMES;
+  return frame - mesh_slots[s].last_frame > MESH_SLOT_AGE_FRAMES;
 }
 
-static inline bool mesh_slot_free(uint8_t s, uint16_t frame)
+static inline bool mesh_slot_free(uint8_t s, uint32_t frame)
 {
   return mesh_slots[s].ac_id == MESH_SLOT_FREE || mesh_slots[s].ac_id == AC_ID
          || mesh_slot_is_stale(s, frame);
@@ -512,10 +586,10 @@ static inline bool mesh_slot_free(uint8_t s, uint16_t frame)
  * The primary is exempt: it is chosen from a genuinely free slot at entry and
  * defended by the AC_ID rule thereafter.
  */
-static bool mesh_slot_quiet(uint8_t slot, uint16_t frame)
+static bool mesh_slot_quiet(uint8_t slot, uint32_t frame)
 {
   return mesh_slots[slot].ac_id == MESH_SLOT_FREE
-         && (uint16_t)(frame - mesh_slots[slot].last_frame) > (2 * MESH_SLOT_AGE_FRAMES);
+         && frame - mesh_slots[slot].last_frame > (2 * MESH_SLOT_AGE_FRAMES);
 }
 
 static bool mesh_owns(uint8_t slot)
@@ -544,15 +618,15 @@ static bool mesh_owns(uint8_t slot)
  * or a dropout simply starts being heard again and reclaims a slot; nothing
  * has to notice that it left.
  */
-void mesh_slot_observe(uint8_t sender, uint32_t net_ms)
+void mesh_slot_observe(uint8_t sender, uint64_t net_ms)
 {
   /* Sender 0 is the ground station, a legitimate member of this mesh, not a
    * null value. Only our own relayed frames are discarded. */
-  if (sender == AC_ID) {
+  if (sender == AC_ID || !traffic_info_id_valid(sender)) {
     return;
   }
   const uint8_t s = mesh_slot_of(net_ms);
-  const uint16_t frame = mesh_frame_of(net_ms);
+  const uint32_t frame = mesh_frame_of(net_ms);
 
   if (mesh_slots[s].ac_id == MESH_SLOT_FREE || mesh_slots[s].ac_id == sender
       || mesh_slot_is_stale(s, frame)) {
@@ -563,7 +637,7 @@ void mesh_slot_observe(uint8_t sender, uint32_t net_ms)
 
 /** Pick a free slot for the primary, biased by AC_ID so that two nodes
  *  reselecting in the same frame rarely land on the same one. */
-static uint8_t mesh_pick_slot(uint16_t frame)
+static uint8_t mesh_pick_slot(uint32_t frame)
 {
   const uint8_t start = (uint8_t)((AC_ID * 7u + mesh_link.reselect_count * 3u)
                                   % MESH_TDMA_NB_SLOTS);
@@ -590,26 +664,24 @@ static uint8_t mesh_pick_slot(uint16_t frame)
  * first leaves the slot, the other node becomes audible, and the map repairs
  * itself.
  */
-static uint16_t mesh_lease_expiry(uint16_t frame)
+static uint32_t mesh_lease_expiry(uint32_t frame)
 {
   /* cheap deterministic scatter, distinct per node and per claim */
   const uint32_t r = (uint32_t)(AC_ID * 2654435761u
                                 + frame * 40503u
                                 + mesh_link.reselect_count * 97u);
-  return (uint16_t)(frame + MESH_SLOT_HOLD_MIN
-                    + (uint16_t)(r % MESH_SLOT_HOLD_SPAN));
+  return frame + MESH_SLOT_HOLD_MIN + r % MESH_SLOT_HOLD_SPAN;
 }
 
 /** Randomised lease length for the primary slot. Much longer than a
  *  secondary's: this exists only to break a mutual-deafness deadlock, not to
  *  share capacity, so it should almost never fire in a healthy mesh. */
-static uint16_t mesh_primary_expiry(uint16_t frame)
+static uint32_t mesh_primary_expiry(uint32_t frame)
 {
   const uint32_t r = (uint32_t)(AC_ID * 1103515245u
                                 + frame * 12345u
                                 + mesh_link.reselect_count * 7919u);
-  return (uint16_t)(frame + MESH_PRIMARY_HOLD_MIN
-                    + (uint16_t)(r % MESH_PRIMARY_HOLD_SPAN));
+  return frame + MESH_PRIMARY_HOLD_MIN + r % MESH_PRIMARY_HOLD_SPAN;
 }
 
 /** May this node take an extra slot in this superframe?
@@ -626,7 +698,7 @@ static uint16_t mesh_primary_expiry(uint16_t frame)
  * and recorded by everyone else before the next node gets its turn, so the
  * second never picks that slot in the first place.
  */
-static bool mesh_expansion_turn(uint16_t frame, uint8_t nodes)
+static bool mesh_expansion_turn(uint32_t frame, uint8_t nodes)
 {
   uint8_t rank = 0;
   for (uint8_t s = 0; s < MESH_TDMA_NB_SLOTS; s++) {
@@ -660,10 +732,11 @@ static bool mesh_expansion_turn(uint16_t frame, uint8_t nodes)
  *    owner appears in is surrendered at once. Growth is therefore always
  *    slower than the detection of a conflict.
  */
-static void mesh_slot_maintain(uint16_t frame, uint32_t now_ms)
+static void mesh_slot_maintain(uint32_t frame, uint32_t now_ms)
 {
   /* --- age the map, count distinct live nodes ---------------------------- */
   uint8_t nodes = 1;                                   /* ourselves */
+  uint8_t rank = 0;                                    /* sorted AC_ID rank */
   uint8_t seen[MESH_TDMA_NB_SLOTS];
   uint8_t seen_n = 0;
   for (uint8_t s = 0; s < MESH_TDMA_NB_SLOTS; s++) {
@@ -684,6 +757,9 @@ static void mesh_slot_maintain(uint16_t frame, uint32_t now_ms)
     if (!dup) {
       seen[seen_n++] = mesh_slots[s].ac_id;            /* one node, many slots */
       nodes++;
+      if (mesh_slots[s].ac_id < AC_ID) {
+        rank++;
+      }
     }
   }
   mesh_link.neighbours = (uint8_t)(nodes - 1);
@@ -704,7 +780,7 @@ static void mesh_slot_maintain(uint16_t frame, uint32_t now_ms)
    * A long randomised lease removes it - the two lapse at different frames,
    * whichever re-picks first becomes audible, and the map repairs. Long enough
    * (tens of superframes) that a healthy node effectively keeps its slot. */
-  if ((int16_t)(frame - mesh_owned_until[0]) >= 0) {
+  if ((int32_t)(frame - mesh_owned_until[0]) >= 0) {
     mesh_owned[0] = mesh_pick_slot(frame);
     mesh_owned_until[0] = mesh_primary_expiry(frame);
     mesh_link.reselect_count++;
@@ -724,7 +800,7 @@ static void mesh_slot_maintain(uint16_t frame, uint32_t now_ms)
   uint8_t keep = 1;
   for (uint8_t i = 1; i < mesh_owned_n; i++) {
     const uint8_t s = mesh_owned[i];
-    const bool expired = (int16_t)(frame - mesh_owned_until[i]) >= 0;
+    const bool expired = (int32_t)(frame - mesh_owned_until[i]) >= 0;
     if (mesh_slot_free(s, frame) && !expired) {
       mesh_owned[keep] = s;
       mesh_owned_until[keep] = mesh_owned_until[i];
@@ -734,7 +810,7 @@ static void mesh_slot_maintain(uint16_t frame, uint32_t now_ms)
   mesh_owned_n = keep;
 
   /* --- size the fair share ----------------------------------------------- */
-  uint8_t target = mesh_redundancy_target(nodes, now_ms);
+  uint8_t target = mesh_redundancy_target(nodes, rank, frame, now_ms);
   if (mesh_frames_seen < MESH_ENTRY_FRAMES) {
     target = 1;                                        /* listen before claiming */
   }
@@ -762,10 +838,37 @@ static void mesh_slot_maintain(uint16_t frame, uint32_t now_ms)
 
 void traffic_info_mesh_periodic(void)
 {
-  const uint32_t net_ms = mesh_network_time_ms();
+  const uint64_t local_ms = traffic_monotonic_time_ms();
+  const uint64_t net_ms = mesh_network_time_ms(local_ms);
   const uint32_t now_ms = get_sys_time_msec();
-  const uint16_t frame = mesh_frame_of(net_ms);
+  const uint32_t frame = mesh_frame_of(net_ms);
   const uint8_t slot = mesh_slot_of(net_ms);
+
+  if (mesh_link.synced != mesh_last_clock_synced) {
+    mesh_last_clock_synced = mesh_link.synced;
+    mesh_clock_sample_valid = false;
+    mesh_slot_reset(frame);
+    return;
+  }
+  if (mesh_link.synced && mesh_clock_sample_valid) {
+    const int64_t network_elapsed = mesh_time_delta_ms(net_ms, mesh_last_network_ms);
+    const int64_t local_elapsed = mesh_time_delta_ms(local_ms, mesh_last_local_ms);
+    const int64_t correction = network_elapsed - local_elapsed;
+    if (correction > MESH_CLOCK_STEP_MAX_MS || correction < -MESH_CLOCK_STEP_MAX_MS) {
+      mesh_last_network_ms = net_ms;
+      mesh_last_local_ms = local_ms;
+      mesh_slot_reset(frame);
+      return;
+    }
+  }
+  mesh_last_network_ms = net_ms;
+  mesh_last_local_ms = local_ms;
+  mesh_clock_sample_valid = true;
+  if (mesh_frames_seen > 0 && frame != mesh_last_frame
+      && frame != mesh_last_frame + 1u) {
+    mesh_slot_reset(frame);
+    return;
+  }
 
   /* Slot bookkeeping is a per-SUPERFRAME activity, not a per-tick one.
    *
@@ -814,8 +917,16 @@ void traffic_info_mesh_periodic(void)
 void traffic_info_init(void)
 {
   memset(ti_acs_id, 0, NB_ACS_ID);
+  memset(traffic_position_received_ms, 0, sizeof(traffic_position_received_ms));
+  memset(traffic_velocity_received_ms, 0, sizeof(traffic_velocity_received_ms));
+  memset(traffic_has_position_observation, 0, sizeof(traffic_has_position_observation));
+  memset(traffic_has_velocity_observation, 0, sizeof(traffic_has_velocity_observation));
+  memset(traffic_source_itow, 0, sizeof(traffic_source_itow));
+  memset(traffic_has_source_itow, 0, sizeof(traffic_has_source_itow));
+  traffic_info_capacity_exceeded = false;
+  traffic_info_surveillance_established = false;
 
-  ti_acs_id[0] = 0;  // ground station
+  ti_acs_id[TRAFFIC_INFO_GCS_ID] = 0;
   ti_acs_id[AC_ID] = 1;
   ti_acs[ti_acs_id[AC_ID]].ac_id = AC_ID;
   ti_acs_idx = 2;
@@ -823,17 +934,13 @@ void traffic_info_init(void)
   geoid_height = NAV_MSL0;
 
 #if TRAFFIC_INFO_USE_MESH
-  for (uint8_t s = 0; s < MESH_TDMA_NB_SLOTS; s++) {
-    mesh_slots[s].ac_id = MESH_SLOT_FREE;   /* not 0: that is the GCS */
-    mesh_slots[s].last_frame = 0;
-  }
-  mesh_owned[0] = (uint8_t)(MESH_TDMA_SLOT_HINT % MESH_TDMA_NB_SLOTS);
-  mesh_owned_until[0] = MESH_PRIMARY_HOLD_MIN;
-  mesh_owned_n = 1;
-  mesh_entered = false;
-  mesh_frames_seen = 0;
-  mesh_link.slot = mesh_owned[0];
-  mesh_link.reuse = 1;
+  mesh_slot_reset(0);
+  memset(mesh_received_ms, 0, sizeof(mesh_received_ms));
+  memset(mesh_has_valid_observation, 0, sizeof(mesh_has_valid_observation));
+  mesh_last_clock_synced = false;
+  mesh_clock_sample_valid = false;
+  mesh_last_network_ms = 0;
+  mesh_last_local_ms = 0;
   mesh_link.modem_free_ms = get_sys_time_msec();
   mesh_link.last_emit_key = UINT32_MAX;
 #endif
@@ -873,6 +980,9 @@ bool parse_acinfo_dl(uint8_t *buf)
 #else
   if (sender_id > 0) {
 #endif
+    if (!traffic_info_id_valid(sender_id)) {
+      return FALSE;
+    }
     switch (msg_id) {
       case DL_GPS_SMALL: {
         uint32_t multiplex_speed = DL_GPS_SMALL_multiplex_speed(buf);
@@ -883,24 +993,18 @@ bool parse_acinfo_dl(uint8_t *buf)
           course |= 0xF800;  // fix for twos complements
         }
         course *= 2; // scale course by resolution
-        int16_t gspeed = (int16_t)((multiplex_speed >> 10) & 0x7FF); // bits 20-10 ground speed cm/s
-        if (gspeed & 0x400) {
-          gspeed |= 0xF800;  // fix for twos complements
-        }
+        uint16_t gspeed = (uint16_t)((multiplex_speed >> 10) & 0x7FF); // bits 20-10 ground speed cm/s
         int16_t climb = (int16_t)(multiplex_speed & 0x3FF); // bits 9-0 z climb speed in cm/s
         if (climb & 0x200) {
           climb |= 0xFC00;  // fix for twos complements
         }
-        itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
-
-        set_ac_info_lla(sender_id,
-                        DL_GPS_SMALL_lat(buf),
-                        DL_GPS_SMALL_lon(buf),
-                        (int32_t)DL_GPS_SMALL_alt(buf) * 10,
-                        course,
-                        gspeed,
-                        climb,
-                        itow);
+        set_ac_info_lla_arrival(sender_id,
+              DL_GPS_SMALL_lat(buf),
+              DL_GPS_SMALL_lon(buf),
+              (int32_t)DL_GPS_SMALL_alt(buf) * 10,
+              course,
+              gspeed,
+              climb);
       }
       break;
       case DL_GPS: {
@@ -972,11 +1076,9 @@ bool parse_acinfo_dl(uint8_t *buf)
         if (sender_id == AC_ID) {
           return TRUE;
         }
-        int16_t course;
-        uint16_t gspeed;
-        int16_t climb;
-        mesh_multiplex_decode(DL_MESH_STATE_multiplex_speed(buf), &course, &gspeed, &climb);
-
+        if (!traffic_info_id_valid(sender_id)) {
+          return FALSE;
+        }
         /* The originator is the PPRZLink sender, not a payload field: there is
          * no ac_id in MESH_STATE, so a relayed frame cannot claim to be from
          * someone else without also rewriting the frame header. */
@@ -985,21 +1087,56 @@ bool parse_acinfo_dl(uint8_t *buf)
         /* The arrival time also tells us which slot the sender is using, which
          * is how the occupancy map is built without spending a single byte on
          * a reservation protocol. */
-        mesh_slot_observe(sender_id, mesh_network_time_ms());
+        const uint64_t local_ms = traffic_monotonic_time_ms();
+        mesh_slot_observe(sender_id, mesh_network_time_ms(local_ms));
 
-        set_ac_info_lla(sender_id,
-                        DL_MESH_STATE_lat(buf),
-                        DL_MESH_STATE_lon(buf),
-                        DL_MESH_STATE_alt(buf) * 10,   /* cm -> mm */
-                        course,
-                        gspeed,
-                        climb,
-                        itow);
+        const uint8_t flags = DL_MESH_STATE_flags(buf);
+        const uint8_t slot = ti_acs_slot(sender_id);
+        if (slot == TI_ACS_NONE) {
+          break;
+        }
+        if ((flags & MESH_FLAG_POS_VALID) != 0) {
+          mesh_received_ms[slot] = traffic_monotonic_time_ms();
+          mesh_has_valid_observation[slot] = true;
+          traffic_info_touch(slot);
+          int16_t course;
+          uint16_t gspeed;
+          int16_t climb;
+          mesh_multiplex_decode(DL_MESH_STATE_multiplex_speed(buf), &course, &gspeed, &climb);
+
+          ti_acs[slot].status = 0;
+          ti_acs[slot].lla_pos_i.lat = DL_MESH_STATE_lat(buf);
+          ti_acs[slot].lla_pos_i.lon = DL_MESH_STATE_lon(buf);
+          ti_acs[slot].lla_pos_i.alt = DL_MESH_STATE_alt(buf) * 10; /* cm -> mm */
+          SetBit(ti_acs[slot].status, AC_INFO_POS_LLA_I);
+          SetBit(ti_acs[slot].status, AC_INFO_VEL_LOCAL_F);
+          SetBit(ti_acs[slot].status, AC_INFO_SOURCE_MESH);
+          ti_acs[slot].course = RadOfDeciDeg(course);
+          ti_acs[slot].gspeed = MOfCm(gspeed);
+          ti_acs[slot].climb = MOfCm(climb);
+          ti_acs[slot].itow = itow;
+        } else {
+          /* Keep the peer visible to the slot allocator, but invalidate its
+           * previous mesh kinematics so safety consumers cannot act on old
+           * state. An invalid heartbeat cannot reclaim a complete legacy
+           * fallback after mesh expiry; only valid mesh state may do that. */
+          const bool complete_legacy = !bit_is_set(ti_acs[slot].status, AC_INFO_SOURCE_MESH)
+                                       && traffic_has_position_observation[slot]
+                                       && traffic_has_velocity_observation[slot];
+          if (!complete_legacy) {
+            ti_acs[slot].status = (1u << AC_INFO_SOURCE_MESH);
+            ti_acs[slot].itow = itow;
+          }
+          return TRUE;
+        }
       }
       break;
     #endif
       case DL_ACINFO: {
         sender_id = DL_ACINFO_ac_id(buf); // may overwrite GCS id
+        if (!traffic_info_id_valid(sender_id)) {
+          return FALSE;
+        }
         itow = DL_ACINFO_itow(buf);
         set_ac_info_utm(sender_id,
                         DL_ACINFO_utm_east(buf),
@@ -1014,6 +1151,9 @@ bool parse_acinfo_dl(uint8_t *buf)
       break;
       case DL_ACINFO_LLA: {
         sender_id = DL_ACINFO_LLA_ac_id(buf); // may overwrite GCS id
+        if (!traffic_info_id_valid(sender_id)) {
+          return FALSE;
+        }
         itow = DL_ACINFO_LLA_itow(buf);
         set_ac_info_lla(sender_id,
                   DL_ACINFO_LLA_lat(buf),
@@ -1045,16 +1185,161 @@ bool parse_acinfo_dl(uint8_t *buf)
   return TRUE;
 }
 
+bool traffic_info_get_age(uint8_t ac_id, uint32_t *age_ms)
+{
+  if (age_ms == NULL || !traffic_info_id_valid(ac_id)) {
+    return false;
+  }
+  const uint8_t slot = ti_acs_id[ac_id];
+  if (slot >= ti_acs_idx || ti_acs[slot].ac_id != ac_id
+      || !traffic_has_position_observation[slot]
+      || !traffic_has_velocity_observation[slot]) {
+    return false;
+  }
+  const uint64_t received_ms = Min(traffic_position_received_ms[slot],
+                                   traffic_velocity_received_ms[slot]);
+  const uint64_t age = traffic_monotonic_time_ms() - received_ms;
+  *age_ms = age > UINT32_MAX ? UINT32_MAX : (uint32_t)age;
+  return true;
+}
 
-void set_ac_info_utm(uint8_t id, uint32_t utm_east, uint32_t utm_north, uint32_t alt, uint8_t utm_zone, uint16_t course,
-                 uint16_t gspeed, uint16_t climb, uint32_t itow)
+void traffic_info_touch(uint8_t slot)
+{
+  if (slot < NB_ACS) {
+    const uint64_t now_ms = traffic_monotonic_time_ms();
+    traffic_position_received_ms[slot] = now_ms;
+    traffic_velocity_received_ms[slot] = now_ms;
+    traffic_has_position_observation[slot] = true;
+    traffic_has_velocity_observation[slot] = true;
+    if (slot >= 2) {
+      traffic_info_surveillance_established = true;
+    }
+  }
+}
+
+void traffic_info_touch_position(uint8_t slot)
+{
+  if (slot < NB_ACS) {
+#if TRAFFIC_INFO_USE_MESH
+    if (bit_is_set(ti_acs[slot].status, AC_INFO_SOURCE_MESH)) {
+      ClearBit(ti_acs[slot].status, AC_INFO_SOURCE_MESH);
+      ti_acs[slot].status &= ~AC_INFO_VELOCITY_MASK;
+      traffic_has_velocity_observation[slot] = false;
+      mesh_has_valid_observation[slot] = false;
+    }
+#endif
+    traffic_position_received_ms[slot] = traffic_monotonic_time_ms();
+    traffic_has_position_observation[slot] = true;
+    if (slot >= 2 && traffic_has_velocity_observation[slot]) {
+      traffic_info_surveillance_established = true;
+    }
+  }
+}
+
+void traffic_info_touch_velocity(uint8_t slot)
+{
+  if (slot < NB_ACS) {
+#if TRAFFIC_INFO_USE_MESH
+    if (bit_is_set(ti_acs[slot].status, AC_INFO_SOURCE_MESH)) {
+      ClearBit(ti_acs[slot].status, AC_INFO_SOURCE_MESH);
+      ti_acs[slot].status &= ~AC_INFO_POSITION_MASK;
+      traffic_has_position_observation[slot] = false;
+      mesh_has_valid_observation[slot] = false;
+    }
+#endif
+    traffic_velocity_received_ms[slot] = traffic_monotonic_time_ms();
+    traffic_has_velocity_observation[slot] = true;
+    if (slot >= 2 && traffic_has_position_observation[slot]) {
+      traffic_info_surveillance_established = true;
+    }
+  }
+}
+
+#if TRAFFIC_INFO_USE_MESH
+/** Return whether valid mesh kinematics are still authoritative. */
+static bool traffic_info_mesh_source_active(uint8_t slot)
+{
+  return bit_is_set(ti_acs[slot].status, AC_INFO_SOURCE_MESH)
+         && mesh_has_valid_observation[slot]
+         && traffic_monotonic_time_ms() - mesh_received_ms[slot]
+            <= TRAFFIC_INFO_MESH_DROP_MS;
+}
+
+bool traffic_info_is_mesh_track(uint8_t ac_id)
+{
+  if (!traffic_info_id_valid(ac_id)) {
+    return false;
+  }
+  const uint8_t slot = ti_acs_id[ac_id];
+  return slot < ti_acs_idx && ti_acs[slot].ac_id == ac_id
+         && bit_is_set(ti_acs[slot].status, AC_INFO_SOURCE_MESH);
+}
+
+bool traffic_info_get_mesh_snapshot(uint8_t ac_id, uint32_t max_prediction_ms,
+                                    struct EnuCoor_f *position,
+                                    struct EnuCoor_f *velocity,
+                                    uint32_t *age_ms)
+{
+  if (position == NULL || velocity == NULL || age_ms == NULL) {
+    return false;
+  }
+  if (!traffic_info_id_valid(ac_id)) {
+    return false;
+  }
+    const uint8_t slot = ti_acs_id[ac_id];
+    if (!traffic_info_is_mesh_track(ac_id)
+      || !bit_is_set(ti_acs[slot].status, AC_INFO_POS_LLA_I)
+      || !bit_is_set(ti_acs[slot].status, AC_INFO_VEL_LOCAL_F)) {
+    return false;
+  }
+
+  *position = *acInfoGetPositionEnu_f(ac_id);
+  *velocity = *acInfoGetVelocityEnu_f(ac_id);
+  if (!isfinite(position->x) || !isfinite(position->y) || !isfinite(position->z)
+      || !isfinite(velocity->x) || !isfinite(velocity->y) || !isfinite(velocity->z)) {
+    return false;
+  }
+  const uint64_t age = traffic_monotonic_time_ms() - mesh_received_ms[slot];
+  *age_ms = age > UINT32_MAX ? UINT32_MAX : (uint32_t)age;
+
+  const float prediction_s = Min(*age_ms, max_prediction_ms) * 0.001f;
+  position->x += velocity->x * prediction_s;
+  position->y += velocity->y * prediction_s;
+  position->z += velocity->z * prediction_s;
+  return true;
+}
+
+bool traffic_info_get_mesh_valid_age(uint8_t ac_id, uint32_t *age_ms)
+{
+  if (age_ms == NULL || !traffic_info_is_mesh_track(ac_id)) {
+    return false;
+  }
+  const uint8_t slot = ti_acs_id[ac_id];
+  if (!mesh_has_valid_observation[slot]) {
+    return false;
+  }
+  const uint64_t age = traffic_monotonic_time_ms() - mesh_received_ms[slot];
+  *age_ms = age > UINT32_MAX ? UINT32_MAX : (uint32_t)age;
+  return true;
+}
+#endif
+
+
+void set_ac_info_utm(uint8_t id, int32_t utm_east, int32_t utm_north, int32_t alt, uint8_t utm_zone, int16_t course,
+                     uint16_t gspeed, int16_t climb, uint32_t itow)
 {
   const uint8_t slot = ti_acs_slot(id);
   if (slot == TI_ACS_NONE) {
     return;
   }
 
-  if (itow < ti_acs[slot].itow) {
+  #if TRAFFIC_INFO_USE_MESH
+    if (traffic_info_mesh_source_active(slot)) {
+      return;
+    }
+  #endif
+    if (traffic_has_source_itow[slot]
+        && !traffic_info_itow_is_newer(itow, traffic_source_itow[slot])) {
     return; // don't update on old data
   }
 
@@ -1088,6 +1373,9 @@ void set_ac_info_utm(uint8_t id, uint32_t utm_east, uint32_t utm_north, uint32_t
   SetBit(ti_acs[slot].status, AC_INFO_VEL_LOCAL_F);
 
   ti_acs[slot].itow = itow;
+  traffic_source_itow[slot] = itow;
+  traffic_has_source_itow[slot] = true;
+  traffic_info_touch(slot);
 }
 
 void set_ac_info_lla(uint8_t id, int32_t lat, int32_t lon, int32_t alt,
@@ -1098,7 +1386,13 @@ void set_ac_info_lla(uint8_t id, int32_t lat, int32_t lon, int32_t alt,
     return;
   }
 
-  if (itow < ti_acs[slot].itow) {
+  #if TRAFFIC_INFO_USE_MESH
+    if (traffic_info_mesh_source_active(slot)) {
+      return;
+    }
+  #endif
+    if (traffic_has_source_itow[slot]
+        && !traffic_info_itow_is_newer(itow, traffic_source_itow[slot])) {
     return; // don't update on old data
   }
 
@@ -1114,6 +1408,35 @@ void set_ac_info_lla(uint8_t id, int32_t lat, int32_t lon, int32_t alt,
   SetBit(ti_acs[slot].status, AC_INFO_VEL_LOCAL_F);
 
   ti_acs[slot].itow = itow;
+  traffic_source_itow[slot] = itow;
+  traffic_has_source_itow[slot] = true;
+  traffic_info_touch(slot);
+}
+
+void set_ac_info_lla_arrival(uint8_t id, int32_t lat, int32_t lon, int32_t alt,
+                             int16_t course, uint16_t gspeed, int16_t climb)
+{
+  const uint8_t slot = ti_acs_slot(id);
+  if (slot == TI_ACS_NONE || traffic_has_source_itow[slot]) {
+    return;
+  }
+#if TRAFFIC_INFO_USE_MESH
+  if (traffic_info_mesh_source_active(slot)) {
+    return;
+  }
+#endif
+
+  ti_acs[slot].status = 0;
+  ti_acs[slot].lla_pos_i.lat = lat;
+  ti_acs[slot].lla_pos_i.lon = lon;
+  ti_acs[slot].lla_pos_i.alt = alt;
+  SetBit(ti_acs[slot].status, AC_INFO_POS_LLA_I);
+  SetBit(ti_acs[slot].status, AC_INFO_VEL_LOCAL_F);
+  ti_acs[slot].course = RadOfDeciDeg(course);
+  ti_acs[slot].gspeed = MOfCm(gspeed);
+  ti_acs[slot].climb = MOfCm(climb);
+  ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
+  traffic_info_touch(slot);
 }
 
 /* Lazy reference-frame conversions. Each function computes only a missing
@@ -1280,7 +1603,7 @@ void acInfoCalcPositionLla_f(uint8_t ac_id)
   SetBit(ti_acs[ac_nr].status, AC_INFO_POS_LLA_F);
 }
 
-/* Compute ENU velocity of aircraft with ac_id (float). */
+/* Compute ENU position of aircraft with ac_id (float). */
 void acInfoCalcPositionEnu_f(uint8_t ac_id)
 {
   uint8_t ac_nr = ti_acs_id[ac_id];

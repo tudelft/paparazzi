@@ -4,8 +4,9 @@
 (62.5 kbit/s), 460800 baud UART, 10 dBm EIRP, 0 dBi antennas.
 
 **Fleet:** eight aircraft nominal, up to twelve aircraft, plus the ground
-station as AC_ID 0. AC_IDs may be any distinct values in 0..254; no ordering or
-sequential numbering is assumed.
+station as AC_ID 0. Aircraft use distinct AC_IDs in 1..254; ID 255 remains
+reserved for broadcast and internal sentinels. No ordering or sequential
+numbering is assumed.
 
 **Priority:** fault tolerance and multi-hop coverage first, then the highest
 state update rate that fits the E52 channel and five-frame transmit cache.
@@ -161,9 +162,13 @@ AC_ID. A joining peer:
    separate even when nobody can decode the collision.
 
 `MESH_SLOT_FREE` is `0xFF`, not zero. AC_ID 0 is the GCS and is a legitimate
-slot owner. The primary-defense code explicitly compares against `0xFF`; using
-zero there caused long-lived GCS collisions and was found by the churn
-simulator.
+mesh slot owner, while aircraft IDs are limited to 1..254. The identity domain
+therefore addresses at most 255 members (GCS plus 254 aircraft), so byte-sized
+member counts remain sufficient without changing the over-air format. The
+delivered 32-slot profile supports at most 32 simultaneous full-membership
+peers. The GCS participates in routing and traffic visibility but is
+deliberately excluded from TCAS collision avoidance; a future
+stationary-obstacle policy could use its track explicitly.
 
 Thirty-two slots are intentional. Thirteen peers could fit in sixteen, but the
 churn test showed that sixteen slots were too tight when up to six aircraft
@@ -204,12 +209,20 @@ at which a node originates its own state:
 * when aircraft leave, healthy peers gradually claim quiet slots; when they
   return, peers contract immediately.
 
-At maximum population, `floor(32/13)` gives each healthy peer two slots per
-12 s, or about 0.17 Hz. At the nominal nine-peer population, 32 slots allow
-roughly three slots per healthy peer, or about 0.25 Hz. Sparse fleets rise
-toward the `MESH_TDMA_MAX_REUSE=4` cap (0.33 Hz). Emergency state receives
-priority within that same bounded channel budget. The optimizer conservatively
-budgets all 32 slots as occupied even when integer division leaves a few quiet.
+For $S$ slots and $N$ live nodes, each healthy node receives a baseline of
+$q=\lfloor S/N\rfloor$ slots. The first $r=S\bmod N$ sorted AC_ID ranks receive
+one remainder slot, so quotas differ by at most one and sum to all available
+slots. The winner window advances by one rank every 81 superframes, about
+16.2 minutes, giving long-term fairness without fleet-wide claim churn.
+
+At maximum population, six of the 13 peers are entitled to three slots and
+seven to two slots per 12 s. The average entitlement is therefore
+$32/(13\times12)=0.205$ Hz instead of the floor-only 0.167 Hz. At the nominal
+nine-peer population, five peers receive four slots and four receive three,
+for the same average 0.296 Hz. Collision-healing leases and policy contraction
+can make observed rates lower than these steady-state entitlements. Sparse
+fleets rise toward the `MESH_TDMA_MAX_REUSE=4` cap of 0.33 Hz. Emergency state
+receives priority within the same bounded channel budget.
 
 The 3 s telemetry period is an enabling ceiling, not a promise that every node
 transmits every 3 s. It lets a sparse, healthy node use four owned slots per
@@ -228,6 +241,7 @@ period remains 3 s.
 | Secondary lease | 6-13 frames | break secondary collisions |
 | Primary lease | 10-19 frames | preserve a 2-4 minute recovery window with a 12 s frame |
 | Slot age | 4 frames | tolerate loss, reclaim departed nodes |
+| Remainder epoch | 81 frames | rotate one rank after ageing and serialized expansion settle |
 | Cache high water | 3 of 5 | leave two E52 cache entries as hard margin |
 
 The static assert in `traffic_info.c` forces the generated `MESH_STATE` period
@@ -474,6 +488,35 @@ variable-length array in the new path.
 increments `throttled_count`. State-aware reuse also contracts by one slot when
 the cache is busy. This leaves two physical cache entries of margin.
 
+### 5.4 Predicted traffic snapshots and TCAS freshness
+
+Each valid `MESH_STATE` stores its immutable position, velocity, local monotonic
+receive time, and mesh provenance in `traffic_info`. Safety consumers can ask
+for a caller-owned ENU snapshot projected with constant velocity:
+
+$$\hat{p}(t)=p_{observation}+v_{observation}\min(\Delta t,T_{prediction})$$
+
+Repeated calls always start from the original observation, so prediction never
+accumulates drift in the traffic table. Invalid-position heartbeats remain
+visible to TDMA membership but invalidate old kinematics immediately. Legacy
+traffic records keep their existing behavior and are never mesh-predicted.
+
+TCAS bounds prediction and fresh decision-making to `TCAS_TAU_TA`, currently
+4 s on the proposed Talon. After that interval an existing TA or RA and its
+altitude target are held, but no stale state opens, closes, or changes an
+advisory. After two complete superframes plus one slot and one 1 Hz task
+interval, currently 25.375 s, the track becomes `TCAS_UNAVAILABLE`; data loss
+is never reported as geometric resolution or `TCAS_NO_ALARM`. Clock arithmetic uses local
+monotonic age, while TDMA epochs use GPS week plus TOW. A synchronization
+change or a GPS-to-monotonic phase correction over 10 ms clears learned slot
+ownership and starts a new listen-before-claim cycle, including corrections
+that remain inside the same superframe or land in exactly the next one.
+
+This policy bridges short update gaps without pretending that constant-velocity
+prediction is certain during maneuvers. It is not TCAS flight qualification.
+Measured packet latency, maneuver envelopes, loss bursts, and hardware-in-the-
+loop conflict scenarios remain required before operational use.
+
 ---
 
 ## 6. Acceptance Procedure
@@ -488,8 +531,8 @@ python3 sw/tools/mesh/mesh_phase_optimizer.py \
   --relay-nodes 13 --nb-slots 32 \
   --mesh-period 3 --superframe 12 --max-reuse 4 --period-scale 4
 
-# 2. Dynamic topology
-for seed in 1 2 3 4 5 6 7 8; do
+# 2. Dynamic topology, fair quotas, clock steps, and state-aware contraction
+for seed in 1 3 5 7 11; do
   python3 sw/tools/mesh/mesh_slot_sim.py \
     --frames 4000 --churn 0.05 --seed "$seed" || exit 1
 done
@@ -508,6 +551,10 @@ make AIRCRAFT=Adam ap.compile
 python3 sw/tools/mesh/e52_provision.py --ac-id 0 --dry-run
 python3 sw/tools/mesh/e52_provision.py --ac-id 251 --dry-run
 ```
+
+The slot simulator also checks 32-bit frame rollover, GPS-week rollover,
+same-frame and next-frame phase corrections, and GPS synchronization loss and
+reacquisition before each churn run.
 
 Bench acceptance must also verify all thirteen modems together. Start them in
 different orders, remove up to six aircraft modems, restore them, and confirm:
@@ -536,8 +583,9 @@ cache flushing, or a topology partition.
    bridge an empty 17 km gap. The mission planner must keep a connected chain
    of aircraft with adequate one-hop margin.
 3. **Dense-fleet update rate is deliberately lower.** Maximum-population
-  `MESH_STATE` is about 0.17 Hz per node; nominal population recovers roughly
-  0.25 Hz through slot reuse. This is the cost of 13-way broadcast redundancy
+  average `MESH_STATE` entitlement is about 0.205 Hz per node; nominal
+  population reaches about 0.296 Hz before lease and policy contraction.
+  This is the cost of 13-way broadcast redundancy
    at 10 dBm and 62.5 kbit/s.
 4. **The GCS command tail is unslotted.** Commands are rare and use E52 CSMA.
    A future high-rate uplink needs a reserved slot or directed unicast design.

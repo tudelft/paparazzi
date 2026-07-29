@@ -57,16 +57,106 @@ import sys
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set
 
-SLOT_FREE = 0xFF          # not 0: 0 is the GCS AC_ID, a real node
+GCS_ID = 0
+MAX_AC_ID = 254
+SLOT_FREE = 0xFF          # 255 is reserved; 0 is the GCS and a real mesh node
 NB_SLOTS = 32
 MAX_REUSE = 4
 AGE_FRAMES = 4
 SUPERFRAME_S = 12.0
+REMAINDER_EPOCH_FRAMES = 4 * AGE_FRAMES + 2 * NB_SLOTS + 1
+CLOCK_STEP_MAX_MS = 10
+GPS_WEEK_MS = 604800000
+UINT32_MASK = 0xFFFFFFFF
+INT32_HALF = 0x80000000
 
 
 ENTRY_FRAMES = 3
 HOLD_MIN, HOLD_SPAN = 6, 8
 PRI_MIN, PRI_SPAN = 10, 10
+
+
+def u32(value: int) -> int:
+    """Return production's modulo-2^32 frame representation."""
+    return value & UINT32_MASK
+
+
+def frame_elapsed(now: int, previous: int) -> int:
+    """Mirror unsigned uint32_t frame subtraction in the airborne allocator."""
+    return u32(now - previous)
+
+
+def frame_reached(now: int, deadline: int) -> bool:
+    """Mirror ``(int32_t)(frame - deadline) >= 0`` from production."""
+    return frame_elapsed(now, deadline) < INT32_HALF
+
+
+@dataclass
+class ClockGuard:
+    """Mirror the production GPS phase-step detector."""
+
+    last_synced: bool = False
+    sample_valid: bool = False
+    last_network_ms: int = 0
+    last_local_ms: int = 0
+
+    def update(self, network_ms: int, local_ms: int, synced: bool) -> bool:
+        if synced != self.last_synced:
+            self.last_synced = synced
+            self.sample_valid = False
+            return True
+        if synced and self.sample_valid:
+            network_elapsed = network_ms - self.last_network_ms
+            local_elapsed = local_ms - self.last_local_ms
+            if abs(network_elapsed - local_elapsed) > CLOCK_STEP_MAX_MS:
+                self.last_network_ms = network_ms
+                self.last_local_ms = local_ms
+                return True
+        self.last_network_ms = network_ms
+        self.last_local_ms = local_ms
+        self.sample_valid = True
+        return False
+
+
+def fair_target(nodes: int, rank: int, frame: int) -> int:
+    """Return this sorted rank's deterministic share of available slots."""
+    nodes = max(nodes, 1)
+    target = max(1, min(MAX_REUSE, NB_SLOTS // nodes))
+    if nodes <= NB_SLOTS and target < MAX_REUSE:
+        remainder = NB_SLOTS % nodes
+        first = (frame // REMAINDER_EPOCH_FRAMES) % nodes
+        relative_rank = (rank + nodes - first) % nodes
+        if relative_rank < remainder:
+            target += 1
+    return target
+
+
+def check_clock_guard(failures: List[str]) -> None:
+    """Exercise clock changes that frame-number-only checks cannot detect."""
+    same_frame = ClockGuard(last_synced=True)
+    if same_frame.update(61000, 1000, True):
+        failures.append("clock guard reset on its first synchronized sample")
+    if same_frame.update(61050, 1050, True):
+        failures.append("clock guard reset during normal synchronized progression")
+    if not same_frame.update(60800, 1100, True):
+        failures.append("clock guard missed a same-superframe backward correction")
+
+    next_frame = ClockGuard(last_synced=True)
+    next_frame.update(71900, 1000, True)
+    if not next_frame.update(72500, 1050, True):
+        failures.append("clock guard missed an exactly-next-frame phase correction")
+
+    week_rollover = ClockGuard(last_synced=True)
+    week_rollover.update(GPS_WEEK_MS - 50, 1000, True)
+    if week_rollover.update(GPS_WEEK_MS, 1050, True):
+        failures.append("clock guard reset at a coherent GPS-week rollover")
+
+    sync_change = ClockGuard(last_synced=True)
+    sync_change.update(100000, 1000, True)
+    if not sync_change.update(1050, 1050, False):
+        failures.append("clock guard missed GPS synchronization loss")
+    if not sync_change.update(100100, 1100, True):
+        failures.append("clock guard missed GPS synchronization reacquisition")
 
 
 @dataclass
@@ -84,17 +174,19 @@ class Node:
     priority: bool = False
     cache_busy: bool = False
     frames_seen: int = 0
-    last_frame: int = -1
+    last_frame: int = 0
     slots: Dict[int, tuple] = field(default_factory=dict)
 
     def __post_init__(self):
+        if not GCS_ID <= self.ac_id <= MAX_AC_ID:
+            raise ValueError(f"AC_ID {self.ac_id} is outside 0..{MAX_AC_ID}")
         self.owned = [self.ac_id % NB_SLOTS]
         self.until = [PRI_MIN]
         self.slots = {s: (SLOT_FREE, 0) for s in range(NB_SLOTS)}
 
     # --- mirrors mesh_slot_is_stale / mesh_slot_free ----------------------- #
     def _stale(self, s: int, frame: int) -> bool:
-        return ((frame - self.slots[s][1]) & 0xFFFF) > AGE_FRAMES
+        return frame_elapsed(frame, self.slots[s][1]) > AGE_FRAMES
 
     def _free(self, s: int, frame: int) -> bool:
         owner = self.slots[s][0]
@@ -125,7 +217,7 @@ class Node:
     def _pri_expiry(self, frame: int) -> int:
         r = (self.ac_id * 1103515245 + frame * 12345
              + self.reselect_count * 7919) & 0xFFFFFFFF
-        return frame + PRI_MIN + r % PRI_SPAN
+        return u32(frame + PRI_MIN + r % PRI_SPAN)
 
     # --- mirrors mesh_expansion_turn --------------------------------------- #
     def _turn(self, frame: int, nodes: int) -> bool:
@@ -136,9 +228,10 @@ class Node:
 
     # --- mirrors mesh_slot_maintain ---------------------------------------- #
     def maintain(self, frame: int) -> None:
-        if frame != self.last_frame:
-            self.last_frame = frame
-            self.frames_seen += 1
+        if frame == self.last_frame:
+            return
+        self.last_frame = frame
+        self.frames_seen += 1
 
         nodes = 1
         seen: Set[int] = set()
@@ -155,12 +248,13 @@ class Node:
                 seen.add(owner)
                 nodes += 1
         self.neighbours = nodes - 1
+        rank = sum(1 for ac_id in seen if ac_id < self.ac_id)
 
         if self.frames_seen == ENTRY_FRAMES:
             self.owned = [self._pick(frame)]
             self.until = [self._pri_expiry(frame)]
 
-        if ((frame - self.until[0]) & 0xFFFF) < 0x8000:
+        if frame_reached(frame, self.until[0]):
             self.owned[0] = self._pick(frame)
             self.until[0] = self._pri_expiry(frame)
             self.reselect_count += 1
@@ -174,12 +268,12 @@ class Node:
 
         keep_o, keep_u = [self.owned[0]], [self.until[0]]
         for i in range(1, len(self.owned)):
-            expired = ((frame - self.until[i]) & 0xFFFF) < 0x8000
+            expired = frame_reached(frame, self.until[i])
             if self._free(self.owned[i], frame) and not expired:
                 keep_o.append(self.owned[i]); keep_u.append(self.until[i])
         self.owned, self.until = keep_o, keep_u
 
-        target = max(1, min(MAX_REUSE, NB_SLOTS // nodes))
+        target = fair_target(nodes, rank, frame)
         if (not self.synced or not self.position_valid
                 or (self.ac_id != 0 and not self.airborne)):
             target = 1
@@ -197,12 +291,12 @@ class Node:
             for k in range(NB_SLOTS):
                 s = (start + k) % NB_SLOTS
                 quiet = (self.slots[s][0] == SLOT_FREE and
-                         ((frame - self.slots[s][1]) & 0xFFFF) > 2 * AGE_FRAMES)
+                         frame_elapsed(frame, self.slots[s][1]) > 2 * AGE_FRAMES)
                 if quiet and not self.owns(s):
                     r = (self.ac_id * 2654435761 + frame * 40503
                          + self.reselect_count * 97) & 0xFFFFFFFF
                     self.owned.append(s)
-                    self.until.append(frame + HOLD_MIN + r % HOLD_SPAN)
+                    self.until.append(u32(frame + HOLD_MIN + r % HOLD_SPAN))
                     break
 
     @property
@@ -212,12 +306,59 @@ class Node:
 
 def run(args: argparse.Namespace) -> int:
     rng = random.Random(args.seed)
-    # AC_IDs are deliberately irregular. Zero is the GCS, a real peer; 0xFF
-    # remains reserved as SLOT_FREE and is never generated.
-    all_ids = [0, 3, 19, 42, 58, 77, 101, 125, 140, 168, 203, 222, 251]
+    # AC_IDs are deliberately irregular. Zero is the GCS, a real mesh peer;
+    # 254 exercises the highest aircraft ID and 255 remains reserved.
+    all_ids = [0, 3, 19, 42, 58, 77, 101, 125, 140, 168, 203, 222, 254]
     live: Dict[int, Node] = {}
     failures: List[str] = []
     rate_log: List[tuple] = []
+
+    try:
+        Node(SLOT_FREE)
+        failures.append("reserved ID 255 was accepted as a mesh node")
+    except ValueError:
+        pass
+
+    boundary_frames = (
+        0,
+        REMAINDER_EPOCH_FRAMES,
+        2 * REMAINDER_EPOCH_FRAMES,
+        65535,
+        65536,
+        int(604800000 / (SUPERFRAME_S * 1000)) - 1,
+        int(604800000 / (SUPERFRAME_S * 1000)),
+        0xFFFFFFFE,
+        0xFFFFFFFF,
+    )
+    for nodes in range(1, NB_SLOTS + 1):
+        for frame in boundary_frames:
+            quotas = [fair_target(nodes, rank, frame) for rank in range(nodes)]
+            expected = min(NB_SLOTS, nodes * MAX_REUSE)
+            if sum(quotas) != expected or max(quotas) - min(quotas) > 1:
+                failures.append(f"invalid fair quotas for {nodes} nodes at frame {frame}: {quotas}")
+
+    if frame_elapsed(1, 0xFFFFFFFE) != 3:
+        failures.append("32-bit frame age did not cross rollover correctly")
+    if not frame_reached(1, 0xFFFFFFFF):
+        failures.append("32-bit lease did not expire across rollover")
+    if frame_reached(0xFFFFFFFE, 1):
+        failures.append("32-bit lease expired before a rollover deadline")
+
+    rollover_node = Node(42)
+    rollover_node.last_frame = 0xFFFFFFFE
+    rollover_node.frames_seen = ENTRY_FRAMES
+    rollover_node.owned = [10, 20]
+    rollover_node.until = [1, 0xFFFFFFFF]
+    rollover_node.maintain(0xFFFFFFFF)
+    if 20 in rollover_node.owned:
+        failures.append("secondary lease did not expire at 32-bit rollover")
+    rollover_node.maintain(0)
+    if rollover_node.until[0] != 1:
+        failures.append("primary lease expired before its rollover deadline")
+    rollover_node.maintain(1)
+    if rollover_node.until[0] == 1:
+        failures.append("primary lease did not renew at its rollover deadline")
+    check_clock_guard(failures)
 
     def join(ac: int) -> None:
         if ac not in live:
@@ -238,15 +379,15 @@ def run(args: argparse.Namespace) -> int:
                 if cand:
                     join(rng.choice(cand))       # arrived / regained link
 
-                # Exercise the application policy independently of topology churn.
-                # The GCS remains a valid stationary peer; airborne nodes occasionally
-                # lose sync/position, land, enter an emergency, or see cache pressure.
-                for node in live.values():
-                    node.synced = rng.random() >= args.state_fault
-                    node.position_valid = rng.random() >= args.state_fault
-                    node.airborne = node.ac_id == 0 or rng.random() >= args.state_fault
-                    node.priority = rng.random() < args.priority
-                    node.cache_busy = rng.random() < args.cache_busy
+        # Exercise application policy independently of topology churn. The GCS
+        # remains a valid stationary peer; airborne nodes may lose state,
+        # enter an emergency, or observe modem-cache pressure.
+        for node in live.values():
+            node.synced = rng.random() >= args.state_fault
+            node.position_valid = rng.random() >= args.state_fault
+            node.airborne = node.ac_id == 0 or rng.random() >= args.state_fault
+            node.priority = rng.random() < args.priority
+            node.cache_busy = rng.random() < args.cache_busy
 
         # ---- every node maintains its view ------------------------------- #
         for n in live.values():
@@ -311,8 +452,8 @@ def run(args: argparse.Namespace) -> int:
     print(f"  (superframe is {SUPERFRAME_S:.0f} s; update rate = slots/{SUPERFRAME_S:.0f})")
     print()
 
-    hard = [f for f in failures if "holds no slot" in f or "exceeded" in f]
     shared = [f for f in failures if "shared by" in f]
+    hard = [f for f in failures if f not in shared]
 
     slot_frames = max(1, (args.frames - args.settle) * NB_SLOTS)
     pct = 100.0 * len(shared) / slot_frames

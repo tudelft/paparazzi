@@ -33,7 +33,7 @@ export PAPARAZZI_HOME
 
 #####################################################
 # If you add more test files you add their names here
-TESTS = test_framed_ring_buffer.run
+TESTS = test_framed_ring_buffer.run test_tcas_policy.run
 
 ###################################################
 # You should not need to touch the rest of the file
@@ -53,6 +53,10 @@ test: build_tests
 	prove $(VERBOSE) --exec '' ./*.run
 
 test_framed_ring_buffer.run: $(PAPARAZZI_SRC)/sw/airborne/utils/framed_ring_buffer.c
+
+test_tcas_policy.run: test_tcas_policy.c
+	@echo BUILD $@
+	$(Q)$(CC) $(FLAGS) -Wextra -Werror -I$(PAPARAZZI_SRC)/sw/airborne $< -o $@
 
 %.run: %.c
 	@echo BUILD $@
