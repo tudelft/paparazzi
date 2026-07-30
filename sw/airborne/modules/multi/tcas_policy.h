@@ -73,6 +73,13 @@ static inline bool tcas_velocity_is_usable(float east, float north, float up)
   return isfinite(east) && isfinite(north) && isfinite(up);
 }
 
+/** Return three legacy update intervals without overflowing milliseconds. */
+static inline uint32_t tcas_legacy_drop_ms(uint32_t legacy_hold_ms)
+{
+  return legacy_hold_ms > UINT32_MAX / 3u
+         ? UINT32_MAX : 3u * legacy_hold_ms;
+}
+
 /**
  * Decide whether geometry may be evaluated, held, or declared unavailable.
  *
@@ -95,7 +102,8 @@ static inline enum tcas_surveillance_action tcas_surveillance_action(
   uint32_t fresh_ms, uint32_t drop_ms, uint32_t legacy_hold_ms)
 {
   if (!valid_geometry) {
-    const uint32_t invalid_drop_ms = mesh_track ? drop_ms : 3u * legacy_hold_ms;
+    const uint32_t invalid_drop_ms = mesh_track ? drop_ms
+                                     : tcas_legacy_drop_ms(legacy_hold_ms);
     return advisory_active && age_ms <= invalid_drop_ms
            ? TCAS_SURVEILLANCE_HOLD : TCAS_SURVEILLANCE_UNAVAILABLE;
   }
@@ -109,7 +117,7 @@ static inline enum tcas_surveillance_action tcas_surveillance_action(
     }
     return TCAS_SURVEILLANCE_EVALUATE;
   }
-  if (age_ms > 3u * legacy_hold_ms) {
+  if (age_ms > tcas_legacy_drop_ms(legacy_hold_ms)) {
     return TCAS_SURVEILLANCE_UNAVAILABLE;
   }
   if (age_ms > legacy_hold_ms) {

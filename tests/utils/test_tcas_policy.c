@@ -26,7 +26,7 @@ static enum tcas_surveillance_action action(bool valid, bool mesh,
 
 int main(void)
 {
-  puts("1..32");
+  puts("1..34");
   expect_action("mesh fresh-1", action(true, true, false, FRESH_MS - 1u),
                 TCAS_SURVEILLANCE_EVALUATE);
   expect_action("mesh fresh exact", action(true, true, false, FRESH_MS),
@@ -104,6 +104,14 @@ int main(void)
     fputs("non-finite velocity was accepted\n", stderr);
     return EXIT_FAILURE;
   }
+  if (tcas_legacy_drop_ms(LEGACY_MS) != 3u * LEGACY_MS) {
+    fputs("normal legacy drop interval was not tripled\n", stderr);
+    return EXIT_FAILURE;
+  }
+  if (tcas_legacy_drop_ms(UINT32_MAX) != UINT32_MAX) {
+    fputs("legacy drop interval overflow was not saturated\n", stderr);
+    return EXIT_FAILURE;
+  }
 
   float resolved_msl = 0.f;
   if (!tcas_resolve_altitude_msl(TCAS_RESOLUTION_CLIMB, true, 100.f, 95.f, 15.f, 25.f, &resolved_msl)
@@ -121,7 +129,7 @@ int main(void)
     fputs("security floor was not applied\n", stderr);
     return EXIT_FAILURE;
   }
-    if (tcas_resolve_altitude_msl(TCAS_RESOLUTION_NONE, true, 100.f, 95.f, 15.f, 25.f, &resolved_msl)
+  if (tcas_resolve_altitude_msl(TCAS_RESOLUTION_NONE, true, 100.f, 95.f, 15.f, 25.f, &resolved_msl)
       || tcas_resolve_altitude_msl(TCAS_RESOLUTION_CLIMB, false, 100.f, 95.f, 15.f, 25.f, &resolved_msl)
       || tcas_resolve_altitude_msl(TCAS_RESOLUTION_CLIMB, true, NAN, 95.f, 15.f, 25.f, &resolved_msl)) {
     fputs("inactive or invalid altitude resolution was accepted\n", stderr);
@@ -132,8 +140,8 @@ int main(void)
     return EXIT_FAILURE;
   }
 
-  for (unsigned test = 1; test <= 32; test++) {
-    printf("ok %u - TCAS policy boundary\n", test);
+  for (unsigned test = 1; test <= 34; test++) {
+    printf("ok %u - TCAS and traffic policy\n", test);
   }
   return EXIT_SUCCESS;
 }

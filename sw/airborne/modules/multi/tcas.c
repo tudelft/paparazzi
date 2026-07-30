@@ -410,7 +410,6 @@ void tcas_periodic_task_1Hz(void)
 #endif
   float fresh_ra_score = TCAS_HUGE_TAU;
   float fresh_ta_score = TCAS_HUGE_TAU;
-  float fresh_ra_vertical_speed = 0.f;
   uint8_t fresh_ra = AC_ID;
   uint8_t held_ra = AC_ID;
   uint8_t fresh_ta = AC_ID;
@@ -418,17 +417,17 @@ void tcas_periodic_task_1Hz(void)
   bool surveillance_unavailable = traffic_info_capacity_exceeded
                                   || !traffic_info_surveillance_established;
   uint8_t i;
-  float vx = stateGetHorizontalSpeedNorm_f() * sinf(stateGetHorizontalSpeedDir_f());
-  float vy = stateGetHorizontalSpeedNorm_f() * cosf(stateGetHorizontalSpeedDir_f());
+  const struct EnuCoor_f *ownship_position = stateGetPositionEnu_f();
+  const struct EnuCoor_f *ownship_velocity = stateGetSpeedEnu_f();
   /* i is a compact ti_acs[] table slot, not an AC_ID. Arbitrary aircraft IDs
    * are mapped into slots as they are first received, so IDs need not be
    * sequential or smaller than NB_ACS. Slot 0 is the GCS and slot 1 is this
-   * aircraft; NB_ACS therefore provides NB_ACS - 2 remote-aircraft slots.
+  * aircraft. ti_acs_idx is the first unused slot, so only occupied remote
+  * slots are evaluated.
    * The GCS contributes mesh routing and traffic visibility, but is excluded
    * from collision avoidance; supporting GCS obstacles would require an
    * explicit stationary-track policy rather than treating it as an aircraft. */
-  for (i = 2; i < NB_ACS; i++) {
-    if (ti_acs[i].ac_id == TRAFFIC_INFO_GCS_ID) { continue; } // unused slot
+  for (i = 2; i < ti_acs_idx; i++) {
     struct EnuCoor_f position;
     struct EnuCoor_f velocity;
     uint32_t age_ms;
@@ -460,12 +459,12 @@ void tcas_periodic_task_1Hz(void)
       surveillance_unavailable = true;
       continue;
     }
-    float dx = position.x - stateGetPositionEnu_f()->x;
-    float dy = position.y - stateGetPositionEnu_f()->y;
-    float dz = position.z - stateGetPositionEnu_f()->z;
-    float dvx = vx - velocity.x;
-    float dvy = vy - velocity.y;
-    float dvz = stateGetSpeedEnu_f()->z - velocity.z;
+    float dx = position.x - ownship_position->x;
+    float dy = position.y - ownship_position->y;
+    float dz = position.z - ownship_position->z;
+    float dvx = ownship_velocity->x - velocity.x;
+    float dvy = ownship_velocity->y - velocity.y;
+    float dvz = ownship_velocity->z - velocity.z;
     float scal = dvx * dx + dvy * dy + dvz * dz;
     float ddh = dx * dx + dy * dy;
     float ddv = dz * dz;
@@ -473,7 +472,6 @@ void tcas_periodic_task_1Hz(void)
     if (scal > 0.) { tau = (ddh + ddv) / scal; }
     /* Advance this track's advisory state from the current geometry. */
     uint8_t inside = TCAS_IsInside();
-    //enum tcas_resolve test_dir = RA_NONE;
     if (tcas_acs_status[i].status == TCAS_UNAVAILABLE) {
       tcas_acs_status[i].status = TCAS_NO_ALARM;
       tcas_resolve_received[i] = false;
@@ -490,10 +488,6 @@ void tcas_periodic_task_1Hz(void)
       case TCAS_TA:
         if (tau < tcas_tau_ra || inside) {
           tcas_acs_status[i].status = TCAS_RA; // TA -> RA
-          // Downlink alert
-          //test_dir = tcas_test_direction(ti_acs[i].ac_id);
-          // DOWNLINK_SEND_TCAS_RA(DefaultChannel, DefaultDevice,
-          //                       &(ti_acs[i].ac_id), &test_dir);
           break;
         }
         if (tau > tcas_tau_ta && !inside) {
@@ -512,9 +506,6 @@ void tcas_periodic_task_1Hz(void)
         }
         if (tau < tcas_tau_ra || inside) {
           tcas_acs_status[i].status = TCAS_RA; // NO_ALARM -> RA = big problem ?
-          // Downlink alert
-          //test_dir = tcas_test_direction(ti_acs[i].ac_id);
-          //DOWNLINK_SEND_TCAS_RA(DefaultChannel, DefaultDevice,&(ti_acs[i].ac_id),&test_dir);
         }
         break;
       default:
@@ -529,7 +520,6 @@ void tcas_periodic_task_1Hz(void)
             || (score == fresh_ra_score && ti_acs[i].ac_id == tcas_ac_RA))) {
       fresh_ra = ti_acs[i].ac_id;
       fresh_ra_score = score;
-      fresh_ra_vertical_speed = velocity.z;
     } else if (tcas_acs_status[i].status == TCAS_TA
                && (fresh_ta == AC_ID || score < fresh_ta_score)) {
       fresh_ta = ti_acs[i].ac_id;
@@ -595,11 +585,6 @@ void tcas_periodic_task_1Hz(void)
       }
     } else {
       tcas_resolve_received[ra_slot] = false;
-      if (tcas_resolve == RA_CLIMB && fresh_ra_vertical_speed > 1.0f) {
-        tcas_resolve = RA_DESCEND;
-      } else if (tcas_resolve == RA_DESCEND && fresh_ra_vertical_speed < -1.0f) {
-        tcas_resolve = RA_CLIMB;
-      }
     }
     if (tcas_ac_RA != previous_ra || tcas_resolve != previous_resolve) {
       tcas_command_valid = false;

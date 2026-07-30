@@ -82,7 +82,7 @@ make -C tests/utils test_tcas_policy.run
 tests/utils/test_tcas_policy.run
 ```
 
-The expected result is `1..32` followed by 32 passing checks.
+The expected result is `1..34` followed by 34 passing checks.
 
 ## Why these scenarios are deterministic
 
@@ -147,6 +147,15 @@ The shared TCAS core now obtains MSL altitude from the firmware's native state:
 The same MSL value is used for the security-height gate, intruder altitude
 conversion, and altitude command refresh.
 
+### Initial RA coordination
+
+Before a peer resolution message arrives, each aircraft independently selects
+a complementary direction from vertical geometry and aircraft-ID ordering.
+The initial command is no longer reversed from the peer's observed vertical
+speed: that unconfirmed-motion heuristic could briefly make both aircraft
+descend. Once a fresh peer resolution is available, the existing explicit
+coordination rule still resolves any same-direction choice by aircraft ID.
+
 ### Reproducible test geometry
 
 The original routes did not guarantee a conflict, and unstable flight-dynamics
@@ -172,7 +181,10 @@ The repair was completed in this order:
 11. found that rotorcraft had valid ENU geometry without UTM altitude;
 12. added firmware-neutral MSL altitude handling;
 13. verified TA, coordinated RA, altitude response, and resolution for both
-    scenarios.
+  scenarios;
+14. repeated the live fixed-wing encounter after the final cleanup, found a
+  one-cycle same-direction RA, removed the uncoordinated speed reversal, and
+  verified complementary first commands through resolution.
 
 ## Troubleshooting
 
