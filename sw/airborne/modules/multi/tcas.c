@@ -128,6 +128,16 @@ static float tcas_backend_ground_altitude_msl(void)
 #endif
 }
 
+/** Return ownship altitude in meters MSL using the firmware's native state. */
+static float tcas_ownship_altitude_msl(void)
+{
+#if FIXEDWING_FIRMWARE
+  return stateGetPositionUtm_f()->alt;
+#else
+  return stateGetHmslOrigin_f() + stateGetPositionEnu_f()->z;
+#endif
+}
+
 /**
  * Check whether ownship position and velocity support TCAS geometry.
  *
@@ -138,17 +148,22 @@ static float tcas_backend_ground_altitude_msl(void)
  */
 static bool tcas_ownship_geometry_valid(void)
 {
-  const struct UtmCoor_f *utm = stateGetPositionUtm_f();
-  return bit_is_set(state.pos_status, POS_UTM_F)
+  const struct EnuCoor_f *position = stateGetPositionEnu_f();
+  const struct EnuCoor_f *velocity = stateGetSpeedEnu_f();
+  const bool altitude_valid = isfinite(tcas_ownship_altitude_msl());
+#if FIXEDWING_FIRMWARE
+  const bool altitude_source_valid = bit_is_set(state.pos_status, POS_UTM_F);
+#else
+  const bool altitude_source_valid = isfinite(stateGetHmslOrigin_f());
+#endif
+  return altitude_source_valid
          && stateIsLocalCoordinateValid()
          && (state.speed_status & SPEED_LOCAL_COORD) != 0
-         && isfinite(utm->alt)
-         && isfinite(stateGetPositionEnu_f()->x)
-         && isfinite(stateGetPositionEnu_f()->y)
-         && isfinite(stateGetPositionEnu_f()->z)
-         && tcas_velocity_is_usable(stateGetSpeedEnu_f()->x,
-                                    stateGetSpeedEnu_f()->y,
-                                    stateGetSpeedEnu_f()->z);
+         && altitude_valid
+         && isfinite(position->x)
+         && isfinite(position->y)
+         && isfinite(position->z)
+         && tcas_velocity_is_usable(velocity->x, velocity->y, velocity->z);
 }
 
 bool tcas_get_altitude_command(float nominal_altitude_msl, float *altitude_msl)
@@ -375,7 +390,7 @@ void tcas_periodic_task_1Hz(void)
     return;
   }
   /* TCAS does not command below the configured security-height floor. */
-  if (stateGetPositionUtm_f()->alt <= tcas_backend_ground_altitude_msl() + SECURITY_HEIGHT) {
+  if (tcas_ownship_altitude_msl() <= tcas_backend_ground_altitude_msl() + SECURITY_HEIGHT) {
     uint8_t i;
     for (i = 0; i < NB_ACS; i++) {
       tcas_acs_status[i].status = TCAS_NO_ALARM;
@@ -385,7 +400,7 @@ void tcas_periodic_task_1Hz(void)
     tcas_status = TCAS_UNAVAILABLE;
     tcas_resolve = RA_NONE;
     tcas_ac_RA = AC_ID;
-    tcas_alt_setpoint = stateGetPositionUtm_f()->alt;
+    tcas_alt_setpoint = tcas_ownship_altitude_msl();
     tcas_command_valid = false;
     return;
   }
@@ -611,7 +626,7 @@ void tcas_periodic_task_4Hz(void)
     return;
   }
   // set alt setpoint
-  if (stateGetPositionUtm_f()->alt > tcas_backend_ground_altitude_msl() + SECURITY_HEIGHT
+  if (tcas_ownship_altitude_msl() > tcas_backend_ground_altitude_msl() + SECURITY_HEIGHT
       && tcas_status == TCAS_RA) {
     struct EnuCoor_f position;
     struct EnuCoor_f velocity;
@@ -636,12 +651,12 @@ void tcas_periodic_task_4Hz(void)
       return; // preserve the last command until the 1 Hz task holds or drops it
     }
     tcas_intruder_altitude = tcas_intruder_altitude_msl(
-                               stateGetPositionUtm_f()->alt,
+                   tcas_ownship_altitude_msl(),
                                position.z,
                                stateGetPositionEnu_f()->z);
     tcas_command_valid = isfinite(tcas_intruder_altitude);
   } else {
-    tcas_alt_setpoint = stateGetPositionUtm_f()->alt;
+    tcas_alt_setpoint = tcas_ownship_altitude_msl();
     tcas_resolve = RA_NONE;
     tcas_command_valid = false;
   }

@@ -28,4 +28,15 @@ static inline bool traffic_info_itow_is_newer(uint32_t incoming, uint32_t stored
   return forward > 0u && forward < TRAFFIC_INFO_GPS_HALF_WEEK_MS;
 }
 
+/** Accept a changing legacy observation when its producer has a frozen TOW. */
+static inline bool traffic_info_itow_accepts_observation(uint32_t incoming,
+                                                          uint32_t stored,
+                                                          bool payload_changed)
+{
+  return traffic_info_itow_is_newer(incoming, stored)
+         || (payload_changed
+             && incoming % TRAFFIC_INFO_GPS_WEEK_MS
+                == stored % TRAFFIC_INFO_GPS_WEEK_MS);
+}
+
 #endif /* TRAFFIC_INFO_TIME_H */

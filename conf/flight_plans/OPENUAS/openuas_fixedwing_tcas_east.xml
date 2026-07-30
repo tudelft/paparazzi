@@ -1,0 +1,20 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="50" ground_alt="0" lat0="52.1682775" lon0="4.4171448" qfu="270"
+             max_dist_from_home="1500" name="TCAS Head-on East" security_height="5">
+  <waypoints>
+    <waypoint name="HOME" x="0" y="0"/>
+    <waypoint name="CLIMB" x="-80" y="0"/>
+    <waypoint name="EAST" x="0" y="0"/>
+    <waypoint name="WEST" x="-300" y="0"/>
+  </waypoints>
+  <blocks>
+    <block name="TCAS head-on" strip_button="TCAS head-on loop">
+      <set value="0" var="autopilot.kill_throttle"/>
+      <set value="1" var="autopilot.launch"/>
+      <go from="EAST" wp="WEST"/>
+      <go from="WEST" wp="EAST"/>
+      <deroute block="TCAS head-on"/>
+    </block>
+  </blocks>
+</flight_plan>

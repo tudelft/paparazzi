@@ -1,0 +1,20 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="12" ground_alt="0" lat0="52.1682775" lon0="4.4149473"
+             max_dist_from_home="1500" name="TCAS Midpoint Hover" security_height="5">
+  <header>
+#include "autopilot.h"
+  </header>
+  <waypoints>
+    <waypoint name="HOME" x="0" y="0"/>
+    <waypoint name="HOLD" x="0" y="0"/>
+  </waypoints>
+  <blocks>
+    <block name="TCAS midpoint hover" strip_button="TCAS midpoint hover">
+      <call_once fun="NavResurrect()"/>
+      <set value="0" var="autopilot.kill_throttle"/>
+      <stay vmode="climb" climb="1.0" wp="HOLD" until="GetPosHeight() @GT 10"/>
+      <stay wp="HOLD"/>
+    </block>
+  </blocks>
+</flight_plan>

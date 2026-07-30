@@ -419,7 +419,7 @@
     <module name="tcas"/>
 
     <!-- <module name="imu_quality_assessment"/>--><!-- Can be disabled after initial tuning -->
-    <module name="tune_airspeed"/><!-- Can be disabled after initial tuning -->
+    <!-- <module name="tune_airspeed"/>--><!-- Can be disabled after initial tuning -->
 
     <define name="RADIO_MANUALLIGHT" value="RADIO_AUX2"/>
     <define name="RADIO_HATCH" value="RADIO_AUX3"/>
@@ -1019,7 +1019,7 @@
   <section name="SIMULATOR" prefix="NPS_">
     <define name="JSBSIM_LAUNCHSPEED" value="MIN_SPEED_FOR_TAKEOFF"/>
     <!-- <define name="JSBSIM_MODEL" value="YardStik" type="string"/> -->
-    <define name="JSBSIM_MODEL" value="Easystar3" type="string"/>
+    <define name="JSBSIM_MODEL" value="openuas_jsbsim_multiplex_easystar3" type="string"/>
     <!-- <define name="JSBSIM_MODEL" value="AGGIEAIR/minion" type="string"/> -->
     <define name="COMMANDS_NB" value="4"/>
     <define name="ACTUATOR_NAMES" value="throttle-cmd-norm, aileron-cmd-norm, elevator-cmd-norm, rudder-cmd-norm" type="string[]"/>

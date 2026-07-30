@@ -26,7 +26,7 @@ static enum tcas_surveillance_action action(bool valid, bool mesh,
 
 int main(void)
 {
-  puts("1..29");
+  puts("1..32");
   expect_action("mesh fresh-1", action(true, true, false, FRESH_MS - 1u),
                 TCAS_SURVEILLANCE_EVALUATE);
   expect_action("mesh fresh exact", action(true, true, false, FRESH_MS),
@@ -83,6 +83,18 @@ int main(void)
     fputs("ambiguous half-week TOW was accepted as newer\n", stderr);
     return EXIT_FAILURE;
   }
+  if (!traffic_info_itow_accepts_observation(1u, 1u, true)) {
+    fputs("changing legacy track with frozen TOW was rejected\n", stderr);
+    return EXIT_FAILURE;
+  }
+  if (traffic_info_itow_accepts_observation(1u, 1u, false)) {
+    fputs("unchanged duplicate observation was accepted\n", stderr);
+    return EXIT_FAILURE;
+  }
+  if (traffic_info_itow_accepts_observation(100u, 101u, true)) {
+    fputs("changed but older observation was accepted\n", stderr);
+    return EXIT_FAILURE;
+  }
 
   if (!tcas_velocity_is_usable(0.0f, 0.0f, 0.0f)) {
     fputs("finite zero velocity was rejected\n", stderr);
@@ -120,7 +132,7 @@ int main(void)
     return EXIT_FAILURE;
   }
 
-  for (unsigned test = 1; test <= 29; test++) {
+  for (unsigned test = 1; test <= 32; test++) {
     printf("ok %u - TCAS policy boundary\n", test);
   }
   return EXIT_SUCCESS;

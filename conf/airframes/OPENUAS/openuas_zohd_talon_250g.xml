@@ -373,7 +373,7 @@
     </module> -->
 
     <module name="traffic_info">
-      <define name="TRAFFIC_INFO_USE_MESH" value="TRUE"/>
+      <!-- <define name="TRAFFIC_INFO_USE_MESH" value="TRUE"/> -->
     </module>
     <module name="tcas"/>
 

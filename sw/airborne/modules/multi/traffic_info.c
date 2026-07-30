@@ -88,6 +88,22 @@ static bool traffic_has_position_observation[NB_ACS];
 static bool traffic_has_velocity_observation[NB_ACS];
 static uint32_t traffic_source_itow[NB_ACS];
 static bool traffic_has_source_itow[NB_ACS];
+enum traffic_source_position_kind {
+  TRAFFIC_SOURCE_POSITION_NONE,
+  TRAFFIC_SOURCE_POSITION_UTM,
+  TRAFFIC_SOURCE_POSITION_LLA
+};
+struct traffic_source_observation {
+  enum traffic_source_position_kind kind;
+  int32_t position_1;
+  int32_t position_2;
+  int32_t altitude;
+  int16_t course;
+  uint16_t gspeed;
+  int16_t climb;
+  uint8_t utm_zone;
+};
+static struct traffic_source_observation traffic_source_observation[NB_ACS];
 static uint64_t traffic_monotonic_epoch_ms;
 static uint32_t traffic_monotonic_last_ms;
 
@@ -102,6 +118,21 @@ static uint64_t traffic_monotonic_time_ms(void)
   return traffic_monotonic_epoch_ms + now_ms;
 }
 
+static bool traffic_source_observation_changed(
+  uint8_t slot, const struct traffic_source_observation *observation)
+{
+  const struct traffic_source_observation *stored =
+    &traffic_source_observation[slot];
+  return observation->kind != stored->kind
+         || observation->position_1 != stored->position_1
+         || observation->position_2 != stored->position_2
+         || observation->altitude != stored->altitude
+         || observation->course != stored->course
+         || observation->gspeed != stored->gspeed
+         || observation->climb != stored->climb
+         || observation->utm_zone != stored->utm_zone;
+}
+
 /* Geoid height (msl) over ellipsoid [mm] */
 int32_t geoid_height;
 
@@ -111,8 +142,8 @@ static void send_acinfo_lla(struct transport_tx *trans, struct link_device *dev)
   int16_t course = (int16_t)DeciDegOfRad(stateGetHorizontalSpeedDir_f());
   struct LlaCoor_i* lla = stateGetPositionLla_i();
   uint32_t itow = gps.tow;
-  uint16_t speed = (uint16_t)(stateGetHorizontalSpeedNorm_f()*10.f);
-  int16_t climb = (int16_t)(stateGetSpeedEnu_f()->z*10.f);
+  uint16_t speed = (uint16_t)(stateGetHorizontalSpeedNorm_f() * 100.f);
+  int16_t climb = (int16_t)(stateGetSpeedEnu_f()->z * 100.f);
   int32_t alt = (int32_t)(lla->alt/10);
   uint8_t ac_id = AC_ID;
 
@@ -1097,6 +1128,7 @@ void traffic_info_init(void)
   memset(traffic_has_velocity_observation, 0, sizeof(traffic_has_velocity_observation));
   memset(traffic_source_itow, 0, sizeof(traffic_source_itow));
   memset(traffic_has_source_itow, 0, sizeof(traffic_has_source_itow));
+  memset(traffic_source_observation, 0, sizeof(traffic_source_observation));
   traffic_info_capacity_exceeded = false;
   traffic_info_surveillance_established = false;
 
@@ -1632,8 +1664,22 @@ void set_ac_info_utm(uint8_t id, int32_t utm_east, int32_t utm_north, int32_t al
       return;
     }
   #endif
-    if (traffic_has_source_itow[slot]
-        && !traffic_info_itow_is_newer(itow, traffic_source_itow[slot])) {
+  const struct traffic_source_observation observation = {
+    .kind = TRAFFIC_SOURCE_POSITION_UTM,
+    .position_1 = utm_east,
+    .position_2 = utm_north,
+    .altitude = alt,
+    .course = course,
+    .gspeed = gspeed,
+    .climb = climb,
+    .utm_zone = utm_zone
+  };
+  const bool payload_changed =
+    traffic_source_observation_changed(slot, &observation);
+  if (traffic_has_source_itow[slot]
+      && !traffic_info_itow_accepts_observation(itow,
+                                                 traffic_source_itow[slot],
+                                                 payload_changed)) {
     return; // don't update on old data
   }
 
@@ -1673,6 +1719,7 @@ void set_ac_info_utm(uint8_t id, int32_t utm_east, int32_t utm_north, int32_t al
   ti_acs[slot].itow = itow;
   traffic_source_itow[slot] = itow;
   traffic_has_source_itow[slot] = true;
+  traffic_source_observation[slot] = observation;
   traffic_info_touch(slot);
 }
 
@@ -1689,8 +1736,22 @@ void set_ac_info_lla(uint8_t id, int32_t lat, int32_t lon, int32_t alt,
       return;
     }
   #endif
-    if (traffic_has_source_itow[slot]
-        && !traffic_info_itow_is_newer(itow, traffic_source_itow[slot])) {
+  const struct traffic_source_observation observation = {
+    .kind = TRAFFIC_SOURCE_POSITION_LLA,
+    .position_1 = lat,
+    .position_2 = lon,
+    .altitude = alt,
+    .course = course,
+    .gspeed = gspeed,
+    .climb = climb,
+    .utm_zone = 0
+  };
+  const bool payload_changed =
+    traffic_source_observation_changed(slot, &observation);
+  if (traffic_has_source_itow[slot]
+      && !traffic_info_itow_accepts_observation(itow,
+                                                 traffic_source_itow[slot],
+                                                 payload_changed)) {
     return; // don't update on old data
   }
 
@@ -1708,6 +1769,7 @@ void set_ac_info_lla(uint8_t id, int32_t lat, int32_t lon, int32_t alt,
   ti_acs[slot].itow = itow;
   traffic_source_itow[slot] = itow;
   traffic_has_source_itow[slot] = true;
+  traffic_source_observation[slot] = observation;
   traffic_info_touch(slot);
 }
 

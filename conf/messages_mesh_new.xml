@@ -3086,7 +3086,7 @@
       <field name="msg" type="char[]"/>
     </message>
 
-    <message name="MESH_STATE" id="200" link="broadcasted">
+    <message name="MESH_STATE" id="194" link="broadcasted">
       <description>
         Compact air-to-air state vector for narrowband broadcast meshes
         (e.g. EByte E52-xxxNWxxS LoRa MESH at 62.5 kbps).
