@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ZOHD Talon 250G — Autopilot Tuning Report</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "DejaVu Sans", "Helvetica Neue", Arial, sans-serif; color: #1c2733; }
+  .page { width: 210mm; height: 296mm; padding: 13mm 15mm; page-break-after: always; position: relative; overflow: hidden; }
+  .page:last-child { page-break-after: auto; }
+  h1 { font-size: 18pt; font-weight: 800; letter-spacing: -0.5px; color: #0d2a4a; }
+  h2 { font-size: 9pt; text-transform: uppercase; letter-spacing: 2.5px; color: #e8720c; margin-bottom: 2mm; }
+  h3 { font-size: 10.5pt; color: #0d2a4a; border-bottom: 2px solid #e8720c; padding-bottom: 0.8mm; margin: 3mm 0 2mm 0; }
+  .tagline { font-size: 9.5pt; color: #46586b; margin-top: 1mm; font-style: italic; }
+  .rule { height: 1.2mm; background: linear-gradient(90deg, #e8720c 0 30%, #0d2a4a 30% 100%); margin: 2.5mm 0 3mm 0; border-radius: 1mm; }
+  table { width: 100%; border-collapse: collapse; font-size: 6.5pt; }
+  th { text-align: left; color: #fff; background: #0d2a4a; padding: 0.8mm 1.3mm; font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.4px;}
+  td { padding: 0.5mm 1.3mm; border-bottom: 0.3mm solid #dfe6ec; vertical-align: top; line-height: 1.18; }
+  td.p { font-family: "DejaVu Sans Mono", monospace; font-size: 6.3pt; white-space: nowrap; }
+  td.v { font-weight: 700; white-space: nowrap; color: #0d2a4a; }
+  .callout { background: #fdf3e7; border-left: 1.5mm solid #e8720c; padding: 2mm 2.5mm; font-size: 8pt; margin: 2.5mm 0; border-radius: 0 1.5mm 1.5mm 0; line-height: 1.35;}
+  .good { background: #eaf6ec; border-left-color: #2e8b46; }
+  .warn2 { background: #fdeaea; border-left-color: #c0392b; }
+  .footer { position: absolute; bottom: 7mm; left: 15mm; right: 15mm; font-size: 7pt; color: #8a97a5;
+            border-top: 0.3mm solid #dfe6ec; padding-top: 1.5mm; display: flex; justify-content: space-between; }
+  ul.tight { font-size: 8.4pt; padding-left: 4.5mm; line-height: 1.36; }
+  ul.tight li { margin-bottom: 0.9mm; }
+  .num { font-variant-numeric: tabular-nums; }
+  .cols { display: flex; gap: 5mm; }
+  .col { flex: 1; }
+  code, .code { font-family: "DejaVu Sans Mono", monospace; font-size: 7.4pt; background: #eef2f6; padding: 0.2mm 1mm; border-radius: 1mm; }
+  pre.code { display: block; background: #0d2a4a; color: #d8e6f2; padding: 3mm; border-radius: 2mm; line-height: 1.45; overflow: hidden; white-space: pre; margin: 2mm 0;}
+  pre.code .c { color: #7fb0d8; } pre.code .k { color: #ffb46b; }
+  .step { display: flex; gap: 2.5mm; margin-bottom: 1.2mm; font-size: 7.8pt; line-height: 1.28;}
+  .stepnum { flex: 0 0 5mm; height: 5mm; border-radius: 50%; background: #e8720c; color: #fff; font-weight: 800;
+             display: flex; align-items: center; justify-content: center; font-size: 8pt;}
+</style>
+</head>
+<body>
+
+<!-- ============ PAGE 1 : HOW IT WAS TUNED ============ -->
+<div class="page">
+  <h2>OpenUAS &middot; ZOHD Talon 250G &middot; Energy Adaptive Control</h2>
+  <h1>Autopilot Tuning Report</h1>
+  <div class="tagline">How the gains were found: measure first, change one thing, prove it in simulation, repeat.</div>
+  <div class="rule"></div>
+
+  <h3 style="margin-top:0">The Method — no guesswork</h3>
+  <div class="step"><div class="stepnum">1</div><div><b>Build a truthful physics model.</b> A JSBSim flight-dynamics model of the Talon 250G was created from the real specs (250 g, 620 mm span, 6.6 dm&sup2;, 5&times;5 pusher) and validated against known behaviour: stall 6.7 m/s, top speed 16 m/s, glide ratio ~9.</div></div>
+  <div class="step"><div class="stepnum">2</div><div><b>Derive first-guess gains from physics.</b> Cruise throttle, climb feedforwards and limits were <i>calculated</i> from the model (e.g. measured 28 % throttle at 12 m/s), not copied from another plane.</div></div>
+  <div class="step"><div class="stepnum">3</div><div><b>Fly repeatable test patterns headlessly.</b> Scripted flights &mdash; hand launch, +30 m altitude step, laps of <i>Oval 1-2</i> &mdash; measured altitude error, airspeed and bank continuously, scored as capture time, dip, balloon and overshoot, split into "straights" vs "turns".</div></div>
+  <div class="step"><div class="stepnum">4</div><div><b>Change one gain, re-fly, compare numbers.</b> Only changes that measurably improved the numbers (without breaking another test) were kept. Where no gain could fix the physics, the <i>firmware itself</i> was improved: a bank-angle energy feedforward and a constant-deceleration altitude capture were added to <code>energy_ctrl.c</code> (both default-off, upstream-safe).</div></div>
+
+  <h3>What was changed, and why (plain language)</h3>
+  <table>
+    <tr><th>Parameter</th><th>Old &rarr; Final</th><th>Why (in plain terms)</th></tr>
+    <tr><td class="p">POWER_CTL_BAT_NOMINAL</td><td class="v num">11.7 &rarr; 7.2 V</td><td>Was a 3-cell value on a 2-cell plane. The controller scales throttle with battery sag &mdash; wrong voltage = wrong scaling.</td></tr>
+    <tr><td class="p">AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE</td><td class="v num">0.60 &rarr; 0.28</td><td>The measured throttle that actually holds 12 m/s level. Starting from the true operating point means the adaptive loops barely have to correct anything.</td></tr>
+    <tr><td class="p">AUTO_THROTTLE_NOMINAL_CRUISE_PITCH</td><td class="v num">0 &rarr; 0.06 rad</td><td>The nose sits ~3.5&deg; up in cruise on this wing; telling the controller up front avoids a sag after every mode change.</td></tr>
+    <tr><td class="p">AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT</td><td class="v num">0.30 &rarr; 0.17</td><td>"Extra throttle per m/s of climb" &mdash; computed: (100 % &minus; 28 %) over the 4.3 m/s max climb. Correct feedforward keeps feedback small.</td></tr>
+    <tr><td class="p">AUTO_THROTTLE_PITCH_OF_VZ_PGAIN</td><td class="v num">0.01 &rarr; 0.085</td><td>"How much nose-up per m/s of climb" &mdash; simply geometry: climb angle = climb rate &divide; airspeed = 1/11.5.</td></tr>
+    <tr><td class="p">ALTITUDE_PGAIN</td><td class="v num">0.05 &rarr; 0.60</td><td>Altitude stiffness. ETECS has <b>no altitude integrator</b>, so standing errors (turn sag) shrink as 1/PGAIN. With the capture law below taming approaches, 12&times; stiffer was possible without harshness &mdash; tighter turns <i>and</i> crisp final metres.</td></tr>
+    <tr><td class="p">ALTITUDE_ACCEL_CAPTURE <b>(new)</b></td><td class="v num">off &rarr; 0.8 m/s&sup2;</td><td>New firmware feature: level off at a <i>constant, gentle deceleration</i> instead of the exponential crawl. Level-off after +30 m: <b>17.8 s &rarr; 4.0 s (&minus;78 %)</b>, +0.05 m overshoot, same airspeed.</td></tr>
+    <tr><td class="p">ALTITUDE_MAX_CLIMB</td><td class="v num">1.0 &rarr; 2.0 m/s</td><td>Ceiling on commanded climb: brisk, yet always leaves throttle for the speed loop; keeps altitude changes gradual.</td></tr>
+    <tr><td class="p">ALTITUDE_MAX_CLIMB_DOT <b>(new)</b></td><td class="v num">2 (hardcoded) &rarr; 4.0 m/s&sup2;</td><td>Was a magic number in the code. Un-hardcoded; 4 lets the altitude loop <i>catch</i> a turn-entry dip and <i>unwind</i> the correction before it balloons past target.</td></tr>
+    <tr><td class="p">MAX_ACCELERATION</td><td class="v num">0.8 &rarr; 0.35 g</td><td>Never ask for more than the motor can deliver (physics: 0.44 g max) &mdash; prevents saturation and wind-up.</td></tr>
+    <tr><td class="p">ENERGY_TOT_P / I</td><td class="v num">0.45 / 0.20</td><td>Throttle response to "total energy is wrong". Raised so the motor answers the extra drag of a banked turn quickly.</td></tr>
+    <tr><td class="p">ENERGY_DIFF_P / I</td><td class="v num">0.60 / 0.10</td><td>Pitch response to "energy is in the wrong place". In turns the energy hid in airspeed while height sagged &mdash; this trades it back promptly.</td></tr>
+    <tr><td class="p">ENERGY_BANK_THROTTLE_GAIN <b>(new)</b></td><td class="v num">off &rarr; 0.36</td><td>New firmware feature: pays the <i>predictable</i> drag cost of a banked turn the moment the wing rolls, not after height is lost. Sized from the drag polar; trimmed 0.40&rarr;0.36 once the stiffer PGAIN carried its share.</td></tr>
+    <tr><td class="p">ENERGY_BANK_WASHOUT_GAIN / TAU <b>(new)</b></td><td class="v num">off &rarr; 0.85 / 2.0 s</td><td>Transient half of the bank feedforward: strong push <i>only while rolling in</i> (bridges motor lag), zero mid-turn, <i>negative</i> on roll-out &mdash; which killed the exit "balloon" above target height.</td></tr>
+    <tr><td class="p">ENERGY_BANK_PITCH_GAIN <b>(new)</b> + PITCH_OF_ROLL</td><td class="v num">off &rarr; 0.19 &nbsp;/&nbsp; 0 &rarr; 0.04</td><td>Banked wings need more lift (load factor 1/cos&phi;). New gain raises the nose from the <i>commanded</i> bank (leads the turn); the small classic term follows the <i>measured</i> bank. Split so neither over-pitches alone.</td></tr>
+    <tr><td class="p">PITCH_IGAIN / ROLL_IGAIN</td><td class="v num">6&rarr;400 / 20&rarr;100</td><td>The attitude "trim knobs". Old time constants were 1000 s / 550 s &mdash; effectively off. Now steady offsets (CG, asymmetry) trim out within seconds.</td></tr>
+    <tr><td class="p">ROLL_KFFA / PITCH_KFFA / REF_W_Q</td><td class="v num">10&rarr;100 / 5&rarr;20 / 5&rarr;7</td><td>Feedforward "muscle memory" plus a faster pitch reference model: needed deflection is applied immediately, and pitch demands arrive while the roll is still happening.</td></tr>
+    <tr><td class="p">THROTTLE_SLEW_LIMITER</td><td class="v num">0.8 &rarr; 0.25 s</td><td>A 250 g pusher can use its throttle quickly and safely; the old limit smeared every correction over nearly a second.</td></tr>
+    <tr><td class="p">SDP3X_LOWPASS_TAU</td><td class="v num">0.09 &rarr; 0.15 s</td><td>Airspeed filtering was <i>below</i> the driver default; the speed loop is far slower than the 1 Hz cut-off &mdash; stronger smoothing is free noise rejection.</td></tr>
+  </table>
+
+  <div class="callout good">
+    <b>Final measured outcome (Oval 1-2, 30 m radius, 33&deg; banks):</b> worst height dip in turns
+    <b class="num">&minus;0.83 m &rarr; &minus;0.17 m</b>, worst balloon <b class="num">+0.19 m</b>, turn mean
+    <b class="num">&minus;0.02 m</b>, straight legs <b class="num">&plusmn;0.15 m</b>; airspeed pinned at
+    <b class="num">12.0 &plusmn; 0.4 m/s</b> throughout. +30 m step: level-off
+    <b class="num">17.8 s &rarr; 4.0 s</b>, overshoot <b class="num">+0.05 m</b>, no oscillation.
+    Hand launch climbs away hands-off.
+  </div>
+
+  <div class="footer">
+    <span>OpenUAS &middot; ZOHD Talon 250G &middot; tuning report &mdash; page 1/3</span>
+    <span>All values verified in NPS against the validated JSBSim model &middot; 2026</span>
+  </div>
+</div>
+
+<!-- ============ PAGE 2 : WHY TECS + RISKS ============ -->
+<div class="page">
+  <h2>Background &amp; Engineering Notes</h2>
+  <h1 style="font-size:17pt">Why Energy Control &mdash; and What to Watch</h1>
+  <div class="rule"></div>
+
+  <div class="cols">
+    <div class="col">
+      <h3 style="margin-top:0">Why (E)TECS suits a small UAV</h3>
+      <ul class="tight">
+        <li><b>One budget, two currencies.</b> TECS treats height and speed as one energy account: <i>E = mgh + &frac12;mV&sup2;</i>. Throttle adds/removes energy; pitch only decides whether it is stored as <i>height</i> or <i>speed</i>. That matches how an airplane actually works.</li>
+        <li><b>Light airframes trade energy fast.</b> A 250 g foamie converts speed&harr;height in a heartbeat: a classic "pitch for altitude, throttle for altitude too" controller constantly fights itself, TECS never does &mdash; each actuator has exactly one job.</li>
+        <li><b>Stall protection by construction.</b> Speed is a first-class citizen: the controller floors its setpoint at 1.23&times;stall, and when the throttle saturates it deliberately gives up climb rather than airspeed. On a plane that stalls at 6.7 m/s that discipline is survival.</li>
+        <li><b>It learns the airframe ("adaptive").</b> The nominal cruise throttle and pitch are slowly re-estimated in flight. As the 2S Li-Ion sags from 8.4 V to 6.6 V &mdash; or a different battery shifts the CG &mdash; the trim follows automatically, so the plane flies the same at the end of the pack as at the start.</li>
+        <li><b>Wind-gust economy.</b> A gust converts to a speed error, absorbed mostly by re-distributing energy (pitch) rather than motor bursts &mdash; smoother flight, longer endurance.</li>
+        <li><b>Feedforward-friendly.</b> Because the energy bookkeeping is explicit, <i>predictable</i> costs (banked turns, climbs) can be paid in advance with physically-sized feedforwards &mdash; the feedback loops then only handle genuine surprises like gusts.</li>
+      </ul>
+
+      <div class="callout" style="margin-top:2mm">
+        <b>Rule of thumb worth keeping:</b> feedback fixes what you did not foresee;
+        feedforward pays for what you can compute. Every improvement in this campaign that
+        actually moved the numbers was a feedforward sized from the airframe's physics &mdash;
+        the feedback gains merely needed to be <i>awake</i> (integrators) and <i>calm</i> (no saturation).
+      </div>
+    </div>
+
+    <div class="col">
+      <h3 style="margin-top:0">Risks &amp; points of attention</h3>
+      <ul class="tight">
+        <li><span style="color:#c0392b;font-weight:700">Airspeed sensor is mission-critical.</span> ETECS is blind without it &mdash; a blocked or icy pitot means the controller chases a phantom speed (we reproduced this in sim: a missing airspeed feed caused a full-throttle dive). Pre-flight: blow-check the SDP33, watch the reading during the launch sprint.</li>
+        <li><b>On-ground adaptation poisoning.</b> After landing, airspeed reads ~0 while the integrators are still allowed to "learn" &mdash; the cruise throttle can wind up (known airframe TODO: aircraft may throttle up after touchdown). Kill the throttle promptly at touchdown.</li>
+        <li><b>No altitude integrator.</b> The altitude loop is P-only: any sustained disturbance leaves a standing error ~1/PGAIN in size. The high PGAIN 0.6 used here is only comfortable <i>because</i> the capture law removes its harshness on approaches &mdash; do not copy the value without the capture feature.</li>
+        <li><b>Capture law constraints.</b> Keep <code>ALTITUDE_ACCEL_CAPTURE &le; ALTITUDE_MAX_CLIMB_DOT</code> (or the rate limiter lags the level-off and causes overshoot) and note the sqrt branch only engages when <code>PGAIN &gt; CAPTURE/MAX_CLIMB</code> &mdash; with a low PGAIN the feature silently does nothing.</li>
+        <li><b>Do not compensate twice.</b> The bank pitch feedforward and the classic <code>H_CTL_PITCH_OF_ROLL</code> both raise the nose in turns. They are deliberately split here (0.19 leading / 0.04 trailing); enabling both at full size will balloon every turn.</li>
+        <li><b>Feedforwards must match reality.</b> All were computed from the model; if the prop, weight or battery changes materially, recompute them &mdash; wrong feedforward makes every manoeuvre start with a lurch.</li>
+        <li><b>Respect saturation.</b> MAX_ACCELERATION and ALTITUDE_MAX_CLIMB are deliberately set <i>inside</i> the physical envelope &mdash; "asking for more" only winds up integrators.</li>
+        <li><b>Sim-to-real gap.</b> These gains were proven against a validated model, but a real airframe adds vibration, sensor noise and servo slop. Start the first flights with the bank feedforwards at ~70 % of the sim values and walk them up via <code>dl_settings</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>OpenUAS &middot; ZOHD Talon 250G &middot; tuning report &mdash; page 2/3</span>
+    <span>ETECS: conf/modules/guidance_energy.xml &middot; energy_ctrl.c &middot; stabilization_adaptive.c</span>
+  </div>
+</div>
+
+<!-- ============ PAGE 3 : NEW FIRMWARE FEATURES + TUNING RECIPE ============ -->
+<div class="page">
+  <h2>Firmware Contributions &amp; Transfer Guide</h2>
+  <h1 style="font-size:17pt">Two New Features &mdash; and How to Tune the Next Airframe</h1>
+  <div class="rule"></div>
+
+  <div class="cols">
+    <div class="col">
+      <h3 style="margin-top:0">1 &middot; Bank-angle energy feedforward</h3>
+      <div style="font-size:8.4pt; line-height:1.45; margin-bottom:2mm">
+        In a coordinated turn the wing must produce lift for load factor <i>n</i> = 1/cos&phi;
+        and induced drag grows with <i>n&sup2;</i> &mdash; a perfectly predictable energy cost.
+        The feedforward pays it <i>as the wing rolls</i> (using the commanded bank, which leads
+        the actual turn), in two parts:
+      </div>
+      <pre class="code"><span class="c">/* u = 1/cos^2(phi) - 1, bank capped at 60 deg */</span>
+throttle += <span class="k">K_steady</span> * u          <span class="c">/* exact turn cost   */</span>
+         +  <span class="k">K_washout</span> * highpass(u) <span class="c">/* roll-in punch,
+    zero mid-turn, NEGATIVE on roll-out (kills
+    the exit balloon). tau = 2 s              */</span>
+pitch    += <span class="k">K_pitch</span> * (1/cos(phi) - 1);</pre>
+      <ul class="tight">
+        <li><b>Talon 250G values:</b> steady 0.36, washout 0.85, &tau; 2.0 s, pitch 0.19.</li>
+        <li><b>Safety:</b> bounded (60&deg; cap), purely additive, never integrated (cannot pollute the adaptation), vanishes wings-level. Defaults to off.</li>
+      </ul>
+
+      <h3>2 &middot; Constant-deceleration altitude capture</h3>
+      <div style="font-size:8.4pt; line-height:1.45; margin-bottom:2mm">
+        The classic proportional law levels off exponentially &mdash; the last metres crawl
+        (17.8 s here). The new law approaches at full climb, then bleeds climb rate at a
+        constant, chosen deceleration <i>a</i>, blending tangentially into the linear law for
+        the final centimetres:
+      </div>
+      <pre class="code"><span class="c">/* outside |err| &lt;= a/P^2 :          */</span>
+climb_sp = sign(e) * sqrt(2a(|e| - a/(2P&sup2;)))
+<span class="c">/* inside: classic  climb_sp = P * e
+   (continuous in value AND slope)     */</span></pre>
+      <ul class="tight">
+        <li><b>Result:</b> level-off 4.0 s (&minus;78 %), +0.05 m overshoot, airspeed untouched &mdash; the altitude-vs-time curve becomes a clean parabola instead of a long tail.</li>
+        <li><b>Both features</b> live in <code>energy_ctrl.c</code>, documented in <code>guidance_energy.xml</code>, tunable in flight via <code>dl_settings</code>, and default off &mdash; candidates for an upstream pull request after a flight-test campaign.</li>
+      </ul>
+    </div>
+
+    <div class="col">
+      <h3 style="margin-top:0">Recipe: tuning another airframe</h3>
+      <div class="step"><div class="stepnum">1</div><div><b>Measure the plane first.</b> Weigh it. Find true stall speed, best-glide speed and ratio, top speed, max climb rate, and &mdash; crucially &mdash; the <i>throttle fraction that holds cruise speed level</i>. Sim or careful manual flight both work.</div></div>
+      <div class="step"><div class="stepnum">2</div><div><b>Fill in the physics, not defaults:</b> battery voltage under load; <code>NOMINAL_CRUISE_THROTTLE</code> = measured; <code>CLIMB_THROTTLE_INCREMENT</code> = (1 &minus; cruise)/max-climb; <code>PITCH_OF_VZ</code> &asymp; 1/airspeed; <code>MAX_ACCELERATION</code> <i>below</i> (T&minus;D)/W; airspeed floor at 1.23&times;stall.</div></div>
+      <div class="step"><div class="stepnum">3</div><div><b>Wake up the attitude loops.</b> Verify the pitch/roll integrators actually act within seconds (compute <code>SUM_ERR_MAX/IGAIN</code> &mdash; if it is minutes, they are decorative), give the feedforwards (KFFA) real values, then fly straight and level hands-off before touching anything else.</div></div>
+      <div class="step"><div class="stepnum">4</div><div><b>Tune energy loops on a step.</b> Command &plusmn;30 m: raise <code>ENERGY_TOT</code> P/I until throttle answers promptly without hunting, then <code>ENERGY_DIFF</code> P/I until speed stays pinned during the climb. Watch the airspeed trace, not the altitude trace.</div></div>
+      <div class="step"><div class="stepnum">5</div><div><b>Then turns.</b> Fly ovals; log altitude split by bank angle. Size the steady bank-throttle gain from the dip, add washout for the entry transient, and only then trim pitch-of-bank. One knob per flight.</div></div>
+      <div class="step"><div class="stepnum">6</div><div><b>Last: capture crispness.</b> Enable <code>ALTITUDE_ACCEL_CAPTURE</code> at ~0.5, raise <code>ALTITUDE_PGAIN</code> until the terminal region feels tight (remember: the sqrt branch needs PGAIN &gt; a/MAX_CLIMB), and re-run the turn test &mdash; a stiffer PGAIN usually means the steady bank gain can come <i>down</i>.</div></div>
+      <div class="step"><div class="stepnum">7</div><div><b>Regress everything, every time.</b> A change that helps captures can break turns (it did here, twice). Keep the scripted tests; numbers beat impressions.</div></div>
+
+      <div class="callout warn2" style="margin-top:2mm">
+        <b>The one unbreakable rule:</b> change one parameter at a time, and keep a written
+        (or scripted) record of the number it moved. Two knobs at once means neither is understood
+        &mdash; and an autopilot that "mostly works" for reasons nobody knows is a future crash.
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>OpenUAS &middot; ZOHD Talon 250G &middot; tuning report &mdash; page 3/3</span>
+    <span>Tests: hand-launch &middot; +30 m capture &middot; Oval 1-2 turn-hold &middot; all headless &amp; repeatable</span>
+  </div>
+</div>
+
+</body>
+</html>
