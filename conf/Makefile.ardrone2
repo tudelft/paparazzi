@@ -25,12 +25,13 @@
 
 include $(PAPARAZZI_SRC)/conf/Makefile.arm-linux
 
+PYTHON ?= python3
 DRONE = $(PAPARAZZI_SRC)/sw/tools/parrot/ardrone2.py
 
 # Program the device and start it.
 upload program: $(OBJDIR)/$(TARGET).elf
-	$(Q)$(DRONE) --host=$(HOST) upload_file_and_run $(OBJDIR)/$(TARGET).elf $(SUB_DIR)
-	$(Q)$(DRONE) --host=$(HOST) status
+	$(Q)$(PYTHON) $(DRONE) --host=$(HOST) upload_file_and_run $(OBJDIR)/$(TARGET).elf $(SUB_DIR)
+	$(Q)$(PYTHON) $(DRONE) --host=$(HOST) status
 
 # Listing of phony targets.
 .PHONY : upload program

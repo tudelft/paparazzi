@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright (C) 2012-2014 The Paparazzi Team
 #               2015 Freek van Tienen <freek.v.tienen@gmail.com>
@@ -21,7 +21,6 @@
 # <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
 from parrot_utils import ParrotUtils
 import re
 import argparse
@@ -50,7 +49,7 @@ class Ardrone2(ParrotUtils):
         if self.read_from_config(name) == 'Unknown':
             self.execute_command('echo "' + name + ' = ' + value + '\" >> ' + self.config_file)
         else:
-            self.execute_command('sed -i "s/\(' + name + ' *= *\).*/\\1' + value + '/g" ' + self.config_file)
+            self.execute_command('sed -i "s/\\(' + name + ' *= *\\).*/\\1' + value + '/g" ' + self.config_file)
 
     def uav_status(self):
         print('Parrot version:\t\t' + str(self.check_version()))
@@ -342,7 +341,6 @@ class Ardrone2(ParrotUtils):
 
 if __name__ == "__main__":
     ardrone2 = Ardrone2()
-    ardrone2.parse_args()
-    exit(0)
+    exit(0 if ardrone2.parse_args() else 1)
 
 

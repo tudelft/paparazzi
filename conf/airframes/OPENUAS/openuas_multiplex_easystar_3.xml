@@ -176,9 +176,10 @@
         <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>
       </module>
 
-      <module name="telemetry" type="transparent">      
-        <configure name="MODEM_PORT" value="UART2"/>
-        <configure name="MODEM_BAUD" value="B9600"/><!-- for mesh modem-->
+      <module name="telemetry" type="transparent">  
+        <configure name="MODEM_PORT" value="usb_serial"/>   
+        <!-- <configure name="MODEM_PORT" value="UART2"/>  -->
+        <!-- <configure name="MODEM_BAUD" value="B9600"/> -->
         <!--<configure name="MODEM_BAUD" value="B57600"/>--><!-- for direct cable desktest -->
       </module>
 

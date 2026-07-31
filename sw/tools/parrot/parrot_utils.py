@@ -20,21 +20,93 @@
 # <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
-from __future__ import unicode_literals
-from builtins import bytes
 import socket
-try:
-    import telnetlib3 as telnetlib
-except ImportError:
-    import telnetlib
 import os
 import sys
 from ftplib import FTP
-from time import sleep
+from time import monotonic, sleep
 import ftplib
 import argparse
 import re
+
+
+class TelnetClient:
+    """Minimal synchronous Telnet client used by the Parrot upload tools."""
+
+    IAC = 255
+    DO = 253
+    DONT = 254
+    WILL = 251
+    WONT = 252
+    SB = 250
+    SE = 240
+
+    def __init__(self, host, timeout=3):
+        self.socket = socket.create_connection((host, 23), timeout)
+        self.buffer = b''
+        self.negotiation_buffer = b''
+
+    def close(self):
+        self.socket.close()
+
+    def write(self, data):
+        self.socket.sendall(data.replace(b'\xff', b'\xff\xff'))
+
+    def read_until(self, expected, timeout=5):
+        deadline = monotonic() + timeout
+        while expected not in self.buffer:
+            remaining = deadline - monotonic()
+            if remaining <= 0:
+                break
+            self.socket.settimeout(remaining)
+            try:
+                data = self.socket.recv(4096)
+            except socket.timeout:
+                break
+            if not data:
+                break
+            self.buffer += self._filter_negotiation(data)
+
+        end = self.buffer.find(expected)
+        if end < 0:
+            result, self.buffer = self.buffer, b''
+        else:
+            end += len(expected)
+            result, self.buffer = self.buffer[:end], self.buffer[end:]
+        return result
+
+    def _filter_negotiation(self, data):
+        data = self.negotiation_buffer + data
+        self.negotiation_buffer = b''
+        output = bytearray()
+        index = 0
+        while index < len(data):
+            if data[index] != self.IAC:
+                output.append(data[index])
+                index += 1
+            elif index + 1 >= len(data):
+                self.negotiation_buffer = data[index:]
+                break
+            elif data[index + 1] == self.IAC:
+                output.append(self.IAC)
+                index += 2
+            elif data[index + 1] in (self.DO, self.DONT, self.WILL, self.WONT) and index + 2 < len(data):
+                command = data[index + 1]
+                response = self.WONT if command in (self.DO, self.DONT) else self.DONT
+                self.socket.sendall(bytes((self.IAC, response, data[index + 2])))
+                index += 3
+            elif data[index + 1] in (self.DO, self.DONT, self.WILL, self.WONT):
+                self.negotiation_buffer = data[index:]
+                break
+            elif data[index + 1] == self.SB:
+                end = data.find(bytes((self.IAC, self.SE)), index + 2)
+                if end < 0:
+                    self.negotiation_buffer = data[index:]
+                    break
+                index = end + 2
+            else:
+                index += 2
+        return bytes(output)
 
 class ParrotVersion(object):
     def __init__(self, s):
@@ -104,13 +176,21 @@ class ParrotUtils:
 
     # Connect with telnet and ftp, wait until login
     def connect(self):
+        self.tn = None
+        self.ftp = None
         try:
-            self.tn = telnetlib.Telnet(self.address, timeout=3)
+            self.tn = TelnetClient(self.address, timeout=3)
             self.ftp = FTP(self.address)
             self.ftp.login()
-            self.tn.read_until(bytes(self.prompt, 'utf-8'))
+            prompt = bytes(self.prompt, 'utf-8')
+            if not self.tn.read_until(prompt).endswith(prompt):
+                raise RuntimeError('Telnet shell prompt not received')
             return True
         except:
+            if self.tn is not None:
+                self.tn.close()
+            if self.ftp is not None:
+                self.ftp.close()
             print('Could not connect to the ' + self.uav_name + ' (address: ' + self.address + ')')
             print('Check if the ' + self.uav_name + ' is turned on and the computer is connected over wifi or bluetooth.')
             if self.address == '192.168.42.1':
@@ -144,13 +224,13 @@ class ParrotUtils:
             print('FTP UPLOAD ERROR: Uploading the file to the ' + self.uav_name + ' failed!')
             print('Check if the Filesystem of the ' + self.uav_name + ' isn\'t full:')
             print(self.check_filesystem())
-            sys.exit()
+            raise RuntimeError('FTP upload failed')
         except:
             print('FTP UPLOAD ERROR: Uploading the file to the ' + self.uav_name + ' failed!')
             print('FTP uploading failed with the following error: ', sys.exc_info()[0])
             print('Check if the Filesystem of the ' + self.uav_name + ' isn\'t full:')
             print(self.check_filesystem())
-            sys.exit()
+            raise RuntimeError('FTP upload failed')
 
     # Download a file from the drone
     def download(self, filename, folder):
@@ -280,8 +360,10 @@ class ParrotUtils:
             v = self.check_version()
             print("Checking " + self.uav_name + " firmware version... " + str(v))
             if ((not v == ParrotVersion('0.0.0.0')) and ((v < ParrotVersion(min_ver)) or (v > ParrotVersion(max_ver)))):
-                print("Error: please upgrade your " + self.uav_name + " firmware to version between " + min_ver + " and " + max_ver + "!")
-                return
+                raise RuntimeError(
+                    "Please upgrade your " + self.uav_name + " firmware to version between "
+                    + min_ver + " and " + max_ver
+                )
 
         f = self.split_into_path_and_file(name)
 
@@ -357,36 +439,38 @@ class ParrotUtils:
         if self.connect() == False:
             return False
 
-        # Parse the command line arguments
-        if args.command == 'status':
-            self.status()
-        elif args.command == 'reboot':
-            self.reboot()
-        elif args.command == 'kill':
-            self.kill_program(args.program)
-        elif args.command == 'start':
-            self.start_program(self.upload_path + args.program)
-        elif args.command == 'upload':
-            self.upload_file(args.file, args.folder)
-        elif args.command == 'download':
-            self.download(args.file, args.save_file)
-        elif args.command == 'upload_file_and_run':
-            if hasattr(args, 'min_version') and hasattr(args, 'max_version'):
-                self.upload_and_run(args.file, args.folder, args.min_version, args.max_version)
+        try:
+            # Parse the command line arguments
+            if args.command == 'status':
+                self.status()
+            elif args.command == 'reboot':
+                self.reboot()
+            elif args.command == 'kill':
+                self.kill_program(args.program)
+            elif args.command == 'start':
+                self.start_program(self.upload_path + args.program)
+            elif args.command == 'upload':
+                self.upload_file(args.file, args.folder)
+            elif args.command == 'download':
+                self.download(args.file, args.save_file)
+            elif args.command == 'upload_file_and_run':
+                if hasattr(args, 'min_version') and hasattr(args, 'max_version'):
+                    self.upload_and_run(args.file, args.folder, args.min_version, args.max_version)
+                else:
+                    self.upload_and_run(args.file, args.folder)
+            elif args.command == 'mkdir':
+                self.create_directory(self.upload_path + args.folder)
+            elif args.command == 'rmdir':
+                self.remove_directory(self.upload_path + args.folder)
+            elif args.command == 'insmod':
+                self.insmod(args.file)
             else:
-                self.upload_and_run(args.file, args.folder)
-        elif args.command == 'mkdir':
-            self.create_directory(self.upload_path + args.folder)
-        elif args.command == 'rmdir':
-            self.remove_directory(self.upload_path + args.folder)
-        elif args.command == 'insmod':
-            self.insmod(args.file)
-        else:
-            if self.parse_extra_args(args) == False:
-                self.disconnect()
-                return False
-
-        # Disconnect
-        self.disconnect()
-        return True
+                if self.parse_extra_args(args) == False:
+                    return False
+            return True
+        except (OSError, RuntimeError) as error:
+            print('Error: ' + str(error))
+            return False
+        finally:
+            self.disconnect()
 

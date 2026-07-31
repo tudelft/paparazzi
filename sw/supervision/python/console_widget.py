@@ -2,10 +2,10 @@
 # released under GNU GPLv2 or later. See COPYING file.
 from generated.ui_console import Ui_Console
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import QProcess, QByteArray, Qt
-from PyQt5.QtGui import QTextCursor
+from PyQt5.QtCore import QProcess, QByteArray, Qt, QTimer, pyqtSignal
 import utils
 from program_widget import ProgramWidget
+from ctypes import c_uint16
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional
@@ -33,8 +33,22 @@ class Record:
     emitter: ProgramWidget
     channel: Channel
 
+    def progress_stage(self):
+        if self.emitter is None or not self.emitter.shortname.startswith("Flash "):
+            return None
+        match = re.match(r"^\s*(Erase|Program|Verify)\s*:", self.data, re.IGNORECASE)
+        return match.group(1).lower() if match is not None else None
+
+    def has_incomplete_progress(self):
+        return self.progress_stage() is not None \
+            and re.search(r"\b100(?:\.0+)?%", self.data) is None
+
 
 class ConsoleWidget(QWidget, Ui_Console):
+
+    # Future GUI hook: connect this to a main-window progress bar. The first
+    # argument identifies the flash job; the second is flash_progress_value.
+    flash_progress_changed = pyqtSignal(object, int)
 
     LEVELS_REG = {
         Level.ERROR: ["error:", "error ", "no such file", "undefined reference", "failure", "multiple definition"],
@@ -47,11 +61,20 @@ class ConsoleWidget(QWidget, Ui_Console):
         self.setupUi(self)
         self.records: List[Record] = []
         self.p_checkboxes: Dict[ProgramWidget, QCheckBox] = {}
+        self.active_flash_programs = set()
+        # Encoded uint16 flash progress: 0-100=Erase, 101-200=Program and
+        # 201-300=Verify. Values 101/201 represent the 0-1% start of those
+        # stages so every encoded value unambiguously identifies one stage.
+        self.flash_progress_value = c_uint16(0)
         self.current_aircraft: Optional[Aircraft] = None
         self.programs_checkbox.stateChanged.connect(self.handle_check_all)
         self.log_level_slider.valueChanged.connect(self.log_level_changed)
         self.clear_button.clicked.connect(self.clear)
         self.splitter.setSizes([500, 100])
+        self.progress_blink_visible = True
+        self.progress_blink_timer = QTimer(self)
+        self.progress_blink_timer.setInterval(500)
+        self.progress_blink_timer.timeout.connect(self.toggle_progress_blink)
 
     def set_aircraft(self, ac: Aircraft):
         self.current_aircraft = ac
@@ -74,8 +97,40 @@ class ConsoleWidget(QWidget, Ui_Console):
         else:
             ch = "font-weight: bold;"
 
-        data = "<span style=\"{}{}\">{}</span>".format(bg, ch, record.data)
+        record_data = record.data
+        if record.progress_stage() is not None:
+            record_data = re.sub(
+                r"\[([= ]*)\]",
+                lambda match: "[" + match.group(1).replace(" ", "&nbsp;") + "]",
+                record_data
+            )
+        if record.emitter in self.active_flash_programs and record.has_incomplete_progress():
+            blink_character = "=" if self.progress_blink_visible \
+                else '<span style="color:transparent;">=</span>'
+            record_data = re.sub(r"(\[[=]*)&nbsp;", r"\1" + blink_character, record_data, count=1)
+        data = "<span style=\"{}{}\">{}</span>".format(bg, ch, record_data)
         self.console_textedit.append(data)
+
+    def toggle_progress_blink(self):
+        self.progress_blink_visible = not self.progress_blink_visible
+        scrollbar = self.console_textedit.verticalScrollBar()
+        was_at_bottom = scrollbar.value() == scrollbar.maximum()
+        scroll_position = scrollbar.value()
+        self.update_content()
+        scrollbar.setValue(scrollbar.maximum() if was_at_bottom else scroll_position)
+
+    def update_progress_blink_timer(self):
+        has_incomplete_progress = any(
+            r.emitter in self.active_flash_programs and r.has_incomplete_progress()
+            for r in self.records
+        )
+        if has_incomplete_progress:
+            if not self.progress_blink_timer.isActive():
+                self.progress_blink_visible = True
+                self.progress_blink_timer.start()
+        else:
+            self.progress_blink_timer.stop()
+            self.progress_blink_visible = True
 
     def classify(self, line: str):
         for level, regs in self.LEVELS_REG.items():
@@ -84,14 +139,34 @@ class ConsoleWidget(QWidget, Ui_Console):
                     return level
         return Level.ALL
 
+    def update_flash_progress_value(self, record: Record):
+        """Prepare encoded progress for a future main-window progress bar."""
+        stage = record.progress_stage()
+        percentage_match = re.search(r"(\d+(?:\.\d+)?)\s*%", record.data)
+        if stage is None or percentage_match is None:
+            return
+
+        percentage = max(0, min(100, int(float(percentage_match.group(1)) + 0.5)))
+        stage_offset = {"erase": 0, "program": 100, "verify": 200}[stage]
+        encoded_percentage = percentage if stage_offset == 0 else stage_offset + max(1, percentage)
+        self.flash_progress_value.value = encoded_percentage
+        # Skeleton only: no GUI consumes this signal yet.
+        self.flash_progress_changed.emit(record.emitter, self.flash_progress_value.value)
+
     def handle_data(self, pw: ProgramWidget, data: QByteArray, channel: Channel):
         if pw not in self.p_checkboxes:
             self.new_program(pw)
-        if data.endsWith(b'\n'):
-            data = data[:-1]
-        lines = data.split(b'\n')
+        is_flash = pw.shortname.startswith("Flash ")
+        if is_flash:
+            lines = re.split(r"[\r\n]+", bytes(data).decode(errors="replace"))
+        else:
+            if data.endsWith(b'\n'):
+                data = data[:-1]
+            lines = data.split(b'\n')
+        content_changed = False
         for line in lines:
-            line = line.data().decode()
+            if not is_flash:
+                line = line.data().decode()
             # remove VT100 escape codes
             while True:
                 m = re.match(r".*(\x1b\[((?:\d+;)*\d+)([mhK])).*", line)
@@ -107,9 +182,27 @@ class ConsoleWidget(QWidget, Ui_Console):
             level = self.classify(line)
             r = Record(level, line, pw, channel)
             r.aircraft = getattr(pw, "aircraft", None)
+            progress_stage = r.progress_stage()
+            if progress_stage is not None:
+                self.active_flash_programs.add(pw)
+                self.update_flash_progress_value(r)
+                for index in range(len(self.records) - 1, -1, -1):
+                    previous = self.records[index]
+                    if previous.emitter == pw and previous.channel == channel \
+                            and previous.progress_stage() is not None:
+                        self.records[index] = r
+                        content_changed = True
+                        break
+                else:
+                    self.records.append(r)
+                    content_changed = True
+                continue
             self.records.append(r)
             if self.filter(r):
                 self.display_record(r)
+        if content_changed:
+            self.update_content()
+            self.update_progress_blink_timer()
 
     def handle_stdout(self, pw: ProgramWidget):
         data = pw.process.readAllStandardOutput()
@@ -120,14 +213,27 @@ class ConsoleWidget(QWidget, Ui_Console):
         self.handle_data(pw, data, Channel.STDERR)
 
     def handle_program_finished(self, pw: ProgramWidget, exit_code: int, exit_status: QProcess.ExitStatus):
+        self.active_flash_programs.discard(pw)
         if exit_code == 0:
-            self.post_message(pw, "{} Done".format(pw.shortname))
+            if pw.shortname.startswith("Flash "):
+                self.post_message(pw, "Done with flashing {}".format(pw.shortname[6:]), replace_progress=True)
+            else:
+                self.post_message(pw, "{} Done".format(pw.shortname))
         else:
             self.post_message(pw, "{} terminated with code {}".format(pw.shortname, exit_code))
+            self.update_progress_blink_timer()
 
-    def post_message(self, pw: ProgramWidget, msg):
+    def post_message(self, pw: ProgramWidget, msg, replace_progress=False):
         r = Record(Level.ALL, msg, pw, Channel.MANAGEMENT)
         r.aircraft = getattr(pw, "aircraft", None)
+        if replace_progress:
+            for index in range(len(self.records) - 1, -1, -1):
+                previous = self.records[index]
+                if previous.emitter == pw and previous.progress_stage() is not None:
+                    self.records[index] = r
+                    self.update_content()
+                    self.update_progress_blink_timer()
+                    return
         self.records.append(r)
         if self.filter(r):
             self.display_record(r)
@@ -143,6 +249,7 @@ class ConsoleWidget(QWidget, Ui_Console):
         self.handle_program_checked()
 
     def remove_program(self, pw: ProgramWidget):
+        self.active_flash_programs.discard(pw)
         chk = self.p_checkboxes.pop(pw)
         if chk is not None:
             for r in self.records:
@@ -151,6 +258,7 @@ class ConsoleWidget(QWidget, Ui_Console):
             self.programs_widget.layout().removeWidget(chk)
             chk.deleteLater()
             self.update_content()
+            self.update_progress_blink_timer()
 
     def handle_check_all(self, state):
         if state == Qt.PartiallyChecked:
@@ -214,3 +322,4 @@ class ConsoleWidget(QWidget, Ui_Console):
         # TODO remove only filtered ? plus trashed ?
         self.records.clear()
         self.update_content()
+        self.update_progress_blink_timer()

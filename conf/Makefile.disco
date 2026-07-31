@@ -26,11 +26,12 @@
 include $(PAPARAZZI_SRC)/conf/Makefile.arm-linux
 
 # reuse bebop flashing script
+PYTHON ?= python3
 DRONE = $(PAPARAZZI_SRC)/sw/tools/parrot/disco.py
 
 # Program the device and start it.
 upload program: $(OBJDIR)/$(TARGET).elf
-	$(Q)$(DRONE) --host=$(HOST) upload_file_and_run $(OBJDIR)/$(TARGET).elf $(SUB_DIR)
+	$(Q)$(PYTHON) $(DRONE) --host=$(HOST) upload_file_and_run $(OBJDIR)/$(TARGET).elf $(SUB_DIR)
 
 # Listing of phony targets.
 .PHONY : upload program
