@@ -62,6 +62,7 @@ class ConsoleWidget(QWidget, Ui_Console):
         self.records: List[Record] = []
         self.p_checkboxes: Dict[ProgramWidget, QCheckBox] = {}
         self.active_flash_programs = set()
+        self.last_flash_progress = {}
         # Encoded uint16 flash progress: 0-100=Erase, 101-200=Program and
         # 201-300=Verify. Values 101/201 represent the 0-1% start of those
         # stages so every encoded value unambiguously identifies one stage.
@@ -75,6 +76,10 @@ class ConsoleWidget(QWidget, Ui_Console):
         self.progress_blink_timer = QTimer(self)
         self.progress_blink_timer.setInterval(500)
         self.progress_blink_timer.timeout.connect(self.toggle_progress_blink)
+        self.progress_inactivity_timer = QTimer(self)
+        self.progress_inactivity_timer.setSingleShot(True)
+        self.progress_inactivity_timer.setInterval(3000)
+        self.progress_inactivity_timer.timeout.connect(self.start_progress_blink)
 
     def set_aircraft(self, ac: Aircraft):
         self.current_aircraft = ac
@@ -119,16 +124,28 @@ class ConsoleWidget(QWidget, Ui_Console):
         self.update_content()
         scrollbar.setValue(scrollbar.maximum() if was_at_bottom else scroll_position)
 
-    def update_progress_blink_timer(self):
-        has_incomplete_progress = any(
+    def has_incomplete_flash_progress(self):
+        return any(
             r.emitter in self.active_flash_programs and r.has_incomplete_progress()
             for r in self.records
         )
-        if has_incomplete_progress:
-            if not self.progress_blink_timer.isActive():
-                self.progress_blink_visible = True
-                self.progress_blink_timer.start()
+
+    def start_progress_blink(self):
+        if self.has_incomplete_flash_progress():
+            self.toggle_progress_blink()
+            self.progress_blink_timer.start()
+
+    def reset_progress_blink_delay(self):
+        self.progress_blink_timer.stop()
+        self.progress_blink_visible = True
+        if self.has_incomplete_flash_progress():
+            self.progress_inactivity_timer.start()
         else:
+            self.progress_inactivity_timer.stop()
+
+    def update_progress_blink_timer(self):
+        if not self.has_incomplete_flash_progress():
+            self.progress_inactivity_timer.stop()
             self.progress_blink_timer.stop()
             self.progress_blink_visible = True
 
@@ -144,14 +161,16 @@ class ConsoleWidget(QWidget, Ui_Console):
         stage = record.progress_stage()
         percentage_match = re.search(r"(\d+(?:\.\d+)?)\s*%", record.data)
         if stage is None or percentage_match is None:
-            return
+            return None
 
-        percentage = max(0, min(100, int(float(percentage_match.group(1)) + 0.5)))
+        raw_percentage = max(0.0, min(100.0, float(percentage_match.group(1))))
+        percentage = int(raw_percentage + 0.5)
         stage_offset = {"erase": 0, "program": 100, "verify": 200}[stage]
         encoded_percentage = percentage if stage_offset == 0 else stage_offset + max(1, percentage)
         self.flash_progress_value.value = encoded_percentage
         # Skeleton only: no GUI consumes this signal yet.
         self.flash_progress_changed.emit(record.emitter, self.flash_progress_value.value)
+        return stage, raw_percentage
 
     def handle_data(self, pw: ProgramWidget, data: QByteArray, channel: Channel):
         if pw not in self.p_checkboxes:
@@ -164,6 +183,7 @@ class ConsoleWidget(QWidget, Ui_Console):
                 data = data[:-1]
             lines = data.split(b'\n')
         content_changed = False
+        progress_changed = False
         for line in lines:
             if not is_flash:
                 line = line.data().decode()
@@ -185,7 +205,10 @@ class ConsoleWidget(QWidget, Ui_Console):
             progress_stage = r.progress_stage()
             if progress_stage is not None:
                 self.active_flash_programs.add(pw)
-                self.update_flash_progress_value(r)
+                progress = self.update_flash_progress_value(r)
+                if progress is not None and self.last_flash_progress.get(pw) != progress:
+                    self.last_flash_progress[pw] = progress
+                    progress_changed = True
                 for index in range(len(self.records) - 1, -1, -1):
                     previous = self.records[index]
                     if previous.emitter == pw and previous.channel == channel \
@@ -201,8 +224,9 @@ class ConsoleWidget(QWidget, Ui_Console):
             if self.filter(r):
                 self.display_record(r)
         if content_changed:
+            if progress_changed:
+                self.reset_progress_blink_delay()
             self.update_content()
-            self.update_progress_blink_timer()
 
     def handle_stdout(self, pw: ProgramWidget):
         data = pw.process.readAllStandardOutput()
@@ -214,6 +238,7 @@ class ConsoleWidget(QWidget, Ui_Console):
 
     def handle_program_finished(self, pw: ProgramWidget, exit_code: int, exit_status: QProcess.ExitStatus):
         self.active_flash_programs.discard(pw)
+        self.last_flash_progress.pop(pw, None)
         if exit_code == 0:
             if pw.shortname.startswith("Flash "):
                 self.post_message(pw, "Done with flashing {}".format(pw.shortname[6:]), replace_progress=True)
@@ -250,6 +275,7 @@ class ConsoleWidget(QWidget, Ui_Console):
 
     def remove_program(self, pw: ProgramWidget):
         self.active_flash_programs.discard(pw)
+        self.last_flash_progress.pop(pw, None)
         chk = self.p_checkboxes.pop(pw)
         if chk is not None:
             for r in self.records:
@@ -321,5 +347,6 @@ class ConsoleWidget(QWidget, Ui_Console):
     def clear(self):
         # TODO remove only filtered ? plus trashed ?
         self.records.clear()
+        self.last_flash_progress.clear()
         self.update_content()
         self.update_progress_blink_timer()
