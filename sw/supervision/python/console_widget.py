@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2022 The Paparazzi Team
+# Copyright (C) 2008-2026 The Paparazzi Team
 # released under GNU GPLv2 or later. See COPYING file.
 from generated.ui_console import Ui_Console
 from PyQt5.QtWidgets import *
@@ -77,7 +77,7 @@ class ConsoleWidget(QWidget, Ui_Console):
         self.progress_blink_timer.timeout.connect(self.toggle_progress_blink)
         self.progress_inactivity_timer = QTimer(self)
         self.progress_inactivity_timer.setSingleShot(True)
-        self.progress_inactivity_timer.setInterval(3000)
+        self.progress_inactivity_timer.setInterval(2000)
         self.progress_inactivity_timer.timeout.connect(self.start_progress_blink)
 
     def set_aircraft(self, ac: Aircraft):
