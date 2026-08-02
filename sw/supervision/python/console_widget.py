@@ -5,7 +5,6 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QProcess, QByteArray, Qt, QTimer, pyqtSignal
 import utils
 from program_widget import ProgramWidget
-from ctypes import c_uint16
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional
@@ -63,10 +62,10 @@ class ConsoleWidget(QWidget, Ui_Console):
         self.p_checkboxes: Dict[ProgramWidget, QCheckBox] = {}
         self.active_flash_programs = set()
         self.last_flash_progress = {}
-        # Encoded uint16 flash progress: 0-100=Erase, 101-200=Program and
+        # Encoded flash progress: 0-100=Erase, 101-200=Program and
         # 201-300=Verify. Values 101/201 represent the 0-1% start of those
         # stages so every encoded value unambiguously identifies one stage.
-        self.flash_progress_value = c_uint16(0)
+        self.flash_progress_value = 0
         self.current_aircraft: Optional[Aircraft] = None
         self.programs_checkbox.stateChanged.connect(self.handle_check_all)
         self.log_level_slider.valueChanged.connect(self.log_level_changed)
@@ -165,11 +164,17 @@ class ConsoleWidget(QWidget, Ui_Console):
 
         raw_percentage = max(0.0, min(100.0, float(percentage_match.group(1))))
         percentage = int(raw_percentage + 0.5)
-        stage_offset = {"erase": 0, "program": 100, "verify": 200}[stage]
-        encoded_percentage = percentage if stage_offset == 0 else stage_offset + max(1, percentage)
-        self.flash_progress_value.value = encoded_percentage
+        stage_min, stage_max = {
+            "erase": (0, 100),
+            "program": (101, 200),
+            "verify": (201, 300),
+        }[stage]
+        encoded_percentage = percentage if stage == "erase" \
+            else stage_min + max(0, percentage - 1)
+        encoded_percentage = max(stage_min, min(stage_max, encoded_percentage))
+        self.flash_progress_value = encoded_percentage
         # Skeleton only: no GUI consumes this signal yet.
-        self.flash_progress_changed.emit(record.emitter, self.flash_progress_value.value)
+        self.flash_progress_changed.emit(record.emitter, self.flash_progress_value)
         return stage, raw_percentage
 
     def handle_data(self, pw: ProgramWidget, data: QByteArray, channel: Channel):
