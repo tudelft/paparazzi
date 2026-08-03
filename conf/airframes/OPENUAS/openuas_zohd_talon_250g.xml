@@ -21,7 +21,7 @@
     + BATTERY:          18650 Li-Ion 2S1P INR18650 3300mAh
 
     NOTES:
-    + ServoPins on PCB point to tail of airframe
+    + ServoPins on PCB point to right side of airframe
     + The FC (FlightController) PCB is mounted with the F4 MCU towards the bottom of the airframe
     + Battery voltage and current via onboard sensor
     + 2nd current sensor values via additional external sensor
@@ -90,7 +90,8 @@
         Filter the 277-364Hz motor and 555-728Hz blade-pass bands before decimation. -->
         <configure name="GYRO_AAF" value="126"/>
         <configure name="ACCEL_AAF" value="84"/>
-        <!-- MATEKF405TE_SD sensor alignment: upside down and 180 degrees flip -->
+        <!-- TODO Set correct sensor alignment -->
+        <!-- MATEKF405TE_SD sensor alignment: upside down and 90 degrees rotation -->
         <define name="IMU_ICM42688_CHAN_X" value="1"/>
         <define name="IMU_ICM42688_CHAN_Y" value="0"/>
         <define name="IMU_ICM42688_CHAN_Z" value="2"/>

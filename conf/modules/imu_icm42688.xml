@@ -12,12 +12,12 @@
     <configure name="ACCEL_RANGE" default="2G" description="Accel range (invensense3.h:145)"/>
     <configure name="GYRO_AAF" value="977" description="Gyro anti-aliasing filter"/>
     <configure name="ACCEL_AAF" value="213" description="Accel anti-aliasing filter"/>
-    <define name="IMU_ICM42688_CHAN_X" value="0" description="Sensor channel mapped to body X (0=X, 1=Y, 2=Z); X/Y/Z channels must form a permutation"/>
-    <define name="IMU_ICM42688_CHAN_Y" value="1" description="Sensor channel mapped to body Y (0=X, 1=Y, 2=Z); X/Y/Z channels must form a permutation"/>
-    <define name="IMU_ICM42688_CHAN_Z" value="2" description="Sensor channel mapped to body Z (0=X, 1=Y, 2=Z); X/Y/Z channels must form a permutation"/>
-    <define name="IMU_ICM42688_X_SIGN" value="1" description="Sign of the mapped body X axis (+, -, +1 or -1)"/>
-    <define name="IMU_ICM42688_Y_SIGN" value="1" description="Sign of the mapped body Y axis (+, -, +1 or -1)"/>
-    <define name="IMU_ICM42688_Z_SIGN" value="1" description="Sign of the mapped body Z axis (+, -, +1 or -1)"/>
+    <define name="IMU_ICM42688_CHAN_X" value="0" description="Channel mapped to body X (0=X, 1=Y, 2=Z)"/>
+    <define name="IMU_ICM42688_CHAN_Y" value="1" description="Channel mapped to body Y (0=X, 1=Y, 2=Z)"/>
+    <define name="IMU_ICM42688_CHAN_Z" value="2" description="Channel mapped to body Z (0=X, 1=Y, 2=Z)"/>
+    <define name="IMU_ICM42688_X_SIGN" value="+" description="Sign mapped body X"/>
+    <define name="IMU_ICM42688_Y_SIGN" value="+" description="Sign mapped body Y"/>
+    <define name="IMU_ICM42688_Z_SIGN" value="+" description="Sign mapped body Z"/>
   </doc>
   <dep>
     <depends>i2c,spi_master,imu_common</depends>
