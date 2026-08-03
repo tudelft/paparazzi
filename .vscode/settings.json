@@ -15,6 +15,7 @@
     "esbonio.sphinx.confDir": "",
     "git.ignoreLimitWarning": true,
     "ocaml.sandbox": {
-        "kind": "global"
+        "kind": "opam",
+        "switch": "default"
     },
 }

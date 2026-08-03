@@ -4,7 +4,7 @@
    + Small airframe to test UWB swarm behavior and ETECS control
 
     + MODEL:            ZoHD Talon 250G
-    + FLIGHTCONTROLLER: Mateksys F405-TE-SD (FlyingRC F4 v1.5)
+    + FLIGHTCONTROLLER: FlyingRC F4 v1.5 as Mateksys F405-TE-SD
     + IMU:              ICM42688-P
     + ACTUATORS:        JX PDI-1143HB 4.3g
     + GNSS              uBlox M10 GNSS
@@ -17,7 +17,7 @@
     + CURRENT:          FC onboard sensor on the default analog ports
     + RANGEFINDER:      Surertech VB22A on I2C
     + MOTOR:            1406 - 2600Kv Brushless outrunner 12 poles
-    + PROPELLER:        Default 2 Blade 5x5in Left
+    + PROPELLER:        Default 2 Blade 5.1x5in Right
     + BATTERY:          18650 Li-Ion 2S1P INR18650 3300mAh
 
     NOTES:
