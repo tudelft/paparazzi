@@ -3,6 +3,8 @@
 from generated.ui_console import Ui_Console
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QProcess, QByteArray, Qt, QTimer, pyqtSignal
+# QTextCursor likly no longer needed
+from PyQt5.QtGui import QTextCursor
 import utils
 from program_widget import ProgramWidget
 from dataclasses import dataclass
