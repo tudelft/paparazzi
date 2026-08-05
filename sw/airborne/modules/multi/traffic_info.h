@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Pascal Brisset, Antoine Drouin (2008), Kirk Scheper (2016), (OpenUAS 2026)
+ * Copyright (C) Pascal Brisset, Antoine Drouin (2008), Kirk Scheper (2016), OpenUAS (2026)
  *
  * This file is part of paparazzi.
  *

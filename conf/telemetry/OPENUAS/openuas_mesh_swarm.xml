@@ -31,7 +31,7 @@
 -->
 <telemetry>
   <process name="Ap">
-    <mode name="default">
+    <mode name="mesh">
       <message name="MESH_STATE"        period="3.0"     phase="0.003333"/>  <!-- t0=   0.00 s, 30 B on the wire; hybrid MAC gates actual emission. -->
       <message name="GPS_LLA"           period="32.0"    phase="0.015938"/>  <!-- t0=   0.50 s, 38 B on the wire,  8.46 ms/hop. -->
       <message name="ESTIMATOR"         period="64.0"    phase="0.023594"/>  <!-- t0=   1.50 s, 16 B on the wire,  5.58 ms/hop. -->
