@@ -126,7 +126,11 @@ void digital_cam_uart_init(void)
 #endif
 
 #ifdef SITL
-  serial_init("/dev/ttyUSB0");
+#ifdef SITL_SERIAL
+    serial_init(SITL_SERIAL);
+#else
+    serial_init("/dev/ttyUSB0");
+#endif
 #endif
 }
 

@@ -118,14 +118,14 @@
       <module name="mag" type="qmc5883l">
         <configure name="MAG_QMC5883L_I2C_DEV" value="i2c1"/>
         <!--<configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="50"/>-->
-        <define name="MODULE_QMC5883L_UPDATE_AHRS" value="FALSE"/>
+        <define name="MODULE_QMC5883L_UPDATE_AHRS" value="TRUE"/>
         <define name="QMC5883L_CHAN_X" value="1"/>
         <define name="QMC5883L_CHAN_Y" value="0"/>
         <define name="QMC5883L_CHAN_Z" value="2"/>
         <define name="QMC5883L_CHAN_X_SIGN" value="+"/>
         <define name="QMC5883L_CHAN_Y_SIGN" value="+"/>
         <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
-        <!--<define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/>--><!-- for debugging -->
+        <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE"/><!-- for debugging -->
       </module> 
 
      <module name="airspeed" type="sdp3x">
@@ -143,7 +143,7 @@
         <define name="USE_AIRSPEED" value="TRUE"/>
         <!-- <define name="USE_AIRSPEED_LOWPASS_FILTER" value="TRUE"/> --><!-- Already TRUE per default -->
         <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/>
-        <!--<define name="SDP3X_SYNC_SEND" value="TRUE"/>--> <!-- Only enable while debugging -->
+        <define name="SDP3X_SYNC_SEND" value="TRUE"/> <!-- Only enable while debugging -->
       </module>
 
       <!-- Build into the airframe is a rangfinder Surertech VB22A 0xA4 (0x52 7bit) -->
@@ -181,8 +181,9 @@
 
       <module name="radio_control" type="sbus">
         <configure name="SBUS_PORT" value="UART2"/>
-        <define name="RADIO_HATCH" value="RADIO_AUX4"/>
-        <define name="RADIO_MANUALRELEASE" value="RADIO_AUX4"/>
+        <define name="RADIO_HATCH" value="RADIO_AUX2"/>
+        <define name="RADIO_MANUALRELEASE" value="RADIO_AUX2"/>
+        <define name="RADIO_BRAKE" value="RADIO_AUX4"/>
       </module>
 
       <!-- <module name="imu_quality_assessment"/> -->
@@ -257,6 +258,7 @@
       <module name="fdm" type="jsbsim"/>
       <module name="radio_control" type="ppm"/>
       <define name="RADIO_MANUALRELEASE" value="RADIO_AUX4"/>
+      <define name="RADIO_BRAKE" value="RADIO_AUX4"/>
       <!-- <module name="telemetry" type="transparent">
         <configure name="MODEM_PORT" value="/dev/ttyUSB0"/>
       </module> -->
@@ -265,6 +267,7 @@
       <define name="USE_NPS_AIRSPEED"/>
       <define name="USE_AIRSPEED" value="TRUE"/>
       <module name="udp"/>
+       <!--<module name="uart"/>--><!-- TODO: Exteral HITL PC debugging e.g a photocam trigger etc -->
     </target>
 
     <define name="USE_ADC_1"/>
@@ -316,7 +319,7 @@
           <!-- float_cmpl_quat enables GPS coordinated-turn compensation by default
             for fixed-wing firmware; the old DCM-only defines do not apply. -->
     <!-- If AHRS_MAG_CORRECT_FREQUENCY is set outside of target no need USE_MAGNETOMETER it is assumed TRUE -->
-    <configure name="USE_MAGNETOMETER" value="FALSE"/>
+    <configure name="USE_MAGNETOMETER" value="TRUE"/>
 
     <!-- *** Modules used for all targets, also simulation -->
 
@@ -336,10 +339,14 @@
     <module name="nav" type="line"/>
     <module name="nav" type="line_border"/>
     <module name="nav" type="line_osam"/>
+
+    <!-- needed to be able to survey an area -->
     <module name="nav" type="survey_polygon">
       <define name="POLYSURVEY_DEFAULT_DISTANCE" value="40"/>
     </module>
     <module name="nav" type="survey_poly_osam"/>
+
+    <!-- In case we need it to survey an area -->
     <module name="nav" type="smooth"/>
     <module name="nav" type="vertical_raster"/>
     <module name="nav" type="flower"/>
@@ -357,11 +364,12 @@
       <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="5.0"/>
     </module> -->
 
-    <!-- When a compute board is connected -->
-    <!-- <module name="digital_cam_uart">
+    <!-- When a compute board with camera is connected -->
+    <module name="digital_cam_uart">
       <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/>
-      <configure name="CAMERA_PORT" value="UART5"/>
-    </module> -->
+      <configure name="CAMERA_PORT" value="UART1"/>
+      <!--<define name="SITL_SERIAL" value="/dev/ttyUSB0"/>--><!-- For SITL testing with FORC on desk taking pictures -->
+    </module>
 
     <module name="traffic_info">
       <define name="TRAFFIC_INFO_USE_MESH" value="TRUE"/>
@@ -441,9 +449,23 @@
 
   <section name="MIXER">
     <define name="ASSIST_ROLL_WITH_RUDDER" value="0.0"/>
+    <define name="RUDDERVATOR_ROLL_FACTOR" value="1.0"/>
     <define name="RUDDERVATOR_PITCH_FACTOR" value="1.0"/>
     <define name="RUDDERVATOR_YAW_FACTOR" value="0.9"/>
-    <!-- <define name="RUDDERVATOR_ROLL_FACTOR" value="0.7"/> -->
+    <!-- not used yet, same for elevon as flaperon at the moment-->
+    <!-- If brakes extended could change pitch, compensate here, Future separate flaperon elevon brake scaling, needs testing -->
+    <define name="BRAKE_PITCH_COMPENSATION" value="0.1f"/>
+    <!-- Full speed brake extending could overload servos and unfavorable sudden pitch change possible, so a slowed extending of brake is performed-->
+    <define name="BRAKE_ENABLED_SLOWDOWN_FACTOR_EXTEND" value="80"/>
+    <!-- no unit yet, be warned test with var frequencies -->
+    <define name="BRAKE_ENABLED_SLOWDOWN_FACTOR_RETRACT" value="420"/>
+    <!-- no unit yet, be warned test with var frequencies -->
+    <!-- If we would set to much brake pct then the elevons and flaperons have not enought authoity to make the AC roll n pitch, not so handy in landing phase -->
+    <define name="BRAKE_MAX_PCT" value="0.75f"/>
+    <define name="BRAKE_PITCH_COMPENSATION" value="0.1f"/>
+    <!-- Set up/down deflection differences, likely needs many in flight tests to find acceptable values-->
+    <define name="AILERON_DIFF" value="0.3f"/>
+    <define name="BRAKE_MOTOR_REVERSE" value="0.3f"/><!-- not used yet-->
   </section>
 
   <rc_commands>
@@ -451,6 +473,7 @@
     <set command="ROLL" value="@ROLL"/>
     <set command="PITCH" value="@PITCH"/>
     <set command="YAW" value="@YAW"/>
+    <set command="BRAKE" value="@BRAKE"/>
     <set command="HATCH" value="@MANUALRELEASE"/>
     <set command="CLICKSHUTTER" value="@MANUALRELEASE"/>
   </rc_commands>
@@ -466,16 +489,27 @@
     <axis name="ROLL" failsafe_value="0"/>
     <axis name="PITCH" failsafe_value="0"/>
     <axis name="YAW" failsafe_value="0"/>
+    <axis name="BRAKE" failsafe_value="0"/>
     <axis name="HATCH" failsafe_value="-9599"/><!-- SERVO_HATCH_CLOSED -->
     <axis name="CLICKSHUTTER" failsafe_value="-9599"/><!-- SERVO_HATCH_CLOSED -->
   </commands>
 
   <command_laws>
+      <!-- Brake Slowdown -->
+    <let var="brake_value_nofilt" value="Clip(-@BRAKE, 0, MAX_PPRZ)"/>
+    <ratelimit var="brake_value" value="$brake_value_nofilt" rate_min="-BRAKE_ENABLED_SLOWDOWN_FACTOR_RETRACT" rate_max="BRAKE_ENABLED_SLOWDOWN_FACTOR_EXTEND"/>
+    <!-- <let var="aileron" value="@ROLL  * RUDDERVATOR_ROLL_FACTOR"/>
+    <let var="elevator" value="@PITCH * RUDDERVATOR_PITCH_FACTOR"/> -->
+    <!-- <let var="crowbrake" value="$brake_value * BRAKE_MAX_PCT"/> -->
     <set servo="S_THROTTLE" value="@THROTTLE"/>
-    <set servo="S_AILERON_LEFT" value="@ROLL"/>
+    <set servo="S_AILERON_LEFT" value="@ROLL"/>    
+    <set servo="S_AILERON_RIGHT" value="@ROLL"/>    
+    <!-- <set servo="S_AILERON_LEFT" value="-$elevator + $aileron - $crowbrake + $rudderleft"/>
+    <set servo="S_AILERON_RIGHT" value="$elevator + $aileron + $crowbrake + $rudderright"/>     -->
     <set servo="S_RUDDERVATOR_LEFT" value="@PITCH+@YAW"/>
     <set servo="S_RUDDERVATOR_RIGHT" value="@PITCH-@YAW"/>
-    <set servo="S_AILERON_RIGHT" value="@ROLL"/>
+    <!-- <set servo="S_RUDDERVATOR_LEFT" value="-$elevator + $aileron + $crowbrake - $rudderleft"/>
+    <set servo="S_RUDDERVATOR_RIGHT" value="$elevator + $aileron - $crowbrake - $rudderright"/> -->
     <set servo="S_HATCH" value="(Or((autopilot.mode == AP_MODE_AUTO1), (autopilot.mode == AP_MODE_AUTO2)) ? MAX_PPRZ : @HATCH)"/>
   </command_laws>
 
@@ -531,9 +565,9 @@
     <define name="GRAVITY_HEURISTIC_FACTOR" value="0.0"/>
     <!-- The external compass is an absolute yaw reference only. This normalized
     2D update prevents motor-current magnetic errors from tilting roll/pitch. -->
-    <define name="MAG_UPDATE_ALL_AXES" value="FALSE"/>
+    <define name="MAG_UPDATE_ALL_AXES" value="TRUE"/>
     <define name="GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>
-    <!-- <define name="FC_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/> -->
+    <define name="FC_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
 
     <!-- Local Magnetic field DE2026 -->
     <define name="H_X" value="0.413550"/>
@@ -764,14 +798,23 @@
     <define name="NO_XBEE_API_INIT" value="TRUE"/>
   </section>
 
+
   <section name="PHOTOGRAMMETRY" prefix="PHOTOGRAMMETRY_">
-    <define name="FOCAL_LENGTH" value="2.5" unit="mm"/>
-    <define name="SENSOR_WIDTH" value="2.304" unit="mm"/>
-    <define name="SENSOR_HEIGHT" value="1.728" unit="mm"/>
-    <define name="PIXELS_WIDTH" value="320"/>
-    <define name="HEIGHT_MIN" value="20." unit="m"/>
-    <define name="HEIGHT_MAX" value="120." unit="m"/>
-    <define name="RADIUS_MIN" value="70." unit="m"/>
+  <!-- Camera Parameters -->
+    <define name="FOCAL_LENGTH" value="4.74" unit="mm"/><!-- 4.74mm RPI AI camera -->
+    <define name="SENSOR_WIDTH" value="6.287" unit="mm"/><!-- In direction of the plane's wings -->
+    <define name="SENSOR_HEIGHT" value="4.712" unit="mm"/> <!-- In direction of the plane's nose -->
+    <define name="PIXELS_WIDTH" value="4056"/>
+    <define name="PIXELS_HEIGHT" value="3040"/>
+    <!-- Photogrammetry Parameters. Can also be defined in a flightplan instead
+    <define name="OVERLAP" value="0.3" unit="%"/>
+    <define name="SIDELAP" value="0.2" unit="%"/>
+    <define name="RESOLUTION" value="50" unit="mm pixel projection"/>--><!-- TODO -->
+
+  <!-- Flight Safety Parameters-->
+    <define name="HEIGHT_MIN" value="10." unit="m"/>
+    <define name="HEIGHT_MAX" value="80." unit="m"/><!-- Parameter given by IMAV2026 -->
+    <define name="RADIUS_MIN" value="50." unit="m"/>
   </section>
 
   <section name="GLS_APPROACH" prefix="APP_">
