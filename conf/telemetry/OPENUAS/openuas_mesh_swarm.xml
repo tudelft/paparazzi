@@ -50,6 +50,14 @@
       <message name="SURVEY"            period="256.0"   phase="0.030273"/>  <!-- t0=   7.74 s, 24 B on the wire,  6.54 ms/hop. only one nav shape is live at a time -->
       <message name="WP_MOVED"          period="256.0"   phase="0.032227"/>  <!-- t0=   8.24 s, 22 B on the wire,  6.54 ms/hop. -->
     </mode>
+    <mode name="mesh_solo">
+      <message name="MESH_STATE"        period="1.5"     phase="0.006667"/>  <!-- Safety/discovery canary; TDMA gates actual emission. -->
+      <message name="MINIMAL_COM"       period="0.25"    phase="0.000000"/>  <!-- 4 Hz position, speed, mode, block, voltage and flight time. -->
+      <message name="ATTITUDE"          period="0.50"    phase="0.500000"/>  <!-- 2 Hz, offset from MINIMAL_COM. -->
+      <message name="ENERGY"            period="1.0"     phase="0.750000"/>
+      <message name="DATALINK_REPORT"   period="2.0"     phase="0.625000"/>
+      <message name="ALIVE"             period="5.0"     phase="0.900000"/>
+    </mode>
   </process>
   <process name="Fbw">
     <mode name="default">

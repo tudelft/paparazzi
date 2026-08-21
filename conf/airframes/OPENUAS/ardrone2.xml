@@ -43,7 +43,10 @@
       <define name="VIEWVIDEO_QUALITY_FACTOR" value="60"/>
     </module>
 
-    <module name="traffic_info"/>
+    <module name="traffic_info">
+      <define name="TRAFFIC_INFO_USE_MESH" value="TRUE"/>
+      <define name="MESH_AUTO_TELEMETRY" value="TRUE"/>
+    </module>
     <module name="tcas"/>
 
   </firmware>

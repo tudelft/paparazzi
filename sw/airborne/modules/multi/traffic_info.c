@@ -51,6 +51,25 @@
 
 #if TRAFFIC_INFO_USE_MESH
 #include "autopilot.h"
+#include "modules/multi/traffic_info_mesh_mode.h"
+#endif
+
+#if MESH_AUTO_TELEMETRY
+#if defined(TELEMETRY_MODE_Ap_mesh) && defined(TELEMETRY_MODE_Ap_mesh_solo)
+#define MESH_AUTO_TELEMETRY_AVAILABLE 1
+#define MESH_TELEMETRY_MODE telemetry_mode_Ap
+#define MESH_TELEMETRY_MODE_MESH TELEMETRY_MODE_Ap_mesh
+#define MESH_TELEMETRY_MODE_SOLO TELEMETRY_MODE_Ap_mesh_solo
+#elif defined(TELEMETRY_MODE_Main_mesh) && defined(TELEMETRY_MODE_Main_mesh_solo)
+#define MESH_AUTO_TELEMETRY_AVAILABLE 1
+#define MESH_TELEMETRY_MODE telemetry_mode_Main
+#define MESH_TELEMETRY_MODE_MESH TELEMETRY_MODE_Main_mesh
+#define MESH_TELEMETRY_MODE_SOLO TELEMETRY_MODE_Main_mesh_solo
+#else
+#define MESH_AUTO_TELEMETRY_AVAILABLE 0
+#endif
+#else
+#define MESH_AUTO_TELEMETRY_AVAILABLE 0
 #endif
 
 #if TRAFFIC_INFO_USE_MESH && PPRZLINK_DEFAULT_VER != 2
@@ -200,6 +219,10 @@ struct MeshLinkState mesh_link;
 #define TRAFFIC_INFO_MESH_STATE_PERIOD PERIOD_MESH_STATE_Ap_0
 #elif defined(PERIOD_MESH_STATE_Ap_1)
 #define TRAFFIC_INFO_MESH_STATE_PERIOD PERIOD_MESH_STATE_Ap_1
+#elif defined(PERIOD_MESH_STATE_Main_0)
+#define TRAFFIC_INFO_MESH_STATE_PERIOD PERIOD_MESH_STATE_Main_0
+#elif defined(PERIOD_MESH_STATE_Main_1)
+#define TRAFFIC_INFO_MESH_STATE_PERIOD PERIOD_MESH_STATE_Main_1
 #endif
 
 #if defined(TRAFFIC_INFO_MESH_STATE_PERIOD)
@@ -257,8 +280,64 @@ static uint32_t mesh_async_prng;
 static uint32_t mesh_recovery_frame;
 static bool mesh_async_announcement_required;
 static bool mesh_recovery_required;
+#if MESH_AUTO_TELEMETRY_AVAILABLE
+static uint64_t mesh_last_peer_ms;
+static uint64_t mesh_alive_retry_ms;
+#endif
+
+static uint32_t mesh_multiplex_encode(int32_t course_ddeg,
+                                      int32_t gspeed_cms,
+                                      int32_t climb_cms);
+static uint8_t mesh_state_flags(void);
 
 static uint8_t mesh_local_tx_in_flight(uint64_t now_ms);
+
+#if MESH_AUTO_TELEMETRY_AVAILABLE
+#define MESH_ALIVE_RETRY_MS 30000u
+
+static void mesh_auto_telemetry_periodic(uint64_t now_ms)
+{
+  if (!mesh_link.ready || mesh_trans == NULL || mesh_dev == NULL) {
+    return;
+  }
+
+  const bool automatic_mode = MESH_TELEMETRY_MODE == MESH_TELEMETRY_MODE_MESH
+                              || MESH_TELEMETRY_MODE == MESH_TELEMETRY_MODE_SOLO;
+  if (automatic_mode) {
+    const struct mesh_mode_policy_input input = {
+      .clock_synchronized = mesh_link.synced,
+      .self_ping_fresh = datalink_gcs_self_ping_is_fresh(MESH_GCS_PING_TIMEOUT_MS),
+      .other_ping_fresh = datalink_gcs_other_ping_is_fresh(MESH_GCS_PING_TIMEOUT_MS),
+      .peer_present = mesh_link.neighbours != 0,
+      .peer_quiet_ms = now_ms - mesh_last_peer_ms,
+      .required_quiet_ms = MESH_SOLO_QUIET_MS
+    };
+    const bool select_solo = mesh_mode_should_use_solo(&input);
+    MESH_TELEMETRY_MODE = select_solo ? MESH_TELEMETRY_MODE_SOLO
+                                      : MESH_TELEMETRY_MODE_MESH;
+    mesh_link.solo_active = select_solo;
+  } else {
+    mesh_link.solo_active = false;
+  }
+
+  if (!datalink_gcs_self_ping_is_fresh(MESH_GCS_PING_TIMEOUT_MS)
+      && now_ms >= mesh_alive_retry_ms
+      && mesh_local_tx_in_flight(now_ms) == 0) {
+    pprz_msg_send_ALIVE(mesh_trans, mesh_dev, AC_ID, 16, MD5SUM);
+    mesh_link.local_tx_free_ms = now_ms + MESH_MODEM_DRAIN_MS;
+    mesh_alive_retry_ms = now_ms + MESH_ALIVE_RETRY_MS;
+  }
+}
+
+static void mesh_auto_telemetry_note_peer(uint64_t now_ms)
+{
+  mesh_last_peer_ms = now_ms;
+  if (MESH_TELEMETRY_MODE == MESH_TELEMETRY_MODE_SOLO) {
+    MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_MESH;
+  }
+  mesh_link.solo_active = false;
+}
+#endif
 
 /** Current absolute GPS time, including a coherent week rollover. */
 static uint64_t mesh_gps_time_ms(void)
@@ -1041,6 +1120,9 @@ void traffic_info_mesh_periodic(void)
     if (mesh_clock.mode == MESH_CLOCK_ASYNC) {
       mesh_link.reuse = 0;
     }
+#if MESH_AUTO_TELEMETRY_AVAILABLE
+    mesh_auto_telemetry_periodic(local_ms);
+#endif
     return;
   }
   if (mesh_clock.mode == MESH_CLOCK_GPS && mesh_clock_sample_valid) {
@@ -1051,6 +1133,9 @@ void traffic_info_mesh_periodic(void)
       mesh_last_network_ms = net_ms;
       mesh_last_local_ms = local_ms;
       mesh_slot_reset(frame);
+    #if MESH_AUTO_TELEMETRY_AVAILABLE
+      mesh_auto_telemetry_periodic(local_ms);
+    #endif
       return;
     }
   }
@@ -1061,6 +1146,9 @@ void traffic_info_mesh_periodic(void)
       && frame != mesh_last_frame
       && frame != mesh_last_frame + 1u) {
     mesh_slot_reset(frame);
+  #if MESH_AUTO_TELEMETRY_AVAILABLE
+    mesh_auto_telemetry_periodic(local_ms);
+  #endif
     return;
   }
 
@@ -1082,16 +1170,25 @@ void traffic_info_mesh_periodic(void)
   }
 
   if (!mesh_link.ready || mesh_trans == NULL || mesh_dev == NULL) {
+  #if MESH_AUTO_TELEMETRY_AVAILABLE
+      mesh_auto_telemetry_periodic(local_ms);
+  #endif
     return;
   }
   if (mesh_clock.mode == MESH_CLOCK_ASYNC) {
     if (local_ms < mesh_async_next_emit_ms) {
       mesh_link.defer_ticks++;
+  #if MESH_AUTO_TELEMETRY_AVAILABLE
+    mesh_auto_telemetry_periodic(local_ms);
+#endif
       return;
     }
     if (mesh_local_tx_in_flight(local_ms) >= MESH_CACHE_HIGH_WATER) {
       mesh_link.throttled_count++;
       mesh_async_schedule_next(local_ms);
+  #if MESH_AUTO_TELEMETRY_AVAILABLE
+    mesh_auto_telemetry_periodic(local_ms);
+  #endif
       return;
     }
     mesh_state_emit();
@@ -1099,21 +1196,33 @@ void traffic_info_mesh_periodic(void)
     mesh_link.local_tx_free_ms = Max(mesh_link.local_tx_free_ms, local_ms)
                    + MESH_MODEM_DRAIN_MS;
     mesh_async_schedule_next(local_ms);
+  #if MESH_AUTO_TELEMETRY_AVAILABLE
+    mesh_auto_telemetry_periodic(local_ms);
+  #endif
     return;
   }
   if (!mesh_owns(slot)) {
     mesh_link.defer_ticks++;
+  #if MESH_AUTO_TELEMETRY_AVAILABLE
+    mesh_auto_telemetry_periodic(local_ms);
+  #endif
     return;
   }
 
   /* One origination per (superframe, slot) pair. */
   const uint32_t key = (uint32_t)frame * MESH_TDMA_NB_SLOTS + slot;
   if (key == mesh_link.last_emit_key) {
+#if MESH_AUTO_TELEMETRY_AVAILABLE
+    mesh_auto_telemetry_periodic(local_ms);
+#endif
     return;
   }
 
   if (mesh_local_tx_in_flight(local_ms) >= MESH_CACHE_HIGH_WATER) {
     mesh_link.throttled_count++;
+  #if MESH_AUTO_TELEMETRY_AVAILABLE
+    mesh_auto_telemetry_periodic(local_ms);
+#endif
     return;
   }
 
@@ -1123,6 +1232,9 @@ void traffic_info_mesh_periodic(void)
   mesh_link.tx_count++;
   mesh_link.local_tx_free_ms = Max(mesh_link.local_tx_free_ms, local_ms)
                                + MESH_MODEM_DRAIN_MS;
+#if MESH_AUTO_TELEMETRY_AVAILABLE
+  mesh_auto_telemetry_periodic(local_ms);
+#endif
 }
 #endif /* TRAFFIC_INFO_USE_MESH */
 
@@ -1177,6 +1289,12 @@ void traffic_info_init(void)
   mesh_link.reuse = 0;
   mesh_link.local_tx_free_ms = traffic_monotonic_time_ms();
   mesh_link.last_emit_key = UINT32_MAX;
+#if MESH_AUTO_TELEMETRY_AVAILABLE
+  MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_MESH;
+  mesh_link.solo_active = false;
+  mesh_last_peer_ms = traffic_monotonic_time_ms();
+  mesh_alive_retry_ms = traffic_monotonic_time_ms();
+#endif
 #endif
 
 #if PERIODIC_TELEMETRY
@@ -1313,6 +1431,9 @@ bool parse_acinfo_dl(uint8_t *buf)
         if (!traffic_info_id_valid(sender_id)) {
           return FALSE;
         }
+      #if MESH_AUTO_TELEMETRY_AVAILABLE
+        mesh_auto_telemetry_note_peer(traffic_monotonic_time_ms());
+      #endif
         /* The originator is the PPRZLink sender, not a payload field: there is
          * no ac_id in MESH_STATE, so a relayed frame cannot claim to be from
          * someone else without also rewriting the frame header. */

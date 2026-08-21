@@ -68,6 +68,12 @@ extern void datalink_periodic(void);
 
 extern void datalink_parse_PING(struct link_device *dev, struct transport_tx *trans, uint8_t *buf);
 
+/** Return whether GCS recently sent a PING addressed to this aircraft. */
+extern bool datalink_gcs_self_ping_is_fresh(uint32_t timeout_ms);
+
+/** Return whether GCS recently sent a PING addressed to another aircraft. */
+extern bool datalink_gcs_other_ping_is_fresh(uint32_t timeout_ms);
+
 /** Check for new message and parse */
 static inline void DlCheckAndParse(struct link_device *dev, struct transport_tx *trans, uint8_t *buf, bool *msg_available, bool update_dl)
 {

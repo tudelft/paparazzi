@@ -428,10 +428,12 @@ let message_uplink = fun device ->
 let send_ping_msg = fun device ->
   Hashtbl.iter
     (fun ac_id status ->
-      let msg_id, _ = Dl_Pprz.message_of_name "PING" in
-      let s = Dl_Pprz.payload_of_values msg_id my_id ac_id [] in
-      send ac_id device s High;
-      status.last_ping <- Unix.gettimeofday ()
+      if live_aircraft ac_id then begin
+        let msg_id, _ = Dl_Pprz.message_of_name "PING" in
+        let s = Dl_Pprz.payload_of_values msg_id my_id ac_id [] in
+        send ac_id device s High;
+        status.last_ping <- Unix.gettimeofday ()
+      end
     )
     statuss
 

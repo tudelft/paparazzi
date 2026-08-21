@@ -47,6 +47,12 @@
       description="Estimated time for one frame to leave the modem transmit cache"/>
     <define name="MESH_CACHE_HIGH_WATER" value="3"
       description="Stop handing frames to the modem at this estimated cache depth; hardware limit is 5"/>
+    <define name="MESH_AUTO_TELEMETRY" value="FALSE|TRUE"
+      description="Automatically select mesh_solo when GCS sees only this aircraft"/>
+    <define name="MESH_GCS_PING_TIMEOUT_MS" value="12000"
+      description="Maximum age of GCS PING evidence used by automatic telemetry selection"/>
+    <define name="MESH_SOLO_QUIET_MS" value="12000"
+      description="Peer-free interval required before selecting mesh_solo"/>
   </doc>
   <dep>
     <depends>logger_utils</depends>

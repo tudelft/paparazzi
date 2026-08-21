@@ -299,6 +299,53 @@ The cap and telemetry period are a fleet-wide protocol profile. Update every
 participating aircraft before using the faster profile; do not mix reuse-four
 and reuse-eight firmware in one mesh.
 
+### 2.4 Automatic one-aircraft telemetry mode
+
+The common one-aircraft test case uses an ordinary `mesh_solo` telemetry mode.
+There is no custom wire protocol and no additional ground application. Both E52
+modules stay in the normal routing/broadcast profile; the feature never rewrites
+`AT+TYPE`, `AT+OPTION`, destination addresses, air rate, power, channel, or UART
+settings in flight.
+
+The existing OCaml link already sends a targeted `PING` to every live aircraft
+at five-second intervals. Because E52 broadcast traffic is heard by every mesh
+member, each aircraft can answer two questions locally:
+
+* has the GCS recently pinged me;
+* has the GCS recently pinged another aircraft.
+
+The airborne selector chooses `mesh_solo` only when the mesh clock is safe, the
+GCS has recently pinged this aircraft, no recent PING targeted another aircraft,
+no peer owns a live mesh slot, and no `MESH_STATE` peer frame has been received
+for 12 seconds. Any failed condition returns immediately to `mesh`. A manual
+selection of any other telemetry mode is preserved and disables automatic
+switching until `mesh` or `mesh_solo` is selected again.
+
+The ground link was tightened to PING only aircraft that are still live. Without
+that small correction, an aircraft which landed hours earlier would remain in
+the link table and suppress solo mode forever.
+
+Only existing messages are used. Fixed-wing sends `MINIMAL_COM` at 4 Hz,
+`ATTITUDE` at 2 Hz, `ENERGY` at 1 Hz, `DATALINK_REPORT` at 0.5 Hz, and `ALIVE`
+at 0.2 Hz. Rotorcraft uses the same schedule with native `ROTORCRAFT_FP` instead
+of `MINIMAL_COM`. `MESH_STATE` remains active as the safety/discovery canary in
+both modes. One standard `ALIVE` is sent when the mesh transport first becomes
+ready and retried every 30 seconds until the first GCS PING, allowing the normal
+server/link discovery cycle to start without a custom handshake.
+
+The two-router conservative budget for the fixed-wing standard-message profile
+is about 15.9% aggregate channel occupancy and 8.0% transmit duty per modem.
+Live NPS measurements were 4.16 Hz for fixed-wing `MINIMAL_COM` and 3.98 Hz for
+rotorcraft `ROTORCRAFT_FP`, roughly seven times the measured 0.56 Hz sparse mesh
+rate. A simultaneous fixed-wing/rotorcraft test observed both aircraft in the
+ordinary link table and zero solo-rate frames over the measured six-second
+window.
+
+The design deliberately accepts less throughput than a custom compact packet.
+In return it uses standard Paparazzi messages, standard generated telemetry
+modes, the existing PING/PONG path, one small firmware-neutral selector, and no
+new process for the operator to start.
+
 ---
 
 ## 3. E52-400NW22S Configuration
@@ -601,6 +648,9 @@ for seed in 1 2 3 4 5 6 7 8; do
     --frames 4000 --churn 0.05 --seed "$seed" --max-reuse 8 || exit 1
 done
 
+# 2a. Automatic mesh/mesh_solo mode policy
+tests/utils/test_mesh_mode_policy.run
+
 # 2b. Independent clocks, bounded holdover, and randomized fallback
 python3 sw/tools/mesh/mesh_gps_denied_sim.py \
   --seeds 100 --duration 3600 --stress-ppm 100 --denied-nodes 13
@@ -615,7 +665,10 @@ python3 sw/tools/mesh/mesh_link_sim.py \
   --width 17000 --height 3000 --duration 1200 --seed 7
 
 # 4. Embedded build
-make AIRCRAFT=Adam ap.compile
+make CONF_XML=conf/userconf/OPENUAS/openuas_swarm_conf.xml \
+  AIRCRAFT=Haydn ap.compile
+make CONF_XML=conf/userconf/OPENUAS/openuas_swarm_conf.xml \
+  AIRCRAFT=Adam ap.compile
 
 # 5. Modem profiles
 python3 sw/tools/mesh/e52_provision.py --ac-id 0 --dry-run
@@ -657,8 +710,9 @@ cache flushing, or a topology partition.
   population reaches about 0.296 Hz before lease and policy contraction.
   This is the cost of 13-way broadcast redundancy
    at 10 dBm and 62.5 kbit/s.
-4. **The GCS command tail is unslotted.** Commands are rare and use E52 CSMA.
-   A future high-rate uplink needs a reserved slot or directed unicast design.
+4. **The GCS command tail is unslotted.** Commands and normal PINGs remain rare
+  CSMA traffic. Solo mode reduces downlink contention but does not turn the
+  command path into a sustained bulk uplink.
 5. **The RF model is terrain-agnostic.** The 10 dB fade reserve covers generic
    shadowing, not a ridge, building, or forest wall. Survey the real site.
 6. **All nodes must share protocol constants and message layout.** The clock
@@ -675,12 +729,39 @@ is the authority for that trade, and it must exit zero before flight.
 
 ---
 
-## 8. Future Improvements
+## 8. End-User Operation
+
+No modem reprovisioning, additional application, or manual telemetry-mode change
+is needed. Build and flash aircraft with a telemetry profile containing both
+`mesh` and `mesh_solo`, then start the normal link/server/GCS session. The E52
+link must use 460800 baud, as provisioned.
+
+The aircraft starts in `mesh`. Once the standard link has discovered it and
+PINGs show that no other aircraft is live, it switches to `mesh_solo`
+automatically after the 12-second quiet interval. Starting another aircraft or
+losing the GCS/clock immediately restores `mesh`. Stopping an aircraft removes
+it from the link's PING set after the normal live-aircraft timeout, allowing the
+remaining aircraft to return to `mesh_solo` automatically.
+
+The supplied fixed-wing profiles use the generated `Ap` process. The dedicated
+`openuas_mesh_rotorcraft.xml` profile uses `Main` and native `ROTORCRAFT_FP`, so
+the selector itself is firmware-neutral. Configurations without both mode names
+continue using their existing telemetry unchanged.
+
+With `digital_cam_uart` disabled in the Talon airframe, clean `ap` and `nps`
+targets build successfully. Validation includes fixed-wing and rotorcraft builds,
+pure mode-policy tests, ordinary mesh churn/GPS-loss simulations, single-aircraft
+rate measurements, and a real two-aircraft fallback run through the unchanged
+OCaml UDP link.
+
+---
+
+## 9. Future Improvements
 
 These are the three highest-value next steps. They are deliberately not
 described as current capabilities.
 
-### 8.1 Hardware-in-the-loop qualification
+### 9.1 Hardware-in-the-loop qualification
 
 The software models now agree, but the largest remaining uncertainty is the
 E52 firmware itself: forwarding jitter, duplicate-filter behavior, cache
@@ -704,7 +785,7 @@ without manual reprovisioning. Use the measured forwarding-delay distribution
 to rerun `mesh_phase_optimizer.py`; replace the current statistical slot
 assumption only after the hardware data supports it.
 
-### 8.2 Hybrid broadcast and routed unicast
+### 9.2 Hybrid broadcast and routed unicast
 
 Keep compact safety state on broadcast because every peer needs it and it must
 survive without a coordinator. Move traffic with one intended recipient, such
@@ -730,7 +811,7 @@ bounded retries at the application layer; never allow bulk unicast to starve
 `MESH_STATE` or emergency traffic. Re-run airtime, cache, churn, and hardware
 tests for the mixed profile.
 
-### 8.3 Topology-aware connectivity protection
+### 9.3 Topology-aware connectivity protection
 
 All-router flooding provides a forwarding opportunity, but connectivity is a
 property of the instantaneous RF graph. In a long strip, one aircraft can be

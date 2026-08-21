@@ -365,14 +365,15 @@
     </module> -->
 
     <!-- When a compute board with camera is connected -->
-    <module name="digital_cam_uart">
-      <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/>
-      <configure name="CAMERA_PORT" value="UART1"/>
+    <!-- <module name="digital_cam_uart"> -->
+      <!-- <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/> -->
+      <!-- <configure name="CAMERA_PORT" value="UART1"/> -->
       <!--<define name="SITL_SERIAL" value="/dev/ttyUSB0"/>--><!-- For SITL testing with FORC on desk taking pictures -->
-    </module>
+    <!-- </module> -->
 
     <module name="traffic_info">
       <define name="TRAFFIC_INFO_USE_MESH" value="TRUE"/>
+      <define name="MESH_AUTO_TELEMETRY" value="TRUE"/>
     </module>
     <module name="tcas"/>
 

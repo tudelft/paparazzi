@@ -332,6 +332,18 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
 #define MESH_CACHE_HIGH_WATER 3
 #endif
 
+#ifndef MESH_AUTO_TELEMETRY
+#define MESH_AUTO_TELEMETRY FALSE
+#endif
+
+#ifndef MESH_GCS_PING_TIMEOUT_MS
+#define MESH_GCS_PING_TIMEOUT_MS 12000u
+#endif
+
+#ifndef MESH_SOLO_QUIET_MS
+#define MESH_SOLO_QUIET_MS 12000u
+#endif
+
 #if MESH_CACHE_HIGH_WATER >= 5
 #error "MESH_CACHE_HIGH_WATER must stay below the 5 frame hardware cache"
 #endif
@@ -378,6 +390,7 @@ struct MeshLinkState {
   uint8_t  slot;             ///< own primary slot
   uint8_t  reuse;            ///< TDMA slots currently claimed; ignored in ASYNC.
   uint8_t  neighbours;       ///< distinct nodes heard in the last age window
+  bool     solo_active;      ///< generated mesh_solo telemetry mode selected
   enum MeshClockMode clock_mode; ///< Current transmission timing authority.
   bool     ready;            ///< the telemetry transport is known
   bool     synced;           ///< GPS or bounded holdover time is safe for TDMA.
