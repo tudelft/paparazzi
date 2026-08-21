@@ -813,7 +813,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                          "period: the frame is fixed, and a node claims between "
                          "1 and --max-reuse of its slots depending on how many "
                          "peers are present. Defaults to mesh-period * max-reuse")
-    ap.add_argument("--max-reuse", type=int, default=4,
+    ap.add_argument("--max-reuse", type=int, default=8,
                     help="maximum slots one node may claim when the mesh is "
                          "sparse. Must match MESH_TDMA_MAX_REUSE in traffic_info.h")
     ap.add_argument("--mesh-period", type=float, default=None,
@@ -920,8 +920,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                      - net.channel_cost_s(ms_entry.msg.wire_bytes) * 1e3
                      * ms_entry.rate_hz) * n_air
     net_util = (ms_chan_ms + other_chan_ms) / 1000.0
-    print(f"  MESH_STATE, whole frame        : {ms_chan_ms:6.1f} ms/s "
-          f"(constant: the frame is always full)")
+    print(f"  MESH_STATE, full-frame budget  : {ms_chan_ms:6.1f} ms/s "
+          f"(conservative: all physical slots occupied)")
     print(f"  all other telemetry, {n_air} aircraft : {other_chan_ms:6.1f} ms/s")
     total_chan_ms_per_s = (ms_chan_ms + other_chan_ms) / max(n_air, 1)
     print(f"  total channel utilisation      : {net_util*100:5.1f} % "

@@ -197,6 +197,12 @@ struct MeshLinkState mesh_link;
  * integer constant expression while a floating multiply is not.
  */
 #if defined(PERIOD_MESH_STATE_Ap_0)
+#define TRAFFIC_INFO_MESH_STATE_PERIOD PERIOD_MESH_STATE_Ap_0
+#elif defined(PERIOD_MESH_STATE_Ap_1)
+#define TRAFFIC_INFO_MESH_STATE_PERIOD PERIOD_MESH_STATE_Ap_1
+#endif
+
+#if defined(TRAFFIC_INFO_MESH_STATE_PERIOD)
 /* The gate can only send what the telemetry scheduler offers it. To use up to
  * MESH_TDMA_MAX_REUSE slots per superframe the request has to arrive at least
  * that often, so the MESH_STATE period must be superframe / MAX_REUSE.
@@ -204,11 +210,12 @@ struct MeshLinkState mesh_link;
  * integer constant expression, a floating multiply is a GCC extension that all
  * supported toolchains accept. */
 _Static_assert((MESH_TDMA_SUPERFRAME_MS / MESH_TDMA_MAX_REUSE) ==
-                 (unsigned)(PERIOD_MESH_STATE_Ap_0 * 1000.0 + 0.5),
+                 (unsigned)(TRAFFIC_INFO_MESH_STATE_PERIOD * 1000.0 + 0.5),
                "The MESH_STATE telemetry period must equal "
                "MESH_TDMA_SUPERFRAME_MS / MESH_TDMA_MAX_REUSE, otherwise the "
                "bandwidth budget is computed for a different rate than the "
                "node will actually emit.");
+#undef TRAFFIC_INFO_MESH_STATE_PERIOD
 #endif
 
 #if defined(TRAFFIC_INFO_MESH_PERIODIC_FREQ)
@@ -491,14 +498,14 @@ static uint8_t mesh_redundancy_target(uint8_t nodes, uint8_t rank,
 {
   const uint8_t flags = mesh_state_flags();
   nodes = Max(nodes, 1u);
-  uint8_t target = (uint8_t)(MESH_TDMA_NB_SLOTS / nodes);
+  uint8_t target = (uint8_t)(MESH_TDMA_FAIR_SLOTS / nodes);
   if (target < 1) {
     target = 1;
   }
   if (target > MESH_TDMA_MAX_REUSE) {
     target = MESH_TDMA_MAX_REUSE;
-  } else if (nodes <= MESH_TDMA_NB_SLOTS && target < MESH_TDMA_MAX_REUSE) {
-    const uint8_t remainder = MESH_TDMA_NB_SLOTS % nodes;
+  } else if (nodes <= MESH_TDMA_FAIR_SLOTS && target < MESH_TDMA_MAX_REUSE) {
+    const uint8_t remainder = MESH_TDMA_FAIR_SLOTS % nodes;
     const uint8_t first = (uint8_t)((frame / MESH_REMAINDER_EPOCH_FRAMES) % nodes);
     const uint8_t relative_rank = (uint8_t)((rank + nodes - first) % nodes);
     if (relative_rank < remainder) {

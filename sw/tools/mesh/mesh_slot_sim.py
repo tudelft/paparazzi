@@ -61,7 +61,8 @@ GCS_ID = 0
 MAX_AC_ID = 254
 SLOT_FREE = 0xFF          # 255 is reserved; 0 is the GCS and a real mesh node
 NB_SLOTS = 32
-MAX_REUSE = 4
+FAIR_SLOTS = 28
+MAX_REUSE = 8
 AGE_FRAMES = 4
 SUPERFRAME_S = 12.0
 REMAINDER_EPOCH_FRAMES = 4 * AGE_FRAMES + 2 * NB_SLOTS + 1
@@ -121,9 +122,9 @@ class ClockGuard:
 def fair_target(nodes: int, rank: int, frame: int) -> int:
     """Return this sorted rank's deterministic share of available slots."""
     nodes = max(nodes, 1)
-    target = max(1, min(MAX_REUSE, NB_SLOTS // nodes))
-    if nodes <= NB_SLOTS and target < MAX_REUSE:
-        remainder = NB_SLOTS % nodes
+    target = max(1, min(MAX_REUSE, FAIR_SLOTS // nodes))
+    if nodes <= FAIR_SLOTS and target < MAX_REUSE:
+        remainder = FAIR_SLOTS % nodes
         first = (frame // REMAINDER_EPOCH_FRAMES) % nodes
         relative_rank = (rank + nodes - first) % nodes
         if relative_rank < remainder:
@@ -305,6 +306,8 @@ class Node:
 
 
 def run(args: argparse.Namespace) -> int:
+    global MAX_REUSE
+    MAX_REUSE = args.max_reuse
     rng = random.Random(args.seed)
     # AC_IDs are deliberately irregular. Zero is the GCS, a real mesh peer;
     # 254 exercises the highest aircraft ID and 255 remains reserved.
@@ -333,7 +336,8 @@ def run(args: argparse.Namespace) -> int:
     for nodes in range(1, NB_SLOTS + 1):
         for frame in boundary_frames:
             quotas = [fair_target(nodes, rank, frame) for rank in range(nodes)]
-            expected = min(NB_SLOTS, nodes * MAX_REUSE)
+            expected = (nodes if nodes > FAIR_SLOTS
+                        else min(FAIR_SLOTS, nodes * MAX_REUSE))
             if sum(quotas) != expected or max(quotas) - min(quotas) > 1:
                 failures.append(f"invalid fair quotas for {nodes} nodes at frame {frame}: {quotas}")
 
@@ -364,7 +368,7 @@ def run(args: argparse.Namespace) -> int:
         if ac not in live:
             live[ac] = Node(ac)
 
-    for ac in all_ids[:9]:             # GCS + nominal eight aircraft
+    for ac in all_ids[:args.initial_nodes]:
         join(ac)
 
     for frame in range(args.frames):
@@ -510,6 +514,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--settle", type=int, default=30,
                     help="frames to allow for initial convergence")
+    ap.add_argument("--initial-nodes", type=int, default=9, choices=range(1, 14),
+                    metavar="1..13",
+                    help="initial live peers including the GCS (default: 9)")
+    ap.add_argument("--max-reuse", type=int, default=MAX_REUSE,
+                    choices=range(1, NB_SLOTS + 1), metavar="1..32",
+                    help="maximum slots per peer (default: production value)")
     ap.add_argument("--state-fault", type=float, default=0.01,
                     help="per-frame probability of sync/position/airborne loss")
     ap.add_argument("--priority", type=float, default=0.01,

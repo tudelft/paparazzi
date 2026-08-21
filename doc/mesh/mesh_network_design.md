@@ -12,7 +12,7 @@ numbering is assumed.
 state update rate that fits the E52 channel and five-frame transmit cache.
 
 **Modeled and build-validated envelope:** 13 routing peers, 32 self-organised
-slots, 12 s superframe, 3 s base `MESH_STATE` period, 38.3% modeled channel
+slots, 12 s superframe, 1.5 s `MESH_STATE` scheduler ceiling, 38.3% modeled channel
 utilisation. This is a software acceptance baseline, not a substitute for
 thirteen-modem bench testing or flight qualification.
 
@@ -233,26 +233,43 @@ at which a node originates its own state:
 * when aircraft leave, healthy peers gradually claim quiet slots; when they
   return, peers contract immediately.
 
-For $S$ slots and $N$ live nodes, each healthy node receives a baseline of
+Of the 32 physical slots, 28 are distributed as steady-state fair share and
+four remain as headroom for joins, partitions merging, and temporarily
+different membership views. For $S=28$ fair-share slots and $N$ live nodes,
+each healthy node receives a baseline of
 $q=\lfloor S/N\rfloor$ slots. The first $r=S\bmod N$ sorted AC_ID ranks receive
 one remainder slot, so quotas differ by at most one and sum to all available
 slots. The winner window advances by one rank every 81 superframes, about
 16.2 minutes, giving long-term fairness without fleet-wide claim churn.
 
-At maximum population, six of the 13 peers are entitled to three slots and
-seven to two slots per 12 s. The average entitlement is therefore
-$32/(13\times12)=0.205$ Hz instead of the floor-only 0.167 Hz. At the nominal
-nine-peer population, five peers receive four slots and four receive three,
-for the same average 0.296 Hz. Collision-healing leases and policy contraction
+At maximum population, two of the 13 peers are entitled to three slots and
+eleven to two slots per 12 s. The average entitlement is therefore
+$28/(13\times12)=0.179$ Hz instead of the floor-only 0.167 Hz. At the nominal
+nine-peer population, one peer receives four slots and eight receive three,
+for an average entitlement of 0.259 Hz. Collision-healing leases and policy contraction
 can make observed rates lower than these steady-state entitlements. Sparse
-fleets rise toward the `MESH_TDMA_MAX_REUSE=4` cap of 0.33 Hz. Emergency state
-receives priority within the same bounded channel budget.
+fleets may now use up to `MESH_TDMA_MAX_REUSE=8` slots. The cap does not add
+slots or shorten them: it lets fewer live peers use slots that would otherwise
+remain empty. Measured steady-state simulator rates changed as follows; counts
+include the GCS because it is a real mesh peer:
 
-The 3 s telemetry period is an enabling ceiling, not a promise that every node
-transmits every 3 s. It lets a sparse, healthy node use four owned slots per
-12 s superframe. At dense population the runtime allocator owns fewer slots,
-so the actual per-node state rate is lower even though the generated telemetry
-period remains 3 s.
+| Live peers | Reuse 4 | Reuse 8 | Improvement |
+| ---: | ---: | ---: | ---: |
+| 1 | 0.31 Hz | 0.56 Hz | 81% |
+| 2 | 0.29 Hz | 0.48 Hz | 66% |
+| 3 | 0.27 Hz | 0.35 Hz | 30% |
+| 4 | 0.27 Hz | 0.28 Hz | 4% |
+| 9 | 0.17 Hz | 0.17 Hz | unchanged |
+| 13 | 0.15 Hz | 0.14 Hz | 0.01 Hz reserved for churn |
+
+Collision-healing leases deliberately limit dense-fleet convergence, so the
+measured rates are lower than the mathematical entitlement. This revision
+does not weaken those leases merely to report a higher number. Emergency state
+still receives priority within the same bounded channel budget.
+
+The 1.5 s telemetry period is an enabling ceiling, not a promise that every
+node transmits every 1.5 s. Actual emission remains controlled by live slot
+ownership, position validity, synchronization state, and cache pressure.
 
 ### 2.3 Time and lease constants
 
@@ -260,7 +277,8 @@ period remains 3 s.
 | --- | ---: | --- |
 | `MESH_TDMA_SUPERFRAME_MS` | 12000 | 32 flood-safe slots |
 | `MESH_TDMA_NB_SLOTS` | 32 | 13 peers plus churn headroom |
-| `MESH_TDMA_MAX_REUSE` | 4 | bounded sparse-fleet acceleration |
+| `MESH_TDMA_FAIR_SLOTS` | 28 | steady quota; four slots absorb membership disagreement |
+| `MESH_TDMA_MAX_REUSE` | 8 | bounded sparse-fleet acceleration |
 | `MESH_ENTRY_FRAMES` | 3 | listen before transmitting |
 | Secondary lease | 6-13 frames | break secondary collisions |
 | Primary lease | 10-19 frames | preserve a 2-4 minute recovery window with a 12 s frame |
@@ -273,8 +291,13 @@ period remains 3 s.
 | Cache high water | 3 of 5 | leave two E52 cache entries as hard margin |
 
 The static assert in `traffic_info.c` forces the generated `MESH_STATE` period
-to equal `superframe / max reuse` (12 / 4 = 3 s). A mismatched telemetry file
-therefore fails the aircraft build instead of failing in flight.
+to equal `superframe / max reuse` (12 / 8 = 1.5 s) in either supported telemetry
+mode layout. A mismatched telemetry file therefore fails the aircraft build
+instead of failing in flight.
+
+The cap and telemetry period are a fleet-wide protocol profile. Update every
+participating aircraft before using the faster profile; do not mix reuse-four
+and reuse-eight firmware in one mesh.
 
 ---
 
@@ -375,7 +398,7 @@ The exact delivered 13-router gate is:
 python3 sw/tools/mesh/mesh_phase_optimizer.py \
   --ac-ids 0,3,19,42,58,77,101,125,140,168,203,222,251 \
   --relay-nodes 13 --nb-slots 32 \
-  --mesh-period 3 --superframe 12 --max-reuse 4 \
+  --mesh-period 1.5 --superframe 12 --max-reuse 8 \
   --period-scale 4 \
   --emit-xml conf/telemetry/OPENUAS/openuas_mesh_swarm.xml
 ```
@@ -393,7 +416,7 @@ cache pressure, and random land/rejoin churn.
 ```bash
 for seed in 1 2 3 4 5 6 7 8; do
   python3 sw/tools/mesh/mesh_slot_sim.py \
-    --frames 4000 --churn 0.05 --seed "$seed" || exit 1
+    --frames 4000 --churn 0.05 --seed "$seed" --max-reuse 8 || exit 1
 done
 ```
 
@@ -570,12 +593,12 @@ change:
 python3 sw/tools/mesh/mesh_phase_optimizer.py \
   --ac-ids 0,3,19,42,58,77,101,125,140,168,203,222,251 \
   --relay-nodes 13 --nb-slots 32 \
-  --mesh-period 3 --superframe 12 --max-reuse 4 --period-scale 4
+  --mesh-period 1.5 --superframe 12 --max-reuse 8 --period-scale 4
 
 # 2. Dynamic topology, fair quotas, clock steps, and state-aware contraction
-for seed in 1 3 5 7 11; do
+for seed in 1 2 3 4 5 6 7 8; do
   python3 sw/tools/mesh/mesh_slot_sim.py \
-    --frames 4000 --churn 0.05 --seed "$seed" || exit 1
+    --frames 4000 --churn 0.05 --seed "$seed" --max-reuse 8 || exit 1
 done
 
 # 2b. Independent clocks, bounded holdover, and randomized fallback

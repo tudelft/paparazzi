@@ -282,12 +282,11 @@
 
          32 slots of 375 ms. A node claims 1 slot when the mesh is full and up
          to MESH_TDMA_MAX_REUSE when it is sparse, so the position rate rises
-         as nodes leave and falls back as they return, at constant channel
-         occupancy. The MESH_STATE telemetry period must be
-         MESH_TDMA_SUPERFRAME_MS / MESH_TDMA_MAX_REUSE = 3000 ms; traffic_info.c
-         static asserts it, and that assert is live on the ap target - setting
-         MAX_REUSE to 5 here fails the ap build, which is how this wiring was
-         verified rather than assumed.
+         as nodes leave and falls back as they return. Four physical slots are
+         reserved as churn headroom. The MESH_STATE telemetry period must be
+         MESH_TDMA_SUPERFRAME_MS / MESH_TDMA_MAX_REUSE = 1500 ms; traffic_info.c
+         static asserts it on the ap target, including telemetry profiles where
+         MESH_STATE is in mode 1 rather than mode 0.
 
          At firmware scope, not inside <target name="ap">, because these are
          PROTOCOL constants: every node on the mesh must agree on the superframe
@@ -298,7 +297,8 @@
          See doc/mesh/mesh_network_design.md. -->
     <define name="MESH_TDMA_SUPERFRAME_MS" value="12000"/>
     <define name="MESH_TDMA_NB_SLOTS" value="32"/>
-    <define name="MESH_TDMA_MAX_REUSE" value="4"/>
+    <define name="MESH_TDMA_FAIR_SLOTS" value="28"/>
+    <define name="MESH_TDMA_MAX_REUSE" value="8"/>
 
     <define name="STRONG_WIND"/>
     <define name="WIND_INFO"/>

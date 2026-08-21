@@ -27,6 +27,8 @@
       description="TDMA superframe in ms; MESH_STATE period is this divided by MESH_TDMA_MAX_REUSE"/>
     <define name="MESH_TDMA_NB_SLOTS" value="32"
       description="TDMA slots per superframe, including headroom for membership churn"/>
+    <define name="MESH_TDMA_FAIR_SLOTS" value="28"
+      description="Physical slots distributed as steady-state fair share; remaining slots absorb churn"/>
     <define name="MESH_CLOCK_HOLDOVER_MAX_MS" value="60000"
       description="Maximum bounded GPS-epoch holdover before asynchronous fallback"/>
     <define name="MESH_CLOCK_ACQUIRE_MS" value="2000"

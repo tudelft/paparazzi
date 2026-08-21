@@ -134,13 +134,23 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
 #define MESH_TDMA_NB_SLOTS 32
 #endif
 
+/** Slots distributed by the fair-share allocator.
+ *
+ * The remaining physical slots absorb short-lived membership disagreement
+ * during joins and partitions. They stay available for primary selection and
+ * collision recovery, but healthy peers do not target them as steady-state
+ * quota. */
+#ifndef MESH_TDMA_FAIR_SLOTS
+#define MESH_TDMA_FAIR_SLOTS 28
+#endif
+
 /** Maximum slots one node may occupy when the mesh is sparsely populated.
  *  This is what converts spare membership into update rate: with N slots and
  *  k nodes present each node claims up to N/k of them, so the position rate
- *  rises automatically as nodes leave and falls back as they return. Channel
- *  occupancy stays constant either way - the frame is always full. */
+ *  rises automatically as nodes leave and falls back as they return. The
+ *  fair-share budget leaves physical slots free for churn headroom. */
 #ifndef MESH_TDMA_MAX_REUSE
-#define MESH_TDMA_MAX_REUSE 4
+#define MESH_TDMA_MAX_REUSE 8
 #endif
 
 /** Superframes a node listens before claiming more than its primary slot.
@@ -231,6 +241,9 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
 #endif
 #if MESH_TDMA_NB_SLOTS > 255
 #error "MESH_TDMA_NB_SLOTS must fit in uint8_t"
+#endif
+#if MESH_TDMA_FAIR_SLOTS < 1 || MESH_TDMA_FAIR_SLOTS > MESH_TDMA_NB_SLOTS
+#error "MESH_TDMA_FAIR_SLOTS must be between 1 and MESH_TDMA_NB_SLOTS"
 #endif
 #if MESH_TDMA_MAX_REUSE < 1
 #error "MESH_TDMA_MAX_REUSE must be at least 1"
