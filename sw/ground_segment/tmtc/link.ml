@@ -428,8 +428,20 @@ let message_uplink = fun device ->
 let send_ping_msg = fun device ->
   Hashtbl.iter
     (fun ac_id status ->
-      (* Targeted PINGs are also observed by mesh peers. Polling only live
-         entries lets a remaining aircraft select its solo telemetry mode. *)
+      (* PING only aircraft from which the link still receives telemetry.
+
+         This matters on a broadcast mesh because every aircraft hears each
+         targeted PING and treats a PING for another ID as evidence that it is
+         not alone. Pinging stale entries forever would therefore keep the one
+         remaining aircraft out of its faster mesh_solo telemetry mode.
+
+         There is no discovery deadlock: a new or returning aircraft announces
+         itself with telemetry (including the mesh ALIVE retry), which refreshes
+         its status and makes it eligible for the next PING. The tradeoff is
+         that a link outage longer than -ac_timeout temporarily stops PINGs to
+         an otherwise active aircraft. This is consistent with all directed
+         uplink traffic in send(), and reception of any later telemetry frame
+         immediately marks the aircraft live again. *)
       if live_aircraft ac_id then begin
         let msg_id, _ = Dl_Pprz.message_of_name "PING" in
         let s = Dl_Pprz.payload_of_values msg_id my_id ac_id [] in
