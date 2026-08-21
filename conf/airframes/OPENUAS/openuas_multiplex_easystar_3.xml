@@ -177,10 +177,11 @@
       </module>
 
       <module name="telemetry" type="transparent">  
-        <configure name="MODEM_PORT" value="usb_serial"/>   
-        <!-- <configure name="MODEM_PORT" value="UART2"/>  -->
+        <!-- <configure name="MODEM_PORT" value="usb_serial"/>    -->
+        <configure name="MODEM_PORT" value="UART2"/>
         <!-- <configure name="MODEM_BAUD" value="B9600"/> -->
         <!--<configure name="MODEM_BAUD" value="B57600"/>--><!-- for direct cable desktest -->
+        <configure name="MODEM_BAUD" value="B460800"/><!-- for mesh test -->
       </module>
 
       <module name="geo_mag"/>
