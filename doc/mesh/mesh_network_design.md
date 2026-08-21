@@ -317,15 +317,16 @@ member, each aircraft can answer two questions locally:
 The airborne selector chooses `mesh_solo` only when the mesh clock is safe, the
 GCS has recently pinged this aircraft, no recent PING targeted another aircraft,
 no peer owns a live mesh slot, and no `MESH_STATE` peer frame has been received
-for 12 seconds. Any failed condition returns immediately to `mesh`. A manual
-selection of any other telemetry mode is preserved and disables automatic
-switching until `mesh` or `mesh_solo` is selected again.
+for 12 seconds. A received peer `MESH_STATE` returns immediately to `mesh`; a
+peer known only through the GCS propagates on the next targeted PING cycle,
+within five seconds. A manual selection of any other telemetry mode is preserved
+and disables automatic switching until `mesh` or `mesh_solo` is selected again.
 
 The ground link was tightened to PING only aircraft that are still live. Without
 that small correction, an aircraft which landed hours earlier would remain in
 the link table and suppress solo mode forever.
 
-Only existing messages are used. Fixed-wing sends `MINIMAL_COM` at 4 Hz,
+Only existing messages are used. Fixed-wing sends `MINIMAL_COM` at 5 Hz,
 `ATTITUDE` at 2 Hz, `ENERGY` at 1 Hz, `DATALINK_REPORT` at 0.5 Hz, and `ALIVE`
 at 0.2 Hz. Rotorcraft uses the same schedule with native `ROTORCRAFT_FP` instead
 of `MINIMAL_COM`. `MESH_STATE` remains active as the safety/discovery canary in
@@ -333,13 +334,25 @@ both modes. One standard `ALIVE` is sent when the mesh transport first becomes
 ready and retried every 30 seconds until the first GCS PING, allowing the normal
 server/link discovery cycle to start without a custom handshake.
 
-The two-router conservative budget for the fixed-wing standard-message profile
-is about 15.9% aggregate channel occupancy and 8.0% transmit duty per modem.
-Live NPS measurements were 4.16 Hz for fixed-wing `MINIMAL_COM` and 3.98 Hz for
-rotorcraft `ROTORCRAFT_FP`, roughly seven times the measured 0.56 Hz sparse mesh
-rate. A simultaneous fixed-wing/rotorcraft test observed both aircraft in the
-ordinary link table and zero solo-rate frames over the measured six-second
-window.
+The primary period was reduced from 250 ms to 200 ms, giving exactly 25% more
+scheduled state updates and 20% less maximum update latency. The auxiliary rates
+remain deliberately unchanged: the available solo-link margin is spent on the
+position and motion data that benefits from freshness, not duplicated diagnostic
+traffic.
+
+With two routing radios, the repository PHY model places the complete 5 Hz
+fixed-wing profile at 15.0% aggregate channel occupancy and 7.5% transmit duty
+per modem. The larger rotorcraft state frame gives 17.9% aggregate occupancy and
+8.9% duty. Compared with 4 Hz, the extra state frame per second costs only 1.82
+percentage points of aggregate occupancy for fixed-wing and 2.40 points for
+rotorcraft.
+
+Live NPS measurements changed from 4.158 Hz to 5.006 Hz for fixed-wing
+`MINIMAL_COM`, a 20.4% observed increase, and from 3.976 Hz to 5.008 Hz for
+rotorcraft `ROTORCRAFT_FP`, a 26.0% increase. Mean delivered intervals were
+199.76 ms and 199.68 ms respectively. In a simultaneous 5 Hz-capable
+fixed-wing/rotorcraft test, both aircraft appeared in the ordinary link table
+and a fully settled ten-second window contained zero solo-rate frames.
 
 The design deliberately accepts less throughput than a custom compact packet.
 In return it uses standard Paparazzi messages, standard generated telemetry

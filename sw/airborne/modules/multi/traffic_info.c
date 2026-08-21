@@ -304,6 +304,9 @@ static void mesh_auto_telemetry_periodic(uint64_t now_ms)
   const bool automatic_mode = MESH_TELEMETRY_MODE == MESH_TELEMETRY_MODE_MESH
                               || MESH_TELEMETRY_MODE == MESH_TELEMETRY_MODE_SOLO;
   if (automatic_mode) {
+    /* PINGs describe the GCS live-aircraft set; MESH_STATE is the independent
+     * radio-side canary. Requiring both prevents a stale GCS table or a missed
+     * PING from enabling the faster profile while another peer is present. */
     const struct mesh_mode_policy_input input = {
       .clock_synchronized = mesh_link.synced,
       .self_ping_fresh = datalink_gcs_self_ping_is_fresh(MESH_GCS_PING_TIMEOUT_MS),
@@ -332,6 +335,7 @@ static void mesh_auto_telemetry_periodic(uint64_t now_ms)
 static void mesh_auto_telemetry_note_peer(uint64_t now_ms)
 {
   mesh_last_peer_ms = now_ms;
+  /* Do not wait for the next periodic selector pass when a peer appears. */
   if (MESH_TELEMETRY_MODE == MESH_TELEMETRY_MODE_SOLO) {
     MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_MESH;
   }

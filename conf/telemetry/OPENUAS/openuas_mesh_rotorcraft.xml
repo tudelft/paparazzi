@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<!DOCTYPE telemetry SYSTEM "../telemetry.dtd">
+<!-- E52 mesh profile for rotorcraft/rover firmware. Mode names intentionally
+     match the fixed-wing profile so traffic_info can select them generically. -->
+<telemetry>
+  <process name="Main">
+    <mode name="mesh">
+      <message name="MESH_STATE"        period="1.5"     phase="0.006667"/>
+      <message name="ROTORCRAFT_FP"     period="32.0"    phase="0.007812"/>
+      <message name="ATTITUDE"          period="64.0"    phase="0.011719"/>
+      <message name="ENERGY"            period="128.0"   phase="0.013672"/>
+      <message name="DATALINK_REPORT"   period="256.0"   phase="0.018555"/>
+      <message name="ALIVE"             period="256.0"   phase="0.014648"/>
+    </mode>
+    <mode name="mesh_solo">
+      <!-- Keep the peer canary and auxiliary diagnostics slow; spend the solo-link margin on state freshness. -->
+      <message name="MESH_STATE"        period="1.5"     phase="0.006667"/>  <!-- Safety/discovery canary; TDMA gates actual emission. -->
+      <message name="ROTORCRAFT_FP"     period="0.20"    phase="0.000000"/>  <!-- 5 Hz native rotorcraft position, velocity, attitude and guidance state. -->
+      <message name="ATTITUDE"          period="0.50"    phase="0.500000"/>
+      <message name="ENERGY"            period="1.0"     phase="0.750000"/>
+      <message name="DATALINK_REPORT"   period="2.0"     phase="0.625000"/>
+      <message name="ALIVE"             period="5.0"     phase="0.900000"/>
+    </mode>
+  </process>
+</telemetry>

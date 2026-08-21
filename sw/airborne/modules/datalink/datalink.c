@@ -68,6 +68,8 @@ void datalink_periodic(void)
 void datalink_parse_PING(struct link_device *dev, struct transport_tx *trans, uint8_t *buf)
 {
   const uint8_t receiver = pprzlink_get_msg_receiver_id(buf);
+  /* Targeted GCS PINGs double as fleet-presence evidence: on a broadcast E52
+   * mesh every aircraft hears which live aircraft the link is polling. */
   if (pprzlink_get_msg_sender_id(buf) == 0) {
     if (receiver == AC_ID) {
       datalink_last_gcs_self_ping_ms = get_sys_time_msec();
@@ -77,6 +79,7 @@ void datalink_parse_PING(struct link_device *dev, struct transport_tx *trans, ui
       datalink_has_gcs_other_ping = true;
     }
   }
+  /* Observe peer-directed PINGs above, but only their addressee sends PONG. */
   if (receiver != AC_ID && receiver != PPRZLINK_MSG_BROADCAST) {
     return;
   }

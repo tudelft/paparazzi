@@ -428,6 +428,8 @@ let message_uplink = fun device ->
 let send_ping_msg = fun device ->
   Hashtbl.iter
     (fun ac_id status ->
+      (* Targeted PINGs are also observed by mesh peers. Polling only live
+         entries lets a remaining aircraft select its solo telemetry mode. *)
       if live_aircraft ac_id then begin
         let msg_id, _ = Dl_Pprz.message_of_name "PING" in
         let s = Dl_Pprz.payload_of_values msg_id my_id ac_id [] in
