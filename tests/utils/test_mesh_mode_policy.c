@@ -13,7 +13,7 @@ static void expect(bool condition, const char *message)
 
 int main(void)
 {
-  puts("1..7");
+  puts("1..11");
   struct mesh_mode_policy_input input = {
     .self_ping_fresh = true,
     .other_ping_fresh = false,
@@ -45,5 +45,17 @@ int main(void)
   input.peer_quiet_ms = input.required_quiet_ms + 60000;
   expect(mesh_mode_should_use_solo(&input), "long GPS-denied solo run was rejected");
   puts("ok 7 - solo selection is independent of mesh clock state");
+    expect(!mesh_mode_should_use_dense(11, false, 12, 10),
+      "dense mode entered below its threshold");
+    puts("ok 8 - common mode remains below dense threshold");
+    expect(mesh_mode_should_use_dense(12, false, 12, 10),
+      "dense mode did not enter at its threshold");
+    puts("ok 9 - dense mode enters at threshold");
+    expect(mesh_mode_should_use_dense(11, true, 12, 10),
+      "dense mode left inside the hysteresis band");
+    puts("ok 10 - dense mode holds inside hysteresis band");
+    expect(!mesh_mode_should_use_dense(10, true, 12, 10),
+      "dense mode did not leave at its exit threshold");
+    puts("ok 11 - dense mode leaves at exit threshold");
   return EXIT_SUCCESS;
 }

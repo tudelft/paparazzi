@@ -56,6 +56,7 @@ Useful variations::
 
     ./mesh_phase_optimizer.py --relay-nodes 3        # only GCS + 2 relays route
     ./mesh_phase_optimizer.py --nodes 17 --utilisation 0.30
+    ./mesh_phase_optimizer.py --period GPS_LLA=16 --period WP_MOVED=32
     ./mesh_phase_optimizer.py --emit-xml conf/telemetry/OPENUAS/openuas_mesh_swarm.xml
 """
 
@@ -310,6 +311,29 @@ class ScheduleEntry:
         return 1.0 / self.period_s
 
 
+def parse_named_values(values: Sequence[str], option: str) -> Dict[str, float]:
+    """Parse repeatable ``NAME=VALUE`` command-line options."""
+    parsed: Dict[str, float] = {}
+    for value in values:
+        name, separator, number = value.partition("=")
+        if not separator or not name.strip():
+            raise ValueError(f"{option} expects NAME=VALUE, got {value!r}")
+        try:
+            parsed_value = float(number)
+        except ValueError as exc:
+            raise ValueError(f"{option} value must be numeric, got {value!r}") from exc
+        if parsed_value <= 0.0:
+            raise ValueError(f"{option} value must be positive, got {value!r}")
+        parsed[name.strip()] = parsed_value
+    return parsed
+
+
+def steady_slot_count(physical_slots: int, fair_slots: int,
+                      members: int, max_reuse: int) -> int:
+    """Return slots carrying steady traffic after reserving churn headroom."""
+    return min(physical_slots, fair_slots, members * max_reuse)
+
+
 #: Highest phase value ``gen_periodic`` accepts as a normalised fraction.
 #: Above 0.95 it treats the value as a legacy 1/65536 tick count.
 PHASE_MAX = 0.95
@@ -437,6 +461,7 @@ def simulate_cache(
     cache_limit: int = 5,
     slot_driven: str = "",
     slot_driven_rate_hz: float = 0.0,
+    event_frames: Sequence[Tuple[MessageDef, float]] = (),
 ) -> Tuple[int, int, float]:
     """Discrete-event simulation of one node's E52 transmit cache.
 
@@ -476,8 +501,10 @@ def simulate_cache(
     others_rate = sum(e.rate_hz for e in entries if e.msg.name != slot_driven)
     local_rate = others_rate + slot_local_hz
     #  own share removed: what this node relays is what the OTHERS originate
+    event_rate_hz = sum(rate_hz for _, rate_hz in event_frames)
     relay_rate = (others_rate * max(0, n_originating_nodes - 1)
-                  + max(0.0, slot_driven_rate_hz - slot_local_hz))
+                  + max(0.0, slot_driven_rate_hz - slot_local_hz)
+                  + event_rate_hz)
 
     drain_backlog = 0.0
     for tick in range(horizon):
@@ -513,6 +540,8 @@ def simulate_cache(
     if slot_driven in by_name:
         utilisation += (slot_driven_rate_hz
                         * net.channel_cost_s(by_name[slot_driven].msg.wire_bytes))
+    utilisation += sum(rate_hz * net.channel_cost_s(msg.wire_bytes)
+                       for msg, rate_hz in event_frames)
     _ = tdma_slot_s
     return peak, overflows, utilisation
 
@@ -805,6 +834,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     help="TDMA slots per superframe. Default is the next power "
                          "of two at or above the node count. With no GCS uplink "
                          "to schedule, 8 slots for 8 aircraft is exact")
+    ap.add_argument("--fair-slots", type=int, default=28,
+                    help="slots distributed in steady state; remaining physical "
+                         "slots are short-lived churn headroom (default: 28)")
     ap.add_argument("--reserve-gcs-slot", action="store_true",
                     help="keep slot 0 free for GCS uplink commands. Not needed "
                          "when the ground station originates almost nothing")
@@ -827,6 +859,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                          "to spend headroom won by reducing the relay count: "
                          "0.5 doubles every rate. Keep it a power of two so the "
                          "periods stay harmonic and the phase lattice stays dense")
+    ap.add_argument("--period", action="append", default=[], metavar="NAME=SECONDS",
+                    help="override one periodic message after --period-scale; "
+                         "repeat for multiple messages. MESH_STATE still uses "
+                         "--mesh-period")
+    ap.add_argument("--control-rate", "--move-wp-rate", dest="control_rate",
+                    type=float, default=0.05, metavar="HZ",
+                    help="fleet-wide asynchronous operator-command reserve; "
+                        "the old --move-wp-rate spelling remains an alias "
+                        "(default: 0.05 Hz, one action per 20 seconds)")
+    ap.add_argument("--ping-period", type=float, default=5.0, metavar="SECONDS",
+                    help="adaptive GCS probe cadence; one live aircraft is "
+                        "PINGed per cycle and returns one PONG (default: 5 seconds)")
     ap.add_argument("--air-rate", type=int, default=0, choices=(0, 1, 2),
                     help="AT+RATE value: 0=62.5k 1=21.875k 2=7k. The lower rates "
                          "buy 5 dB of sensitivity each but cost 3x and 10x in air "
@@ -834,6 +878,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--emit-xml", default=None,
                     help="write the telemetry XML to this path")
     args = ap.parse_args(argv)
+
+    try:
+        period_overrides = parse_named_values(args.period, "--period")
+    except ValueError as exc:
+        ap.error(str(exc))
+    if args.control_rate < 0.0:
+        ap.error("--control-rate must not be negative")
+    if args.ping_period <= 0.0:
+        ap.error("--ping-period must be positive")
+    if args.fair_slots <= 0:
+        ap.error("--fair-slots must be positive")
 
     ac_ids = [int(x) for x in args.ac_ids.split(",") if x.strip()]
     if len(ac_ids) != args.nodes:
@@ -872,7 +927,23 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         p = period * args.period_scale
         if name == "MESH_STATE" and args.mesh_period is not None:
             p = args.mesh_period
+        elif name in period_overrides:
+            p = period_overrides.pop(name)
         entries.append(ScheduleEntry(msgs[key], p, process, group))
+    if period_overrides:
+        ap.error("--period names are not in the mesh telemetry set: "
+                 + ", ".join(sorted(period_overrides)))
+
+    n_air = net.n_nodes - 1
+    event_frames = [
+        # One aggregate operator-action reserve. BLOCK/NAVIGATION is the
+        # largest normal request/response pair; MOVE_WP/WP_MOVED and
+        # SETTING/DL_VALUE use the same reserved arrival opportunity.
+        (msgs[("datalink", "BLOCK")], args.control_rate),
+        (msgs[("telemetry", "NAVIGATION")], args.control_rate),
+        (msgs[("datalink", "PING")], 1.0 / args.ping_period),
+        (msgs[("telemetry", "PONG")], 1.0 / args.ping_period),
+    ]
 
     print("=" * 78)
     print("PHASE 1 - per message cost")
@@ -902,27 +973,36 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
               f"{e.period_s:>9.1f}{chan_per_s:>9.2f}{tag}")
 
     print("  " + "-" * 74)
-    n_air = net.n_nodes - 1
-
     # MESH_STATE is slot driven, not node driven. Every slot in the superframe
     # is used by somebody - a sparse mesh means fewer nodes each using more
     # slots - so its channel cost is a property of the FRAME and does not move
     # with the population. Everything else scales with the number of aircraft.
     ms_entry = next(e for e in live_entries if e.msg.name == "MESH_STATE")
-    mesh_frame_rate_hz = (args.nb_slots or len(ac_ids)) / (
+    physical_slots = args.nb_slots or len(ac_ids)
+    steady_slots = steady_slot_count(physical_slots, args.fair_slots,
+                                     len(ac_ids), args.max_reuse)
+    mesh_frame_rate_hz = steady_slots / (
         args.superframe if args.superframe
         else ms_entry.period_s * args.max_reuse)
-    ms_chan_ms = (args.nb_slots or len(ac_ids)) * \
+    ms_chan_ms = steady_slots * \
                  net.channel_cost_s(ms_entry.msg.wire_bytes) * 1e3 / \
                  (args.superframe if args.superframe
                   else ms_entry.period_s * args.max_reuse)
+    churn_ms = physical_slots * \
+               net.channel_cost_s(ms_entry.msg.wire_bytes) * 1e3 / \
+               (args.superframe if args.superframe
+                else ms_entry.period_s * args.max_reuse)
     other_chan_ms = (total_chan_ms_per_s
                      - net.channel_cost_s(ms_entry.msg.wire_bytes) * 1e3
                      * ms_entry.rate_hz) * n_air
-    net_util = (ms_chan_ms + other_chan_ms) / 1000.0
-    print(f"  MESH_STATE, full-frame budget  : {ms_chan_ms:6.1f} ms/s "
-          f"(conservative: all physical slots occupied)")
+    event_chan_ms = sum(rate_hz * net.channel_cost_s(msg.wire_bytes) * 1e3
+                        for msg, rate_hz in event_frames)
+    net_util = (ms_chan_ms + other_chan_ms + event_chan_ms) / 1000.0
+    print(f"  MESH_STATE, steady fair share  : {ms_chan_ms:6.1f} ms/s "
+          f"({steady_slots} of {physical_slots} physical slots)")
+    print(f"  MESH_STATE, transient churn max: {churn_ms:6.1f} ms/s")
     print(f"  all other telemetry, {n_air} aircraft : {other_chan_ms:6.1f} ms/s")
+    print(f"  control/ack + PING/PONG reserve : {event_chan_ms:6.1f} ms/s")
     total_chan_ms_per_s = (ms_chan_ms + other_chan_ms) / max(n_air, 1)
     print(f"  total channel utilisation      : {net_util*100:5.1f} % "
           f"(ceiling {args.utilisation*100:.0f} %)  "
@@ -991,7 +1071,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     peak, overflows, util = simulate_cache(
         fired, solved, net, args.telemetry_frequency,
         slots.slot_s, net.n_nodes - 1, cache_limit=5,
-        slot_driven="MESH_STATE", slot_driven_rate_hz=mesh_frame_rate_hz)
+        slot_driven="MESH_STATE", slot_driven_rate_hz=mesh_frame_rate_hz,
+        event_frames=event_frames)
 
     # control experiment: the same message set with every phase left at 0,
     # i.e. what happens without this tool.
@@ -1002,7 +1083,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     control_peak, control_ovf, _ = simulate_cache(
         control_fired, control, net, args.telemetry_frequency,
         slots.slot_s, net.n_nodes - 1, cache_limit=5,
-        slot_driven="MESH_STATE", slot_driven_rate_hz=mesh_frame_rate_hz)
+        slot_driven="MESH_STATE", slot_driven_rate_hz=mesh_frame_rate_hz,
+        event_frames=event_frames)
 
     print("=" * 78)
     print("PHASE 1 - verification")

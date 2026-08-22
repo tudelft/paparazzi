@@ -21,4 +21,13 @@ static inline bool mesh_mode_should_use_solo(
          && input->peer_quiet_ms >= input->required_quiet_ms;
 }
 
+static inline bool mesh_mode_should_use_dense(uint8_t neighbours,
+                                               bool dense_active,
+                                               uint8_t enter_neighbours,
+                                               uint8_t exit_neighbours)
+{
+  return dense_active ? neighbours > exit_neighbours
+                      : neighbours >= enter_neighbours;
+}
+
 #endif /* TRAFFIC_INFO_MESH_MODE_H */

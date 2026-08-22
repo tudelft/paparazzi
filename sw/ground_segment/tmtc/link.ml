@@ -205,7 +205,18 @@ let use_tele_message = fun ?udp_peername ?raw_data_size payload ->
     send_message_over_ivy (string_of_int ac_id) msg.PprzLink.name values;
     update_status ?udp_peername ac_id raw_data_size (msg.PprzLink.name = "PONG")
   with
-    | Failure msg when String.length msg >= 25 && String.sub msg 0 25 = "PprzLink.invalid class ID" -> ()
+    | Failure msg when String.length msg >= 25 && String.sub msg 0 25 = "PprzLink.invalid class ID" ->
+        (* MESH_STATE is a datalink-class frame sent aircraft-to-aircraft. Do
+           not publish it on the datalink Ivy class, which would feed it back
+           into the uplink broadcaster; only use it as authoritative evidence
+           that the sender remains live and command-addressable. *)
+        begin try
+          let (header, _values) = Dl_Pprz.values_of_payload payload in
+          let dl_msg = Dl_Pprz.message_of_id header.PprzLink.message_id in
+          if dl_msg.PprzLink.name = "MESH_STATE" then
+            update_status ?udp_peername header.PprzLink.sender_id raw_data_size false
+        with _ -> ()
+        end
     | exc ->
         prerr_endline (Printexc.to_string exc);
         Debug.call 'W' (fun f ->  fprintf f "Warning, cannot use: %s\n" (Debug.xprint buf));
@@ -426,30 +437,35 @@ let message_uplink = fun device ->
     Dl_Pprz.messages
 
 let send_ping_msg = fun device ->
-  Hashtbl.iter
-    (fun ac_id status ->
-      (* PING only aircraft from which the link still receives telemetry.
+  (* Probe one live aircraft per cycle, choosing the one least recently
+     probed. This is adaptive round-robin without assuming contiguous AC_IDs.
+     It avoids an N-aircraft PING/PONG flood while retaining RTT coverage.
 
-         This matters on a broadcast mesh because every aircraft hears each
-         targeted PING and treats a PING for another ID as evidence that it is
-         not alone. Pinging stale entries forever would therefore keep the one
-         remaining aircraft out of its faster mesh_solo telemetry mode.
-
-         There is no discovery deadlock: a new or returning aircraft announces
-         itself with telemetry (including the mesh ALIVE retry), which refreshes
-         its status and makes it eligible for the next PING. The tradeoff is
-         that a link outage longer than -ac_timeout temporarily stops PINGs to
-         an otherwise active aircraft. This is consistent with all directed
-         uplink traffic in send(), and reception of any later telemetry frame
-         immediately marks the aircraft live again. *)
-      if live_aircraft ac_id then begin
+     Aircraft presence comes from telemetry, especially MESH_STATE; PING is a
+     GCS-reachability probe. A new or returning aircraft announces itself with
+     telemetry (including the mesh ALIVE retry), starts with last_ping = 0,
+     and is therefore selected before already-probed peers. *)
+  let candidate =
+    Hashtbl.fold
+      (fun ac_id status selected ->
+        if not (live_aircraft ac_id) then selected
+        else match selected with
+          | None -> Some (ac_id, status)
+          | Some (selected_id, selected_status) ->
+              if status.last_ping < selected_status.last_ping
+                 || (status.last_ping = selected_status.last_ping
+                     && ac_id < selected_id)
+              then Some (ac_id, status)
+              else selected)
+      statuss None
+  in
+  match candidate with
+    | None -> ()
+    | Some (ac_id, status) ->
         let msg_id, _ = Dl_Pprz.message_of_name "PING" in
         let s = Dl_Pprz.payload_of_values msg_id my_id ac_id [] in
         send ac_id device s High;
         status.last_ping <- Unix.gettimeofday ()
-      end
-    )
-    statuss
 
 
 (** Main *********************************************************************)

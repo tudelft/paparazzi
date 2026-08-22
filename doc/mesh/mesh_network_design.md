@@ -1,20 +1,32 @@
 # Self-Organising E52 LoRa Mesh for Paparazzi UAV
 
+> **Flighted design:** this document describes the current GPS/holdover TDMA
+> transport. Phase 1 investigation of a GPS-independent coded transport is
+> documented separately in
+> [Asynchronous Coded Mesh for Paparazzi UAV](asynchronous_coded_mesh.md).
+> The coded design is currently a simulator and codec experiment; it must not
+> be confused with deployed airborne behavior.
+
 **Radio:** EByte E52-400NW22S, channel 24 (434.125 MHz), rate 0
 (62.5 kbit/s), 460800 baud UART, 10 dBm EIRP, 0 dBi antennas.
 
-**Fleet:** eight aircraft nominal, up to twelve aircraft, plus the ground
-station as AC_ID 0. Aircraft use distinct AC_IDs in 1..254; ID 255 remains
-reserved for broadcast and internal sentinels. No ordering or sequential
-numbering is assumed.
+**Fleet:** nine aircraft common, up to sixteen aircraft as the normal design
+target, with a theoretical 64-aircraft graceful-degradation requirement. The
+current flighted TDMA profile below remains validated for its stated 13-peer
+envelope and must be requalified before its fleet limit changes. The ground
+station is AC_ID 0 and may move on the ground. Aircraft use distinct arbitrary
+AC_IDs in 1..254; ID 255 remains reserved for broadcast and internal sentinels.
+No ordering or sequential numbering is assumed.
 
 **Priority:** fault tolerance and multi-hop coverage first, then the highest
 state update rate that fits the E52 channel and five-frame transmit cache.
 
-**Modeled and build-validated envelope:** 13 routing peers, 32 self-organised
-slots, 12 s superframe, 1.5 s `MESH_STATE` scheduler ceiling, 38.3% modeled channel
-utilisation. This is a software acceptance baseline, not a substitute for
-thirteen-modem bench testing or flight qualification.
+**Modeled and build-validated envelope:** 13 routing peers use the common
+profile at 38.3% modeled channel utilisation. Seventeen peers (16 aircraft and
+GCS) automatically use the dense profile at 38.9%. Both use 32 self-organised
+slots, 28 steady fair-share slots, a 12 s superframe, and a 1.5 s `MESH_STATE`
+scheduler ceiling. These are software acceptance baselines, not substitutes
+for multi-modem bench testing or flight qualification.
 
 ---
 
@@ -299,17 +311,31 @@ The cap and telemetry period are a fleet-wide protocol profile. Update every
 participating aircraft before using the faster profile; do not mix reuse-four
 and reuse-eight firmware in one mesh.
 
-### 2.4 Automatic one-aircraft telemetry mode
+### 2.4 Automatic telemetry modes
 
-The common one-aircraft test case uses an ordinary `mesh_solo` telemetry mode.
-There is no custom wire protocol and no additional ground application. Both E52
-modules stay in the normal routing/broadcast profile; the feature never rewrites
-`AT+TYPE`, `AT+OPTION`, destination addresses, air rate, power, channel, or UART
-settings in flight.
+There is no operator mode selection, custom wire protocol, additional ground
+application, or in-flight modem reconfiguration. Every scenario uses the same
+routing/broadcast E52 profile. Aircraft start conservatively in `mesh_dense`,
+then select one of three generated telemetry modes from observed peers:
 
-The existing OCaml link already sends a targeted `PING` to every live aircraft
-at five-second intervals. Because E52 broadcast traffic is heard by every mesh
-member, each aircraft can answer two questions locally:
+| Mode | Automatic condition | Purpose |
+| --- | --- | --- |
+| `mesh_solo` | GCS contact, no aircraft peer, 12 s quiet | 5 Hz direct-link state for the common <=1 km fallback |
+| `mesh` | up to 11 observed aircraft peers | normal 1-12 aircraft operation |
+| `mesh_dense` | enter at 12 peers, leave at 10 | bounded 13-16 aircraft operation with hysteresis |
+
+Startup remains in `mesh_dense` for the three-superframe listen-before-claim
+interval. This prevents a newly powered fleet from briefly transmitting the
+more generous common profile before its membership map converges.
+
+The OCaml link sends one targeted `PING` every five seconds to the live aircraft
+that was least recently probed. The matching `PONG` still measures reachability
+and RTT, but aggregate liveness traffic remains one request/response pair per
+cycle rather than growing linearly with fleet size. New aircraft are selected
+first because their last-ping timestamp is zero. Incoming `MESH_STATE` also
+refreshes the ground link's live-aircraft table without being republished on
+Ivy. Because E52 broadcast traffic is heard by every mesh member, each aircraft
+can answer two questions locally:
 
 * has the GCS recently pinged me;
 * has the GCS recently pinged another aircraft.
@@ -321,15 +347,18 @@ synchronized mesh clock is deliberately not required for this one-aircraft
 case: there is no peer TDMA schedule to coordinate, and requiring GPS time would
 leave an indoor or GPS-denied bench test permanently on sparse telemetry. The
 `MESH_STATE` canary continues using the normal GPS, bounded-holdover, or
-randomized asynchronous mesh timing. A received peer `MESH_STATE` returns
-immediately to `mesh`; a peer known only through the GCS propagates on the next
-targeted PING cycle, within five seconds. A manual selection of any other
-telemetry mode is preserved and disables automatic switching until `mesh` or
-`mesh_solo` is selected again.
+randomized asynchronous mesh timing. A received peer `MESH_STATE` leaves solo
+mode immediately, conservatively via `mesh_dense`; after membership converges,
+peer-count hysteresis selects the appropriate fleet profile. A manual selection
+of an unrelated diagnostic mode is preserved and disables automatic switching
+until a mesh mode is selected again.
 
-The ground link was tightened to PING only aircraft that are still live. Without
-that small correction, an aircraft which landed hours earlier would remain in
-the link table and suppress solo mode forever.
+The ground link probes only aircraft that are still live. Without that rule, an
+aircraft which landed hours earlier would remain in the link table and suppress
+solo mode forever. `ALIVE` is a discovery and configuration-identity message,
+not the high-rate heartbeat: an aircraft retries it every 30 seconds only while
+no recent GCS probe has been heard. `MESH_STATE` is the authoritative aircraft
+presence and motion stream.
 
 Only existing messages are used. Fixed-wing sends `MINIMAL_COM` at 5 Hz,
 `ATTITUDE` at 2 Hz, `ENERGY` at 1 Hz, `DATALINK_REPORT` at 0.5 Hz, and `ALIVE`
@@ -363,6 +392,32 @@ The design deliberately accepts less throughput than a custom compact packet.
 In return it uses standard Paparazzi messages, standard generated telemetry
 modes, the existing PING/PONG path, one small firmware-neutral selector, and no
 new process for the operator to start.
+
+### 2.5 Traffic and operator-command priority
+
+The priority order is:
+
+1. operator control and its acknowledgement: `BLOCK` -> `NAVIGATION`,
+  `MOVE_WP` -> `WP_MOVED`, and `SETTING` -> `DL_VALUE`;
+2. `MESH_STATE`, which supplies peer presence and compact kinematics to
+  `traffic_info` and TCAS;
+3. `GPS_LLA`, the slower authoritative GPS diagnostic for the GCS;
+4. `ALIVE` and periodic navigation/health recovery snapshots;
+5. optional diagnostics.
+
+Control messages are event-driven and are never assigned a telemetry `phase`.
+The ground link writes forwarded commands immediately, and the fixed-wing
+parsers send their standard acknowledgement immediately after applying the
+change. Periodic copies remain only for eventual recovery. The optimizer
+reserves one worst-case command/acknowledgement pair every 20 seconds across
+the fleet plus one adaptive `PING/PONG` pair every five seconds. With solved
+phases the modeled modem cache peaks at one frame, so an operator command can
+sit behind at most the frame already being transmitted; future periodic
+traffic does not form a queue in front of it.
+
+`phase` remains valuable for periodic traffic: generated offsets prevent a
+single aircraft from presenting a multi-frame UART burst to its five-entry
+modem cache. It cannot schedule or accelerate asynchronous commands.
 
 ---
 
@@ -457,15 +512,21 @@ multiplies it by the E52 flood tax, solves Paparazzi phase offsets, replays the
 generated tick condition, simulates the five-frame modem cache, and writes the
 telemetry XML.
 
-The exact delivered 13-router gate is:
+The exact delivered common and dense gates are:
 
 ```bash
 python3 sw/tools/mesh/mesh_phase_optimizer.py \
   --ac-ids 0,3,19,42,58,77,101,125,140,168,203,222,251 \
-  --relay-nodes 13 --nb-slots 32 \
+  --relay-nodes 13 --nb-slots 32 --fair-slots 28 \
   --mesh-period 1.5 --superframe 12 --max-reuse 8 \
-  --period-scale 4 \
-  --emit-xml conf/telemetry/OPENUAS/openuas_mesh_swarm.xml
+  --period-scale 4
+
+python3 sw/tools/mesh/mesh_phase_optimizer.py \
+  --ac-ids 0,3,19,42,58,77,101,125,140,168,203,222,231,239,247,251,254 \
+  --relay-nodes 17 --nb-slots 32 --fair-slots 28 \
+  --mesh-period 1.5 --superframe 12 --max-reuse 8 \
+  --period-scale 24 \
+  --period GPS_LLA=128 --period ALIVE=256 --period WP_MOVED=512
 ```
 
 The AC_ID list is deliberately irregular. Its length drives population; the
@@ -657,8 +718,14 @@ change:
 # 1. Channel, flood span, phases, and cache
 python3 sw/tools/mesh/mesh_phase_optimizer.py \
   --ac-ids 0,3,19,42,58,77,101,125,140,168,203,222,251 \
-  --relay-nodes 13 --nb-slots 32 \
+  --relay-nodes 13 --nb-slots 32 --fair-slots 28 \
   --mesh-period 1.5 --superframe 12 --max-reuse 8 --period-scale 4
+
+python3 sw/tools/mesh/mesh_phase_optimizer.py \
+  --ac-ids 0,3,19,42,58,77,101,125,140,168,203,222,231,239,247,251,254 \
+  --relay-nodes 17 --nb-slots 32 --fair-slots 28 \
+  --mesh-period 1.5 --superframe 12 --max-reuse 8 --period-scale 24 \
+  --period GPS_LLA=128 --period ALIVE=256 --period WP_MOVED=512
 
 # 2. Dynamic topology, fair quotas, clock steps, and state-aware contraction
 for seed in 1 2 3 4 5 6 7 8; do
@@ -666,10 +733,13 @@ for seed in 1 2 3 4 5 6 7 8; do
     --frames 4000 --churn 0.05 --seed "$seed" --max-reuse 8 || exit 1
 done
 
-# 2a. Automatic mesh/mesh_solo mode policy
+# 2a. Automatic mesh/mesh_dense/mesh_solo mode policy
 tests/utils/test_mesh_mode_policy.run
 
-# 2b. Independent clocks, bounded holdover, and randomized fallback
+# 2b. Optimizer parser and airtime-accounting regressions
+python3 -m unittest sw/tools/mesh/test_mesh_phase_optimizer.py
+
+# 2c. Independent clocks, bounded holdover, and randomized fallback
 python3 sw/tools/mesh/mesh_gps_denied_sim.py \
   --seeds 100 --duration 3600 --stress-ppm 100 --denied-nodes 13
 python3 sw/tools/mesh/mesh_gps_denied_sim.py \
@@ -723,14 +793,13 @@ cache flushing, or a topology partition.
 2. **Connectivity still depends on geometry.** All-router capability cannot
    bridge an empty 17 km gap. The mission planner must keep a connected chain
    of aircraft with adequate one-hop margin.
-3. **Dense-fleet update rate is deliberately lower.** Maximum-population
-  average `MESH_STATE` entitlement is about 0.205 Hz per node; nominal
-  population reaches about 0.296 Hz before lease and policy contraction.
-  This is the cost of 13-way broadcast redundancy
-   at 10 dBm and 62.5 kbit/s.
-4. **The GCS command tail is unslotted.** Commands and normal PINGs remain rare
-  CSMA traffic. Solo mode reduces downlink contention but does not turn the
-  command path into a sustained bulk uplink.
+3. **Dense-fleet update rate is deliberately lower.** At 16 aircraft the 28
+  fair slots provide one or two `MESH_STATE` updates per aircraft per 12 s.
+  TCAS fails closed when a track exceeds its prediction horizon; this profile
+  does not claim uninterrupted 16-aircraft collision-avoidance coverage.
+4. **The GCS command tail is unslotted.** Commands and adaptive PINGs remain
+  rare CSMA traffic. Airtime is reserved for control and immediate responses,
+  but the E52 cannot preempt a frame already on air.
 5. **The RF model is terrain-agnostic.** The 10 dB fade reserve covers generic
    shadowing, not a ridge, building, or forest wall. Survey the real site.
 6. **All nodes must share protocol constants and message layout.** The clock
@@ -740,6 +809,10 @@ cache flushing, or a topology partition.
 7. **Asynchronous fallback is degraded operation.** It preserves low-rate
   discovery without false TDMA authority; it does not guarantee collision-free
   delivery. The 100-seed software gate must be followed by thirteen-modem HIL.
+8. **Sixty-four aircraft is graceful-degradation research scope.** AC_IDs and
+  software membership support the range, but the present 32-slot all-router
+  channel cannot provide collision-free 64-aircraft state or real-time TCAS.
+  Do not advertise 64-aircraft flight safety from this profile.
 
 The design preference is explicit: when speed and redundancy conflict, keep
 the all-routing topology and reduce originated telemetry first. The optimizer
@@ -749,17 +822,19 @@ is the authority for that trade, and it must exit zero before flight.
 
 ## 8. End-User Operation
 
-No modem reprovisioning, additional application, or manual telemetry-mode change
-is needed. Build and flash aircraft with a telemetry profile containing both
-`mesh` and `mesh_solo`, then start the normal link/server/GCS session. The E52
-link must use 460800 baud, as provisioned.
+No modem reprovisioning between scenarios, additional application, or manual
+telemetry-mode change is needed. Build and flash aircraft with a telemetry
+profile containing `mesh`, `mesh_dense`, and `mesh_solo`, then start the normal
+link/server/GCS session. Every E52 keeps the same all-routing, broadcast,
+62.5 kbit/s, 460800-baud profile.
 
-The aircraft starts in `mesh`. Once the standard link has discovered it and
-PINGs show that no other aircraft is live, it switches to `mesh_solo`
-automatically after the 12-second quiet interval. Starting another aircraft or
-losing the GCS/clock immediately restores `mesh`. Stopping an aircraft removes
-it from the link's PING set after the normal live-aircraft timeout, allowing the
-remaining aircraft to return to `mesh_solo` automatically.
+The aircraft starts in conservative `mesh_dense`. Once the standard link has
+discovered it and the radio-side membership map converges, it changes to
+`mesh`, or to `mesh_solo` after GCS contact and the 12-second peer-quiet
+interval. Starting another aircraft immediately leaves solo mode; joining and
+departing aircraft move the fleet between common and dense profiles with
+12-peer/10-peer hysteresis. All transitions are automatic and invisible to the
+operator.
 
 The supplied fixed-wing profiles use the generated `Ap` process. The dedicated
 `openuas_mesh_rotorcraft.xml` profile uses `Main` and native `ROTORCRAFT_FP`, so

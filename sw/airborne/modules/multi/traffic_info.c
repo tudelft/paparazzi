@@ -55,13 +55,31 @@
 #endif
 
 #if MESH_AUTO_TELEMETRY
-#if defined(TELEMETRY_MODE_Ap_mesh) && defined(TELEMETRY_MODE_Ap_mesh_solo)
+#if defined(TELEMETRY_MODE_Ap_mesh) && defined(TELEMETRY_MODE_Ap_mesh_dense) \
+  && defined(TELEMETRY_MODE_Ap_mesh_solo)
 #define MESH_AUTO_TELEMETRY_AVAILABLE 1
+#define MESH_AUTO_TELEMETRY_HAS_DENSE 1
+#define MESH_TELEMETRY_MODE telemetry_mode_Ap
+#define MESH_TELEMETRY_MODE_MESH TELEMETRY_MODE_Ap_mesh
+#define MESH_TELEMETRY_MODE_DENSE TELEMETRY_MODE_Ap_mesh_dense
+#define MESH_TELEMETRY_MODE_SOLO TELEMETRY_MODE_Ap_mesh_solo
+#elif defined(TELEMETRY_MODE_Main_mesh) && defined(TELEMETRY_MODE_Main_mesh_dense) \
+  && defined(TELEMETRY_MODE_Main_mesh_solo)
+#define MESH_AUTO_TELEMETRY_AVAILABLE 1
+#define MESH_AUTO_TELEMETRY_HAS_DENSE 1
+#define MESH_TELEMETRY_MODE telemetry_mode_Main
+#define MESH_TELEMETRY_MODE_MESH TELEMETRY_MODE_Main_mesh
+#define MESH_TELEMETRY_MODE_DENSE TELEMETRY_MODE_Main_mesh_dense
+#define MESH_TELEMETRY_MODE_SOLO TELEMETRY_MODE_Main_mesh_solo
+#elif defined(TELEMETRY_MODE_Ap_mesh) && defined(TELEMETRY_MODE_Ap_mesh_solo)
+#define MESH_AUTO_TELEMETRY_AVAILABLE 1
+#define MESH_AUTO_TELEMETRY_HAS_DENSE 0
 #define MESH_TELEMETRY_MODE telemetry_mode_Ap
 #define MESH_TELEMETRY_MODE_MESH TELEMETRY_MODE_Ap_mesh
 #define MESH_TELEMETRY_MODE_SOLO TELEMETRY_MODE_Ap_mesh_solo
 #elif defined(TELEMETRY_MODE_Main_mesh) && defined(TELEMETRY_MODE_Main_mesh_solo)
 #define MESH_AUTO_TELEMETRY_AVAILABLE 1
+#define MESH_AUTO_TELEMETRY_HAS_DENSE 0
 #define MESH_TELEMETRY_MODE telemetry_mode_Main
 #define MESH_TELEMETRY_MODE_MESH TELEMETRY_MODE_Main_mesh
 #define MESH_TELEMETRY_MODE_SOLO TELEMETRY_MODE_Main_mesh_solo
@@ -70,9 +88,11 @@
 #error "MESH_AUTO_TELEMETRY requires matching mesh and mesh_solo modes in one telemetry process"
 #else
 #define MESH_AUTO_TELEMETRY_AVAILABLE 0
+#define MESH_AUTO_TELEMETRY_HAS_DENSE 0
 #endif
 #else
 #define MESH_AUTO_TELEMETRY_AVAILABLE 0
+#define MESH_AUTO_TELEMETRY_HAS_DENSE 0
 #endif
 
 #if TRAFFIC_INFO_USE_MESH && PPRZLINK_DEFAULT_VER != 2
@@ -286,6 +306,9 @@ static bool mesh_recovery_required;
 #if MESH_AUTO_TELEMETRY_AVAILABLE
 static uint64_t mesh_last_peer_ms;
 static uint64_t mesh_alive_retry_ms;
+#if MESH_AUTO_TELEMETRY_HAS_DENSE
+static uint64_t mesh_dense_hold_until_ms;
+#endif
 #endif
 
 static uint32_t mesh_multiplex_encode(int32_t course_ddeg,
@@ -297,6 +320,8 @@ static uint8_t mesh_local_tx_in_flight(uint64_t now_ms);
 
 #if MESH_AUTO_TELEMETRY_AVAILABLE
 #define MESH_ALIVE_RETRY_MS 30000u
+#define MESH_DENSE_ENTER_NEIGHBOURS 12u
+#define MESH_DENSE_EXIT_NEIGHBOURS 10u
 
 static void mesh_auto_telemetry_periodic(uint64_t now_ms)
 {
@@ -306,7 +331,12 @@ static void mesh_auto_telemetry_periodic(uint64_t now_ms)
 
   const bool automatic_mode = MESH_TELEMETRY_MODE == MESH_TELEMETRY_MODE_MESH
                               || MESH_TELEMETRY_MODE == MESH_TELEMETRY_MODE_SOLO;
-  if (automatic_mode) {
+#if MESH_AUTO_TELEMETRY_HAS_DENSE
+  const bool dense_mode = MESH_TELEMETRY_MODE == MESH_TELEMETRY_MODE_DENSE;
+#else
+  const bool dense_mode = false;
+#endif
+  if (automatic_mode || dense_mode) {
     /* PINGs describe the GCS live-aircraft set; MESH_STATE is the independent
      * radio-side canary. Requiring both prevents a stale GCS table or a missed
      * PING from enabling the faster profile while another peer is present.
@@ -321,14 +351,30 @@ static void mesh_auto_telemetry_periodic(uint64_t now_ms)
       .required_quiet_ms = MESH_SOLO_QUIET_MS
     };
     const bool select_solo = mesh_mode_should_use_solo(&input);
-    MESH_TELEMETRY_MODE = select_solo ? MESH_TELEMETRY_MODE_SOLO
-                                      : MESH_TELEMETRY_MODE_MESH;
+    if (select_solo) {
+      MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_SOLO;
+    } else {
+#if MESH_AUTO_TELEMETRY_HAS_DENSE
+  const bool select_dense = now_ms < mesh_dense_hold_until_ms
+            || mesh_mode_should_use_dense(
+             mesh_link.neighbours, dense_mode,
+             MESH_DENSE_ENTER_NEIGHBOURS,
+             MESH_DENSE_EXIT_NEIGHBOURS);
+      MESH_TELEMETRY_MODE = select_dense ? MESH_TELEMETRY_MODE_DENSE
+                                         : MESH_TELEMETRY_MODE_MESH;
+#else
+      MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_MESH;
+#endif
+    }
     mesh_link.solo_active = select_solo;
   } else {
     mesh_link.solo_active = false;
   }
 
-  if (!datalink_gcs_self_ping_is_fresh(MESH_GCS_PING_TIMEOUT_MS)
+  const bool any_gcs_ping_fresh =
+    datalink_gcs_self_ping_is_fresh(MESH_GCS_PING_TIMEOUT_MS)
+    || datalink_gcs_other_ping_is_fresh(MESH_GCS_PING_TIMEOUT_MS);
+  if (!any_gcs_ping_fresh
       && now_ms >= mesh_alive_retry_ms
       && mesh_local_tx_in_flight(now_ms) == 0) {
     pprz_msg_send_ALIVE(mesh_trans, mesh_dev, AC_ID, 16, MD5SUM);
@@ -342,7 +388,13 @@ static void mesh_auto_telemetry_note_peer(uint64_t now_ms)
   mesh_last_peer_ms = now_ms;
   /* Do not wait for the next periodic selector pass when a peer appears. */
   if (MESH_TELEMETRY_MODE == MESH_TELEMETRY_MODE_SOLO) {
+#if MESH_AUTO_TELEMETRY_HAS_DENSE
+    MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_DENSE;
+    mesh_dense_hold_until_ms = now_ms
+                               + MESH_ENTRY_FRAMES * MESH_TDMA_SUPERFRAME_MS;
+#else
     MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_MESH;
+#endif
   }
   mesh_link.solo_active = false;
 }
@@ -1299,7 +1351,13 @@ void traffic_info_init(void)
   mesh_link.local_tx_free_ms = traffic_monotonic_time_ms();
   mesh_link.last_emit_key = UINT32_MAX;
 #if MESH_AUTO_TELEMETRY_AVAILABLE
+#if MESH_AUTO_TELEMETRY_HAS_DENSE
+  MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_DENSE;
+  mesh_dense_hold_until_ms = traffic_monotonic_time_ms()
+                             + MESH_ENTRY_FRAMES * MESH_TDMA_SUPERFRAME_MS;
+#else
   MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_MESH;
+#endif
   mesh_link.solo_active = false;
   mesh_last_peer_ms = traffic_monotonic_time_ms();
   mesh_alive_retry_ms = traffic_monotonic_time_ms();

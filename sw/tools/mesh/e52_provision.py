@@ -369,7 +369,6 @@ def provision(args: argparse.Namespace) -> int:
     role_name, args.node_type = role_of(args.ac_id, args)
     steps = build_profile(args.ac_id, args)
     addr = ADDRESS_BASE + args.ac_id
-    slot = None if args.ac_id == 0 else (args.ac_id - 1) % args.nb_slots
 
     if args.dry_run and args.port is None:
         args.port = "(dry run)"
@@ -378,9 +377,7 @@ def provision(args: argparse.Namespace) -> int:
     print(f"E52-400NW22S provisioning - AC_ID {args.ac_id}")
     print("=" * 78)
     print(f"  modem address : {addr}")
-    print(f"  TDMA slot     : "
-          + (f"none (unslotted; rare commands contend)" if slot is None
-             else f"{slot} of {args.nb_slots}"))
+    print("  TDMA slot     : learned at runtime; never derived from AC_ID")
     print(f"  ROLE          : {role_name}   (AT+TYPE={args.node_type})")
     print(f"  frequency     : {E52_400_F0_MHZ + args.channel:.3f} MHz (channel {args.channel})")
     print(f"  port          : {args.port}  {args.initial_baud} -> {args.baud} baud")
@@ -511,6 +508,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args(argv)
 
+    if not 0 <= args.ac_id <= 254:
+        ap.error("--ac-id must be in 0..254; 255 is reserved for broadcast")
+
     if args.relay_ids.strip().lower() == "all":
         args.relay_ids = None
     else:
@@ -519,8 +519,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         except ValueError:
             ap.error("--relay-ids must be 'all' or a comma separated list of integers")
         for r in args.relay_ids:
-            if not 0 <= r <= 255:
-                ap.error(f"relay AC_ID {r} is outside 0..255")
+            if not 0 <= r <= 254:
+                ap.error(f"relay AC_ID {r} is outside 0..254; 255 is broadcast")
 
     if args.port is None and not args.dry_run:
         ap.error("--port is required unless --dry-run is given")

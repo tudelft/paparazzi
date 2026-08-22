@@ -242,7 +242,7 @@
       </process>
       -->
 
-      <!-- <module name="sys_mon"/> -->
+      <!-- I -->
 
       <!-- Inter aircraft RSSI exchange -->
       <!-- <module name="rssi"/> -->

@@ -9,14 +9,14 @@
   Link      : EByte E52-400NW22S LoRa MESH, broadcast mode (AT+OPTION=3)
   Air rate  : 62500 bps  (SF5, BW 500 kHz, CR 4/5)
   UART      : 460800 baud 8N1
-  Network   : 13 nodes (12 aircraft + 1 GCS), 13 routing
-  Flood tax : 13 transmissions per originated broadcast
+  Network   : common 13 peers; dense 17 peers (16 aircraft + GCS), all routing
+  Flood tax : one transmission per routing peer for each originated broadcast
 
   Budget
-    per aircraft : 0.780 frames/s (one frame every 1.28 s), 31.9 ms/s of channel
-    whole mesh   : 38.3 % channel utilisation
-    guaranteed minimum spacing between scheduled telemetry frames: 240 ms
-    modem cache never exceeds 3 of its 5 frames -> no OUT OF CACHE flush
+    common       : 38.3 % channel utilisation at 13 peers
+    dense        : 38.9 % channel utilisation at 17 peers
+    steady state : 28 fair-share slots; 4 physical slots are churn headroom
+    modem cache  : modeled peak 1 of 5 frames -> no OUT OF CACHE flush
 
   Inter-node collision avoidance is handled by the GPS-time TDMA in
   sw/airborne/modules/multi/traffic_info.c :
@@ -49,6 +49,26 @@
       <message name="SEGMENT"           period="256.0"   phase="0.028320"/>  <!-- t0=   7.24 s, 24 B on the wire,  6.54 ms/hop. only one nav shape is live at a time -->
       <message name="SURVEY"            period="256.0"   phase="0.030273"/>  <!-- t0=   7.74 s, 24 B on the wire,  6.54 ms/hop. only one nav shape is live at a time -->
       <message name="WP_MOVED"          period="256.0"   phase="0.032227"/>  <!-- t0=   8.24 s, 22 B on the wire,  6.54 ms/hop. -->
+    </mode>
+    <mode name="mesh_dense">
+      <!-- Selected automatically for 13-16 aircraft. Operator commands and their immediate acknowledgements are not periodic. -->
+      <message name="MESH_STATE"        period="1.5"     phase="0.006667"/>  <!-- t0=   0.00 s, primary traffic/TCAS state; TDMA gates actual emission. -->
+      <message name="GPS_LLA"           period="128.0"   phase="0.001953"/>  <!-- t0=   0.24 s, authoritative GPS diagnostic; MESH_STATE carries fresh position. -->
+      <message name="ALIVE"             period="256.0"   phase="0.002930"/>  <!-- t0=   0.74 s, configuration identity/discovery fallback. -->
+      <message name="WP_MOVED"          period="512.0"   phase="0.002441"/>  <!-- t0=   1.24 s; MOVE_WP still triggers an immediate acknowledgement. -->
+      <message name="ESTIMATOR"         period="384.0"   phase="0.005859"/>  <!-- t0=   2.24 s. -->
+      <message name="ATTITUDE"          period="768.0"   phase="0.004883"/>  <!-- t0=   3.74 s. -->
+      <message name="ENERGY"            period="768.0"   phase="0.006836"/>  <!-- t0=   5.24 s. -->
+      <message name="NAVIGATION"        period="768.0"   phase="0.008789"/>  <!-- t0=   6.74 s; BLOCK still triggers an immediate acknowledgement. -->
+      <message name="PPRZ_MODE"         period="768.0"   phase="0.010742"/> <!-- t0=   8.24 s. -->
+      <message name="AIR_DATA"          period="1536.0"  phase="0.006348"/>  <!-- t0=   9.74 s. -->
+      <message name="CIRCLE"            period="1536.0"  phase="0.007324"/>  <!-- t0=  11.24 s; only one nav shape is live at a time. -->
+      <message name="DATALINK_REPORT"   period="1536.0"  phase="0.008301"/>  <!-- t0=  12.74 s. -->
+      <message name="DL_VALUE"          period="1536.0"  phase="0.009277"/>  <!-- t0=  14.24 s; SETTING still triggers an immediate acknowledgement. -->
+      <message name="GPS_SOL"           period="1536.0"  phase="0.011230"/>  <!-- t0=  17.24 s. -->
+      <message name="NAVIGATION_REF"    period="1536.0"  phase="0.012207"/>  <!-- t0=  18.74 s. -->
+      <message name="SEGMENT"           period="1536.0"  phase="0.013184"/>  <!-- t0=  20.24 s; only one nav shape is live at a time. -->
+      <message name="SURVEY"            period="1536.0"  phase="0.014160"/>  <!-- t0=  21.74 s; only one nav shape is live at a time. -->
     </mode>
     <mode name="mesh_solo">
       <!-- Keep the peer canary and auxiliary diagnostics slow; spend the solo-link margin on state freshness. -->
