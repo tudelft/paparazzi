@@ -36,8 +36,8 @@ from mesh_coding import CodedSymbol, GenerationDecoder, Membership, systematic_s
 from mesh_link_sim import Drone, Shadowing, receive
 
 GCS_AC_ID = 0
-FAIR_SLOTS = 28
-SUPERFRAME_S = 12.0
+FAIR_SLOTS = 25
+SUPERFRAME_S = 16.0
 MAX_REUSE = 8
 
 

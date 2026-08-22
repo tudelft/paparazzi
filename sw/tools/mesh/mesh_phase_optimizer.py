@@ -246,7 +246,7 @@ class NetworkModel:
     n_nodes: int = 9                 # 8 aircraft + 1 GCS
     n_relay_nodes: int = 9           # nodes configured as routing nodes (AT+TYPE=0)
     csma_range_ms: int = 20          # AT+CSMA_RNG, datasheet minimum
-    target_utilisation: float = 0.40
+    target_utilisation: Optional[float] = None
     uart_baud: int = 460_800
 
     @property
@@ -338,11 +338,45 @@ def steady_slot_count(physical_slots: int, fair_slots: int,
 #: Above 0.95 it treats the value as a legacy 1/65536 tick count.
 PHASE_MAX = 0.95
 
+#: Bound exact trigger replay so an accidental non-harmonic period set cannot
+#: consume unbounded CPU and memory through its least-common-multiple horizon.
+DEFAULT_MAX_REPLAY_TICKS = 100_000
+
+
+def schedule_horizon_ticks(
+    entries: Sequence[ScheduleEntry],
+    telemetry_frequency: int,
+    max_ticks: int = DEFAULT_MAX_REPLAY_TICKS,
+) -> int:
+    """Return the exact replay horizon, rejecting pathological schedules."""
+    horizon = 1
+    for entry in entries:
+        ticks = int(round(telemetry_frequency * entry.period_s))
+        if ticks <= 0:
+            raise ValueError(f"period {entry.period_s} too short for {entry.msg.name}")
+        horizon = math.lcm(horizon, ticks)
+        if horizon > max_ticks:
+            raise ValueError(
+                f"schedule replay horizon {horizon} ticks exceeds the "
+                f"{max_ticks}-tick safety limit; use harmonic periods or "
+                "raise --max-replay-ticks deliberately"
+            )
+    return horizon
+
+
+def _periodic_gap(a_tick: int, a_period: int,
+                  b_tick: int, b_period: int) -> int:
+    """Minimum tick distance between two periodic trigger sequences."""
+    common = math.gcd(a_period, b_period)
+    delta = (a_tick - b_tick) % common
+    return min(delta, common - delta)
+
 
 def solve_phases(
     entries: Sequence[ScheduleEntry],
     telemetry_frequency: int,
     min_gap_ticks: int,
+    max_replay_ticks: int = DEFAULT_MAX_REPLAY_TICKS,
 ) -> Tuple[List[ScheduleEntry], int]:
     """Assign each message a trigger tick that maximises the minimum spacing.
 
@@ -359,14 +393,8 @@ def solve_phases(
     Returns the solved entries and the achieved minimum gap in ticks.
     """
     f = telemetry_frequency
-    horizon = 1
-    for e in entries:
-        n = int(round(f * e.period_s))
-        if n <= 0:
-            raise ValueError(f"period {e.period_s} too short for {e.msg.name}")
-        horizon = horizon * n // math.gcd(horizon, n)
-
-    occupied: List[int] = []
+    horizon = schedule_horizon_ticks(entries, f, max_replay_ticks)
+    placed: List[Tuple[int, int]] = []
     ordered = sorted(entries, key=lambda e: (e.period_s, e.msg.name))
 
     for entry in ordered:
@@ -374,15 +402,11 @@ def solve_phases(
         n_max = int(PHASE_MAX * n)          # respect the gen_periodic clamp
         best_tick, best_score = 0, -1.0
         for candidate in range(0, n_max + 1):
-            fires = range(candidate, horizon, n)
-            if not occupied:
+            if not placed:
                 score = float(horizon)
             else:
-                score = min(
-                    min(abs(((t - o + horizon // 2) % horizon) - horizon // 2)
-                        for o in occupied)
-                    for t in fires
-                )
+                score = min(_periodic_gap(candidate, n, tick, period)
+                            for tick, period in placed)
             # tie-break towards the earliest tick for reproducibility
             if score > best_score:
                 best_tick, best_score = candidate, score
@@ -390,9 +414,14 @@ def solve_phases(
         # Land safely inside the integer bin: gen_periodic truncates
         # f*period*phase, so aim at the middle of bin `best_tick`.
         entry.phase = min(PHASE_MAX, (best_tick + 0.5) / n)
-        occupied.extend(range(best_tick, horizon, n))
+        placed.append((best_tick, n))
 
-    achieved = _min_gap(sorted(occupied), horizon)
+    achieved = min(
+        (_periodic_gap(a_tick, a_period, b_tick, b_period)
+         for index, (a_tick, a_period) in enumerate(placed)
+         for b_tick, b_period in placed[index + 1:]),
+        default=horizon,
+    )
     if achieved < min_gap_ticks:
         print(
             f"  ! warning: achieved minimum spacing {achieved} ticks "
@@ -412,7 +441,8 @@ def _min_gap(sorted_ticks: Sequence[int], horizon: int) -> int:
 
 
 def replay_generated_trigger(
-    entries: Sequence[ScheduleEntry], telemetry_frequency: int
+    entries: Sequence[ScheduleEntry], telemetry_frequency: int,
+    max_replay_ticks: int = DEFAULT_MAX_REPLAY_TICKS,
 ) -> Dict[int, List[str]]:
     """Bit-exact replay of the C code ``gen_periodic`` will emit.
 
@@ -425,10 +455,7 @@ def replay_generated_trigger(
     than against our own idealised model.
     """
     f = telemetry_frequency
-    horizon = 1
-    for e in entries:
-        n = int(round(f * e.period_s))
-        horizon = horizon * n // math.gcd(horizon, n)
+    horizon = schedule_horizon_ticks(entries, f, max_replay_ticks)
 
     # counters are shared between messages that use the same period *string*
     counters: Dict[float, int] = {e.period_s: 0 for e in entries}
@@ -495,8 +522,7 @@ def simulate_cache(
     # the frame, fixed at one origination per slot, and multiplying its
     # per-node rate by the number of nodes counts it twice over. Doing that here
     # made this cross-check report 56.5% against the budget's 32% for the very
-    # same configuration - and the higher figure sits above the 40% ceiling, so
-    # the disagreement was not cosmetic.
+    # same configuration. The disagreement was therefore not cosmetic.
     slot_local_hz = by_name[slot_driven].rate_hz if slot_driven in by_name else 0.0
     others_rate = sum(e.rate_hz for e in entries if e.msg.name != slot_driven)
     local_rate = others_rate + slot_local_hz
@@ -555,9 +581,20 @@ class SlotPlan:
     slot_s: float
     n_slots: int
     superframe_s: float
+    guard_s: float = 0.0
     span_mean_s: float = 0.0
-    span_p999_s: float = 0.0
+    span_statistical_s: float = 0.0
     span_worst_s: float = 0.0
+    use_statistical_bound: bool = False
+
+    @property
+    def usable_s(self) -> float:
+        return max(0.0, self.slot_s - self.guard_s)
+
+    @property
+    def required_span_s(self) -> float:
+        return (self.span_statistical_s if self.use_statistical_bound
+                else self.span_worst_s)
 
     @property
     def ok(self) -> bool:
@@ -570,8 +607,7 @@ class SlotPlan:
         a slot - which made the tool reject any fleet whose AC_IDs were not
         consecutive, even though the firmware never uses such a map.
         """
-        return self.slot_s >= self.span_p999_s
-
+        return self.usable_s >= self.required_span_s
 
 def plan_slots(
     net: NetworkModel,
@@ -579,6 +615,8 @@ def plan_slots(
     ac_ids: Sequence[int],
     superframe_s: float,
     n_slots: Optional[int] = None,
+    guard_s: float = 0.0,
+    use_statistical_bound: bool = False,
 ) -> SlotPlan:
     """Size the GPS-time-synchronised TDMA superframe.
 
@@ -599,12 +637,12 @@ def plan_slots(
         slot_s=slot_s,
         n_slots=n_slots,
         superframe_s=superframe_s,
+        guard_s=guard_s,
         span_mean_s=mean,
-        span_p999_s=p999,
+        span_statistical_s=p999,
         span_worst_s=worst,
+        use_statistical_bound=use_statistical_bound,
     )
-
-
 # --------------------------------------------------------------------------- #
 # 7. RF link budget                                                             #
 # --------------------------------------------------------------------------- #
@@ -822,21 +860,39 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--relay-nodes", type=int, default=None,
                     help="nodes configured as routing nodes (default: all)")
     ap.add_argument("--telemetry-frequency", type=int, default=50)
+    ap.add_argument("--max-replay-ticks", type=int,
+                    default=DEFAULT_MAX_REPLAY_TICKS,
+                    help="maximum exact gen_periodic replay horizon; "
+                         "pathological non-harmonic schedules are rejected "
+                        "before phase search (default: 100000 ticks)")
+    ap.add_argument("--tdma-gate-frequency", type=float, default=20.0,
+                    help="traffic_info_mesh_periodic frequency in Hz; one full "
+                         "period is reserved for adjacent-slot sampling skew")
+    ap.add_argument("--clock-skew-ms", type=float, default=12.0,
+                    help="maximum relative peer clock skew reserved at a slot "
+                         "boundary (default: 12 ms for 60 s at +/-100 ppm)")
+    ap.add_argument("--statistical-slot-bound", action="store_true",
+                    help="accept mean-plus-three-sigma flood timing instead of "
+                         "the default absolute modeled CSMA bound")
     ap.add_argument("--csma-ms", type=int, default=20,
                     help="AT+CSMA_RNG value in ms (datasheet minimum is 20)")
-    ap.add_argument("--utilisation", type=float, default=0.40,
-                    help="channel utilisation ceiling used for the budget check")
+    ap.add_argument("--utilisation", type=float, default=None,
+                    help="optional channel-utilisation ceiling used for an "
+                         "operator-selected budget check; omitted by default "
+                         "because the E52 documentation specifies no safe limit")
     ap.add_argument("--cache-limit", type=int, default=3,
-                    help="maximum tolerated modem cache depth (hardware limit 5)")
+                    help="acceptance ceiling for modeled total cache depth; "
+                        "not the airborne local-admission estimate "
+                        "(hardware limit 5, default acceptance ceiling 3)")
     ap.add_argument("--ac-ids", default="0,122,123,124,125,126,127,128,129",
                     help="comma separated AC_IDs on the mesh, 0 is the GCS")
     ap.add_argument("--nb-slots", type=int, default=None,
                     help="TDMA slots per superframe. Default is the next power "
                          "of two at or above the node count. With no GCS uplink "
                          "to schedule, 8 slots for 8 aircraft is exact")
-    ap.add_argument("--fair-slots", type=int, default=28,
+    ap.add_argument("--fair-slots", type=int, default=25,
                     help="slots distributed in steady state; remaining physical "
-                         "slots are short-lived churn headroom (default: 28)")
+                         "slots are short-lived churn headroom (default: 25)")
     ap.add_argument("--reserve-gcs-slot", action="store_true",
                     help="keep slot 0 free for GCS uplink commands. Not needed "
                          "when the ground station originates almost nothing")
@@ -887,6 +943,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         ap.error("--control-rate must not be negative")
     if args.ping_period <= 0.0:
         ap.error("--ping-period must be positive")
+    if args.tdma_gate_frequency <= 0.0:
+        ap.error("--tdma-gate-frequency must be positive")
+    if args.max_replay_ticks <= 0:
+        ap.error("--max-replay-ticks must be positive")
+    if args.clock_skew_ms < 0.0:
+        ap.error("--clock-skew-ms must not be negative")
     if args.fair_slots <= 0:
         ap.error("--fair-slots must be positive")
 
@@ -1004,9 +1066,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     print(f"  all other telemetry, {n_air} aircraft : {other_chan_ms:6.1f} ms/s")
     print(f"  control/ack + PING/PONG reserve : {event_chan_ms:6.1f} ms/s")
     total_chan_ms_per_s = (ms_chan_ms + other_chan_ms) / max(n_air, 1)
-    print(f"  total channel utilisation      : {net_util*100:5.1f} % "
-          f"(ceiling {args.utilisation*100:.0f} %)  "
-          f"{'OK' if net_util <= args.utilisation else 'OVER BUDGET'}")
+    if args.utilisation is None:
+        print(f"  total channel utilisation      : {net_util*100:5.1f} % "
+              "(reported; no evidence-based default ceiling)")
+    else:
+        print(f"  total channel utilisation      : {net_util*100:5.1f} % "
+              f"(operator ceiling {args.utilisation*100:.0f} %)  "
+              f"{'OK' if net_util <= args.utilisation else 'OVER BUDGET'}")
     print(f"  UART burst time of the largest frame at {net.uart_baud} baud : "
           f"{net.uart_time_s(max(e.msg.wire_bytes for e in live_entries))*1e3:.2f} ms")
     print()
@@ -1017,24 +1083,30 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     superframe_s = args.superframe
     if superframe_s is None:
         superframe_s = mesh_state_period * args.max_reuse
+    slot_guard_s = 1.0 / args.tdma_gate_frequency + args.clock_skew_ms / 1000.0
     slots = plan_slots(net, mesh_state.wire_bytes, ac_ids, superframe_s,
-                       args.nb_slots)
+                       args.nb_slots, slot_guard_s,
+                       args.statistical_slot_bound)
     print("=" * 78)
     print("PHASE 1 - GPS-synchronised TDMA slot plan")
     print("=" * 78)
     print(f"  flood span for MESH_STATE ({net.n_transmissions_per_broadcast} hops)")
     print(f"     mean            : {slots.span_mean_s*1e3:7.1f} ms")
-    print(f"     mean + 3 sigma  : {slots.span_p999_s*1e3:7.1f} ms   <- slot sizing criterion")
+    print(f"     mean + 3 sigma  : {slots.span_statistical_s*1e3:7.1f} ms   "
+          "<- statistical design span")
     print(f"     absolute worst  : {slots.span_worst_s*1e3:7.1f} ms   "
           f"(every hop draws the maximum CSMA back-off)")
+    bound_name = ("mean + 3 sigma" if slots.use_statistical_bound
+            else "absolute worst")
+    print(f"  slot / guard / usable : {slots.slot_s*1e3:.1f} / "
+        f"{slots.guard_s*1e3:.1f} / {slots.usable_s*1e3:.1f} ms")
+    print(f"  selected {bound_name} bound : {slots.required_span_s*1e3:.1f} ms; "
+        f"margin {(slots.usable_s-slots.required_span_s)*1e3:+.1f} ms  "
+        f"{'OK' if slots.ok else 'FAIL'}")
     print(f"  superframe     : {slots.superframe_s:.2f} s "
-          f"(fixed; a node claims 1..{args.max_reuse} of its slots)")
+            f"(fixed; a node claims 1..{args.max_reuse} of its slots)")
     print(f"  slots          : {slots.n_slots}  "
           f"(shared out at run time over the {len(ac_ids)} nodes present)")
-    print(f"  slot time      : {slots.slot_s*1e3:.1f} ms  "
-          f"{'OK' if slots.slot_s >= slots.span_p999_s else 'TOO SHORT'}"
-          f"  ({(slots.slot_s/slots.span_p999_s - 1)*100:+.0f} % over the "
-          f"worst case flood)")
     print("  slots are not assigned from AC_ID: each node listens, then claims")
     print("  a slot that is demonstrably free, so AC_IDs may be any distinct")
     print("  values in 0..254 and need not be consecutive.")
@@ -1047,7 +1119,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     # ---- phase solve ------------------------------------------------------- #
     min_gap_ticks = int(round(slots.slot_s * args.telemetry_frequency))
-    solved, achieved = solve_phases(live_entries, args.telemetry_frequency, min_gap_ticks)
+    try:
+        solved, achieved = solve_phases(
+            live_entries, args.telemetry_frequency, min_gap_ticks,
+            args.max_replay_ticks)
+    except ValueError as exc:
+        print(f"  ERROR: {exc}", file=sys.stderr)
+        return 2
 
     print("=" * 78)
     print("PHASE 1 - solved phase offsets")
@@ -1060,13 +1138,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(f"  {e.msg.name:<17}{e.period_s:>8.1f}{n:>8}{e.tick:>7}"
               f"{e.phase:>11.6f}{e.tick*1000.0/args.telemetry_frequency:>10.0f}")
     print("  " + "-" * 61)
+    phase_spacing_ok = achieved >= min_gap_ticks
     print(f"  achieved minimum inter-frame spacing : {achieved} ticks = "
           f"{achieved*1000.0/args.telemetry_frequency:.0f} ms "
-          f"(required >= {min_gap_ticks} ticks)")
+          f"(required >= {min_gap_ticks} ticks)  "
+          f"{'OK' if phase_spacing_ok else 'FAIL'}")
     print()
 
     # ---- verification ------------------------------------------------------ #
-    fired = replay_generated_trigger(solved, args.telemetry_frequency)
+    fired = replay_generated_trigger(
+        solved, args.telemetry_frequency, args.max_replay_ticks)
     bursts = {t: n for t, n in fired.items() if len(n) > 1}
     peak, overflows, util = simulate_cache(
         fired, solved, net, args.telemetry_frequency,
@@ -1078,7 +1159,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     # i.e. what happens without this tool.
     control = [ScheduleEntry(e.msg, e.period_s, e.process, e.exclusive_group,
                              tick=0, phase=0.0) for e in solved]
-    control_fired = replay_generated_trigger(control, args.telemetry_frequency)
+    control_fired = replay_generated_trigger(
+        control, args.telemetry_frequency, args.max_replay_ticks)
     control_bursts = {t: n for t, n in control_fired.items() if len(n) > 1}
     control_peak, control_ovf, _ = simulate_cache(
         control_fired, control, net, args.telemetry_frequency,
@@ -1090,15 +1172,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     print("PHASE 1 - verification")
     print("=" * 78)
     print(f"  replayed gen_periodic over {max(fired)+1} ticks "
-          f"({(max(fired)+1)/args.telemetry_frequency:.0f} s superperiod)")
+        f"({(max(fired)+1)/args.telemetry_frequency:.0f} s superperiod)")
     print(f"  total emissions in the superperiod   : {sum(len(v) for v in fired.values())}")
     print(f"  ticks emitting more than one message : {len(bursts)}  "
-          f"{'OK' if not bursts else 'FAIL -> ' + str(bursts)}")
+        f"{'OK' if not bursts else 'FAIL -> ' + str(bursts)}")
     print(f"  peak modem cache depth (local + relay): {peak} "
-          f"(tolerated {args.cache_limit}, hardware limit 5)  "
-          f"{'OK' if peak <= args.cache_limit else 'FAIL'}")
+        f"(acceptance ceiling {args.cache_limit}, hardware limit 5)  "
+        f"{'OK' if peak <= args.cache_limit else 'FAIL'}")
     print(f"  cache overflow events                 : {overflows}  "
-          f"{'OK' if overflows == 0 else 'FAIL'}")
+        f"{'OK' if overflows == 0 else 'FAIL'}")
     print(f"  simulated channel utilisation         : {util*100:.1f} %")
     print()
     print("  control experiment - identical message set, all phase=0 (the default):")
@@ -1126,8 +1208,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     else:
         print(xml)
 
-    ok = ((not bursts) and peak <= args.cache_limit and overflows == 0
-          and net_util <= args.utilisation and slots.ok)
+        utilisation_ok = (args.utilisation is None
+                    or net_util <= args.utilisation)
+        ok = ((not bursts) and peak <= args.cache_limit and overflows == 0
+            and utilisation_ok and slots.ok and phase_spacing_ok)
     return 0 if ok else 1
 
 

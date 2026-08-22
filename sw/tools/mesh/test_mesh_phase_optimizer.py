@@ -48,8 +48,51 @@ class AirtimeAccountingTest(unittest.TestCase):
             0.25 * network.channel_cost_s(event.wire_bytes))
 
     def test_fair_slots_leave_churn_headroom(self) -> None:
-        self.assertEqual(optimizer.steady_slot_count(32, 28, 17, 8), 28)
-        self.assertEqual(optimizer.steady_slot_count(32, 28, 2, 8), 16)
+        self.assertEqual(optimizer.steady_slot_count(32, 30, 17, 8), 30)
+        self.assertEqual(optimizer.steady_slot_count(32, 30, 2, 8), 16)
+
+    def test_absolute_slot_bound_is_default(self) -> None:
+        absolute = optimizer.SlotPlan(
+            slot_s=0.5, n_slots=32, superframe_s=16.0, guard_s=0.022,
+            span_statistical_s=0.369, span_worst_s=0.468)
+        statistical = optimizer.SlotPlan(
+            slot_s=0.5, n_slots=32, superframe_s=16.0, guard_s=0.062,
+            span_statistical_s=0.369, span_worst_s=0.468,
+            use_statistical_bound=True)
+        self.assertTrue(absolute.ok)
+        self.assertTrue(statistical.ok)
+        self.assertEqual(absolute.required_span_s, absolute.span_worst_s)
+        self.assertEqual(statistical.required_span_s,
+                         statistical.span_statistical_s)
+
+
+class PhaseSafetyTest(unittest.TestCase):
+
+    def test_periodic_gap_matches_explicit_replay(self) -> None:
+        for a_period, b_period in ((8, 12), (16, 64), (25, 40)):
+            horizon = optimizer.math.lcm(a_period, b_period)
+            for a_tick in range(a_period):
+                for b_tick in range(b_period):
+                    explicit = min(
+                        abs(((left - right + horizon // 2) % horizon)
+                            - horizon // 2)
+                        for left in range(a_tick, horizon, a_period)
+                        for right in range(b_tick, horizon, b_period)
+                    )
+                    self.assertEqual(
+                        optimizer._periodic_gap(
+                            a_tick, a_period, b_tick, b_period),
+                        explicit)
+
+    def test_pathological_horizon_is_rejected_before_phase_search(self) -> None:
+        message = optimizer.MessageDef("TEST", "telemetry", 1, 1, False)
+        entries = [
+            optimizer.ScheduleEntry(message, 2.02),
+            optimizer.ScheduleEntry(message, 2.06),
+        ]
+        with self.assertRaisesRegex(ValueError, "safety limit"):
+            optimizer.solve_phases(entries, 50, 1, max_replay_ticks=1000)
+        self.assertTrue(all(entry.tick == -1 for entry in entries))
 
 
 class CommandLineTest(unittest.TestCase):
@@ -69,6 +112,34 @@ class CommandLineTest(unittest.TestCase):
     def test_legacy_control_rate_alias_is_retained(self) -> None:
         error = self.assert_cli_error("--move-wp-rate", "-1")
         self.assertIn("--control-rate must not be negative", error)
+
+    def test_cli_rejects_large_replay_horizon(self) -> None:
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr), \
+                contextlib.redirect_stdout(io.StringIO()):
+            result = optimizer.main((
+                "--mesh-period", "2.02",
+                "--superframe", "16.16",
+                "--max-replay-ticks", "1000",
+            ))
+        self.assertEqual(result, 2)
+        self.assertIn("schedule replay horizon", stderr.getvalue())
+
+    def test_inadequate_phase_spacing_fails(self) -> None:
+        with contextlib.redirect_stderr(io.StringIO()), \
+                contextlib.redirect_stdout(io.StringIO()):
+            result = optimizer.main((
+                "--ac-ids", "0,3,19,42,58,77,101,125,140,168,203,222,251",
+                "--relay-nodes", "13",
+                "--nb-slots", "32",
+                "--fair-slots", "30",
+                "--mesh-period", "1.8",
+                "--superframe", "14.4",
+                "--max-reuse", "8",
+                "--period-scale", "2",
+                "--utilisation", "0.60",
+            ))
+        self.assertEqual(result, 1)
 
 
 if __name__ == "__main__":

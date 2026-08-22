@@ -61,20 +61,28 @@ GCS_ID = 0
 MAX_AC_ID = 254
 SLOT_FREE = 0xFF          # 255 is reserved; 0 is the GCS and a real mesh node
 NB_SLOTS = 32
-FAIR_SLOTS = 28
+FAIR_SLOTS = 25
 MAX_REUSE = 8
 AGE_FRAMES = 4
-SUPERFRAME_S = 12.0
+SUPERFRAME_S = 16.0
 REMAINDER_EPOCH_FRAMES = 4 * AGE_FRAMES + 2 * NB_SLOTS + 1
 CLOCK_STEP_MAX_MS = 10
 GPS_WEEK_MS = 604800000
 UINT32_MASK = 0xFFFFFFFF
 INT32_HALF = 0x80000000
 
+# Deliberately irregular and deterministic. Includes GCS ID 0, exercises high
+# aircraft IDs, and leaves 255 reserved while supporting a full 32-slot fleet.
+SIM_AC_IDS = [
+    0, 3, 11, 19, 27, 34, 42, 51, 58, 66, 77, 89, 101, 113, 125, 137,
+    140, 151, 168, 177, 188, 197, 203, 211, 222, 228, 231, 237, 241, 247,
+    251, 254,
+]
+
 
 ENTRY_FRAMES = 3
 HOLD_MIN, HOLD_SPAN = 6, 8
-PRI_MIN, PRI_SPAN = 10, 10
+PRI_MIN, PRI_SPAN = 120, 120
 
 
 def u32(value: int) -> int:
@@ -90,6 +98,15 @@ def frame_elapsed(now: int, previous: int) -> int:
 def frame_reached(now: int, deadline: int) -> bool:
     """Mirror ``(int32_t)(frame - deadline) >= 0`` from production."""
     return frame_elapsed(now, deadline) < INT32_HALF
+
+
+def slot_hash(value: int) -> int:
+    """Mirror the production avalanche hash used for slot and lease scatter."""
+    value = u32(value ^ (value >> 16))
+    value = u32(value * 0x7FEB352D)
+    value = u32(value ^ (value >> 15))
+    value = u32(value * 0x846CA68B)
+    return u32(value ^ (value >> 16))
 
 
 @dataclass
@@ -208,7 +225,9 @@ class Node:
 
     # --- mirrors mesh_pick_slot -------------------------------------------- #
     def _pick(self, frame: int) -> int:
-        start = (self.ac_id * 7 + self.reselect_count * 3) % NB_SLOTS
+        mixed = slot_hash(self.ac_id | (self.reselect_count << 8)
+                          | (frame << 16))
+        start = mixed % NB_SLOTS
         for k in range(NB_SLOTS):
             s = (start + k) % NB_SLOTS
             if self._free(s, frame) and not self.owns(s):
@@ -216,8 +235,8 @@ class Node:
         return start
 
     def _pri_expiry(self, frame: int) -> int:
-        r = (self.ac_id * 1103515245 + frame * 12345
-             + self.reselect_count * 7919) & 0xFFFFFFFF
+        r = slot_hash(self.ac_id | (self.reselect_count << 8)
+                      | (frame << 16) | 0x80000000)
         return u32(frame + PRI_MIN + r % PRI_SPAN)
 
     # --- mirrors mesh_expansion_turn --------------------------------------- #
@@ -294,8 +313,8 @@ class Node:
                 quiet = (self.slots[s][0] == SLOT_FREE and
                          frame_elapsed(frame, self.slots[s][1]) > 2 * AGE_FRAMES)
                 if quiet and not self.owns(s):
-                    r = (self.ac_id * 2654435761 + frame * 40503
-                         + self.reselect_count * 97) & 0xFFFFFFFF
+                    r = slot_hash(self.ac_id | (self.reselect_count << 8)
+                                | (frame << 16))
                     self.owned.append(s)
                     self.until.append(u32(frame + HOLD_MIN + r % HOLD_SPAN))
                     break
@@ -306,12 +325,15 @@ class Node:
 
 
 def run(args: argparse.Namespace) -> int:
-    global MAX_REUSE
+    global NB_SLOTS, FAIR_SLOTS, MAX_REUSE, REMAINDER_EPOCH_FRAMES
+    NB_SLOTS = args.nb_slots
+    FAIR_SLOTS = args.fair_slots
     MAX_REUSE = args.max_reuse
+    REMAINDER_EPOCH_FRAMES = 4 * AGE_FRAMES + 2 * NB_SLOTS + 1
     rng = random.Random(args.seed)
     # AC_IDs are deliberately irregular. Zero is the GCS, a real mesh peer;
     # 254 exercises the highest aircraft ID and 255 remains reserved.
-    all_ids = [0, 3, 19, 42, 58, 77, 101, 125, 140, 168, 203, 222, 254]
+    all_ids = SIM_AC_IDS
     live: Dict[int, Node] = {}
     failures: List[str] = []
     rate_log: List[tuple] = []
@@ -379,7 +401,8 @@ def run(args: argparse.Namespace) -> int:
                 victim = rng.choice(airborne_live)
                 del live[victim]                 # landed / lost link
             else:
-                cand = [a for a in all_ids if a not in live]
+                cand = ([a for a in all_ids if a not in live]
+                        if len(live) < args.max_nodes else [])
                 if cand:
                     join(rng.choice(cand))       # arrived / regained link
 
@@ -514,11 +537,22 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--settle", type=int, default=30,
                     help="frames to allow for initial convergence")
-    ap.add_argument("--initial-nodes", type=int, default=9, choices=range(1, 14),
-                    metavar="1..13",
+    ap.add_argument("--initial-nodes", type=int, default=9,
+                    choices=range(1, len(SIM_AC_IDS) + 1),
+                    metavar=f"1..{len(SIM_AC_IDS)}",
                     help="initial live peers including the GCS (default: 9)")
+    ap.add_argument("--max-nodes", type=int, default=None,
+                    choices=range(1, len(SIM_AC_IDS) + 1),
+                    metavar=f"1..{len(SIM_AC_IDS)}",
+                    help="maximum live peers under churn (default: initial nodes)")
+    ap.add_argument("--nb-slots", type=int, default=NB_SLOTS,
+                    choices=range(1, 256), metavar="1..255",
+                    help="physical slots per superframe")
+    ap.add_argument("--fair-slots", type=int, default=FAIR_SLOTS,
+                    choices=range(1, 256), metavar="1..255",
+                    help="slots distributed in steady state")
     ap.add_argument("--max-reuse", type=int, default=MAX_REUSE,
-                    choices=range(1, NB_SLOTS + 1), metavar="1..32",
+                    choices=range(1, 256), metavar="1..255",
                     help="maximum slots per peer (default: production value)")
     ap.add_argument("--state-fault", type=float, default=0.01,
                     help="per-frame probability of sync/position/airborne loss")
@@ -527,7 +561,20 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--cache-busy", type=float, default=0.02,
                     help="per-frame probability of cache back-pressure")
     ap.add_argument("-v", "--verbose", action="store_true")
-    return run(ap.parse_args(argv))
+    args = ap.parse_args(argv)
+    if args.max_nodes is None:
+        args.max_nodes = args.initial_nodes
+    if args.fair_slots > args.nb_slots:
+        ap.error("--fair-slots must not exceed --nb-slots")
+    if args.max_reuse > args.nb_slots:
+        ap.error("--max-reuse must not exceed --nb-slots")
+    if args.initial_nodes > args.nb_slots:
+        ap.error("--initial-nodes must not exceed --nb-slots")
+    if args.initial_nodes > args.max_nodes:
+        ap.error("--initial-nodes must not exceed --max-nodes")
+    if args.initial_nodes > len(SIM_AC_IDS):
+        ap.error("--initial-nodes exceeds the deterministic AC_ID pool")
+    return run(args)
 
 
 if __name__ == "__main__":

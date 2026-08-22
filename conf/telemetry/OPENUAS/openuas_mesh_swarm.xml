@@ -13,17 +13,18 @@
   Flood tax : one transmission per routing peer for each originated broadcast
 
   Budget
-    common       : 38.3 % channel utilisation at 13 peers
-    dense        : 38.9 % channel utilisation at 17 peers
-    steady state : 28 fair-share slots; 4 physical slots are churn headroom
-    modem cache  : modeled peak 1 of 5 frames -> no OUT OF CACHE flush
+    common       : 57.7 % modeled channel utilisation at 13 peers
+    dense        : 59.4 % modeled channel utilisation at 17 peers
+    steady state : 25 fair-share slots; 7 physical slots are churn headroom
+    modem cache  : modeled peak 1; acceptance ceiling 3; hardware limit 5
 
-  Inter-node collision avoidance is handled by the GPS-time TDMA in
+  Inter-node collision avoidance uses GNSS-time TDMA, bounded monotonic
+  holdover, then randomized GPS-free access in
   sw/airborne/modules/multi/traffic_info.c :
-    superframe 12.00 s / 32 slots of 375.0 ms
+    superframe 16.00 s / 32 slots of 500.0 ms
     slots are claimed at run time by listening, never derived
     from AC_ID, so any set of distinct IDs in 0..254 works
-    the airframe MUST set MESH_TDMA_SUPERFRAME_MS=12000 (traffic_info.c static asserts it)
+    traffic_info module defaults define the fleet-wide 16000/32/25/8 timing contract
 
   phase is a normalised fraction of the period, so this file stays valid
   for any TELEMETRY_FREQUENCY; it was solved and verified against
@@ -32,47 +33,47 @@
 <telemetry>
   <process name="Ap">
     <mode name="mesh" key_press="h">
-      <message name="MESH_STATE"        period="1.5"     phase="0.006667"/>  <!-- t0=   0.00 s, 30 B on the wire; hybrid MAC gates actual emission. -->
-      <message name="GPS_LLA"           period="32.0"    phase="0.007812"/>  <!-- t0=   0.24 s, 38 B on the wire,  8.46 ms/hop. -->
-      <message name="ESTIMATOR"         period="64.0"    phase="0.011719"/>  <!-- t0=   0.74 s, 16 B on the wire,  5.58 ms/hop. -->
-      <message name="ATTITUDE"          period="128.0"   phase="0.009766"/>  <!-- t0=   1.24 s, 20 B on the wire,  6.22 ms/hop. -->
-      <message name="ENERGY"            period="128.0"   phase="0.013672"/>  <!-- t0=   1.74 s, 33 B on the wire,  7.82 ms/hop. -->
-      <message name="NAVIGATION"        period="128.0"   phase="0.017578"/>  <!-- t0=   2.24 s, 35 B on the wire,  8.14 ms/hop. -->
-      <message name="PPRZ_MODE"         period="128.0"   phase="0.021484"/>  <!-- t0=   2.74 s, 14 B on the wire,  5.26 ms/hop. -->
-      <message name="AIR_DATA"          period="256.0"   phase="0.012695"/>  <!-- t0=   3.24 s, 36 B on the wire,  8.14 ms/hop. -->
-      <message name="ALIVE"             period="256.0"   phase="0.014648"/>  <!-- t0=   3.74 s, 17 B on the wire,  5.90 ms/hop. -->
-      <message name="CIRCLE"            period="256.0"   phase="0.016602"/>  <!-- t0=   4.24 s, 20 B on the wire,  6.22 ms/hop. only one nav shape is live at a time -->
-      <message name="DATALINK_REPORT"   period="256.0"   phase="0.018555"/>  <!-- t0=   4.74 s, 19 B on the wire,  5.90 ms/hop. -->
-      <message name="DL_VALUE"          period="256.0"   phase="0.020508"/>  <!-- t0=   5.24 s, 13 B on the wire,  5.26 ms/hop. -->
-      <message name="GPS_SOL"           period="256.0"   phase="0.024414"/>  <!-- t0=   6.24 s, 19 B on the wire,  5.90 ms/hop. -->
-      <message name="NAVIGATION_REF"    period="256.0"   phase="0.026367"/>  <!-- t0=   6.74 s, 21 B on the wire,  6.22 ms/hop. -->
-      <message name="SEGMENT"           period="256.0"   phase="0.028320"/>  <!-- t0=   7.24 s, 24 B on the wire,  6.54 ms/hop. only one nav shape is live at a time -->
-      <message name="SURVEY"            period="256.0"   phase="0.030273"/>  <!-- t0=   7.74 s, 24 B on the wire,  6.54 ms/hop. only one nav shape is live at a time -->
-      <message name="WP_MOVED"          period="256.0"   phase="0.032227"/>  <!-- t0=   8.24 s, 22 B on the wire,  6.54 ms/hop. -->
+      <message name="MESH_STATE"        period="2.0"     phase="0.005000"/>
+      <message name="GPS_LLA"           period="10.0"    phase="0.101000"/>
+      <message name="ESTIMATOR"         period="20.0"    phase="0.150500"/>
+      <message name="ATTITUDE"          period="40.0"    phase="0.125250"/>
+      <message name="ENERGY"            period="40.0"    phase="0.175250"/>
+      <message name="NAVIGATION"        period="40.0"    phase="0.225250"/>
+      <message name="PPRZ_MODE"         period="40.0"    phase="0.325250"/>
+      <message name="AIR_DATA"          period="80.0"    phase="0.187625"/>
+      <message name="ALIVE"             period="80.0"    phase="0.212625"/>
+      <message name="CIRCLE"            period="80.0"    phase="0.237625"/>
+      <message name="DATALINK_REPORT"   period="80.0"    phase="0.312625"/>
+      <message name="DL_VALUE"          period="80.0"    phase="0.337625"/>
+      <message name="GPS_SOL"           period="80.0"    phase="0.412625"/>
+      <message name="NAVIGATION_REF"    period="80.0"    phase="0.437625"/>
+      <message name="SEGMENT"           period="80.0"    phase="0.462625"/>
+      <message name="SURVEY"            period="80.0"    phase="0.487625"/>
+      <message name="WP_MOVED"          period="80.0"    phase="0.687625"/>
     </mode>
     <mode name="mesh_dense">
       <!-- Selected automatically for 13-16 aircraft. Operator commands and their immediate acknowledgements are not periodic. -->
-      <message name="MESH_STATE"        period="1.5"     phase="0.006667"/>  <!-- t0=   0.00 s, primary traffic/TCAS state; TDMA gates actual emission. -->
-      <message name="GPS_LLA"           period="128.0"   phase="0.001953"/>  <!-- t0=   0.24 s, authoritative GPS diagnostic; MESH_STATE carries fresh position. -->
-      <message name="ALIVE"             period="256.0"   phase="0.002930"/>  <!-- t0=   0.74 s, configuration identity/discovery fallback. -->
-      <message name="WP_MOVED"          period="512.0"   phase="0.002441"/>  <!-- t0=   1.24 s; MOVE_WP still triggers an immediate acknowledgement. -->
-      <message name="ESTIMATOR"         period="384.0"   phase="0.005859"/>  <!-- t0=   2.24 s. -->
-      <message name="ATTITUDE"          period="768.0"   phase="0.004883"/>  <!-- t0=   3.74 s. -->
-      <message name="ENERGY"            period="768.0"   phase="0.006836"/>  <!-- t0=   5.24 s. -->
-      <message name="NAVIGATION"        period="768.0"   phase="0.008789"/>  <!-- t0=   6.74 s; BLOCK still triggers an immediate acknowledgement. -->
-      <message name="PPRZ_MODE"         period="768.0"   phase="0.010742"/> <!-- t0=   8.24 s. -->
-      <message name="AIR_DATA"          period="1536.0"  phase="0.006348"/>  <!-- t0=   9.74 s. -->
-      <message name="CIRCLE"            period="1536.0"  phase="0.007324"/>  <!-- t0=  11.24 s; only one nav shape is live at a time. -->
-      <message name="DATALINK_REPORT"   period="1536.0"  phase="0.008301"/>  <!-- t0=  12.74 s. -->
-      <message name="DL_VALUE"          period="1536.0"  phase="0.009277"/>  <!-- t0=  14.24 s; SETTING still triggers an immediate acknowledgement. -->
-      <message name="GPS_SOL"           period="1536.0"  phase="0.011230"/>  <!-- t0=  17.24 s. -->
-      <message name="NAVIGATION_REF"    period="1536.0"  phase="0.012207"/>  <!-- t0=  18.74 s. -->
-      <message name="SEGMENT"           period="1536.0"  phase="0.013184"/>  <!-- t0=  20.24 s; only one nav shape is live at a time. -->
-      <message name="SURVEY"            period="1536.0"  phase="0.014160"/>  <!-- t0=  21.74 s; only one nav shape is live at a time. -->
+      <message name="MESH_STATE"        period="2.0"     phase="0.005000"/>
+      <message name="GPS_LLA"           period="20.0"    phase="0.050500"/>
+      <message name="ESTIMATOR"         period="40.0"    phase="0.075250"/>
+      <message name="ATTITUDE"          period="80.0"    phase="0.062625"/>
+      <message name="ENERGY"            period="80.0"    phase="0.087625"/>
+      <message name="NAVIGATION"        period="80.0"    phase="0.112625"/>
+      <message name="PPRZ_MODE"         period="80.0"    phase="0.137625"/>
+      <message name="AIR_DATA"          period="160.0"   phase="0.081312"/>
+      <message name="ALIVE"             period="160.0"   phase="0.106313"/>
+      <message name="CIRCLE"            period="160.0"   phase="0.118813"/>
+      <message name="DATALINK_REPORT"   period="160.0"   phase="0.143813"/>
+      <message name="DL_VALUE"          period="160.0"   phase="0.156312"/>
+      <message name="GPS_SOL"           period="160.0"   phase="0.168813"/>
+      <message name="NAVIGATION_REF"    period="160.0"   phase="0.181312"/>
+      <message name="SEGMENT"           period="160.0"   phase="0.193812"/>
+      <message name="SURVEY"            period="160.0"   phase="0.206313"/>
+      <message name="WP_MOVED"          period="160.0"   phase="0.218812"/>
     </mode>
     <mode name="mesh_solo">
       <!-- Keep the peer canary and auxiliary diagnostics slow; spend the solo-link margin on state freshness. -->
-      <message name="MESH_STATE"        period="1.5"     phase="0.006667"/>  <!-- Safety/discovery canary; TDMA gates actual emission. -->
+      <message name="MESH_STATE"        period="2.0"     phase="0.005000"/>  <!-- Safety/discovery canary; TDMA gates actual emission. -->
       <message name="MINIMAL_COM"       period="0.20"    phase="0.000000"/>  <!-- 5 Hz position, speed, mode, block, voltage and flight time. -->
       <message name="ATTITUDE"          period="0.50"    phase="0.500000"/>  <!-- 2 Hz, offset from MINIMAL_COM. -->
       <message name="ENERGY"            period="1.0"     phase="0.750000"/>
@@ -82,7 +83,7 @@
   </process>
   <process name="Fbw">
     <mode name="default">
-      <message name="FBW_STATUS"        period="256.0"   phase="0.022461"/>  <!-- t0=   5.74 s, 19 B on the wire,  5.90 ms/hop. -->
+      <message name="FBW_STATUS"        period="80.0"    phase="0.712625"/>
     </mode>
   </process>
 </telemetry>

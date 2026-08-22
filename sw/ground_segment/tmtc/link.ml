@@ -208,14 +208,19 @@ let use_tele_message = fun ?udp_peername ?raw_data_size payload ->
     | Failure msg when String.length msg >= 25 && String.sub msg 0 25 = "PprzLink.invalid class ID" ->
         (* MESH_STATE is a datalink-class frame sent aircraft-to-aircraft. Do
            not publish it on the datalink Ivy class, which would feed it back
-           into the uplink broadcaster; only use it as authoritative evidence
-           that the sender remains live and command-addressable. *)
+           into the uplink broadcaster. Project it onto a telemetry-only event
+           so the GCS can use the already-paid-for state vector. *)
         begin try
-          let (header, _values) = Dl_Pprz.values_of_payload payload in
+          let (header, values) = Dl_Pprz.values_of_payload payload in
           let dl_msg = Dl_Pprz.message_of_id header.PprzLink.message_id in
-          if dl_msg.PprzLink.name = "MESH_STATE" then
-            update_status ?udp_peername header.PprzLink.sender_id raw_data_size false
-        with _ -> ()
+          if dl_msg.PprzLink.name = "MESH_STATE" then begin
+            let ac_id = header.PprzLink.sender_id in
+            update_status ?udp_peername ac_id raw_data_size false;
+            send_message_over_ivy (string_of_int ac_id) "MESH_STATUS" values
+          end
+        with exc ->
+          Debug.call 'W' (fun f -> fprintf f "Warning, cannot project datalink telemetry: %s\n"
+            (Printexc.to_string exc))
         end
     | exc ->
         prerr_endline (Printexc.to_string exc);

@@ -124,7 +124,7 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
  *  Fixed and identical on every node. It is NOT tied to the node count: with
  *  nodes joining and leaving freely there is no fixed count to tie it to. */
 #ifndef MESH_TDMA_SUPERFRAME_MS
-#define MESH_TDMA_SUPERFRAME_MS 12000
+#define MESH_TDMA_SUPERFRAME_MS 16000
 #endif
 
 /** Slots per superframe, i.e. the maximum number of nodes the mesh can carry
@@ -141,7 +141,7 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
  * collision recovery, but healthy peers do not target them as steady-state
  * quota. */
 #ifndef MESH_TDMA_FAIR_SLOTS
-#define MESH_TDMA_FAIR_SLOTS 28
+#define MESH_TDMA_FAIR_SLOTS 25
 #endif
 
 /** Maximum slots one node may occupy when the mesh is sparsely populated.
@@ -168,10 +168,10 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
  *  no evidence of the clash is available to anybody. In a healthy mesh a node
  *  keeps its slot across the whole flight. */
 #ifndef MESH_PRIMARY_HOLD_MIN
-#define MESH_PRIMARY_HOLD_MIN 10
+#define MESH_PRIMARY_HOLD_MIN 120
 #endif
 #ifndef MESH_PRIMARY_HOLD_SPAN
-#define MESH_PRIMARY_HOLD_SPAN 10
+#define MESH_PRIMARY_HOLD_SPAN 120
 #endif
 
 /** Lease on an opportunistic (secondary) slot, in superframes: held for
@@ -227,15 +227,6 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
  */
 #define MESH_SLOT_FREE TRAFFIC_INFO_RESERVED_ID
 
-/** First slot this node prefers when selecting a primary slot.
- *
- * This is a starting hint, not a static assignment. Runtime observation and
- * conflict resolution decide which slot is ultimately owned.
- */
-#ifndef MESH_TDMA_SLOT_HINT
-#define MESH_TDMA_SLOT_HINT ((AC_ID) % MESH_TDMA_NB_SLOTS)
-#endif
-
 #if MESH_TDMA_SUPERFRAME_MS < MESH_TDMA_NB_SLOTS
 #error "MESH_TDMA_SUPERFRAME_MS is too short for MESH_TDMA_NB_SLOTS"
 #endif
@@ -265,6 +256,13 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
 /** Continuous valid-GPS interval required before entering GPS TDMA. */
 #ifndef MESH_CLOCK_ACQUIRE_MS
 #define MESH_CLOCK_ACQUIRE_MS 2000u
+#endif
+
+/** Maximum time estimator-derived global kinematics remain publishable after
+ * the last 3D GNSS fix. This does not extend TDMA clock authority. Set to zero
+ * when the estimator cannot dead-reckon in its initialized global frame. */
+#ifndef MESH_POSITION_HOLDOVER_MS
+#define MESH_POSITION_HOLDOVER_MS MESH_TDMA_SUPERFRAME_MS
 #endif
 
 /** Randomized origination interval when no bounded network clock exists. */
@@ -301,6 +299,9 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
 #if MESH_CLOCK_ACQUIRE_MS == 0
 #error "MESH_CLOCK_ACQUIRE_MS must be positive"
 #endif
+#if MESH_POSITION_HOLDOVER_MS > MESH_CLOCK_HOLDOVER_MAX_MS
+#error "MESH_POSITION_HOLDOVER_MS must not outlive bounded clock holdover"
+#endif
 #if MESH_ASYNC_MIN_INTERVAL_MS == 0
 #error "MESH_ASYNC_MIN_INTERVAL_MS must be positive"
 #endif
@@ -326,8 +327,14 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
 #define MESH_MODEM_DRAIN_MS 60
 #endif
 
-/** Never hand a frame to the modem when this many are estimated to be still
- *  queued inside it. The hardware limit is 5. */
+/** Stop local MESH_STATE admission at this estimated local queue depth.
+ *
+ * The E52 does not expose its total queue occupancy, including relay and other
+ * telemetry frames. Keeping this below the five-item hardware limit reserves
+ * two entries for those unobservable producers. Raising it cannot create TDMA
+ * slots or airtime; it only reduces protection against a destructive cache
+ * flush.
+ */
 #ifndef MESH_CACHE_HIGH_WATER
 #define MESH_CACHE_HIGH_WATER 3
 #endif
@@ -337,11 +344,11 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
 #endif
 
 #ifndef MESH_GCS_PING_TIMEOUT_MS
-#define MESH_GCS_PING_TIMEOUT_MS 12000u
+#define MESH_GCS_PING_TIMEOUT_MS MESH_TDMA_SUPERFRAME_MS
 #endif
 
 #ifndef MESH_SOLO_QUIET_MS
-#define MESH_SOLO_QUIET_MS 12000u
+#define MESH_SOLO_QUIET_MS MESH_TDMA_SUPERFRAME_MS
 #endif
 
 #if MESH_CACHE_HIGH_WATER >= 5
@@ -364,45 +371,6 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
 #define MESH_FLAG_AIRBORNE   0x20u
 #define MESH_FLAG_ALERT      0x40u
 #define MESH_FLAG_EMERGENCY  0x80u
-
-/** One TDMA slot's observed owner.
- *
- * Ownership is *learned*, never configured: a frame's slot is implied by its
- * arrival time while peers share GPS or bounded-holdover time. Asynchronous
- * frames do not update this map. The occupancy map costs zero bytes on air.
- */
-struct MeshSlot {
-  uint8_t  ac_id;        ///< Observed owner, or MESH_SLOT_FREE when unowned.
-  uint32_t last_frame;   ///< superframe index when last heard
-};
-
-/** Health and back-pressure state of the mesh link.
- *  Statically allocated, updated only from the module task and the telemetry
- *  callback, both of which run in the main loop context.
- */
-struct MeshLinkState {
-  uint64_t local_tx_free_ms; ///< monotonic estimate for locally submitted frames only
-  uint32_t last_emit_key;    ///< superframe*NB_SLOTS + slot of the last origination
-  uint16_t tx_count;         ///< MESH_STATE frames handed to the modem
-  uint16_t defer_ticks;      ///< module task iterations spent waiting for a slot
-  uint16_t throttled_count;  ///< frames held back by the cache governor
-  uint16_t reselect_count;   ///< times this node had to move to a different slot
-  uint8_t  slot;             ///< own primary slot
-  uint8_t  reuse;            ///< TDMA slots currently claimed; ignored in ASYNC.
-  uint8_t  neighbours;       ///< distinct nodes heard in the last age window
-  bool     solo_active;      ///< generated mesh_solo telemetry mode selected
-  enum MeshClockMode clock_mode; ///< Current transmission timing authority.
-  bool     ready;            ///< the telemetry transport is known
-  bool     synced;           ///< GPS or bounded holdover time is safe for TDMA.
-};
-
-extern struct MeshLinkState mesh_link;
-
-/** Record a received MESH_STATE in the inferred TDMA slot map.
- * @param[in] sender Originating aircraft ID; AC_ID 0 is the GCS.
- * @param[in] net_ms GPS or bounded-holdover network time in milliseconds.
- */
-extern void mesh_slot_observe(uint8_t sender, uint64_t net_ms);
 
 /** Periodic task driving the mesh transmit slot. Call at 20 Hz or faster. */
 extern void traffic_info_mesh_periodic(void);
@@ -551,6 +519,17 @@ static inline uint8_t ti_acs_registered_slot(uint8_t id)
   return slot;
 }
 
+/** Resolve an ID for legacy getters that cannot report lookup failure.
+ *
+ * Historical pointer getters always returned storage and unknown IDs read slot
+ * zero. Preserve that API while preventing reserved ID 255 from indexing past
+ * ::ti_acs_id. New safety-sensitive code should use the checked snapshot APIs.
+ */
+static inline uint8_t ti_acs_legacy_read_slot(uint8_t id)
+{
+  return traffic_info_id_valid(id) ? ti_acs_id[id] : 0u;
+}
+
 /**
  * Parse a supported traffic-position message.
  *
@@ -629,13 +608,6 @@ extern bool traffic_info_get_mesh_snapshot(uint8_t ac_id, uint32_t max_predictio
  * @return @c true when this mesh track has had a valid observation.
  */
 extern bool traffic_info_get_mesh_valid_age(uint8_t ac_id, uint32_t *age_ms);
-
-/** Return the latest raw MESH_STATE flags for a mesh peer.
- *
- * The rotorcraft bit is retained for mixed-fleet observability. TCAS does not
- * branch on aircraft type; all avoidance geometry and advisories remain shared.
- */
-extern bool traffic_info_get_mesh_flags(uint8_t ac_id, uint8_t *flags);
 
 /** Return whether the latest observation for an aircraft came from MESH_STATE. */
 extern bool traffic_info_is_mesh_track(uint8_t ac_id);
@@ -842,10 +814,11 @@ extern void acInfoCalcVelocityEnu_f(uint8_t ac_id);
  */
 static inline struct UtmCoor_i *acInfoGetPositionUtm_i(uint8_t ac_id)
 {
-  if (!bit_is_set(ti_acs[ti_acs_id[ac_id]].status, AC_INFO_POS_UTM_I)) {
+  const uint8_t slot = ti_acs_legacy_read_slot(ac_id);
+  if (!bit_is_set(ti_acs[slot].status, AC_INFO_POS_UTM_I)) {
     acInfoCalcPositionUtm_i(ac_id);
   }
-  return &ti_acs[ti_acs_id[ac_id]].utm_pos_i;
+  return &ti_acs[slot].utm_pos_i;
 }
 
 /** Get position from LLA coordinates (int).
@@ -853,10 +826,11 @@ static inline struct UtmCoor_i *acInfoGetPositionUtm_i(uint8_t ac_id)
  */
 static inline struct LlaCoor_i *acInfoGetPositionLla_i(uint8_t ac_id)
 {
-  if (!bit_is_set(ti_acs[ti_acs_id[ac_id]].status, AC_INFO_POS_LLA_I)) {
+  const uint8_t slot = ti_acs_legacy_read_slot(ac_id);
+  if (!bit_is_set(ti_acs[slot].status, AC_INFO_POS_LLA_I)) {
     acInfoCalcPositionLla_i(ac_id);
   }
-  return &ti_acs[ti_acs_id[ac_id]].lla_pos_i;
+  return &ti_acs[slot].lla_pos_i;
 }
 
 /** Get position in local ENU coordinates (int).
@@ -864,10 +838,11 @@ static inline struct LlaCoor_i *acInfoGetPositionLla_i(uint8_t ac_id)
  */
 static inline struct EnuCoor_i *acInfoGetPositionEnu_i(uint8_t ac_id)
 {
-  if (!bit_is_set(ti_acs[ti_acs_id[ac_id]].status, AC_INFO_POS_ENU_I)) {
+  const uint8_t slot = ti_acs_legacy_read_slot(ac_id);
+  if (!bit_is_set(ti_acs[slot].status, AC_INFO_POS_ENU_I)) {
     acInfoCalcPositionEnu_i(ac_id);
   }
-  return &ti_acs[ti_acs_id[ac_id]].enu_pos_i;
+  return &ti_acs[slot].enu_pos_i;
 }
 
 /** Get position from UTM coordinates (float).
@@ -875,10 +850,11 @@ static inline struct EnuCoor_i *acInfoGetPositionEnu_i(uint8_t ac_id)
  */
 static inline struct UtmCoor_f *acInfoGetPositionUtm_f(uint8_t ac_id)
 {
-  if (!bit_is_set(ti_acs[ti_acs_id[ac_id]].status, AC_INFO_POS_UTM_F)) {
+  const uint8_t slot = ti_acs_legacy_read_slot(ac_id);
+  if (!bit_is_set(ti_acs[slot].status, AC_INFO_POS_UTM_F)) {
     acInfoCalcPositionUtm_f(ac_id);
   }
-  return &ti_acs[ti_acs_id[ac_id]].utm_pos_f;
+  return &ti_acs[slot].utm_pos_f;
 }
 
 /** Get position from LLA coordinates (float).
@@ -886,10 +862,11 @@ static inline struct UtmCoor_f *acInfoGetPositionUtm_f(uint8_t ac_id)
  */
 static inline struct LlaCoor_f *acInfoGetPositionLla_f(uint8_t ac_id)
 {
-  if (!bit_is_set(ti_acs[ti_acs_id[ac_id]].status, AC_INFO_POS_LLA_F)) {
+  const uint8_t slot = ti_acs_legacy_read_slot(ac_id);
+  if (!bit_is_set(ti_acs[slot].status, AC_INFO_POS_LLA_F)) {
     acInfoCalcPositionLla_f(ac_id);
   }
-  return &ti_acs[ti_acs_id[ac_id]].lla_pos_f;
+  return &ti_acs[slot].lla_pos_f;
 }
 
 /** Get position in local ENU coordinates (float).
@@ -897,10 +874,11 @@ static inline struct LlaCoor_f *acInfoGetPositionLla_f(uint8_t ac_id)
  */
 static inline struct EnuCoor_f *acInfoGetPositionEnu_f(uint8_t ac_id)
 {
-  if (!bit_is_set(ti_acs[ti_acs_id[ac_id]].status, AC_INFO_POS_ENU_F)) {
+  const uint8_t slot = ti_acs_legacy_read_slot(ac_id);
+  if (!bit_is_set(ti_acs[slot].status, AC_INFO_POS_ENU_F)) {
     acInfoCalcPositionEnu_f(ac_id);
   }
-  return &ti_acs[ti_acs_id[ac_id]].enu_pos_f;
+  return &ti_acs[slot].enu_pos_f;
 }
 
 /** Get velocity in local ENU coordinates (integer BFP).
@@ -908,10 +886,11 @@ static inline struct EnuCoor_f *acInfoGetPositionEnu_f(uint8_t ac_id)
  */
 static inline struct EnuCoor_i *acInfoGetVelocityEnu_i(uint8_t ac_id)
 {
-  if (!bit_is_set(ti_acs[ti_acs_id[ac_id]].status, AC_INFO_VEL_ENU_I)) {
+  const uint8_t slot = ti_acs_legacy_read_slot(ac_id);
+  if (!bit_is_set(ti_acs[slot].status, AC_INFO_VEL_ENU_I)) {
     acInfoCalcVelocityEnu_i(ac_id);
   }
-  return &ti_acs[ti_acs_id[ac_id]].enu_vel_i;
+  return &ti_acs[slot].enu_vel_i;
 }
 
 /** Get velocity in local ENU coordinates (float).
@@ -919,10 +898,11 @@ static inline struct EnuCoor_i *acInfoGetVelocityEnu_i(uint8_t ac_id)
  */
 static inline struct EnuCoor_f *acInfoGetVelocityEnu_f(uint8_t ac_id)
 {
-  if (!bit_is_set(ti_acs[ti_acs_id[ac_id]].status, AC_INFO_VEL_ENU_F)) {
+  const uint8_t slot = ti_acs_legacy_read_slot(ac_id);
+  if (!bit_is_set(ti_acs[slot].status, AC_INFO_VEL_ENU_F)) {
     acInfoCalcVelocityEnu_f(ac_id);
   }
-  return &ti_acs[ti_acs_id[ac_id]].enu_vel_f;
+  return &ti_acs[slot].enu_vel_f;
 }
 
 /** Get vehicle course (float).
@@ -930,7 +910,7 @@ static inline struct EnuCoor_f *acInfoGetVelocityEnu_f(uint8_t ac_id)
  */
 static inline float acInfoGetCourse(uint8_t ac_id)
 {
-  return ti_acs[ti_acs_id[ac_id]].course;
+  return ti_acs[ti_acs_legacy_read_slot(ac_id)].course;
 }
 
 /** Get vehicle ground speed (float).
@@ -938,7 +918,7 @@ static inline float acInfoGetCourse(uint8_t ac_id)
  */
 static inline float acInfoGetGspeed(uint8_t ac_id)
 {
-  return ti_acs[ti_acs_id[ac_id]].gspeed;
+  return ti_acs[ti_acs_legacy_read_slot(ac_id)].gspeed;
 }
 
 /** Get vehicle climb speed (float).
@@ -946,7 +926,7 @@ static inline float acInfoGetGspeed(uint8_t ac_id)
  */
 static inline float acInfoGetClimb(uint8_t ac_id)
 {
-  return ti_acs[ti_acs_id[ac_id]].climb;
+  return ti_acs[ti_acs_legacy_read_slot(ac_id)].climb;
 }
 
 /** Get time of week from latest message (ms).
@@ -954,7 +934,7 @@ static inline float acInfoGetClimb(uint8_t ac_id)
  */
 static inline uint32_t acInfoGetItow(uint8_t ac_id)
 {
-  return ti_acs[ti_acs_id[ac_id]].itow;
+  return ti_acs[ti_acs_legacy_read_slot(ac_id)].itow;
 }
 
 // Logging functions

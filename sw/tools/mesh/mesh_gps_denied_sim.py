@@ -13,25 +13,28 @@ counted as a collision and every modem has an explicit five-entry queue.
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import heapq
+import os
 import random
-from dataclasses import dataclass
-from typing import List, Sequence
+from dataclasses import dataclass, field
+from typing import List, Sequence, Set
 
 
 AC_IDS = (0, 3, 19, 42, 58, 77, 101, 125, 140, 168, 203, 222, 251)
 HOLDOVER_MS = 60_000
 ASYNC_MIN_MS = 16_000
 ASYNC_MAX_MS = 24_000
-FLOOD_SPAN_MS = 290
+FLOOD_SPAN_MS = 358
 MODEM_DRAIN_MS = 60
 MODEM_CACHE_SIZE = 5
-TASK_PERIOD_MS = 50
-TDMA_SLOT_MS = 375
-ACQUIRE_AND_ENTRY_MS = 2_000 + 3 * 12_000
-PEER_HOLD_MS = 2 * ASYNC_MAX_MS + 12_000
+TASK_PERIOD_MS = 10
+TDMA_SLOT_MS = 500
+SUPERFRAME_MS = 16_000
+ACQUIRE_AND_ENTRY_MS = 2_000 + 3 * SUPERFRAME_MS
+PEER_HOLD_MS = 2 * ASYNC_MAX_MS + SUPERFRAME_MS
 RECOVERY_EPOCH_FRAMES = 8
-RECOVERY_MIN_LEAD_FRAMES = PEER_HOLD_MS // 12_000 + 2
+RECOVERY_MIN_LEAD_FRAMES = PEER_HOLD_MS // SUPERFRAME_MS + 2
 
 GPS = 0
 HOLDOVER = 1
@@ -55,6 +58,8 @@ class Node:
     recovery_frame: int = 0
     first_holdover_ms: float = -1.0
     next_local_ms: float = 0.0
+    population_known: bool = False
+    seen_peers: Set[int] = field(default_factory=set)
 
     def random_u32(self) -> int:
         value = self.prng
@@ -73,12 +78,23 @@ class Node:
         self.self_until_ms = 0.0
         self.recovery_frame = 0
         self.first_holdover_ms = -1.0
+        self.population_known = False
+        self.seen_peers.clear()
 
     def schedule(self, true_ms: float) -> float:
         local_now = true_ms * self.drift
-        span = ASYNC_MAX_MS - ASYNC_MIN_MS + 1
+        minimum_ms = ASYNC_MIN_MS
+        maximum_ms = ASYNC_MAX_MS
+        if self.population_known:
+            if not self.seen_peers:
+                minimum_ms //= 4
+                maximum_ms //= 3
+            elif len(self.seen_peers) <= 3:
+                minimum_ms //= 2
+                maximum_ms -= maximum_ms // 3
+        span = maximum_ms - minimum_ms + 1
         offset = (self.random_u32() * span) >> 32
-        self.next_local_ms = local_now + ASYNC_MIN_MS + offset
+        self.next_local_ms = local_now + minimum_ms + offset
         true_deadline = self.next_local_ms / self.drift
         return ((true_deadline + TASK_PERIOD_MS - 1) // TASK_PERIOD_MS
                 * TASK_PERIOD_MS)
@@ -124,6 +140,10 @@ def simulate(seed: int, duration_s: int, stress_ppm: int,
         nodes.append(Node(ac_id,
                           1.0 + rng.uniform(-stress_ppm, stress_ppm) * 1e-6,
                           prng & 0xFFFFFFFF or 1))
+    for node in nodes:
+        node.population_known = True
+        node.seen_peers.update(peer.ac_id for peer in nodes
+                               if peer.ac_id != node.ac_id)
     end_ms = duration_s * 1000.0
     recovery_started_ms = duration_s * 400.0
     denied = set(range(denied_nodes))
@@ -206,6 +226,7 @@ def simulate(seed: int, duration_s: int, stress_ppm: int,
         nonlocal fallback_converged_ms
         node = nodes[index]
         if node.mode != ASYNC:
+            node.population_known = True
             node.mode = ASYNC
             node.announcement_required = True
             node.recovery_frame = 0
@@ -219,9 +240,10 @@ def simulate(seed: int, duration_s: int, stress_ppm: int,
         heapq.heappush(events, (target_ms, 5, index,
                                nodes[index].generation))
 
-    def receive(index: int, sender_mode: int, target: int,
+    def receive(index: int, sender: int, sender_mode: int, target: int,
                 now_ms: float) -> None:
         node = nodes[index]
+        node.seen_peers.add(sender)
         if sender_mode == HOLDOVER:
             if node.first_holdover_ms < 0.0:
                 node.first_holdover_ms = now_ms
@@ -311,7 +333,7 @@ def simulate(seed: int, duration_s: int, stress_ppm: int,
             if generation == cluster_generation and cluster_count == 1:
                 for receiver in range(len(nodes)):
                     if receiver != cluster_sender:
-                        receive(receiver, cluster_mode, cluster_target,
+                        receive(receiver, cluster_sender, cluster_mode, cluster_target,
                                 event_ms)
             continue
 
@@ -351,16 +373,28 @@ def simulate(seed: int, duration_s: int, stress_ppm: int,
                   final_modes)
 
 
+def _simulate_job(arguments: tuple[int, int, int, int]) -> Result:
+    """Unpack one process-pool job without relying on a non-picklable lambda."""
+    return simulate(*arguments)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seeds", type=int, default=100)
     parser.add_argument("--duration", type=int, default=3600,
                         help="simulated seconds per seed")
     parser.add_argument("--stress-ppm", type=int, default=100)
+    parser.add_argument("--workers", type=int,
+                        default=min(32, os.cpu_count() or 1),
+                        help="independent seed workers (default: up to 32)")
     parser.add_argument("--denied-nodes", type=int, default=len(AC_IDS),
                         choices=range(1, len(AC_IDS) + 1),
                         help="GPS-denied nodes; remaining peers retain TDMA")
     args = parser.parse_args(argv)
+    if args.seeds <= 0:
+        parser.error("--seeds must be positive")
+    if args.workers <= 0:
+        parser.error("--workers must be positive")
 
     total_tx = 0
     total_collisions = 0
@@ -370,21 +404,25 @@ def main(argv: Sequence[str] | None = None) -> int:
     worst_collision_rate = 0.0
     worst_convergence_ms = 0.0
     worst_recovery_ms = 0.0
-    for seed in range(1, args.seeds + 1):
-        result = simulate(seed, args.duration, args.stress_ppm,
-                          args.denied_nodes)
-        total_tx += result.transmissions
-        total_collisions += result.collisions
-        total_flushes += result.cache_flushes
-        total_stale_events += result.stale_events
-        total_unrecovered += sum(result.final_modes[1:])
-        worst_collision_rate = max(worst_collision_rate,
-                                   result.collisions
-                                   / max(result.transmissions, 1))
-        worst_convergence_ms = max(worst_convergence_ms,
-                                   result.fallback_converged_ms)
-        worst_recovery_ms = max(worst_recovery_ms,
-                                result.recovery_completed_ms)
+    worker_count = min(args.workers, args.seeds)
+    jobs = ((seed, args.duration, args.stress_ppm, args.denied_nodes)
+            for seed in range(1, args.seeds + 1))
+    with concurrent.futures.ProcessPoolExecutor(
+            max_workers=worker_count) as executor:
+        results = executor.map(_simulate_job, jobs)
+        for result in results:
+            total_tx += result.transmissions
+            total_collisions += result.collisions
+            total_flushes += result.cache_flushes
+            total_stale_events += result.stale_events
+            total_unrecovered += sum(result.final_modes[1:])
+            worst_collision_rate = max(worst_collision_rate,
+                                       result.collisions
+                                       / max(result.transmissions, 1))
+            worst_convergence_ms = max(worst_convergence_ms,
+                                       result.fallback_converged_ms)
+            worst_recovery_ms = max(worst_recovery_ms,
+                                    result.recovery_completed_ms)
 
     collision_rate = total_collisions / max(total_tx, 1)
     print("GPS-DENIED RANDOMIZED ACCESS")
@@ -405,7 +443,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     recovery_limit_ms = args.duration * 400.0 \
                                 + PEER_HOLD_MS \
                                 + (RECOVERY_MIN_LEAD_FRAMES
-                                    + RECOVERY_EPOCH_FRAMES) * 12_000 \
+                                    + RECOVERY_EPOCH_FRAMES) * SUPERFRAME_MS \
                         + ACQUIRE_AND_ENTRY_MS
     if (total_flushes != 0 or worst_collision_rate > 0.30
             or worst_convergence_ms > convergence_limit_ms

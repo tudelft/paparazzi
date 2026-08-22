@@ -1,19 +1,46 @@
 # Self-Organising E52 LoRa Mesh for Paparazzi UAV
 
-> **Flighted design:** this document describes the current GPS/holdover TDMA
-> transport. Phase 1 investigation of a GPS-independent coded transport is
+> **Flighted design:** this document describes the current GNSS-assisted TDMA
+> transport with clock holdover and GNSS-independent randomized fallback.
+> Phase 1 investigation of a fully asynchronous coded transport is
 > documented separately in
 > [Asynchronous Coded Mesh for Paparazzi UAV](asynchronous_coded_mesh.md).
 > The coded design is currently a simulator and codec experiment; it must not
 > be confused with deployed airborne behavior.
 
+## Start Here
+
+The flighted system has two cooperating layers. Paparazzi decides **when an
+aircraft may originate** a compact `MESH_STATE` packet. The E52 radio decides
+**how that packet is forwarded** across the broadcast mesh. The operator does
+not choose either layer: all nodes use one radio configuration, while aircraft
+automatically select solo, common, or dense telemetry.
+
+`MESH_STATE` is the primary peer-presence and motion stream. `GPS_LLA` is a
+slower full GPS report for the GCS. The implementation is divided as follows:
+
+| Concern | Source of truth |
+| --- | --- |
+| Airborne MAC, packet encoding, traffic storage | [`traffic_info.c`](../../sw/airborne/modules/multi/traffic_info.c) |
+| Public traffic and TCAS API | [`traffic_info.h`](../../sw/airborne/modules/multi/traffic_info.h) |
+| TCAS freshness and fail-closed policy | [`tcas.c`](../../sw/airborne/modules/multi/tcas.c) |
+| GPS, holdover, fallback, and recovery policy | [`traffic_info_mesh_clock.h`](../../sw/airborne/modules/multi/traffic_info_mesh_clock.h) |
+| Radio provisioning | [`e52_provision.py`](../../sw/tools/mesh/e52_provision.py) |
+| Capacity and command reserve | [`mesh_phase_optimizer.py`](../../sw/tools/mesh/mesh_phase_optimizer.py) |
+| Join, leave, and collision recovery | [`mesh_slot_sim.py`](../../sw/tools/mesh/mesh_slot_sim.py) |
+
+Useful background includes the included
+[E52 user manual](E52-xxxNWxxS_UserManual_EN_v1.4-4.pdf), the
+[PPRZLink developer guide](https://paparazzi-uav.readthedocs.io/en/latest/developer_guide/pprzlink.html),
+and [ITU-R M.1371](https://www.itu.int/rec/R-REC-M.1371/en) for the
+self-organising TDMA ideas behind slot observation and timed leases.
+
 **Radio:** EByte E52-400NW22S, channel 24 (434.125 MHz), rate 0
 (62.5 kbit/s), 460800 baud UART, 10 dBm EIRP, 0 dBi antennas.
 
-**Fleet:** nine aircraft common, up to sixteen aircraft as the normal design
-target, with a theoretical 64-aircraft graceful-degradation requirement. The
-current flighted TDMA profile below remains validated for its stated 13-peer
-envelope and must be requalified before its fleet limit changes. The ground
+**Fleet:** nine aircraft are common and sixteen aircraft are the normal
+maximum. Sixty-four aircraft is an addressability and graceful-degradation
+research target, not a real-time TCAS claim. The ground
 station is AC_ID 0 and may move on the ground. Aircraft use distinct arbitrary
 AC_IDs in 1..254; ID 255 remains reserved for broadcast and internal sentinels.
 No ordering or sequential numbering is assumed.
@@ -21,10 +48,10 @@ No ordering or sequential numbering is assumed.
 **Priority:** fault tolerance and multi-hop coverage first, then the highest
 state update rate that fits the E52 channel and five-frame transmit cache.
 
-**Modeled and build-validated envelope:** 13 routing peers use the common
-profile at 38.3% modeled channel utilisation. Seventeen peers (16 aircraft and
-GCS) automatically use the dense profile at 38.9%. Both use 32 self-organised
-slots, 28 steady fair-share slots, a 12 s superframe, and a 1.5 s `MESH_STATE`
+**Modeled envelope:** 13 routing peers use the common fixed-wing profile at
+57.7% modeled channel utilisation. Seventeen peers (16 aircraft and GCS)
+automatically use the dense profile at 59.4%. Both use 32 self-organised
+slots, 25 steady fair-share slots, a 16 s superframe, and a 2 s `MESH_STATE`
 scheduler ceiling. These are software acceptance baselines, not substitutes
 for multi-modem bench testing or flight qualification.
 
@@ -40,8 +67,9 @@ battery swap, disappear, or rejoin without changing any other modem.
 
 This distinction matters:
 
-* **Paparazzi decides when a node originates a new frame.** `traffic_info.c`
-  uses GPS-synchronised self-organising TDMA and modem-cache back-pressure.
+* **Paparazzi decides when a node originates a new frame.** [`traffic_info.c`](../../sw/airborne/modules/multi/traffic_info.c)
+  uses GNSS-synchronised self-organising TDMA, bounded clock holdover,
+  GNSS-independent randomized fallback, and modem-cache back-pressure.
 * **The E52 decides how the frame is forwarded.** In broadcast mode
   (`AT+OPTION=3`) every routing modem that first receives a new frame forwards
   it once. Its duplicate filter prevents endless forwarding.
@@ -125,26 +153,33 @@ designed around the flood cost and cache behavior, not around the nominal
 | --- | ---: |
 | Nodes / routing nodes | 13 / 13 |
 | Flood tax | 13 transmissions |
-| Channel utilisation | 38.3% (40% ceiling) |
+| Modeled channel utilisation | 57.7% (operator ceiling 60%) |
 | Flood span, mean + 3 sigma | 290.0 ms |
-| Slot length | 375.0 ms (+29%) |
+| Flood span, absolute modeled maximum | 357.6 ms |
+| Physical slot / guarded usable gap | 500.0 / 478.0 ms (+34%) |
 | Peak E52 cache depth | 1 of 5 |
 | Cache overflow events | 0 |
 
-The 40% limit here is an engineering ceiling on aggregate shared-channel
-occupancy, chosen to retain contention and model-error headroom. It is not a
-statement of legal transmitter duty cycle. The optimizer separately estimates
-the busiest all-router radio at 3.985% transmit duty for the full telemetry
-mix. Applicable national limits on frequency, bandwidth, power, and duty cycle
-remain authoritative and must be checked for the flight location.
+The E52 documentation specifies no safe aggregate channel-utilisation limit,
+and no hardware measurements establish one for this network. Utilisation is
+therefore reported rather than compared with a default pass/fail percentage.
+The optimizer accepts an explicit `--utilisation` ceiling when an operator has
+a measured limit for a particular deployment. The actual software acceptance
+checks are that a flood fits its slot, generated messages do not burst together,
+the modeled five-frame cache does not overflow, and slot collisions remain
+bounded in the churn simulation. Applicable national limits on frequency,
+bandwidth, power, and duty cycle remain separate and must be checked for the
+flight location.
 
 The optimizer's deliberately unscheduled control experiment reaches 17 cached
 frames and overflows. Phase placement and TDMA are safety mechanisms, not
 cosmetic tuning.
 
-The 375 ms slot is much longer than one 6.86 ms radio transmission because it
-contains the complete multi-hop forwarding episode, CSMA delay, and statistical
-headroom:
+The former 375 ms slot was only the arithmetic result of dividing a 12 s
+superframe into 32 physical slots; it was not derived independently from E52
+flood latency. For the common 13-node model, one 30-byte `MESH_STATE`
+transmission is 7.50 ms and the modeled flood spans are 227.6 ms mean, 290.0 ms
+mean plus three standard deviations, and 357.6 ms absolute maximum.
 
 ```mermaid
 flowchart LR
@@ -153,9 +188,13 @@ flowchart LR
   Q --> N["Next TDMA origination"]
 ```
 
-The optimizer's mean-plus-three-sigma flood span is 290.0 ms. A 375 ms slot
-leaves 85.0 ms, or 29%, beyond that modeled bound. This is statistical
-engineering headroom, not a hard proof that an RF flood can never run longer.
+The dense 17-node model gives 369.0 ms mean plus three standard deviations and
+467.6 ms absolute maximum. The delivered 500 ms slot reserves 10 ms for the
+100 Hz gate and 12 ms for clock skew, leaving 478 ms and a 10.4 ms margin over
+that absolute modeled bound. Both calculations still assume
+that every relay adds one independent uniform 0..20 ms CSMA delay and that the
+inferred 13-byte E52 mesh header is correct. Hardware flood-latency measurement
+is required before treating the result as a physical guarantee.
 
 ---
 
@@ -163,7 +202,7 @@ engineering headroom, not a hard proof that an RF flood can never run longer.
 
 ### 2.1 Self-organising slots
 
-The superframe is 12 s with 32 slots of 375 ms. Slots are not derived from
+The superframe is 16 s with 32 slots of 500 ms. Slots are not derived from
 AC_ID. A joining peer:
 
 1. listens for three complete superframes;
@@ -201,25 +240,34 @@ stateDiagram-v2
 ```
 
 There is no reservation packet. Each receiver infers the sender's slot from
-GPS-aligned or bounded-holdover arrival time. Listen-before-claim avoids cold-start over-allocation;
-round-robin expansion prevents two nodes from grabbing the same apparently
-free slot in one superframe; leases eventually break collisions that are
-otherwise invisible because collided frames cannot be decoded.
+GNSS-aligned or bounded-holdover arrival time. Listen-before-claim avoids
+cold-start over-allocation. Round-robin expansion prevents two nodes from
+grabbing the same apparently free slot in one superframe. Timed leases break
+collisions that are otherwise invisible because collided frames cannot be
+decoded.
 
-When GPS time disappears, the node retains the last GPS-to-monotonic anchor for
+When GNSS time disappears, the node retains the last GNSS-to-monotonic anchor for
 up to 60 seconds instead of jumping to boot-relative time. The primary
 reservation and absolute superframe phase therefore survive a short outage;
-position-invalid policy contracts opportunistic slots. The bound
+position-invalid policy contracts opportunistic slots. This requires no RTC:
+the autopilot's monotonic clock carries the startup GNSS epoch while power
+remains applied. The bound
 assumes at most 100 ppm error per node: two worst-case clocks separate by about
-12 ms in one minute, leaving margin inside the 375 ms slot after the modeled
-290.0 ms flood span and 50 ms scheduler sampling interval.
+12 ms in one minute. That skew and the 50 ms scheduler sampling interval fit
+inside the common 13-node statistical budget, but not the dense 17-node budget.
 
 One superframe before that bound, the denied node and peers which hear its
 `HOLDOVER` advertisements clear slot authority and enter `MESH_CLOCK_ASYNC`.
 This fleet-wide downgrade prevents synchronized and asynchronous MACs from
-competing indefinitely during partial GPS loss. Each peer then originates one
-frame at an independently randomized 16-24 second interval; asynchronous frames
-remain valid traffic but never reserve a TDMA slot. GPS-ready fallback peers
+competing indefinitely during partial GNSS loss. Each peer then originates
+from its monotonic local clock with randomized CSMA timing. A trusted
+pre-outage membership view selects 4-8 seconds for a solo aircraft, 8-16
+seconds for two to four aircraft, and 16-24 seconds for five or more aircraft.
+A node that rebooted without synchronized membership always uses the
+conservative 16-24 second range. Learned population never decreases during an
+outage because packet loss is not proof that a peer departed. Asynchronous
+frames remain valid presence traffic but never reserve a TDMA slot. GNSS-ready
+fallback peers
 advertise `RECOVERY` without extending the denied-peer lease. `RECOVERY` carries
 a deterministic absolute GPS-frame target: every peer selects the same next
 eight-frame epoch at least seven frames ahead and adopts any later target it
@@ -234,31 +282,31 @@ them.
 All radios route continuously at the E52 layer. Paparazzi adapts only the rate
 at which a node originates its own state:
 
-* a healthy airborne node with GPS or bounded holdover and valid position
+* a healthy airborne node with GNSS or bounded holdover and valid position
   receives its fair share of available slots;
 * a landed or position-invalid node keeps one heartbeat slot;
-* a node without bounded network time uses low-rate randomized access instead
-  of pretending that boot-relative slots are synchronized;
+* a node without bounded network time uses population-aware randomized access
+  instead of pretending that boot-relative slots are synchronized;
 * HOME, emergency, failsafe, and low-battery states request one extra slot;
 * when the estimated modem cache reaches the high-water mark, the node gives
   up one opportunistic slot before the E52 can overflow;
 * when aircraft leave, healthy peers gradually claim quiet slots; when they
   return, peers contract immediately.
 
-Of the 32 physical slots, 28 are distributed as steady-state fair share and
-four remain as headroom for joins, partitions merging, and temporarily
-different membership views. For $S=28$ fair-share slots and $N$ live nodes,
+Of the 32 physical slots, 30 are distributed as steady-state fair share and
+two remain as headroom for joins, partitions merging, and temporarily
+different membership views. For $S=30$ fair-share slots and $N$ live nodes,
 each healthy node receives a baseline of
 $q=\lfloor S/N\rfloor$ slots. The first $r=S\bmod N$ sorted AC_ID ranks receive
 one remainder slot, so quotas differ by at most one and sum to all available
 slots. The winner window advances by one rank every 81 superframes, about
 16.2 minutes, giving long-term fairness without fleet-wide claim churn.
 
-At maximum population, two of the 13 peers are entitled to three slots and
-eleven to two slots per 12 s. The average entitlement is therefore
-$28/(13\times12)=0.179$ Hz instead of the floor-only 0.167 Hz. At the nominal
-nine-peer population, one peer receives four slots and eight receive three,
-for an average entitlement of 0.259 Hz. Collision-healing leases and policy contraction
+At 13 peers, four are entitled to three slots and nine to two slots per 16 s.
+The average entitlement is therefore $30/(13\times16)=0.144$ Hz instead of the
+floor-only 0.125 Hz. At the nominal nine-peer population, three peers receive
+four slots and six receive three, for an average entitlement of 0.208 Hz.
+Collision-healing leases and policy contraction
 can make observed rates lower than these steady-state entitlements. Sparse
 fleets may now use up to `MESH_TDMA_MAX_REUSE=8` slots. The cap does not add
 slots or shorten them: it lets fewer live peers use slots that would otherwise
@@ -279,31 +327,32 @@ measured rates are lower than the mathematical entitlement. This revision
 does not weaken those leases merely to report a higher number. Emergency state
 still receives priority within the same bounded channel budget.
 
-The 1.5 s telemetry period is an enabling ceiling, not a promise that every
-node transmits every 1.5 s. Actual emission remains controlled by live slot
+The 2 s telemetry period is an enabling ceiling, not a promise that every
+node transmits every 2 s. Actual emission remains controlled by live slot
 ownership, position validity, synchronization state, and cache pressure.
 
 ### 2.3 Time and lease constants
 
 | Parameter | Value | Reason |
 | --- | ---: | --- |
-| `MESH_TDMA_SUPERFRAME_MS` | 12000 | 32 flood-safe slots |
+| `MESH_TDMA_SUPERFRAME_MS` | 16000 | 32 absolute-model flood-safe slots |
 | `MESH_TDMA_NB_SLOTS` | 32 | 13 peers plus churn headroom |
-| `MESH_TDMA_FAIR_SLOTS` | 28 | steady quota; four slots absorb membership disagreement |
+| `MESH_TDMA_FAIR_SLOTS` | 25 | steady quota; seven slots absorb membership disagreement |
 | `MESH_TDMA_MAX_REUSE` | 8 | bounded sparse-fleet acceleration |
 | `MESH_ENTRY_FRAMES` | 3 | listen before transmitting |
 | Secondary lease | 6-13 frames | break secondary collisions |
-| Primary lease | 10-19 frames | preserve a 2-4 minute recovery window with a 12 s frame |
+| Primary lease | 120-239 frames | avoid healthy-fleet churn while still breaking silent primary collisions |
 | Slot age | 4 frames | tolerate loss, reclaim departed nodes |
 | Remainder epoch | 81 frames | rotate one rank after ageing and serialized expansion settle |
 | Holdover | 60 s | preserve GPS epoch while worst-case relative drift stays bounded |
-| GPS acquisition | 2 s | reject fix flapping before entering TDMA |
-| Asynchronous interval | 16-24 s | bounded degraded-mode load below the track-drop horizon |
+| GNSS acquisition | 2 s | reject fix flapping before entering TDMA |
+| Position holdover | 16 s | allow one superframe of globalized estimator output, then fail closed |
+| Asynchronous interval | 4-8 / 8-16 / 16-24 s | solo / 2-4 aircraft / larger or unknown fleet |
 | Recovery epoch | 8 frames | deterministic common target beyond all fallback leases |
-| Cache high water | 3 of 5 | leave two E52 cache entries as hard margin |
+| Cache high water | 3 of 5 | local-only admission guard; reserve two entries for hidden relay/telemetry traffic |
 
 The static assert in `traffic_info.c` forces the generated `MESH_STATE` period
-to equal `superframe / max reuse` (12 / 8 = 1.5 s) in either supported telemetry
+to equal `superframe / max reuse` (16 / 8 = 2 s) in either supported telemetry
 mode layout. A mismatched telemetry file therefore fails the aircraft build
 instead of failing in flight.
 
@@ -320,7 +369,7 @@ then select one of three generated telemetry modes from observed peers:
 
 | Mode | Automatic condition | Purpose |
 | --- | --- | --- |
-| `mesh_solo` | GCS contact, no aircraft peer, 12 s quiet | 5 Hz direct-link state for the common <=1 km fallback |
+| `mesh_solo` | GCS contact, no aircraft peer, 16 s quiet | 5 Hz direct-link state for the common <=1 km fallback |
 | `mesh` | up to 11 observed aircraft peers | normal 1-12 aircraft operation |
 | `mesh_dense` | enter at 12 peers, leave at 10 | bounded 13-16 aircraft operation with hysteresis |
 
@@ -342,7 +391,7 @@ can answer two questions locally:
 
 The airborne selector chooses `mesh_solo` when the GCS has recently pinged this
 aircraft, no recent PING targeted another aircraft, no peer owns a live mesh
-slot, and no `MESH_STATE` peer frame has been received for 12 seconds. A
+slot, and no `MESH_STATE` peer frame has been received for 16 seconds. A
 synchronized mesh clock is deliberately not required for this one-aircraft
 case: there is no peer TDMA schedule to coordinate, and requiring GPS time would
 leave an indoor or GPS-denied bench test permanently on sparse telemetry. The
@@ -517,16 +566,16 @@ The exact delivered common and dense gates are:
 ```bash
 python3 sw/tools/mesh/mesh_phase_optimizer.py \
   --ac-ids 0,3,19,42,58,77,101,125,140,168,203,222,251 \
-  --relay-nodes 13 --nb-slots 32 --fair-slots 28 \
-  --mesh-period 1.5 --superframe 12 --max-reuse 8 \
-  --period-scale 4
+  --relay-nodes 13 --nb-slots 32 --fair-slots 25 \
+  --mesh-period 2 --superframe 16 --max-reuse 8 \
+  --tdma-gate-frequency 100 --period-scale 1.5 --utilisation 0.60
 
 python3 sw/tools/mesh/mesh_phase_optimizer.py \
-  --ac-ids 0,3,19,42,58,77,101,125,140,168,203,222,231,239,247,251,254 \
-  --relay-nodes 17 --nb-slots 32 --fair-slots 28 \
-  --mesh-period 1.5 --superframe 12 --max-reuse 8 \
-  --period-scale 24 \
-  --period GPS_LLA=128 --period ALIVE=256 --period WP_MOVED=512
+  --ac-ids 0,3,19,42,58,77,101,125,140,168,203,222,231,237,241,247,251 \
+  --relay-nodes 17 --nb-slots 32 --fair-slots 25 \
+  --mesh-period 2 --superframe 16 --max-reuse 8 \
+  --tdma-gate-frequency 100 --period-scale 3 --period FBW_STATUS=96 \
+  --utilisation 0.60
 ```
 
 The AC_ID list is deliberately irregular. Its length drives population; the
@@ -648,10 +697,11 @@ and the active `conf/messages.xml` resolves to the mesh definition.
 
 No parallel estimator or flight-mode model was invented. `traffic_info` uses:
 
-* current `gps.fix` and `gps_tow_from_sys_ticks()` for GPS time; configured
+* current `gps.fix` and `gps_tow_from_sys_ticks()` for GNSS time; configured
   fix-grace time is deliberately excluded from clock authority;
 * an anchored monotonic clock for bounded holdover;
-* `state.pos_status` and `stateGetPositionLla_i()` for position validity/state;
+* `stateIsGlobalCoordinateValid()` and `stateGetPositionLla_i()` for the
+  estimator's position in the initialized global frame;
 * `stateGetHorizontalSpeedDir_f()`, `stateGetHorizontalSpeedNorm_f()`, and
   `stateGetSpeedEnu_f()` for motion;
 * `autopilot_in_flight()`, `autopilot_get_mode()`, and
@@ -662,21 +712,40 @@ No parallel estimator or flight-mode model was invented. `traffic_info` uses:
 All mesh storage is static. There is no heap allocation, recursion, or
 variable-length array in the new path.
 
-Clock validity and kinematic validity are separate. Losing GPS time does not
-immediately end TDMA because holdover preserves the epoch, but the current
-position contract still requires a valid 3D GPS fix. A future vision, UWB, or
-SLAM source may set position valid only after it provides a globally shared
-frame and bounded uncertainty; local coordinates must never be encoded as LLA.
+Clock validity and kinematic validity are separate. Losing GNSS does not
+immediately end TDMA because holdover preserves the epoch. For 16 seconds after
+the last observed 3D fix, `MESH_STATE` may continue carrying the estimator's
+globalized position and local velocity. This permits short inertial, airspeed,
+magnetometer, and barometer dead-reckoning gaps without freezing coordinates.
+After that configurable grace, the valid-position flag clears automatically;
+the packet still carries identity, flight state, and clock mode, while TCAS
+refuses the stale geometry. Increase `MESH_POSITION_HOLDOVER_MS` only from
+measured estimator error bounds, and never beyond the 60-second clock holdover.
+An estimator that has never acquired a shared global origin cannot emit valid
+mesh position. Vision, UWB, or SLAM may be used only when it supplies that
+shared frame and bounded uncertainty; unrelated local coordinates must never
+be encoded as LLA.
 
 ### 5.3 Hardware back-pressure
 
 `mesh_local_tx_in_flight()` is a leaky-bucket estimate of locally submitted
 frames which may not yet have drained. `traffic_info_mesh_periodic()` refuses a
-new origination at depth three and increments `throttled_count`; state-aware
-reuse also contracts by one. E52-internal relay frames are not observable on
-the UART API, so this is local admission control, not a physical cache-depth
-measurement. Worst-case relay load remains an optimizer and HIL acceptance
-constraint.
+new `MESH_STATE` origination at depth three; state-aware reuse also contracts by
+one. E52-internal relay frames and ordinary generated telemetry are not included
+in that estimate, and `AT+BACK=0` intentionally suppresses modem status text on
+the flight UART. This is therefore local admission control, not a physical
+cache-depth measurement. The separate optimizer acceptance ceiling of three
+applies to modeled total depth and reserves two of the five hardware entries.
+The E52 manual states that an overflow forcibly clears every buffered frame.
+
+Raising either value does not add airtime or TDMA opportunities. In the dense
+17-peer schedule, sweeping the optimizer acceptance ceiling from one through
+five leaves the same modeled peak depth of one, 59.4% channel utilization, and
+zero overflows. A higher airborne high-water mark can matter only during an
+unexpected local burst, precisely when unobservable relay traffic makes the
+remaining margin valuable. Change it only after bench instrumentation shows
+total modem occupancy and proves a repeatable delivery benefit under delayed
+UART service, clustered relays, commands, and topology churn.
 
 ### 5.4 Predicted traffic snapshots and TCAS freshness
 
@@ -691,11 +760,11 @@ accumulates drift in the traffic table. Invalid-position heartbeats remain
 visible to TDMA membership but invalidate old kinematics immediately. Legacy
 traffic records keep their existing behavior and are never mesh-predicted.
 
-TCAS bounds prediction and fresh decision-making to `TCAS_TAU_TA`, currently
-4 s on the proposed Talon. After that interval an existing TA or RA and its
+TCAS bounds prediction and fresh decision-making to `TCAS_TAU_TA`, configured
+by the active airframe. After that interval an existing TA or RA and its
 altitude target are held, but no stale state opens, closes, or changes an
 advisory. After two complete superframes plus one slot and one 1 Hz task
-interval, currently 25.375 s, the track becomes `TCAS_UNAVAILABLE`; data loss
+interval, currently 33.5 s, the track becomes `TCAS_UNAVAILABLE`; data loss
 is never reported as geometric resolution or `TCAS_NO_ALARM`. Clock arithmetic uses local
 monotonic age, while TDMA epochs use GPS week plus TOW. A synchronization
 change or a GPS-to-monotonic phase correction over 10 ms clears learned slot
@@ -718,14 +787,16 @@ change:
 # 1. Channel, flood span, phases, and cache
 python3 sw/tools/mesh/mesh_phase_optimizer.py \
   --ac-ids 0,3,19,42,58,77,101,125,140,168,203,222,251 \
-  --relay-nodes 13 --nb-slots 32 --fair-slots 28 \
-  --mesh-period 1.5 --superframe 12 --max-reuse 8 --period-scale 4
+  --relay-nodes 13 --nb-slots 32 --fair-slots 25 \
+  --mesh-period 2 --superframe 16 --max-reuse 8 \
+  --tdma-gate-frequency 100 --period-scale 1.5 --utilisation 0.60
 
 python3 sw/tools/mesh/mesh_phase_optimizer.py \
-  --ac-ids 0,3,19,42,58,77,101,125,140,168,203,222,231,239,247,251,254 \
-  --relay-nodes 17 --nb-slots 32 --fair-slots 28 \
-  --mesh-period 1.5 --superframe 12 --max-reuse 8 --period-scale 24 \
-  --period GPS_LLA=128 --period ALIVE=256 --period WP_MOVED=512
+  --ac-ids 0,3,19,42,58,77,101,125,140,168,203,222,231,237,241,247,251 \
+  --relay-nodes 17 --nb-slots 32 --fair-slots 25 \
+  --mesh-period 2 --superframe 16 --max-reuse 8 \
+  --tdma-gate-frequency 100 --period-scale 3 --period FBW_STATUS=96 \
+  --utilisation 0.60
 
 # 2. Dynamic topology, fair quotas, clock steps, and state-aware contraction
 for seed in 1 2 3 4 5 6 7 8; do
@@ -741,9 +812,9 @@ python3 -m unittest sw/tools/mesh/test_mesh_phase_optimizer.py
 
 # 2c. Independent clocks, bounded holdover, and randomized fallback
 python3 sw/tools/mesh/mesh_gps_denied_sim.py \
-  --seeds 100 --duration 3600 --stress-ppm 100 --denied-nodes 13
+  --seeds 100 --workers 32 --duration 3600 --stress-ppm 100 --denied-nodes 13
 python3 sw/tools/mesh/mesh_gps_denied_sim.py \
-  --seeds 100 --duration 3600 --stress-ppm 100 --denied-nodes 6
+  --seeds 100 --workers 32 --duration 3600 --stress-ppm 100 --denied-nodes 6
 
 # 3. RF geometry and moving multi-hop delivery
 python3 sw/tools/mesh/mesh_link_budget.py \
@@ -763,6 +834,15 @@ python3 sw/tools/mesh/e52_provision.py --ac-id 0 --dry-run
 python3 sw/tools/mesh/e52_provision.py --ac-id 251 --dry-run
 ```
 
+The one-hour, 100-seed gate with 13 denied nodes and +/-100 ppm oscillator
+error produced 505720 originations, 6.915% collisions, no modem-cache flushes,
+and no unrecovered nodes. Denying six of 13 nodes produced 6.804% collisions,
+48.358 s worst fallback convergence, no cache flushes, and no unrecovered
+nodes. Sparse-fleet runs averaged 5682, 2864, 1489, and 684 originations per
+node per hour for one, two, four, and nine nodes respectively. These are model
+results, not RF qualification; rerun the commands after changing any interval,
+flood span, clock, or recovery constant.
+
 The slot simulator also checks 32-bit frame rollover, GPS-week rollover,
 same-frame and next-frame phase corrections, and GPS synchronization loss and
 reacquisition before each churn run.
@@ -772,14 +852,13 @@ different orders, remove up to six aircraft modems, restore them, and confirm:
 
 * all present AC_IDs continue updating;
 * the GCS (AC_ID 0) can transmit and route;
-* `throttled_count` remains near zero in steady state;
 * no modem returns `OUT OF CACHE`;
 * removing any one routing node does not partition the remaining connected
   topology;
 * modem readback matches the provisioning profile.
 
 Record packet timestamps, source AC_ID, duplicate count where observable,
-end-to-end latency, modem errors, and `throttled_count`. A pass/fail result
+end-to-end latency, and modem errors. A pass/fail result
 without these traces cannot distinguish RF loss, a slot collision, UART loss,
 cache flushing, or a topology partition.
 
@@ -793,8 +872,8 @@ cache flushing, or a topology partition.
 2. **Connectivity still depends on geometry.** All-router capability cannot
    bridge an empty 17 km gap. The mission planner must keep a connected chain
    of aircraft with adequate one-hop margin.
-3. **Dense-fleet update rate is deliberately lower.** At 16 aircraft the 28
-  fair slots provide one or two `MESH_STATE` updates per aircraft per 12 s.
+3. **Dense-fleet update rate is deliberately lower.** At 16 aircraft the 30
+  fair slots provide one or two `MESH_STATE` updates per aircraft per 16 s.
   TCAS fails closed when a track exceeds its prediction horizon; this profile
   does not claim uninterrupted 16-aircraft collision-avoidance coverage.
 4. **The GCS command tail is unslotted.** Commands and adaptive PINGs remain
@@ -803,13 +882,21 @@ cache flushing, or a topology partition.
 5. **The RF model is terrain-agnostic.** The 10 dB fade reserve covers generic
    shadowing, not a ridge, building, or forest wall. Survey the real site.
 6. **All nodes must share protocol constants and message layout.** The clock
-  clock and recovery fields change `MESH_STATE` to 30 bytes on wire. Mixed old/new firmware
+  and recovery fields make `MESH_STATE` 30 bytes on wire. Mixed firmware
   can decode shifted fields incorrectly, so rebuild and deploy the whole fleet
   atomically. A mixed 16-slot/32-slot fleet will also collide.
 7. **Asynchronous fallback is degraded operation.** It preserves low-rate
   discovery without false TDMA authority; it does not guarantee collision-free
   delivery. The 100-seed software gate must be followed by thirteen-modem HIL.
-8. **Sixty-four aircraft is graceful-degradation research scope.** AC_IDs and
+8. **No RTC is required, but oscillator drift remains bounded.** Continuous
+  power lets local monotonic time preserve the startup GNSS epoch for short
+  holdover and drive randomized access indefinitely. It cannot preserve
+  collision-safe TDMA phase indefinitely without oscillator calibration.
+9. **Dead reckoning is deliberately time-limited.** IMU, airspeed,
+  magnetometer, and barometer inputs can bridge a short GNSS outage, but their
+  unbounded drift cannot support indefinite TCAS geometry. Presence and command
+  transport continue after the valid-position flag expires.
+10. **Sixty-four aircraft is graceful-degradation research scope.** AC_IDs and
   software membership support the range, but the present 32-slot all-router
   channel cannot provide collision-free 64-aircraft state or real-time TCAS.
   Do not advertise 64-aircraft flight safety from this profile.
@@ -838,14 +925,13 @@ operator.
 
 The supplied fixed-wing profiles use the generated `Ap` process. The dedicated
 `openuas_mesh_rotorcraft.xml` profile uses `Main` and native `ROTORCRAFT_FP`, so
-the selector itself is firmware-neutral. Configurations without both mode names
-continue using their existing telemetry unchanged.
+the selector itself is firmware-neutral. The delivered mesh profiles define
+all three modes. Downstream two-mode profiles remain compatible and continue
+using common mesh telemetry where a specialized mode is absent.
 
-With `digital_cam_uart` disabled in the Talon airframe, clean `ap` and `nps`
-targets build successfully. Validation includes fixed-wing and rotorcraft builds,
-pure mode-policy tests, ordinary mesh churn/GPS-loss simulations, single-aircraft
-rate measurements, and a real two-aircraft fallback run through the unchanged
-OCaml UDP link.
+Validation includes fixed-wing and rotorcraft builds, pure mode-policy tests,
+mesh churn and GPS-loss simulations, single-aircraft rate measurements, and a
+two-aircraft fallback run through the standard OCaml link.
 
 ---
 

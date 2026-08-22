@@ -1903,7 +1903,21 @@
       <field name="mz"    type="float" />
     </message>
 
-    <!-- 194 is free -->
+    <message name="MESH_STATUS" id="194">
+      <description>
+        Ground-local projection of a received datalink MESH_STATE. The link
+        process publishes this on the telemetry Ivy bus only; aircraft never
+        transmit this message. Raw flags and clock mode preserve mesh validity
+        semantics without fabricating GPS fix or time fields.
+      </description>
+      <field name="flags"           type="uint8"/>
+      <field name="clock_mode"      type="uint8" values="GPS|HOLDOVER|ASYNC|RECOVERY"/>
+      <field name="lat"             type="int32"  unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="lon"             type="int32"  unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="alt"             type="int32"  unit="cm" alt_unit="m" alt_unit_coef="0.01">height above the WGS84 ellipsoid</field>
+      <field name="multiplex_speed" type="uint32"/>
+      <field name="recovery_frame"  type="uint32"/>
+    </message>
     <!-- 195 is free -->
 
     <message name="AIRSPEED_WIND_ESTIMATOR_EKF" id="196">
@@ -3117,14 +3131,15 @@
                      range -256 .. +255 dm/s (-25.6 .. +25.5 m/s)
 
         flags bit layout:
-          bits 2-0   autopilot mode (0=MANUAL 1=AUTO1 2=AUTO2 3=HOME 4=NOGPS
-                     5=FAILSAFE 6=KILL 7=OTHER)
+          bits 2-0   unified mode (0=MANUAL 1=ASSISTED 2=AUTO 3=HOME 4=NOGPS
+                     5=FAILSAFE 6=KILL 7=UNKNOWN)
           bit  3     vehicle class (0 = fixedwing, 1 = rotorcraft/hybrid)
-          bit  4     position valid (3D GPS fix and INS converged)
-          bit  5     airborne (takeoff detected / motors armed)
-          bit  6     low battery or other non fatal system alert
+          bit  4     kinematics valid (recent 3D GNSS fix, or bounded estimator
+                     holdover, plus finite global position and local velocity)
+          bit  5     airborne according to autopilot_in_flight()
+          bit  6     low battery when LOW_BAT_LEVEL is configured
           bit  7     emergency: this vehicle is not following its flight plan
-                     (kill, failsafe, geofence) - give it right of way
+                     (NOGPS, FAILSAFE, or KILL) - give it right of way
       </description>
       <field name="flags"           type="uint8">see description</field>
       <field name="clock_mode"      type="uint8" values="GPS|HOLDOVER|ASYNC|RECOVERY">transmission timing authority; ASYNC means GPS denied, RECOVERY means GPS ready but fleet fallback remains active</field>

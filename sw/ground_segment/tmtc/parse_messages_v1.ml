@@ -127,6 +127,26 @@ let pos_frac = 2. ** 8.
 let speed_frac = 2. ** 19.
 let angle_frac = 2. ** 12.
 let gps_frac = 1e7
+let mesh_pos_valid = 0x10
+
+let mesh_kinematics = fun values ->
+  let flags = PprzLink.int_assoc "flags" values in
+  if flags land mesh_pos_valid = 0 then None else
+    let lat_i = PprzLink.int32_assoc "lat" values
+    and lon_i = PprzLink.int32_assoc "lon" values
+    and alt_i = PprzLink.int32_assoc "alt" values
+    and packed = PprzLink.uint32_assoc "multiplex_speed" values in
+    let lat = Int32.to_float lat_i /. gps_frac
+    and lon = Int32.to_float lon_i /. gps_frac
+    and course = Int64.to_int (Int64.logand (Int64.shift_right_logical packed 20) 0xfffL)
+    and gspeed = Int64.to_int (Int64.logand (Int64.shift_right_logical packed 9) 0x7ffL)
+    and climb_raw = Int64.to_int (Int64.logand packed 0x1ffL) in
+    if lat <= -90. || lat >= 90. || lon < -180. || lon >= 180. || course >= 3600 then None
+    else
+      let climb = if climb_raw >= 0x100 then climb_raw - 0x200 else climb_raw in
+      Some (LL.make_geo_deg lat lon, Int32.to_float alt_i /. 100.,
+            float gspeed /. 10., (Deg>>Rad) (float course /. 10.),
+            float climb /. 10.)
 
 let geo_hmsl_of_ltp = fun ned nav_ref d_hmsl ->
   match nav_ref with
@@ -159,9 +179,26 @@ let log_and_parse = fun ac_name (a:Aircraft_server.aircraft) msg values ->
   and ivalue = fun x -> ivalue (value x)
   (*and i32value = fun x -> i32value (value x)*)
   and foi32value = fun x -> foi32value (value x) in
-  if not (msg.PprzLink.name = "DOWNLINK_STATUS") then
+  let mesh_state =
+    if msg.PprzLink.name = "MESH_STATUS" then mesh_kinematics values else None in
+  if not (msg.PprzLink.name = "DOWNLINK_STATUS")
+     && not (msg.PprzLink.name = "MESH_STATUS" && mesh_state = None) then
     a.last_msg_date <- U.gettimeofday ();
   match msg.PprzLink.name with
+      "MESH_STATUS" ->
+        begin match mesh_state with
+        | Some (pos, ellipsoid_alt, gspeed, course, climb) ->
+          a.pos <- pos;
+          a.alt <- ellipsoid_alt -. LL.wgs84_hmsl pos;
+          a.gspeed <- gspeed;
+          a.course <- norm_course course;
+          a.climb <- climb;
+          if !heading_from_course then
+            a.heading <- a.course;
+          a.agl <- a.alt -. (try float (Srtm.of_wgs84 a.pos) with _ -> a.ground_alt)
+        | None -> ()
+        end
+    |
       "GPS" ->
         a.gps_mode <- check_index (ivalue "mode") gps_modes "GPS_MODE";
         if a.gps_mode >= _3D then begin

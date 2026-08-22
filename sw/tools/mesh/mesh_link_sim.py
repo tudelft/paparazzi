@@ -89,7 +89,7 @@ GCS_AC_ID = 0
 NB_SLOTS = 32
 DUTY_CEILING = 0.40           # matches mesh_phase_optimizer.py
 # Representative mean air time of one frame in the optimizer's traffic mix.
-# Duty is charged from actual transmissions, not the 375 ms reservation slot:
+# Duty is charged from actual transmissions, not the 500 ms reservation slot:
 # the slot is sized for a complete worst-case flood, not one RF transmission.
 AIR_TIME_MS_DEFAULT = 20.0
 

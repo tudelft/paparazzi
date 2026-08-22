@@ -215,15 +215,27 @@ static void send_acinfo_lla(struct transport_tx *trans, struct link_device *dev)
 }
 
 #if TRAFFIC_INFO_USE_MESH
-/* ------------------------------------------------------------------------- *
- * MESH_STATE: compact broadcast state vector for narrowband LoRa MESH links
+/** @brief One learned TDMA slot owner.
  *
- * Everything below is statically allocated and O(1). The only mutable state is
- * ::mesh_link plus two pointers to the transport and device objects owned by
- * the telemetry subsystem, captured on the first telemetry callback.
- * ------------------------------------------------------------------------- */
+ * Ownership comes from the arrival time of valid @c MESH_STATE frames. The
+ * table is deliberately private: callers consume aircraft state through the
+ * normal traffic-info API and must not depend on MAC bookkeeping.
+ */
+struct MeshSlot {
+  uint8_t ac_id;       /**< Observed owner, or #MESH_SLOT_FREE. */
+  uint32_t last_frame; /**< Superframe index when the owner was last heard. */
+};
 
-struct MeshLinkState mesh_link;
+/** @brief Private health and back-pressure state for mesh transmission. */
+struct MeshLinkState {
+  uint64_t local_tx_free_ms; /**< Estimated completion time of locally submitted frames. */
+  uint32_t last_emit_key;    /**< Superframe/slot key of the last origination. */
+  uint16_t reselect_count;   /**< Primary-slot reselections after conflicts. */
+  uint8_t neighbours;        /**< Distinct peers heard within the slot-age window. */
+  bool ready;                /**< Whether the telemetry transport has been captured. */
+};
+
+static struct MeshLinkState mesh_link;
 
 /* The MESH_STATE period in the telemetry file is what the bandwidth budget was
  * computed from; the superframe and reuse cap are what the node will actually
@@ -267,8 +279,8 @@ _Static_assert((MESH_TDMA_SUPERFRAME_MS / MESH_TDMA_MAX_REUSE) ==
 #if defined(TRAFFIC_INFO_MESH_PERIODIC_FREQ)
 /* The transmit gate samples the clock; it is not interrupt driven. A slot is
  * only ever used if at least one run of the periodic task falls inside it, so
- * the task period must be strictly shorter than one slot. The delivered 20 Hz
- * task and 12 s / 32-slot profile give 50 ms sampling inside a 375 ms slot.
+ * the task period must be strictly shorter than one slot. The delivered 100 Hz
+ * task and 16 s / 32-slot profile give 10 ms sampling inside a 500 ms slot.
  * Cross-multiplied to stay in integers if either profile value changes.
  */
 _Static_assert(MESH_TDMA_NB_SLOTS * 1000u <
@@ -287,8 +299,7 @@ static struct transport_tx *mesh_trans;
 static struct link_device *mesh_dev;
 static uint64_t mesh_received_ms[NB_ACS];
 static bool mesh_has_valid_observation[NB_ACS];
-static uint8_t mesh_received_flags[NB_ACS];
-static bool mesh_flags_observed[NB_ACS];
+static bool mesh_peer_seen[NB_ACS];
 static uint8_t mesh_peer_clock_mode[NB_ACS];
 static uint64_t mesh_peer_clock_received_ms[NB_ACS];
 static uint64_t mesh_peer_holdover_started_ms[NB_ACS];
@@ -303,6 +314,9 @@ static uint32_t mesh_async_prng;
 static uint32_t mesh_recovery_frame;
 static bool mesh_async_announcement_required;
 static bool mesh_recovery_required;
+static bool mesh_async_population_known;
+static uint64_t mesh_last_position_fix_ms;
+static bool mesh_position_fix_seen;
 #if MESH_AUTO_TELEMETRY_AVAILABLE
 static uint64_t mesh_last_peer_ms;
 static uint64_t mesh_alive_retry_ms;
@@ -314,7 +328,7 @@ static uint64_t mesh_dense_hold_until_ms;
 static uint32_t mesh_multiplex_encode(int32_t course_ddeg,
                                       int32_t gspeed_cms,
                                       int32_t climb_cms);
-static uint8_t mesh_state_flags(void);
+static uint8_t mesh_state_flags(uint64_t local_ms);
 
 static uint8_t mesh_local_tx_in_flight(uint64_t now_ms);
 
@@ -366,9 +380,6 @@ static void mesh_auto_telemetry_periodic(uint64_t now_ms)
       MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_MESH;
 #endif
     }
-    mesh_link.solo_active = select_solo;
-  } else {
-    mesh_link.solo_active = false;
   }
 
   const bool any_gcs_ping_fresh =
@@ -396,7 +407,6 @@ static void mesh_auto_telemetry_note_peer(uint64_t now_ms)
     MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_MESH;
 #endif
   }
-  mesh_link.solo_active = false;
 }
 #endif
 
@@ -441,13 +451,34 @@ static void mesh_async_remix(uint64_t local_ms)
   (void)mesh_async_random();
 }
 
-/** Schedule one asynchronous origination in the configured closed interval. */
+/** Count peers learned before or during the current GPS-denied episode.
+ *
+ * The count intentionally does not age while asynchronous. Losing a peer is
+ * indistinguishable from losing its packets, so decreasing the count could
+ * accelerate a partition into unsafe channel load. A reboot without prior
+ * synchronization keeps mesh_async_population_known false and therefore uses
+ * the conservative dense interval regardless of partial receptions.
+ */
+static uint8_t mesh_async_known_peers(void)
+{
+  uint8_t peers = 0;
+  for (uint8_t slot = 0; slot < ti_acs_idx; slot++) {
+    if (ti_acs[slot].ac_id != AC_ID && mesh_peer_seen[slot]) {
+      peers++;
+    }
+  }
+  return peers;
+}
+
+/** Schedule one asynchronous origination from current membership evidence. */
 static void mesh_async_schedule_next(uint64_t local_ms)
 {
-  const uint64_t span = (uint64_t)MESH_ASYNC_MAX_INTERVAL_MS
-                        - MESH_ASYNC_MIN_INTERVAL_MS + 1u;
+  const struct mesh_async_interval interval = mesh_async_interval_for_peers(
+    mesh_async_known_peers(), mesh_async_population_known,
+    MESH_ASYNC_MIN_INTERVAL_MS, MESH_ASYNC_MAX_INTERVAL_MS);
+  const uint64_t span = (uint64_t)interval.max_ms - interval.min_ms + 1u;
   const uint64_t offset = ((uint64_t)mesh_async_random() * span) >> 32;
-  mesh_async_next_emit_ms = local_ms + MESH_ASYNC_MIN_INTERVAL_MS + offset;
+  mesh_async_next_emit_ms = local_ms + interval.min_ms + offset;
 }
 
 /** Whether a continuously heard peer requires fleet-wide fallback. */
@@ -582,7 +613,7 @@ static uint8_t mesh_unified_mode(void)
   }
 }
 
-static uint8_t mesh_state_flags(void)
+static uint8_t mesh_state_flags(uint64_t local_ms)
 {
   uint8_t flags = mesh_unified_mode() & MESH_FLAG_MODE_MASK;
 
@@ -592,14 +623,21 @@ static uint8_t mesh_state_flags(void)
 
   const struct LlaCoor_i *position = stateGetPositionLla_i();
   const struct EnuCoor_f *velocity = stateGetSpeedEnu_f();
-  const bool position_valid = bit_is_set(state.pos_status, POS_LLA_I);
+  if (gps.fix >= GPS_FIX_3D) {
+    mesh_last_position_fix_ms = local_ms;
+    mesh_position_fix_seen = true;
+  }
+  const bool position_valid = stateIsGlobalCoordinateValid();
   const bool velocity_valid = (state.speed_status & SPEED_LOCAL_COORD) != 0
                               && isfinite(stateGetHorizontalSpeedDir_f())
                               && isfinite(stateGetHorizontalSpeedNorm_f())
                               && isfinite(velocity->x)
                               && isfinite(velocity->y)
                               && isfinite(velocity->z);
-  if (gps.fix >= GPS_FIX_3D && position_valid && velocity_valid
+  const bool position_holdover_valid = mesh_position_holdover_valid(
+    mesh_position_fix_seen, local_ms - mesh_last_position_fix_ms,
+    MESH_POSITION_HOLDOVER_MS);
+  if (position_holdover_valid && position_valid && velocity_valid
       && position != NULL) {
     flags |= MESH_FLAG_POS_VALID;
   }
@@ -636,7 +674,7 @@ static uint8_t mesh_state_flags(void)
 static uint8_t mesh_redundancy_target(uint8_t nodes, uint8_t rank,
                                       uint32_t frame, uint64_t now_ms)
 {
-  const uint8_t flags = mesh_state_flags();
+  const uint8_t flags = mesh_state_flags(now_ms);
   nodes = Max(nodes, 1u);
   uint8_t target = (uint8_t)(MESH_TDMA_FAIR_SLOTS / nodes);
   if (target < 1) {
@@ -660,7 +698,7 @@ static uint8_t mesh_redundancy_target(uint8_t nodes, uint8_t rank,
    * repeated state. Keep one heartbeat slot so it remains discoverable, but
    * let healthy peers use the spare capacity. A landed aircraft behaves the
    * same way; AC_ID 0 is exempt because the GCS is a real stationary peer. */
-  if (!mesh_link.synced || (flags & MESH_FLAG_POS_VALID) == 0
+  if (mesh_clock.mode == MESH_CLOCK_ASYNC || (flags & MESH_FLAG_POS_VALID) == 0
       || (AC_ID != TRAFFIC_INFO_GCS_ID && (flags & MESH_FLAG_AIRBORNE) == 0)) {
     return 1;
   }
@@ -688,12 +726,13 @@ static uint8_t mesh_redundancy_target(uint8_t nodes, uint8_t rank,
  *  latency but never accuracy. */
 static void mesh_state_emit(void)
 {
+  const uint64_t local_ms = traffic_monotonic_time_ms();
   const struct LlaCoor_i *lla = stateGetPositionLla_i();
 
-  uint8_t flags = mesh_state_flags();
-  uint8_t clock_mode = (uint8_t)mesh_link.clock_mode;
+  uint8_t flags = mesh_state_flags(local_ms);
+  uint8_t clock_mode = (uint8_t)mesh_clock.mode;
   uint32_t recovery_frame = 0;
-  if (mesh_link.clock_mode == MESH_CLOCK_ASYNC
+  if (mesh_clock.mode == MESH_CLOCK_ASYNC
       && gps.fix >= GPS_FIX_3D
       && !mesh_async_announcement_required) {
     clock_mode = MESH_CLOCK_RECOVERY;
@@ -723,35 +762,24 @@ static void mesh_state_emit(void)
                                &lat, &lon, &alt, &multiplex,
                                &recovery_frame);
   if (clock_mode == MESH_CLOCK_ASYNC) {
-    mesh_async_self_until_ms = traffic_monotonic_time_ms()
-                               + MESH_ASYNC_PEER_HOLD_MS;
+    mesh_async_self_until_ms = local_ms + MESH_ASYNC_PEER_HOLD_MS;
     mesh_async_announcement_required = false;
     mesh_recovery_required = true;
   }
 }
 
-/** Periodic telemetry callback for MESH_STATE.
+/** Capture the generated telemetry transport for deferred @c MESH_STATE sends.
  *
- * It does *not* transmit. The periodic telemetry counters are free running
- * from boot and are therefore uncorrelated between aircraft; transmitting here
- * would let several nodes originate at the same instant, which floods every
- * modem cache in the mesh with simultaneous relay frames. Instead the request
- * is latched and ::traffic_info_mesh_periodic releases it inside this node's
- * own GPS synchronised slot.
+ * This callback intentionally does not transmit. Generated telemetry counters
+ * start at boot and are not synchronized between aircraft, whereas
+ * traffic_info_mesh_periodic() owns the network-time slot gate. Keeping one
+ * transmission authority prevents periodic callbacks from bypassing TDMA.
+ *
+ * @param[in] trans Transport selected by generated telemetry.
+ * @param[in] dev Link device selected by generated telemetry.
  */
 static void request_mesh_state(struct transport_tx *trans, struct link_device *dev)
 {
-  /* This callback exists only to learn which transport and device the telemetry
-   * subsystem wants us to use. It deliberately does not transmit and does not
-   * pace anything.
-   *
-   * An earlier version latched a "pending" flag here and let the transmit gate
-   * consume it. That silently threw away transmit opportunities: the telemetry
-   * scheduler fires on a counter that starts at boot, whereas slots are aligned
-   * to GPS time, so the two clocks have an arbitrary and drifting offset. A
-   * node owning four slots per superframe would find the flag already consumed
-   * on some of them and skip. Emission is now driven purely by slot ownership,
-   * which is the only clock that matters here. */
   mesh_trans = trans;
   mesh_dev = dev;
   mesh_link.ready = true;
@@ -820,14 +848,15 @@ static void mesh_slot_reset(uint32_t frame)
     mesh_slots[slot].ac_id = MESH_SLOT_FREE;
     mesh_slots[slot].last_frame = frame;
   }
-  mesh_owned[0] = (uint8_t)(MESH_TDMA_SLOT_HINT % MESH_TDMA_NB_SLOTS);
+  /* Slot zero is only a harmless array placeholder while network entry is
+   * listening. mesh_owns() suppresses transmission until mesh_pick_slot()
+   * replaces it with an observed-free primary. */
+  mesh_owned[0] = 0;
   mesh_owned_until[0] = frame + MESH_PRIMARY_HOLD_MIN;
   mesh_owned_n = 1;
   mesh_entered = false;
   mesh_frames_seen = 0;
   mesh_last_frame = frame;
-  mesh_link.slot = mesh_owned[0];
-  mesh_link.reuse = 1;
   mesh_link.neighbours = 0;
 }
 
@@ -905,7 +934,7 @@ static bool mesh_owns(uint8_t slot)
  * or a dropout simply starts being heard again and reclaims a slot; nothing
  * has to notice that it left.
  */
-void mesh_slot_observe(uint8_t sender, uint64_t net_ms)
+static void mesh_slot_observe(uint8_t sender, uint64_t net_ms)
 {
   /* Sender 0 is the ground station, a legitimate member of this mesh, not a
    * null value. Only our own relayed frames are discarded. */
@@ -922,12 +951,23 @@ void mesh_slot_observe(uint8_t sender, uint64_t net_ms)
   }
 }
 
+static uint32_t mesh_slot_hash(uint32_t value)
+{
+  value ^= value >> 16;
+  value *= 0x7FEB352Du;
+  value ^= value >> 15;
+  value *= 0x846CA68Bu;
+  return value ^ (value >> 16);
+}
+
 /** Pick a free slot for the primary, biased by AC_ID so that two nodes
  *  reselecting in the same frame rarely land on the same one. */
 static uint8_t mesh_pick_slot(uint32_t frame)
 {
-  const uint8_t start = (uint8_t)((AC_ID * 7u + mesh_link.reselect_count * 3u)
-                                  % MESH_TDMA_NB_SLOTS);
+  const uint32_t mixed = mesh_slot_hash((uint32_t)AC_ID
+                                       | ((uint32_t)mesh_link.reselect_count << 8)
+                                       | (frame << 16));
+  const uint8_t start = (uint8_t)(mixed % MESH_TDMA_NB_SLOTS);
   for (uint8_t k = 0; k < MESH_TDMA_NB_SLOTS; k++) {
     const uint8_t s = (uint8_t)((start + k) % MESH_TDMA_NB_SLOTS);
     if (mesh_slot_free(s, frame) && !mesh_owns(s)) {
@@ -953,10 +993,9 @@ static uint8_t mesh_pick_slot(uint32_t frame)
  */
 static uint32_t mesh_lease_expiry(uint32_t frame)
 {
-  /* cheap deterministic scatter, distinct per node and per claim */
-  const uint32_t r = (uint32_t)(AC_ID * 2654435761u
-                                + frame * 40503u
-                                + mesh_link.reselect_count * 97u);
+  const uint32_t r = mesh_slot_hash((uint32_t)AC_ID
+                                    | ((uint32_t)mesh_link.reselect_count << 8)
+                                    | (frame << 16));
   return frame + MESH_SLOT_HOLD_MIN + r % MESH_SLOT_HOLD_SPAN;
 }
 
@@ -965,9 +1004,9 @@ static uint32_t mesh_lease_expiry(uint32_t frame)
  *  share capacity, so it should almost never fire in a healthy mesh. */
 static uint32_t mesh_primary_expiry(uint32_t frame)
 {
-  const uint32_t r = (uint32_t)(AC_ID * 1103515245u
-                                + frame * 12345u
-                                + mesh_link.reselect_count * 7919u);
+  const uint32_t r = mesh_slot_hash((uint32_t)AC_ID
+                                    | ((uint32_t)mesh_link.reselect_count << 8)
+                                    | (frame << 16) | 0x80000000u);
   return frame + MESH_PRIMARY_HOLD_MIN + r % MESH_PRIMARY_HOLD_SPAN;
 }
 
@@ -1081,7 +1120,6 @@ static void mesh_slot_maintain(uint32_t frame, uint64_t now_ms)
     mesh_owned[0] = mesh_pick_slot(frame);             /* higher AC_ID yields */
     mesh_link.reselect_count++;
   }
-  mesh_link.slot = mesh_owned[0];
 
   /* --- drop secondaries that a real owner took, or whose lease expired ---- */
   uint8_t keep = 1;
@@ -1120,7 +1158,6 @@ static void mesh_slot_maintain(uint32_t frame, uint64_t now_ms)
     }
   }
 
-  mesh_link.reuse = mesh_owned_n;
 }
 
 void traffic_info_mesh_periodic(void)
@@ -1163,11 +1200,12 @@ void traffic_info_mesh_periodic(void)
   const uint32_t frame = mesh_frame_of(net_ms);
   const uint8_t slot = mesh_slot_of(net_ms);
 
-  mesh_link.clock_mode = mesh_clock.mode;
-  mesh_link.synced = mesh_clock.mode != MESH_CLOCK_ASYNC;
   if (mesh_clock.mode != previous_mode) {
     mesh_clock_sample_valid = false;
     if (mesh_clock.mode == MESH_CLOCK_ASYNC) {
+      if (previous_mode != MESH_CLOCK_ASYNC) {
+        mesh_async_population_known = mesh_frames_seen >= MESH_ENTRY_FRAMES;
+      }
       mesh_async_announcement_required = true;
       mesh_async_remix(local_ms);
       mesh_async_schedule_next(local_ms);
@@ -1178,9 +1216,6 @@ void traffic_info_mesh_periodic(void)
   }
   if (reset_slots) {
     mesh_slot_reset(frame);
-    if (mesh_clock.mode == MESH_CLOCK_ASYNC) {
-      mesh_link.reuse = 0;
-    }
 #if MESH_AUTO_TELEMETRY_AVAILABLE
     mesh_auto_telemetry_periodic(local_ms);
 #endif
@@ -1215,7 +1250,7 @@ void traffic_info_mesh_periodic(void)
 
   /* Slot bookkeeping is a per-SUPERFRAME activity, not a per-tick one.
    *
-   * This task runs at 20 Hz, so a superframe covers about twenty calls. Running
+  * This task runs at 100 Hz, so a superframe covers many calls. Running
    * the maintenance on every one of them would let a node take its whole share
    * of slots inside a single frame: mesh_expansion_turn() is a function of the
    * frame number alone, so it stays true for every tick of that frame, and the
@@ -1238,14 +1273,12 @@ void traffic_info_mesh_periodic(void)
   }
   if (mesh_clock.mode == MESH_CLOCK_ASYNC) {
     if (local_ms < mesh_async_next_emit_ms) {
-      mesh_link.defer_ticks++;
   #if MESH_AUTO_TELEMETRY_AVAILABLE
     mesh_auto_telemetry_periodic(local_ms);
 #endif
       return;
     }
     if (mesh_local_tx_in_flight(local_ms) >= MESH_CACHE_HIGH_WATER) {
-      mesh_link.throttled_count++;
       mesh_async_schedule_next(local_ms);
   #if MESH_AUTO_TELEMETRY_AVAILABLE
     mesh_auto_telemetry_periodic(local_ms);
@@ -1253,7 +1286,6 @@ void traffic_info_mesh_periodic(void)
       return;
     }
     mesh_state_emit();
-    mesh_link.tx_count++;
     mesh_link.local_tx_free_ms = Max(mesh_link.local_tx_free_ms, local_ms)
                    + MESH_MODEM_DRAIN_MS;
     mesh_async_schedule_next(local_ms);
@@ -1263,7 +1295,6 @@ void traffic_info_mesh_periodic(void)
     return;
   }
   if (!mesh_owns(slot)) {
-    mesh_link.defer_ticks++;
   #if MESH_AUTO_TELEMETRY_AVAILABLE
     mesh_auto_telemetry_periodic(local_ms);
   #endif
@@ -1280,7 +1311,6 @@ void traffic_info_mesh_periodic(void)
   }
 
   if (mesh_local_tx_in_flight(local_ms) >= MESH_CACHE_HIGH_WATER) {
-    mesh_link.throttled_count++;
   #if MESH_AUTO_TELEMETRY_AVAILABLE
     mesh_auto_telemetry_periodic(local_ms);
 #endif
@@ -1290,7 +1320,6 @@ void traffic_info_mesh_periodic(void)
   mesh_state_emit();
 
   mesh_link.last_emit_key = key;
-  mesh_link.tx_count++;
   mesh_link.local_tx_free_ms = Max(mesh_link.local_tx_free_ms, local_ms)
                                + MESH_MODEM_DRAIN_MS;
 #if MESH_AUTO_TELEMETRY_AVAILABLE
@@ -1323,14 +1352,13 @@ void traffic_info_init(void)
   mesh_slot_reset(0);
   memset(mesh_received_ms, 0, sizeof(mesh_received_ms));
   memset(mesh_has_valid_observation, 0, sizeof(mesh_has_valid_observation));
-  memset(mesh_received_flags, 0, sizeof(mesh_received_flags));
-  memset(mesh_flags_observed, 0, sizeof(mesh_flags_observed));
-    memset(mesh_peer_clock_mode, MESH_CLOCK_RECOVERY,
-      sizeof(mesh_peer_clock_mode));
-    memset(mesh_peer_clock_received_ms, 0,
-      sizeof(mesh_peer_clock_received_ms));
-    memset(mesh_peer_holdover_started_ms, 0,
-      sizeof(mesh_peer_holdover_started_ms));
+  memset(mesh_peer_seen, 0, sizeof(mesh_peer_seen));
+  memset(mesh_peer_clock_mode, MESH_CLOCK_RECOVERY,
+    sizeof(mesh_peer_clock_mode));
+  memset(mesh_peer_clock_received_ms, 0,
+    sizeof(mesh_peer_clock_received_ms));
+  memset(mesh_peer_holdover_started_ms, 0,
+    sizeof(mesh_peer_holdover_started_ms));
   mesh_clock_init(&mesh_clock);
   mesh_clock_sample_valid = false;
   mesh_last_network_ms = 0;
@@ -1345,9 +1373,9 @@ void traffic_info_init(void)
   mesh_recovery_frame = 0;
   mesh_async_announcement_required = false;
   mesh_recovery_required = false;
-  mesh_link.clock_mode = MESH_CLOCK_ASYNC;
-  mesh_link.synced = false;
-  mesh_link.reuse = 0;
+  mesh_async_population_known = false;
+  mesh_last_position_fix_ms = 0;
+  mesh_position_fix_seen = false;
   mesh_link.local_tx_free_ms = traffic_monotonic_time_ms();
   mesh_link.last_emit_key = UINT32_MAX;
 #if MESH_AUTO_TELEMETRY_AVAILABLE
@@ -1358,7 +1386,6 @@ void traffic_info_init(void)
 #else
   MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_MESH;
 #endif
-  mesh_link.solo_active = false;
   mesh_last_peer_ms = traffic_monotonic_time_ms();
   mesh_alive_retry_ms = traffic_monotonic_time_ms();
 #endif
@@ -1522,6 +1549,7 @@ bool parse_acinfo_dl(uint8_t *buf)
           break;
         }
         if (clock_mode <= MESH_CLOCK_RECOVERY) {
+          mesh_peer_seen[slot] = true;
           if (clock_mode == MESH_CLOCK_ASYNC) {
             mesh_async_peer_until_ms = local_ms + MESH_ASYNC_PEER_HOLD_MS;
             mesh_recovery_frame = 0;
@@ -1551,8 +1579,6 @@ bool parse_acinfo_dl(uint8_t *buf)
           mesh_peer_clock_mode[slot] = clock_mode;
           mesh_peer_clock_received_ms[slot] = local_ms;
         }
-        mesh_received_flags[slot] = flags;
-        mesh_flags_observed[slot] = true;
         if ((flags & MESH_FLAG_POS_VALID) != 0) {
           mesh_received_ms[slot] = traffic_monotonic_time_ms();
           mesh_has_valid_observation[slot] = true;
@@ -1830,19 +1856,6 @@ bool traffic_info_get_mesh_valid_age(uint8_t ac_id, uint32_t *age_ms)
   return true;
 }
 
-bool traffic_info_get_mesh_flags(uint8_t ac_id, uint8_t *flags)
-{
-  if (flags == NULL || !traffic_info_id_valid(ac_id)) {
-    return false;
-  }
-  const uint8_t slot = ti_acs_id[ac_id];
-  if (slot >= ti_acs_idx || ti_acs[slot].ac_id != ac_id
-      || !mesh_flags_observed[slot]) {
-    return false;
-  }
-  *flags = mesh_received_flags[slot];
-  return true;
-}
 #endif
 
 

@@ -1,29 +1,31 @@
 <?xml version="1.0"?>
 <!DOCTYPE telemetry SYSTEM "../telemetry.dtd">
 <!-- E52 mesh profile for rotorcraft/rover firmware. Mode names intentionally
-     match the fixed-wing profile so traffic_info can select them generically. -->
+  match the fixed-wing profile so traffic_info can select them generically.
+  MESH_STATE uses GNSS TDMA, bounded monotonic holdover, then randomized
+  GPS-free access without operator intervention. -->
 <telemetry>
   <process name="Main">
     <mode name="mesh">
-      <message name="MESH_STATE"        period="1.5"     phase="0.006667"/>
-      <message name="ROTORCRAFT_FP"     period="32.0"    phase="0.007812"/>
-      <message name="ATTITUDE"          period="64.0"    phase="0.011719"/>
-      <message name="ENERGY"            period="128.0"   phase="0.013672"/>
-      <message name="DATALINK_REPORT"   period="256.0"   phase="0.018555"/>
-      <message name="ALIVE"             period="256.0"   phase="0.014648"/>
+      <message name="MESH_STATE"        period="2.0"     phase="0.005000"/>
+      <message name="ROTORCRAFT_FP"     period="7.0"     phase="0.072857"/>
+      <message name="ATTITUDE"          period="14.0"    phase="0.215000"/>
+      <message name="ENERGY"            period="28.0"    phase="0.178929"/>
+      <message name="DATALINK_REPORT"   period="56.0"    phase="0.196607"/>
+      <message name="ALIVE"             period="56.0"    phase="0.160893"/>
     </mode>
     <mode name="mesh_dense">
-      <!-- Native 13-16 aircraft schedule: 37.8% modeled channel use at 17 routing peers. -->
-      <message name="MESH_STATE"        period="1.5"     phase="0.006667"/>
-      <message name="ROTORCRAFT_FP"     period="128.0"   phase="0.001953"/>
-      <message name="ALIVE"             period="256.0"   phase="0.002930"/>
-      <message name="ATTITUDE"          period="768.0"   phase="0.004883"/>
-      <message name="ENERGY"            period="768.0"   phase="0.006836"/>
-      <message name="DATALINK_REPORT"   period="1536.0"  phase="0.008301"/>
+      <!-- Native 13-16 aircraft schedule: 57.2% modeled channel use at 17 routing peers. -->
+      <message name="MESH_STATE"        period="2.0"     phase="0.005000"/>
+      <message name="ROTORCRAFT_FP"     period="14.0"    phase="0.072143"/>
+      <message name="ATTITUDE"          period="56.0"    phase="0.053750"/>
+      <message name="ENERGY"            period="56.0"    phase="0.089464"/>
+      <message name="DATALINK_REPORT"   period="112.0"   phase="0.080446"/>
+      <message name="ALIVE"             period="112.0"   phase="0.062589"/>
     </mode>
     <mode name="mesh_solo">
       <!-- Keep the peer canary and auxiliary diagnostics slow; spend the solo-link margin on state freshness. -->
-      <message name="MESH_STATE"        period="1.5"     phase="0.006667"/>  <!-- Safety/discovery canary; TDMA gates actual emission. -->
+      <message name="MESH_STATE"        period="2.0"     phase="0.005000"/>  <!-- Safety/discovery canary; TDMA gates actual emission. -->
       <message name="ROTORCRAFT_FP"     period="0.20"    phase="0.000000"/>  <!-- 5 Hz native rotorcraft position, velocity, attitude and guidance state. -->
       <message name="ATTITUDE"          period="0.50"    phase="0.500000"/>
       <message name="ENERGY"            period="1.0"     phase="0.750000"/>
