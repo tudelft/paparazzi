@@ -24,13 +24,21 @@
       <message name="ALIVE"             period="112.0"   phase="0.062589"/>
     </mode>
     <mode name="mesh_solo">
-      <!-- Keep the peer canary and auxiliary diagnostics slow; spend the solo-link margin on state freshness. -->
+      <!-- Camera shots and TCAS advisories are event-driven and do not belong in this periodic schedule. -->
       <message name="MESH_STATE"        period="2.0"     phase="0.005000"/>  <!-- Safety/discovery canary; TDMA gates actual emission. -->
-      <message name="ROTORCRAFT_FP"     period="0.20"    phase="0.000000"/>  <!-- 5 Hz native rotorcraft position, velocity, attitude and guidance state. -->
-      <message name="ATTITUDE"          period="0.50"    phase="0.500000"/>
-      <message name="ENERGY"            period="1.0"     phase="0.750000"/>
-      <message name="DATALINK_REPORT"   period="2.0"     phase="0.625000"/>
-      <message name="ALIVE"             period="5.0"     phase="0.900000"/>
+      <message name="ROTORCRAFT_FP"     period="0.125"   phase="0.007812"/>  <!-- 8 Hz native position, velocity, attitude and guidance state. -->
+      <message name="ATTITUDE"          period="0.50"    phase="0.126953"/>
+      <message name="ENERGY"            period="1.0"     phase="0.188477"/>
+      <message name="MINIMAL_COM"       period="1.0"     phase="0.313477"/>  <!-- Global position, mode, block, GPS fix and flight time. -->
+      <message name="DATALINK_REPORT"   period="2.0"     phase="0.219238"/>
+      <message name="ROTORCRAFT_CMD"    period="2.0"     phase="0.344238"/>
+      <message name="ROTORCRAFT_STATUS" period="2.0"     phase="0.406738"/>  <!-- RC, arming, failsafe, motor and GPS health. -->
+      <message name="ALIVE"             period="5.0"     phase="0.187695"/>
+      <message name="WP_MOVED"          period="8.0"     phase="0.179810"/>
+      <message name="AIR_DATA"          period="10.0"    phase="0.168848"/>
+      <message name="GPS_SOL"           period="10.0"    phase="0.181348"/>
+      <message name="STATE_FILTER_STATUS" period="10.0"  phase="0.193848"/>
+      <message name="DL_VALUE"          period="30.0"    phase="0.097949"/>
     </mode>
   </process>
 </telemetry>
