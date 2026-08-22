@@ -314,13 +314,18 @@ member, each aircraft can answer two questions locally:
 * has the GCS recently pinged me;
 * has the GCS recently pinged another aircraft.
 
-The airborne selector chooses `mesh_solo` only when the mesh clock is safe, the
-GCS has recently pinged this aircraft, no recent PING targeted another aircraft,
-no peer owns a live mesh slot, and no `MESH_STATE` peer frame has been received
-for 12 seconds. A received peer `MESH_STATE` returns immediately to `mesh`; a
-peer known only through the GCS propagates on the next targeted PING cycle,
-within five seconds. A manual selection of any other telemetry mode is preserved
-and disables automatic switching until `mesh` or `mesh_solo` is selected again.
+The airborne selector chooses `mesh_solo` when the GCS has recently pinged this
+aircraft, no recent PING targeted another aircraft, no peer owns a live mesh
+slot, and no `MESH_STATE` peer frame has been received for 12 seconds. A
+synchronized mesh clock is deliberately not required for this one-aircraft
+case: there is no peer TDMA schedule to coordinate, and requiring GPS time would
+leave an indoor or GPS-denied bench test permanently on sparse telemetry. The
+`MESH_STATE` canary continues using the normal GPS, bounded-holdover, or
+randomized asynchronous mesh timing. A received peer `MESH_STATE` returns
+immediately to `mesh`; a peer known only through the GCS propagates on the next
+targeted PING cycle, within five seconds. A manual selection of any other
+telemetry mode is preserved and disables automatic switching until `mesh` or
+`mesh_solo` is selected again.
 
 The ground link was tightened to PING only aircraft that are still live. Without
 that small correction, an aircraft which landed hours earlier would remain in

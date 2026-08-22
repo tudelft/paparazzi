@@ -65,6 +65,9 @@
 #define MESH_TELEMETRY_MODE telemetry_mode_Main
 #define MESH_TELEMETRY_MODE_MESH TELEMETRY_MODE_Main_mesh
 #define MESH_TELEMETRY_MODE_SOLO TELEMETRY_MODE_Main_mesh_solo
+#elif defined(TELEMETRY_MODE_Ap_mesh) || defined(TELEMETRY_MODE_Ap_mesh_solo) \
+  || defined(TELEMETRY_MODE_Main_mesh) || defined(TELEMETRY_MODE_Main_mesh_solo)
+#error "MESH_AUTO_TELEMETRY requires matching mesh and mesh_solo modes in one telemetry process"
 #else
 #define MESH_AUTO_TELEMETRY_AVAILABLE 0
 #endif
@@ -306,9 +309,11 @@ static void mesh_auto_telemetry_periodic(uint64_t now_ms)
   if (automatic_mode) {
     /* PINGs describe the GCS live-aircraft set; MESH_STATE is the independent
      * radio-side canary. Requiring both prevents a stale GCS table or a missed
-     * PING from enabling the faster profile while another peer is present. */
+     * PING from enabling the faster profile while another peer is present.
+     * Clock synchronization is intentionally not required here: solo traffic
+     * has no peer TDMA schedule to synchronize, and the mesh task continues to
+     * use its GPS-denied randomized fallback for the MESH_STATE canary. */
     const struct mesh_mode_policy_input input = {
-      .clock_synchronized = mesh_link.synced,
       .self_ping_fresh = datalink_gcs_self_ping_is_fresh(MESH_GCS_PING_TIMEOUT_MS),
       .other_ping_fresh = datalink_gcs_other_ping_is_fresh(MESH_GCS_PING_TIMEOUT_MS),
       .peer_present = mesh_link.neighbours != 0,

@@ -5,7 +5,6 @@
 #include <stdint.h>
 
 struct mesh_mode_policy_input {
-  bool clock_synchronized;
   bool self_ping_fresh;
   bool other_ping_fresh;
   bool peer_present;
@@ -16,8 +15,7 @@ struct mesh_mode_policy_input {
 static inline bool mesh_mode_should_use_solo(
   const struct mesh_mode_policy_input *input)
 {
-  return input->clock_synchronized
-         && input->self_ping_fresh
+  return input->self_ping_fresh
          && !input->other_ping_fresh
          && !input->peer_present
          && input->peer_quiet_ms >= input->required_quiet_ms;
