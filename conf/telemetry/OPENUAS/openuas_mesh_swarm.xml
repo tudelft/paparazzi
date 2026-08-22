@@ -107,28 +107,28 @@
       <!-- One aircraft plus GCS only: spend the released flood capacity on
            control-relevant freshness while preserving margin for events. -->
       <message name="MESH_STATE"        period="2.0"     phase="0.005000"/>  <!-- Safety/discovery canary; TDMA gates actual emission. -->
-      <message name="MINIMAL_COM"       period="0.10"    phase="0.200000"/>  <!-- 10 Hz position, speed, mode, block, voltage and flight time. -->
-      <message name="RANGEFINDER"       period="0.40"    phase="0.150000"/>
-      <message name="ATTITUDE"          period="0.40"    phase="0.400000"/>  <!-- 2.5 Hz, offset from MINIMAL_COM. -->
-      <message name="AIRSPEED"          period="0.50"    phase="0.560000"/>
+      <message name="MINIMAL_COM"       period="0.20"    phase="0.100000"/>  <!-- 5 Hz position, speed, mode, block, voltage and flight time. -->
+      <message name="RANGEFINDER"       period="2.0"     phase="0.150000"/>
+      <message name="ATTITUDE"          period="0.50"    phase="0.500000"/>  <!-- 2 Hz, offset from MINIMAL_COM. -->
+      <message name="AIRSPEED"          period="2.0"     phase="0.560000"/>
       <message name="ENERGY"            period="1.0"     phase="0.540000"/>
-      <message name="NAVIGATION"        period="1.0"     phase="0.700000"/>
-      <message name="DATALINK_REPORT"   period="2.0"     phase="0.980000"/>
-      <message name="FBW_STATUS"        period="2.0"     phase="0.590000"/>
-      <message name="PPRZ_MODE"         period="2.0"     phase="0.740000"/>
-      <message name="DESIRED"           period="2.0"     phase="0.580000"/>
+      <message name="NAVIGATION"        period="4.0"     phase="0.700000"/>
+      <message name="DATALINK_REPORT"   period="2.0"     phase="0.900000"/>
+      <message name="FBW_STATUS"        period="8.0"     phase="0.590000"/>
+      <message name="PPRZ_MODE"         period="8.0"     phase="0.740000"/>
+      <message name="DESIRED"           period="8.0"     phase="0.580000"/>
       <!-- Only one navigation shape emits at a time, so these intentionally share a phase. -->
-      <message name="CIRCLE"            period="2.0"     phase="0.940000"/>
-      <message name="SEGMENT"           period="2.0"     phase="0.940000"/>
-      <message name="SURVEY"            period="2.0"     phase="0.940000"/>
+      <message name="CIRCLE"            period="8.0"     phase="0.940000"/>
+      <message name="SEGMENT"           period="8.0"     phase="0.940000"/>
+      <message name="SURVEY"            period="8.0"     phase="0.940000"/>
       <message name="ALIVE"             period="5.0"     phase="0.136000"/>
-      <message name="AIR_DATA"          period="10.0"    phase="0.908000"/>
-      <message name="GPS_SOL"           period="10.0"    phase="0.866000"/>
-      <message name="STATE_FILTER_STATUS" period="10.0"  phase="0.758000"/>
-      <message name="WP_MOVED"          period="8.0"     phase="0.545000"/>
-      <message name="NAVIGATION_REF"    period="16.0"    phase="0.523750"/>
-      <message name="DL_VALUE"          period="30.0"    phase="0.836000"/>
-      <message name="CALIBRATION"       period="30.0"    phase="0.702000"/>
+      <message name="AIR_DATA"          period="20.0"    phase="0.908000"/>
+      <message name="GPS_SOL"           period="20.0"    phase="0.866000"/>
+      <message name="STATE_FILTER_STATUS" period="20.0"  phase="0.758000"/>
+      <message name="WP_MOVED"          period="16.0"    phase="0.545000"/>
+      <message name="NAVIGATION_REF"    period="32.0"    phase="0.523750"/>
+      <message name="DL_VALUE"          period="60.0"    phase="0.836000"/>
+      <message name="CALIBRATION"       period="60.0"    phase="0.702000"/>
     </mode>
   </process>
   <process name="Fbw">

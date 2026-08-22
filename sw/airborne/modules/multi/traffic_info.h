@@ -344,7 +344,7 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
 #endif
 
 #ifndef MESH_GCS_PING_TIMEOUT_MS
-#define MESH_GCS_PING_TIMEOUT_MS MESH_TDMA_SUPERFRAME_MS
+#define MESH_GCS_PING_TIMEOUT_MS 60000u
 #endif
 
 #ifndef MESH_SOLO_QUIET_MS

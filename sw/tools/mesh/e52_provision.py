@@ -308,7 +308,7 @@ class Modem:
             return "OK"
         assert self.ser is not None
         self.ser.reset_input_buffer()
-        self.ser.write((command + "\r\n").encode("ascii"))
+        self.ser.write(command.encode("ascii"))
         self.ser.flush()
         deadline = time.time() + self.timeout
         chunks: List[bytes] = []
@@ -336,6 +336,15 @@ def response_ok(command: str, reply: str) -> bool:
     if "CMD_ERR" in upper or "CMD_VALUE_ERR" in upper or "VALUE_ERR" in upper:
         return False
     return "OK" in upper
+
+
+def query_response_ok(reply: str) -> bool:
+    """A query returns its value directly rather than an OK token."""
+    if not reply:
+        return False
+    upper = reply.upper()
+    return "CMD_ERR" not in upper and "CMD_VALUE_ERR" not in upper \
+           and "VALUE_ERR" not in upper
 
 
 # --------------------------------------------------------------------------- #
@@ -426,7 +435,7 @@ def provision(args: argparse.Namespace) -> int:
         for query, label in VERIFY_QUERIES:
             reply = modem.send(query)
             print(f"    {label:<22} {query:<18} -> {reply if reply else '(no reply)'}")
-            if not args.dry_run and not reply:
+            if not args.dry_run and not query_response_ok(reply):
                 failures += 1
         print("  " + "-" * 70)
     finally:

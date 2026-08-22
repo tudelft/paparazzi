@@ -60,8 +60,8 @@
       description="Stop local MESH_STATE admission at this estimated local depth; two hardware entries remain for unobservable relay and telemetry traffic"/>
     <define name="MESH_AUTO_TELEMETRY" value="FALSE|TRUE"
       description="Automatically select mesh_solo, mesh, or mesh_dense from GCS and peer observations"/>
-    <define name="MESH_GCS_PING_TIMEOUT_MS" value="16000"
-      description="Maximum age of GCS PING evidence used by automatic telemetry selection"/>
+    <define name="MESH_GCS_PING_TIMEOUT_MS" value="60000"
+      description="Maximum age of GCS PING evidence used by automatic telemetry selection; covers two nominal 30 s E52 delivery intervals"/>
     <define name="MESH_SOLO_QUIET_MS" value="16000"
       description="Peer-free interval required before selecting mesh_solo"/>
   </doc>
