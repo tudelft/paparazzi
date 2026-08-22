@@ -26,7 +26,7 @@ static enum tcas_surveillance_action action(bool valid, bool mesh,
 
 int main(void)
 {
-  puts("1..34");
+  puts("1..40");
   expect_action("mesh fresh-1", action(true, true, false, FRESH_MS - 1u),
                 TCAS_SURVEILLANCE_EVALUATE);
   expect_action("mesh fresh exact", action(true, true, false, FRESH_MS),
@@ -104,6 +104,30 @@ int main(void)
     fputs("non-finite velocity was accepted\n", stderr);
     return EXIT_FAILURE;
   }
+  if (!tcas_candidate_preferred(2.f, 42u, false, 1.f, 10u, 10u)) {
+    fputs("first TCAS candidate was not selected\n", stderr);
+    return EXIT_FAILURE;
+  }
+  if (!tcas_candidate_preferred(1.f, 42u, true, 2.f, 10u, 10u)) {
+    fputs("lower-risk TCAS candidate was not selected\n", stderr);
+    return EXIT_FAILURE;
+  }
+  if (tcas_candidate_preferred(3.f, 42u, true, 2.f, 10u, 10u)) {
+    fputs("higher-risk TCAS candidate replaced the selection\n", stderr);
+    return EXIT_FAILURE;
+  }
+  if (!tcas_candidate_preferred(2.f, 42u, true, 2.f, 90u, 42u)) {
+    fputs("current TCAS advisory did not win an equal-risk tie\n", stderr);
+    return EXIT_FAILURE;
+  }
+  if (tcas_candidate_preferred(2.f, 42u, true, 2.f, 90u, 90u)) {
+    fputs("current TCAS advisory was displaced on an equal-risk tie\n", stderr);
+    return EXIT_FAILURE;
+  }
+  if (!tcas_candidate_preferred(2.f, 42u, true, 2.f, 90u, 1u)) {
+    fputs("lower AC_ID did not win an equal-risk TCAS tie\n", stderr);
+    return EXIT_FAILURE;
+  }
   if (tcas_legacy_drop_ms(LEGACY_MS) != 3u * LEGACY_MS) {
     fputs("normal legacy drop interval was not tripled\n", stderr);
     return EXIT_FAILURE;
@@ -140,7 +164,7 @@ int main(void)
     return EXIT_FAILURE;
   }
 
-  for (unsigned test = 1; test <= 34; test++) {
+  for (unsigned test = 1; test <= 40; test++) {
     printf("ok %u - TCAS and traffic policy\n", test);
   }
   return EXIT_SUCCESS;

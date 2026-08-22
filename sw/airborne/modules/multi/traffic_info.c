@@ -250,31 +250,38 @@ static struct MeshLinkState mesh_link;
  * whole milliseconds because a cast of a parenthesised floating constant is an
  * integer constant expression while a floating multiply is not.
  */
-#if defined(PERIOD_MESH_STATE_Ap_0)
-#define TRAFFIC_INFO_MESH_STATE_PERIOD PERIOD_MESH_STATE_Ap_0
-#elif defined(PERIOD_MESH_STATE_Ap_1)
-#define TRAFFIC_INFO_MESH_STATE_PERIOD PERIOD_MESH_STATE_Ap_1
-#elif defined(PERIOD_MESH_STATE_Main_0)
-#define TRAFFIC_INFO_MESH_STATE_PERIOD PERIOD_MESH_STATE_Main_0
-#elif defined(PERIOD_MESH_STATE_Main_1)
-#define TRAFFIC_INFO_MESH_STATE_PERIOD PERIOD_MESH_STATE_Main_1
-#endif
-
-#if defined(TRAFFIC_INFO_MESH_STATE_PERIOD)
 /* The gate can only send what the telemetry scheduler offers it. To use up to
  * MESH_TDMA_MAX_REUSE slots per superframe the request has to arrive at least
  * that often, so the MESH_STATE period must be superframe / MAX_REUSE.
  * Compared in milliseconds; a cast of a parenthesised floating constant is an
  * integer constant expression, a floating multiply is a GCC extension that all
  * supported toolchains accept. */
-_Static_assert((MESH_TDMA_SUPERFRAME_MS / MESH_TDMA_MAX_REUSE) ==
-                 (unsigned)(TRAFFIC_INFO_MESH_STATE_PERIOD * 1000.0 + 0.5),
-               "The MESH_STATE telemetry period must equal "
-               "MESH_TDMA_SUPERFRAME_MS / MESH_TDMA_MAX_REUSE, otherwise the "
-               "bandwidth budget is computed for a different rate than the "
-               "node will actually emit.");
-#undef TRAFFIC_INFO_MESH_STATE_PERIOD
+#define TRAFFIC_INFO_ASSERT_MESH_PERIOD(period) \
+  _Static_assert((MESH_TDMA_SUPERFRAME_MS / MESH_TDMA_MAX_REUSE) == \
+                   (unsigned)((period) * 1000.0 + 0.5), \
+                 "Every MESH_STATE telemetry period must equal " \
+                 "MESH_TDMA_SUPERFRAME_MS / MESH_TDMA_MAX_REUSE")
+
+#if defined(PERIOD_MESH_STATE_Ap_0)
+TRAFFIC_INFO_ASSERT_MESH_PERIOD(PERIOD_MESH_STATE_Ap_0);
 #endif
+#if defined(PERIOD_MESH_STATE_Ap_1)
+TRAFFIC_INFO_ASSERT_MESH_PERIOD(PERIOD_MESH_STATE_Ap_1);
+#endif
+#if defined(PERIOD_MESH_STATE_Ap_2)
+TRAFFIC_INFO_ASSERT_MESH_PERIOD(PERIOD_MESH_STATE_Ap_2);
+#endif
+#if defined(PERIOD_MESH_STATE_Main_0)
+TRAFFIC_INFO_ASSERT_MESH_PERIOD(PERIOD_MESH_STATE_Main_0);
+#endif
+#if defined(PERIOD_MESH_STATE_Main_1)
+TRAFFIC_INFO_ASSERT_MESH_PERIOD(PERIOD_MESH_STATE_Main_1);
+#endif
+#if defined(PERIOD_MESH_STATE_Main_2)
+TRAFFIC_INFO_ASSERT_MESH_PERIOD(PERIOD_MESH_STATE_Main_2);
+#endif
+
+#undef TRAFFIC_INFO_ASSERT_MESH_PERIOD
 
 #if defined(TRAFFIC_INFO_MESH_PERIODIC_FREQ)
 /* The transmit gate samples the clock; it is not interrupt driven. A slot is

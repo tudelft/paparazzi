@@ -293,34 +293,34 @@ at which a node originates its own state:
 * when aircraft leave, healthy peers gradually claim quiet slots; when they
   return, peers contract immediately.
 
-Of the 32 physical slots, 30 are distributed as steady-state fair share and
-two remain as headroom for joins, partitions merging, and temporarily
-different membership views. For $S=30$ fair-share slots and $N$ live nodes,
+Of the 32 physical slots, 25 are distributed as steady-state fair share and
+seven remain as headroom for joins, partitions merging, and temporarily
+different membership views. For $S=25$ fair-share slots and $N$ live nodes,
 each healthy node receives a baseline of
 $q=\lfloor S/N\rfloor$ slots. The first $r=S\bmod N$ sorted AC_ID ranks receive
 one remainder slot, so quotas differ by at most one and sum to all available
 slots. The winner window advances by one rank every 81 superframes, about
-16.2 minutes, giving long-term fairness without fleet-wide claim churn.
+21.6 minutes, giving long-term fairness without fleet-wide claim churn.
 
-At 13 peers, four are entitled to three slots and nine to two slots per 16 s.
-The average entitlement is therefore $30/(13\times16)=0.144$ Hz instead of the
-floor-only 0.125 Hz. At the nominal nine-peer population, three peers receive
-four slots and six receive three, for an average entitlement of 0.208 Hz.
+At 13 peers, twelve are entitled to two slots and one to one slot per 16 s.
+The average entitlement is therefore $25/(13\times16)=0.120$ Hz instead of the
+floor-only 0.0625 Hz. At the nominal nine-peer population, seven peers receive
+three slots and two receive two, for an average entitlement of 0.174 Hz.
 Collision-healing leases and policy contraction
 can make observed rates lower than these steady-state entitlements. Sparse
 fleets may now use up to `MESH_TDMA_MAX_REUSE=8` slots. The cap does not add
 slots or shorten them: it lets fewer live peers use slots that would otherwise
-remain empty. Measured steady-state simulator rates changed as follows; counts
+remain empty. Theoretical steady-state entitlements are shown below; counts
 include the GCS because it is a real mesh peer:
 
 | Live peers | Reuse 4 | Reuse 8 | Improvement |
 | ---: | ---: | ---: | ---: |
-| 1 | 0.31 Hz | 0.56 Hz | 81% |
-| 2 | 0.29 Hz | 0.48 Hz | 66% |
-| 3 | 0.27 Hz | 0.35 Hz | 30% |
-| 4 | 0.27 Hz | 0.28 Hz | 4% |
+| 1 | 0.25 Hz | 0.50 Hz | 100% |
+| 2 | 0.25 Hz | 0.50 Hz | 100% |
+| 3 | 0.25 Hz | 0.50 Hz | 100% |
+| 4 | 0.25 Hz | 0.39 Hz | 56% |
 | 9 | 0.17 Hz | 0.17 Hz | unchanged |
-| 13 | 0.15 Hz | 0.14 Hz | 0.01 Hz reserved for churn |
+| 13 | 0.12 Hz | 0.12 Hz | unchanged |
 
 Collision-healing leases deliberately limit dense-fleet convergence, so the
 measured rates are lower than the mathematical entitlement. This revision
@@ -872,8 +872,8 @@ cache flushing, or a topology partition.
 2. **Connectivity still depends on geometry.** All-router capability cannot
    bridge an empty 17 km gap. The mission planner must keep a connected chain
    of aircraft with adequate one-hop margin.
-3. **Dense-fleet update rate is deliberately lower.** At 16 aircraft the 30
-  fair slots provide one or two `MESH_STATE` updates per aircraft per 16 s.
+3. **Dense-fleet update rate is deliberately lower.** At 16 aircraft plus the
+  GCS, the 25 fair slots provide one or two `MESH_STATE` updates per peer per 16 s.
   TCAS fails closed when a track exceeds its prediction horizon; this profile
   does not claim uninterrupted 16-aircraft collision-avoidance coverage.
 4. **The GCS command tail is unslotted.** Commands and adaptive PINGs remain

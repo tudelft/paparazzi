@@ -73,6 +73,29 @@ static inline bool tcas_velocity_is_usable(float east, float north, float up)
   return isfinite(east) && isfinite(north) && isfinite(up);
 }
 
+/** Select a stable winner between traffic candidates with comparable risk. */
+static inline bool tcas_candidate_preferred(float candidate_score,
+                                            uint8_t candidate_id,
+                                            bool selected_valid,
+                                            float selected_score,
+                                            uint8_t selected_id,
+                                            uint8_t current_id)
+{
+  if (!selected_valid || candidate_score < selected_score) {
+    return true;
+  }
+  if (candidate_score > selected_score) {
+    return false;
+  }
+  if (candidate_id == current_id) {
+    return selected_id != current_id;
+  }
+  if (selected_id == current_id) {
+    return false;
+  }
+  return candidate_id < selected_id;
+}
+
 /** Return three legacy update intervals without overflowing milliseconds. */
 static inline uint32_t tcas_legacy_drop_ms(uint32_t legacy_hold_ms)
 {

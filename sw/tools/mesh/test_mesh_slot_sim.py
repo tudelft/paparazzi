@@ -15,6 +15,17 @@ import mesh_slot_sim as simulator
 
 class DenseFleetRegressionTest(unittest.TestCase):
 
+    def test_late_join_starts_with_fresh_slot_history(self) -> None:
+        node = simulator.Node(42, start_frame=100)
+
+        self.assertEqual(node.last_frame, 100)
+        self.assertTrue(all(last_frame == 100
+                            for _, last_frame in node.slots.values()))
+        self.assertFalse(any(node._free(slot, 100)
+                             and simulator.frame_elapsed(100, node.slots[slot][1])
+                             > 2 * simulator.AGE_FRAMES
+                             for slot in range(simulator.NB_SLOTS)))
+
     def test_id_pool_covers_full_physical_slot_count(self) -> None:
         self.assertEqual(len(simulator.SIM_AC_IDS), simulator.NB_SLOTS)
         self.assertEqual(len(set(simulator.SIM_AC_IDS)), simulator.NB_SLOTS)

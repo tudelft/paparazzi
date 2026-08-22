@@ -52,6 +52,7 @@ Run it::
 from __future__ import annotations
 
 import argparse
+import collections
 import random
 import sys
 from dataclasses import dataclass, field
@@ -182,6 +183,7 @@ class Node:
     """One aircraft's view of the mesh. Mirrors the C state exactly."""
 
     ac_id: int
+    start_frame: int = 0
     owned: List[int] = field(default_factory=list)
     until: List[int] = field(default_factory=list)
     reselect_count: int = 0
@@ -199,8 +201,9 @@ class Node:
         if not GCS_ID <= self.ac_id <= MAX_AC_ID:
             raise ValueError(f"AC_ID {self.ac_id} is outside 0..{MAX_AC_ID}")
         self.owned = [self.ac_id % NB_SLOTS]
-        self.until = [PRI_MIN]
-        self.slots = {s: (SLOT_FREE, 0) for s in range(NB_SLOTS)}
+        self.until = [u32(self.start_frame + PRI_MIN)]
+        self.last_frame = self.start_frame
+        self.slots = {s: (SLOT_FREE, self.start_frame) for s in range(NB_SLOTS)}
 
     # --- mirrors mesh_slot_is_stale / mesh_slot_free ----------------------- #
     def _stale(self, s: int, frame: int) -> bool:
@@ -337,6 +340,7 @@ def run(args: argparse.Namespace) -> int:
     live: Dict[int, Node] = {}
     failures: List[str] = []
     rate_log: List[tuple] = []
+    collision_kinds: collections.Counter[str] = collections.Counter()
 
     try:
         Node(SLOT_FREE)
@@ -386,9 +390,9 @@ def run(args: argparse.Namespace) -> int:
         failures.append("primary lease did not renew at its rollover deadline")
     check_clock_guard(failures)
 
-    def join(ac: int) -> None:
+    def join(ac: int, frame: int = 0) -> None:
         if ac not in live:
-            live[ac] = Node(ac)
+            live[ac] = Node(ac, start_frame=frame)
 
     for ac in all_ids[:args.initial_nodes]:
         join(ac)
@@ -404,7 +408,7 @@ def run(args: argparse.Namespace) -> int:
                 cand = ([a for a in all_ids if a not in live]
                         if len(live) < args.max_nodes else [])
                 if cand:
-                    join(rng.choice(cand))       # arrived / regained link
+                    join(rng.choice(cand), frame)  # arrived / regained link
 
         # Exercise application policy independently of topology churn. The GCS
         # remains a valid stationary peer; airborne nodes may lose state,
@@ -438,6 +442,13 @@ def run(args: argparse.Namespace) -> int:
             for s, senders in tx.items():
                 if len(senders) > 1:
                     failures.append(f"frame {frame}: slot {s} shared by {senders}")
+                    primary_count = sum(live[ac].owned[0] == s for ac in senders)
+                    if primary_count == len(senders):
+                        collision_kinds["primary-primary"] += 1
+                    elif primary_count:
+                        collision_kinds["primary-secondary"] += 1
+                    else:
+                        collision_kinds["secondary-secondary"] += 1
             for n in live.values():
                 if n.frames_seen < ENTRY_FRAMES:
                     continue            # listening, deliberately silent
@@ -500,8 +511,11 @@ def run(args: argparse.Namespace) -> int:
     print("  " + "-" * 44)
     print(f"    slot-frames simulated       : {slot_frames}")
     print(f"    with two nodes transmitting : {len(shared)}  ({pct:.3f} %)")
-    print(f"    longest single collision    : {longest} frames "
-          f"(lease is {HOLD_MIN}-{HOLD_MIN+HOLD_SPAN-1})")
+    print(f"    longest single collision    : {longest} frames")
+    print(f"    secondary / primary leases  : {HOLD_MIN}-{HOLD_MIN+HOLD_SPAN-1} / "
+          f"{PRI_MIN}-{PRI_MIN+PRI_SPAN-1} frames")
+    for kind in ("primary-primary", "primary-secondary", "secondary-secondary"):
+        print(f"    {kind:<27}: {collision_kinds[kind]}")
     print("  " + "-" * 44)
     print()
 

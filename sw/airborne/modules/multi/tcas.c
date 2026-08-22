@@ -513,15 +513,20 @@ void tcas_periodic_task_1Hz(void)
     }
 
     /* Select candidates only after updating their advisory state. Penetrating
-     * the protected volume outranks time-to-conflict; current RA wins a tie. */
+     * the protected volume outranks time-to-conflict. The current RA wins an
+     * exact tie; otherwise AC_ID gives a stable, arrival-order-independent
+     * result. */
     const float score = inside ? 0.f : tau;
     if (tcas_acs_status[i].status == TCAS_RA
-        && (fresh_ra == AC_ID || score < fresh_ra_score
-            || (score == fresh_ra_score && ti_acs[i].ac_id == tcas_ac_RA))) {
+        && tcas_candidate_preferred(score, ti_acs[i].ac_id,
+                                    fresh_ra != AC_ID, fresh_ra_score,
+                                    fresh_ra, tcas_ac_RA)) {
       fresh_ra = ti_acs[i].ac_id;
       fresh_ra_score = score;
     } else if (tcas_acs_status[i].status == TCAS_TA
-               && (fresh_ta == AC_ID || score < fresh_ta_score)) {
+               && tcas_candidate_preferred(score, ti_acs[i].ac_id,
+                                           fresh_ta != AC_ID, fresh_ta_score,
+                                           fresh_ta, AC_ID)) {
       fresh_ta = ti_acs[i].ac_id;
       fresh_ta_score = score;
     }
