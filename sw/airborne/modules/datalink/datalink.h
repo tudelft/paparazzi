@@ -66,6 +66,8 @@ extern void datalink_init(void);
 /** periodic function, should be called at 1Hz */
 extern void datalink_periodic(void);
 
+extern void datalink_parse_ALIVE_REQ(struct link_device *dev, struct transport_tx *trans, uint8_t *buf);
+
 extern void datalink_parse_PING(struct link_device *dev, struct transport_tx *trans, uint8_t *buf);
 
 /** Return whether GCS recently sent a PING addressed to this aircraft. */

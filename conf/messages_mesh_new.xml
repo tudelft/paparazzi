@@ -2565,6 +2565,10 @@
       <field name="ac_id" type="uint8"/>
     </message>
 
+    <message name="ALIVE_REQ" id="195">
+      <description>Request the addressed aircraft to send its configuration identity in an ALIVE message</description>
+    </message>
+
     <message name="PING" id="8"/>
 
     <message name="FORMATION_SLOT" id="9" link="broadcasted">

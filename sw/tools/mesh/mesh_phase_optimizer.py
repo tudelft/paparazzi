@@ -927,6 +927,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--ping-period", type=float, default=5.0, metavar="SECONDS",
                     help="adaptive GCS probe cadence; one live aircraft is "
                         "PINGed per cycle and returns one PONG (default: 5 seconds)")
+    ap.add_argument("--identity-retry-period", type=float, default=4.0,
+                    metavar="SECONDS",
+                    help="fastest fleet-wide serialized ALIVE_REQ/ALIVE recovery "
+                         "cadence before exponential backoff (default: 4 seconds)")
     ap.add_argument("--air-rate", type=int, default=0, choices=(0, 1, 2),
                     help="AT+RATE value: 0=62.5k 1=21.875k 2=7k. The lower rates "
                          "buy 5 dB of sensitivity each but cost 3x and 10x in air "
@@ -943,6 +947,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         ap.error("--control-rate must not be negative")
     if args.ping_period <= 0.0:
         ap.error("--ping-period must be positive")
+    if args.identity_retry_period <= 0.0:
+        ap.error("--identity-retry-period must be positive")
     if args.tdma_gate_frequency <= 0.0:
         ap.error("--tdma-gate-frequency must be positive")
     if args.max_replay_ticks <= 0:
@@ -1004,8 +1010,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         (msgs[("datalink", "BLOCK")], args.control_rate),
         (msgs[("telemetry", "NAVIGATION")], args.control_rate),
         (msgs[("datalink", "PING")], 1.0 / args.ping_period),
-        (msgs[("telemetry", "ALIVE")], 1.0 / args.ping_period),
         (msgs[("telemetry", "PONG")], 1.0 / args.ping_period),
+        # Registration recovery is separate from PING/PONG and globally
+        # serialized by link. Exponential backoff rapidly lowers the real cost.
+        (msgs[("datalink", "ALIVE_REQ")], 1.0 / args.identity_retry_period),
+        (msgs[("telemetry", "ALIVE")], 1.0 / args.identity_retry_period),
     ]
 
     print("=" * 78)
@@ -1065,7 +1074,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
           f"({steady_slots} of {physical_slots} physical slots)")
     print(f"  MESH_STATE, transient churn max: {churn_ms:6.1f} ms/s")
     print(f"  all other telemetry, {n_air} aircraft : {other_chan_ms:6.1f} ms/s")
-    print(f"  control/ack + PING/PONG reserve : {event_chan_ms:6.1f} ms/s")
+    print(f"  control/ack + health/identity reserve: {event_chan_ms:6.1f} ms/s")
     total_chan_ms_per_s = (ms_chan_ms + other_chan_ms) / max(n_air, 1)
     if args.utilisation is None:
         print(f"  total channel utilisation      : {net_util*100:5.1f} % "

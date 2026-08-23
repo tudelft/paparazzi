@@ -379,11 +379,15 @@ before claiming slots, preventing newly powered peers from making conflicting
 slot assumptions before their membership maps converge.
 
 The OCaml link sends one targeted `PING` every five seconds to the live aircraft
-that was least recently probed. The aircraft returns its MD5-bearing `ALIVE`
-before `PONG`, so server restarts and a startup identity packet lost while the
-radio boots recover automatically. Aggregate liveness traffic remains one
-request/two-response exchange per cycle rather than growing linearly with fleet
-size. Incoming `MESH_STATE` also
+that was least recently probed. The addressed aircraft returns one `PONG`.
+Identity recovery is deliberately separate: an unregistered live aircraft is
+sent a serialized `ALIVE_REQ` and returns one MD5-bearing `ALIVE`. This avoids
+the adjacent `ALIVE`/`PONG` response burst that previously made normal health
+probes less reliable. Identity requests use exponential backoff and stop when
+the server's authoritative `AIRCRAFTS` snapshot contains the aircraft.
+`NEW_AIRCRAFT` is only a low-latency hint; periodic snapshots make link-first
+startup, server-first startup, missed Ivy events, and either process restarting
+converge to the same state. Incoming `MESH_STATE` also
 refreshes the ground link's live-aircraft table without being republished on
 Ivy. Because E52 broadcast traffic is heard by every mesh member, each aircraft
 can answer two questions locally:
@@ -408,14 +412,23 @@ until a mesh mode is selected again.
 
 The ground link probes only aircraft that are still live. Without that rule, an
 aircraft which landed hours earlier would remain in the link table and suppress
-solo mode forever. Before an aircraft's first `ALIVE`, state reception starts a
-serialized 500 ms discovery PING. This closes the historical deadlock where the
-server waited for `ALIVE`, while ordinary state made the link start PINGing and
-suppressed the aircraft's identity retry. `ALIVE` remains a discovery and
-configuration-identity message, not the high-rate heartbeat. `MESH_STATE` is
-the authoritative aircraft presence and motion stream.
+solo mode forever. State from an unregistered live aircraft triggers an
+immediate serialized `ALIVE_REQ`; if that request or response is lost, retries
+start at four seconds and back off to at most 30 seconds. The four-second retry
+floor keeps the modeled 17-node recovery envelope below the 60% operator channel
+ceiling. This closes the historical deadlock where the server waited for an
+`ALIVE` that could have been lost while the radio booted. Stale aircraft are not
+eligible for discovery. `ALIVE` remains a discovery and configuration-identity
+message, not the high-rate heartbeat. `MESH_STATE` is the authoritative aircraft
+presence and motion stream.
 
-Only existing messages are used. Fixed-wing sends `MINIMAL_COM` at 5 Hz,
+The only added wire message is the empty `ALIVE_REQ` datalink request (ID 195),
+chosen outside IDs used by the repository's older/custom datalink schemas.
+`Makefile.ac` makes aircraft generation depend on the generated PPRZLink
+protocol header, so changing `conf/messages.xml` regenerates protocol headers
+before computing the aircraft configuration MD5. This prevents firmware from
+advertising a stale identity after message-schema changes. Fixed-wing sends
+`MINIMAL_COM` at 5 Hz,
 `ATTITUDE` at 2 Hz, `ENERGY` at 1 Hz, `DATALINK_REPORT` at 0.5 Hz, and `ALIVE`
 at 0.2 Hz. Rotorcraft uses the same schedule with native `ROTORCRAFT_FP` instead
 of `MINIMAL_COM`. `MESH_STATE` remains active as the safety/discovery canary in

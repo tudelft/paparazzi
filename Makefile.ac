@@ -34,6 +34,9 @@ CONF=$(PAPARAZZI_HOME)/conf
 VAR=$(PAPARAZZI_HOME)/var
 CONF_XML ?= $(CONF)/conf.xml
 AIRBORNE=sw/airborne
+CUSTOM_MESSAGES_XML = $(CONF)/messages.xml
+DEFAULT_MESSAGES_XML = $(PAPARAZZI_SRC)/sw/ext/pprzlink/message_definitions/v1.0/messages.xml
+PPRZLINK_MESSAGES_XML = $(if $(wildcard $(CUSTOM_MESSAGES_XML)),$(CUSTOM_MESSAGES_XML),$(DEFAULT_MESSAGES_XML))
 
 # make sure the TARGET variable is set if needed for current make target
 ifneq (,$(findstring $(MAKECMDGOALS),all_ac_h radio_ac_h flight_plan_ac_h))
@@ -51,6 +54,7 @@ endif
 
 AIRCRAFT_CONF_DIR = $(AIRCRAFT_BUILD_DIR)/conf
 AC_GENERATED = $(AIRCRAFT_BUILD_DIR)/$(TARGET)/generated
+PPRZLINK_PROTOCOL_H = $(VAR)/include/pprzlink/dl_protocol.h
 
 SRCS_LIST=$(AIRCRAFT_BUILD_DIR)/$(TARGET)_srcs.list
 TMP_LIST=$(AIRCRAFT_BUILD_DIR)/$(TARGET)_tmp.list
@@ -191,7 +195,10 @@ ifneq ($(PAPARAZZI_QT_GEN),)
 	$(Q)./sw/tools/qt_project.py $(AIRCRAFT) $(CONF_XML) $(SRCS_LIST)
 endif
 
-%.ac_h : $(GENERATORS)/gen_aircraft.out
+$(PPRZLINK_PROTOCOL_H) : $(PPRZLINK_MESSAGES_XML)
+	$(MAKE) -f Makefile pprzlink_protocol
+
+%.ac_h : $(GENERATORS)/gen_aircraft.out $(PPRZLINK_PROTOCOL_H)
 	$(Q)if (expr "$(AIRCRAFT)") > /dev/null; then : ; else echo "AIRCRAFT undefined: type 'make AIRCRAFT=AircraftName ...'"; exit 1; fi
 	@echo "#######################################"
 	@echo "# BUILD AIRCRAFT=$(AIRCRAFT), TARGET $*"

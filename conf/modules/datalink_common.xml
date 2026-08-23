@@ -15,6 +15,7 @@
   <init fun="downlink_init()"/>
   <periodic fun="telemetry_reporting_task()"/>
   <periodic fun="datalink_periodic()" freq="1"/>
+  <datalink message="ALIVE_REQ" fun="datalink_parse_ALIVE_REQ(dev, trans, buf)"/>
   <datalink message="PING" fun="datalink_parse_PING(dev, trans, buf)"/>
   <makefile>
     <define name="DOWNLINK"/>

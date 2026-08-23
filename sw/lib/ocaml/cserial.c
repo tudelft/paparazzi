@@ -24,11 +24,14 @@
 
 #include <sys/types.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <termios.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/termios.h>
 #include <sys/ioctl.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <caml/mlvalues.h>
 #include <caml/fail.h>
@@ -119,9 +122,24 @@ value c_init_serial(value device, value speed, value hw_flow_control)
 
   int fd = open(String_val(device), O_RDWR|O_NOCTTY|O_NONBLOCK);
 
-  if (fd == -1) caml_failwith("opening modem serial device : fd < 0");
+  if (fd == -1) {
+    if (errno == EBUSY) {
+      caml_failwith("serial device is already in use");
+    }
+    caml_failwith("opening modem serial device : fd < 0");
+  }
 
-  if (tcgetattr(fd, &orig_termios)) caml_failwith("getting modem serial device attr");
+#ifdef TIOCEXCL
+  if (ioctl(fd, TIOCEXCL) == -1) {
+    close(fd);
+    caml_failwith("serial device is already in use");
+  }
+#endif
+
+  if (tcgetattr(fd, &orig_termios)) {
+    close(fd);
+    caml_failwith("getting modem serial device attr");
+  }
   cur_termios = orig_termios;
 
   /* input modes - turn off input processing */
@@ -147,11 +165,28 @@ value c_init_serial(value device, value speed, value hw_flow_control)
   cur_termios.c_lflag &= ~(ISIG|ICANON|IEXTEN|ECHO|FLUSHO|PENDIN);
   cur_termios.c_lflag |= NOFLSH;
 
-  if (cfsetspeed(&cur_termios, br)) caml_failwith("setting modem serial device speed");
+  if (cfsetspeed(&cur_termios, br)) {
+    close(fd);
+    caml_failwith("setting modem serial device speed");
+  }
 
-  if (tcsetattr(fd, TCSADRAIN, &cur_termios)) caml_failwith("setting modem serial device attr");
+  if (tcsetattr(fd, TCSADRAIN, &cur_termios)) {
+    close(fd);
+    caml_failwith("setting modem serial device attr");
+  }
 
   CAMLreturn (Val_int(fd));
+}
+
+value c_monotonic_time(value unit)
+{
+  CAMLparam1(unit);
+  struct timespec now;
+
+  if (clock_gettime(CLOCK_MONOTONIC, &now) == -1) {
+    caml_failwith("clock_gettime(CLOCK_MONOTONIC)");
+  }
+  CAMLreturn(caml_copy_double((double)now.tv_sec + (double)now.tv_nsec / 1e9));
 }
 
 value c_set_dtr(value val_fd, value val_bit)

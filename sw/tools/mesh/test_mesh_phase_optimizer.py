@@ -113,6 +113,10 @@ class CommandLineTest(unittest.TestCase):
         error = self.assert_cli_error("--move-wp-rate", "-1")
         self.assertIn("--control-rate must not be negative", error)
 
+    def test_identity_retry_period_must_be_positive(self) -> None:
+        error = self.assert_cli_error("--identity-retry-period", "0")
+        self.assertIn("--identity-retry-period must be positive", error)
+
     def test_cli_rejects_large_replay_horizon(self) -> None:
         stderr = io.StringIO()
         with contextlib.redirect_stderr(stderr), \

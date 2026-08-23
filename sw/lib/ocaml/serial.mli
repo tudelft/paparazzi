@@ -55,6 +55,7 @@ val opendev : string -> speed -> bool -> Unix.file_descr
 val close : Unix.file_descr -> unit
 val set_dtr : Unix.file_descr -> bool -> unit
 val set_speed : Unix.file_descr -> speed -> unit
+val monotonic_time : unit -> float
 
 val input :
   ?read:(Unix.file_descr -> bytes -> int -> int -> int) ->

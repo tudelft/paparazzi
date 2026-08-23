@@ -105,30 +105,55 @@ type status = {
   mutable rx_err : int;
   mutable tx_msg : int;
   mutable ms_since_last_msg : int;
-  mutable last_ping : float; (* s *)
-  mutable last_pong : float; (* s *)
+  mutable last_ping_at : float; (* monotonic s *)
+  mutable ping_sent_at : float option; (* monotonic s *)
+  mutable ping_time : float; (* ms, last completed round trip *)
   mutable identified : bool; (* server validated ALIVE and registered aircraft *)
+  mutable identity_request_at : float; (* monotonic s *)
+  mutable identity_retry_s : float;
   udp_peername : Unix.sockaddr option
 }
 
 let statuss = Hashtbl.create 3
+let registered_aircrafts = Hashtbl.create 3
+let identity_retry_initial_s = 4.
 
 let initial_status = {
   last_rx_byte = 0; last_rx_msg = 0;
   rx_byte = 0; rx_msg = 0; rx_err = 0;
   tx_msg = 0;
   ms_since_last_msg = !dead_aircraft_time_ms;
-  last_ping = 0.; last_pong = 0.;
+  last_ping_at = 0.; ping_sent_at = None; ping_time = 0.;
   identified = false;
+  identity_request_at = 0.; identity_retry_s = identity_retry_initial_s;
   udp_peername = None
 }
+
+let set_identified = fun ac_id status identified ->
+  if identified then begin
+    Hashtbl.replace registered_aircrafts ac_id ();
+    status.identified <- true;
+    status.identity_request_at <- 0.;
+    status.identity_retry_s <- identity_retry_initial_s
+  end else begin
+    Hashtbl.remove registered_aircrafts ac_id;
+    if status.identified then begin
+      status.identity_request_at <- 0.;
+      status.identity_retry_s <- identity_retry_initial_s
+    end;
+    status.identified <- false
+  end
 
 let update_status = fun ?udp_peername ac_id buf_size is_pong ->
   if !gen_stat_trafic then
     Printf.printf "%.3f %d\n%!" (Unix.gettimeofday ()) buf_size;
   let status =
     try Hashtbl.find statuss ac_id with Not_found ->
-      let s = { initial_status with udp_peername = udp_peername } in
+      let s = {
+        initial_status with
+        identified = Hashtbl.mem registered_aircrafts ac_id;
+        udp_peername = udp_peername
+      } in
       begin
         match s.udp_peername with
         | Some (Unix.ADDR_INET (peername, port)) ->
@@ -141,8 +166,13 @@ let update_status = fun ?udp_peername ac_id buf_size is_pong ->
   status.rx_msg <- status.rx_msg + 1;
   status.rx_err <- !PprzTransport.nb_err;
   status.ms_since_last_msg <- 0;
-  if is_pong then
-    status.last_pong <- Unix.gettimeofday ();;
+  if is_pong then begin
+    match status.ping_sent_at with
+    | Some sent_at ->
+        status.ping_time <- max 0. (1000. *. (Serial.monotonic_time () -. sent_at));
+        status.ping_sent_at <- None
+    | None -> ()
+  end;;
 
 let status_ping_diff = 500 (* ms *)
 let discovery_ping_period = 500 (* ms *)
@@ -163,8 +193,12 @@ let udp_peername = fun ac_id ->
 let last_udp_peername = ref (Unix.ADDR_UNIX "not initialized")
 let udp_read = fun fd buf pos len ->
   let (n, sockaddr) = Unix.recvfrom fd buf pos len [] in
-  last_udp_peername := sockaddr;
-  n
+  if n = 0 then
+    raise (Unix.Unix_error (Unix.EAGAIN, "recvfrom", "zero-length datagram"))
+  else begin
+    last_udp_peername := sockaddr;
+    n
+  end
 
 let send_status_msg =
   let start = Unix.gettimeofday () in
@@ -186,7 +220,7 @@ let send_status_msg =
                 "rx_bytes_rate", PprzLink.Float byte_rate;
                 "rx_msgs_rate", PprzLink.Float msg_rate;
                 "tx_msgs", PprzLink.Int64 (Int64.of_int status.tx_msg);
-                "ping_time", PprzLink.Float (1000. *. (status.last_pong -. status.last_ping))
+                "ping_time", PprzLink.Float status.ping_time
                ] in
       send_ground_over_ivy "link" "LINK_REPORT" vs)
       statuss
@@ -349,9 +383,9 @@ let udp_send = fun fd payload peername ->
   let n = Unix.sendto fd (Bytes.of_string buf) 0 len [] sockaddr in
   assert (n = len)
 
-let send = fun ac_id device payload _priority ->
+let send = fun ?(require_live=true) ac_id device payload _priority ->
   Debug.call 's' (fun f -> fprintf f "%d\n" ac_id);
-  if live_aircraft ac_id then
+  if not require_live || live_aircraft ac_id then
     let _ = try
       let s = Hashtbl.find statuss ac_id in
       s.tx_msg <- s.tx_msg + 1;
@@ -440,11 +474,18 @@ let message_uplink = fun device ->
         | _ -> ())
     Dl_Pprz.messages
 
-let ping_aircraft = fun device ac_id status ->
+let ping_aircraft = fun device ac_id status measure_rtt ->
+  let now = Serial.monotonic_time () in
   let msg_id, _ = Dl_Pprz.message_of_name "PING" in
   let s = Dl_Pprz.payload_of_values msg_id my_id ac_id [] in
   send ac_id device s High;
-  status.last_ping <- Unix.gettimeofday ()
+  status.last_ping_at <- now;
+  if measure_rtt then begin
+    let pending_is_fresh = match status.ping_sent_at with
+      | Some sent_at -> now -. sent_at < 2.
+      | None -> false in
+    if not pending_is_fresh then status.ping_sent_at <- Some now
+  end
 
 let select_ping_candidate = fun require_identified ->
   Hashtbl.fold
@@ -454,17 +495,40 @@ let select_ping_candidate = fun require_identified ->
       else match selected with
         | None -> Some (ac_id, status)
         | Some (selected_id, selected_status) ->
-            if status.last_ping < selected_status.last_ping
-               || (status.last_ping = selected_status.last_ping
+            if status.last_ping_at < selected_status.last_ping_at
+              || (status.last_ping_at = selected_status.last_ping_at
                    && ac_id < selected_id)
             then Some (ac_id, status)
             else selected)
     statuss None
 
 let send_discovery_ping = fun device ->
-  match select_ping_candidate false with
+  let now = Serial.monotonic_time () in
+  let candidate =
+    Hashtbl.fold
+      (fun ac_id status selected ->
+        if status.identified || not (live_aircraft ac_id)
+           || now -. status.identity_request_at < status.identity_retry_s
+        then selected
+        else match selected with
+          | None -> Some (ac_id, status)
+          | Some (selected_id, selected_status) ->
+              if status.identity_request_at < selected_status.identity_request_at
+                 || (status.identity_request_at = selected_status.identity_request_at
+                     && ac_id < selected_id)
+              then Some (ac_id, status)
+              else selected)
+      statuss None
+  in
+  match candidate with
     | None -> ()
-    | Some (ac_id, status) -> ping_aircraft device ac_id status
+    | Some (ac_id, status) ->
+        let msg_id, _ = Dl_Pprz.message_of_name "ALIVE_REQ" in
+        let payload = Dl_Pprz.payload_of_values msg_id my_id ac_id [] in
+        send ~require_live:false ac_id device payload High;
+        if status.identity_request_at > 0. then
+          status.identity_retry_s <- min 30. (2. *. status.identity_retry_s);
+        status.identity_request_at <- now
 
 let send_ping_msg = fun device ->
   (* Probe one live aircraft per cycle, choosing the one least recently
@@ -476,7 +540,7 @@ let send_ping_msg = fun device ->
     above, so a missed startup ALIVE cannot delay server registration. *)
   match select_ping_candidate true with
     | None -> ()
-    | Some (ac_id, status) -> ping_aircraft device ac_id status
+    | Some (ac_id, status) -> ping_aircraft device ac_id status true
 
 
 (** Main *********************************************************************)
@@ -553,18 +617,90 @@ let () =
     let baudrate = int_of_string !baudrate in
     let device = { fd=fd; transport=transport; baud_rate=baudrate; channel= !channel } in
 
-    (* NEW_AIRCRAFT is emitted only after server-side MD5 validation and
-       registration. Until this acknowledgement arrives, keep discovery PINGs
-       active even when ALIVE crossed the link but the server rejected it. *)
+    (* NEW_AIRCRAFT is a low-latency hint. AIRCRAFTS snapshots below are the
+       durable source of truth, so link/server restarts and missed Ivy events
+       always converge. *)
     let aircraft_identified = fun _sender vs ->
-      let ac_id = int_of_string (PprzLink.string_assoc "ac_id" vs) in
-      try
-        let status = Hashtbl.find statuss ac_id in
-        status.identified <- true
-      with Not_found -> () in
+      match int_of_string_opt (PprzLink.string_assoc "ac_id" vs) with
+      | None -> () (* Replay aircraft use nonnumeric server IDs. *)
+      | Some ac_id ->
+          Hashtbl.replace registered_aircrafts ac_id ();
+          try set_identified ac_id (Hashtbl.find statuss ac_id) true with Not_found -> () in
     ignore (Ground_Pprz.message_bind "NEW_AIRCRAFT" aircraft_identified);
 
+    let aircrafts_request = ref None in
+    let server_responding = ref false in
+    let reconcile_aircrafts = fun _sender vs ->
+      begin try
+        let registered = Hashtbl.create 3 in
+        let ac_list = PprzLink.string_assoc "ac_list" vs in
+        List.iter
+          (fun id ->
+            match int_of_string_opt id with
+            | Some ac_id -> Hashtbl.replace registered ac_id ()
+            | None -> ())
+          (String.split_on_char ',' ac_list);
+        let server_returned = not !server_responding in
+        server_responding := true;
+        Hashtbl.clear registered_aircrafts;
+        Hashtbl.iter (fun ac_id () -> Hashtbl.replace registered_aircrafts ac_id ()) registered;
+        Hashtbl.iter
+          (fun ac_id status ->
+            let identified = Hashtbl.mem registered ac_id in
+            set_identified ac_id status identified;
+            if server_returned && not identified then begin
+              status.identity_request_at <- 0.;
+              status.identity_retry_s <- identity_retry_initial_s
+            end)
+          statuss
+      with exc ->
+        prerr_endline ("Invalid AIRCRAFTS snapshot: " ^ Printexc.to_string exc)
+      end;
+      aircrafts_request := None
+    in
+    let request_aircrafts = fun () ->
+      let now = Serial.monotonic_time () in
+      begin match !aircrafts_request with
+      | Some (binding, pending, sent_at) when !pending && now -. sent_at >= 1. ->
+          Ivy.unbind binding;
+          server_responding := false;
+          aircrafts_request := None
+      | Some (_, pending, _) when not !pending -> aircrafts_request := None
+      | _ -> ()
+      end;
+      match !aircrafts_request with
+      | Some _ -> ()
+      | None ->
+          let binding, pending =
+            Ground_Pprz.message_req "link" "AIRCRAFTS" [] reconcile_aircrafts in
+          aircrafts_request := Some (binding, pending, now)
+    in
+
     (* The function to be called when data is available *)
+    let device_closed = ref false in
+    let reconnecting = ref false in
+    let reconnect () =
+      if not !reconnecting then begin
+        reconnecting := true;
+        device_closed := true;
+        prerr_endline "Modem connection lost. Waiting for serial device to reconnect";
+        (try Unix.close fd with Unix.Unix_error (Unix.EBADF, _, _) -> ());
+        let rec restart retries =
+          if retries <= 0 then begin
+            prerr_endline "Serial device did not return within 30 seconds. Exiting";
+            exit 1
+          end;
+          Unix.sleep 1;
+          try
+            let probe = open_fd () in
+            Unix.close probe;
+            prerr_endline "Serial device restored. Restarting link";
+            Unix.execv Sys.argv.(0) Sys.argv
+          with Unix.Unix_error _ | Failure _ -> restart (retries - 1)
+        in
+        restart 30
+      end
+    in
     let read_fd =
       let buffered_parser =
         (* Get the specific parser for the given transport protocol *)
@@ -573,30 +709,23 @@ let () =
         (* Wrap the parser into the buffered bytes reader *)
         match Serial.input ~read parser with Serial.Closure f -> f in
       fun _io_event ->
-        begin
-          try buffered_parser fd with
-          | Failure msg when String.length msg >= 25 && String.sub msg 0 25 = "PprzLink.invalid class ID" -> ()
-          | exc -> prerr_endline (Printexc.to_string exc)
-      end;
-      true (* Returns true to be called again *)
+        if !device_closed then
+          false
+        else begin
+          begin
+            try buffered_parser fd with
+            | Failure msg when String.length msg >= 25 && String.sub msg 0 25 = "PprzLink.invalid class ID" -> ()
+            | Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK), _, _) -> ()
+            | (End_of_file | Unix.Unix_error ((Unix.EBADF | Unix.ENODEV | Unix.EIO), _, _)) ->
+              reconnect ()
+            | exc -> prerr_endline (Printexc.to_string exc)
+          end;
+          not !device_closed (* Returns true to be called again *)
+        end
     in
     let hangup = fun _ ->
-      prerr_endline "Modem hangup. Waiting for serial device to reconnect";
-      Unix.close fd;
-      let rec restart retries =
-        if retries <= 0 then begin
-          prerr_endline "Serial device did not return within 30 seconds. Exiting";
-          exit 1
-        end;
-        Unix.sleep 1;
-        try
-          let probe = open_fd () in
-          Unix.close probe;
-          prerr_endline "Serial device restored. Restarting link";
-          Unix.execv Sys.argv.(0) Sys.argv
-        with Unix.Unix_error _ -> restart (retries - 1)
-      in
-      restart 30
+      reconnect ();
+      false
     in
     ignore (Glib.Io.add_watch ~cond:[`HUP] ~callback:hangup (GMain.Io.channel_of_descr fd));
     ignore (Glib.Io.add_watch ~cond:[`IN] ~callback:read_fd (GMain.Io.channel_of_descr fd));
@@ -612,6 +741,9 @@ let () =
       if !uplink then begin
         ignore (Glib.Timeout.add ~ms:discovery_ping_period
           ~callback:(fun () -> send_discovery_ping device; true));
+        ignore (Glib.Timeout.add ~ms:1000
+          ~callback:(fun () -> request_aircrafts (); true));
+        request_aircrafts ();
         let start_ping = fun () ->
           ignore (Glib.Timeout.add ~ms:!ping_msg_period ~callback:(fun () -> send_ping_msg device; true));
           false in

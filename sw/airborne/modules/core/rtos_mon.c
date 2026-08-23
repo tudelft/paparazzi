@@ -29,6 +29,24 @@
 
 struct rtos_monitoring rtos_mon;
 
+/*
+ * Choose how RTOS_MON is sent:
+ *
+ * By default, periodic_report_sysmon() updates the measurements and sends them
+ * immediately (normally once per second, as configured by sys_mon.xml).
+ *
+ * Define SYS_MON_SCHEDULED_TELEMETRY when the telemetry scheduler should own
+ * the radio timing instead. This is useful on bandwidth-limited or shared
+ * links, where RTOS_MON must follow the periods and phases of the active
+ * telemetry mode. The monitor still updates its measurements once per second;
+ * the scheduler sends the latest available snapshot when its RTOS_MON slot is
+ * due.
+ *
+ * When this option is enabled, add RTOS_MON to every telemetry mode that should
+ * transmit it. If a mode does not list RTOS_MON, no report is sent in that
+ * mode. This is also a convenient way to keep CPU monitoring enabled without
+ * spending radio bandwidth on the report.
+ */
 #ifdef SYS_MON_SCHEDULED_TELEMETRY
 static void send_sysmon(struct transport_tx *trans, struct link_device *dev)
 {
@@ -50,6 +68,7 @@ void init_sysmon(void)
   // arch init
   rtos_mon_init_arch();
 #ifdef SYS_MON_SCHEDULED_TELEMETRY
+  // Let the active telemetry mode decide when the latest snapshot is sent.
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_RTOS_MON, send_sysmon);
 #endif
 }
@@ -65,7 +84,7 @@ void periodic_report_sysmon(void)
   // update cpu time
   rtos_mon.cpu_time = get_sys_time_float();
 
-  // send report unless periodic telemetry controls the radio cadence
+  // In the default mode, each fresh sample is sent immediately.
 #ifndef SYS_MON_SCHEDULED_TELEMETRY
   DOWNLINK_SEND_RTOS_MON(DefaultChannel, DefaultDevice,
       &rtos_mon.thread_counter,

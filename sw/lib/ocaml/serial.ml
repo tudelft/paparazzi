@@ -81,6 +81,7 @@ let speed_of_baudrate = fun baudrate ->
 external init_serial : string -> speed -> bool -> Unix.file_descr = "c_init_serial"
 external set_dtr : Unix.file_descr -> bool -> unit = "c_set_dtr"
 external set_speed : Unix.file_descr -> speed -> unit = "c_serial_set_baudrate"
+external monotonic_time : unit -> float = "c_monotonic_time"
 
 let opendev device speed hw_flow_control =
   try
