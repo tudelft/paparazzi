@@ -26,9 +26,9 @@
       mesh          : Startup and normal 1-12 aircraft profile. It carries the same operational
             message set as mesh_manifold at approximately twice its rates.
     mesh_solo  : High-rate two-node profile for one aircraft plus the GCS. It
-                 requires fresh GCS contact, no other live aircraft or peer
-                 slot, and one quiet 16 s superframe before entry. Any peer
-                 MESH_STATE exits solo immediately through mesh_manifold.
+           requires fresh GCS contact, no other live aircraft or peer
+           slot, and one quiet 16 s superframe before entry. Any peer
+           ALIVE or MESH_STATE exits solo immediately to mesh.
 
   Operator commands and their acknowledgements are asynchronous. Camera shots
   and TCAS advisories are event-driven, so none belongs in a periodic mode.
@@ -50,7 +50,7 @@
     <mode name="mesh" key_press="h">
       <!-- Normal 1-12 aircraft operation: complete operational visibility at
            roughly twice the manifold update rate while retaining event reserve. -->
-      <message name="MESH_STATE"        period="2.0"     phase="0.005000"/>
+      <message name="MESH_STATE"        period="2.0"     phase="0.010000"/>
       <message name="MINIMAL_COM"       period="10.0"    phase="0.201000"/>
       <message name="PPRZ_MODE"         period="40.0"    phase="0.112750"/>
       <message name="ATTITUDE"          period="40.0"    phase="0.175250"/>

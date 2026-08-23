@@ -31,6 +31,26 @@ static inline bool mesh_mode_should_use_solo(
          && input->peer_quiet_ms >= input->required_quiet_ms;
 }
 
+/** @brief Decide whether a received frame is airborne peer evidence. */
+static inline bool mesh_mode_is_peer_sender(uint8_t sender_id,
+                                            uint8_t local_id)
+{
+  return sender_id != 0u && sender_id != UINT8_MAX
+         && sender_id != local_id;
+}
+
+/** Spread simultaneous boot traffic deterministically over a bounded window. */
+static inline uint32_t mesh_mode_boot_spread_ms(uint32_t identity,
+                                                uint32_t window_ms)
+{
+  identity ^= identity >> 16;
+  identity *= UINT32_C(0x7feb352d);
+  identity ^= identity >> 15;
+  identity *= UINT32_C(0x846ca68b);
+  identity ^= identity >> 16;
+  return window_ms == 0u ? 0u : identity % window_ms;
+}
+
 /** @brief Apply hysteresis to mesh-versus-manifold telemetry selection.
  *
  * @param[in] neighbours Number of distinct live aircraft peers.

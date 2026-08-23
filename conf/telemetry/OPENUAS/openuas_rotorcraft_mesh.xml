@@ -7,7 +7,7 @@
 <telemetry>
   <process name="Main">
     <mode name="mesh">
-      <message name="MESH_STATE"        period="2.0"     phase="0.005000"/>
+      <message name="MESH_STATE"        period="2.0"     phase="0.010000"/>
       <message name="ROTORCRAFT_FP"     period="7.0"     phase="0.072857"/>
       <message name="ATTITUDE"          period="14.0"    phase="0.215000"/>
       <message name="ENERGY"            period="28.0"    phase="0.178929"/>

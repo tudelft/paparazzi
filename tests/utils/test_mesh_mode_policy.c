@@ -13,7 +13,7 @@ static void expect(bool condition, const char *message)
 
 int main(void)
 {
-  puts("1..20");
+  puts("1..27");
   struct mesh_mode_policy_input input = {
     .self_ping_fresh = true,
     .other_ping_fresh = false,
@@ -91,5 +91,26 @@ int main(void)
         expect(!mesh_position_holdover_valid(true, 12001, 12000),
           "position holdover accepted stale estimator state");
         puts("ok 20 - stale estimator state is rejected");
+        expect(mesh_mode_is_peer_sender(42, 17),
+          "airborne peer sender was rejected");
+        puts("ok 21 - airborne ALIVE is peer evidence");
+        expect(!mesh_mode_is_peer_sender(17, 17),
+          "reflected self sender was accepted as a peer");
+        puts("ok 22 - reflected self ALIVE is ignored");
+        expect(!mesh_mode_is_peer_sender(0, 17),
+          "ground sender was accepted as an airborne peer");
+        puts("ok 23 - ground ALIVE is ignored");
+        expect(!mesh_mode_is_peer_sender(UINT8_MAX, 17),
+          "broadcast sender was accepted as an airborne peer");
+        puts("ok 24 - reserved broadcast ALIVE is ignored");
+        const uint32_t boot_spread = mesh_mode_boot_spread_ms(17, 250);
+        expect(boot_spread < 250, "boot spread exceeded its bound");
+        puts("ok 25 - boot announcement spread is bounded");
+        expect(boot_spread == mesh_mode_boot_spread_ms(17, 250),
+          "boot spread was not deterministic");
+        puts("ok 26 - boot announcement spread is deterministic");
+        expect(mesh_mode_boot_spread_ms(17, 0) == 0,
+          "disabled boot spread was nonzero");
+        puts("ok 27 - zero boot spread window is supported");
   return EXIT_SUCCESS;
 }

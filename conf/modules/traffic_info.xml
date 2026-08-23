@@ -22,6 +22,8 @@
       With MESH_AUTO_TELEMETRY enabled, profiles defining mesh, mesh_manifold, and mesh_solo are selected automatically.
       Selection starts in mesh, uses neighbour-count hysteresis for high-population fleets,
       and enters mesh_solo only after targeted GCS contact and a complete peer-quiet interval.
+      A peer ALIVE is weak presence evidence that exits mesh_solo immediately; it never creates traffic kinematics or slot ownership.
+      Startup sends a bounded, AC_ID-spread ALIVE and primary state pair, then one wider-spread state recovery for simultaneous fleet power-up.
       Profiles defining only mesh and mesh_solo remain supported without manifold selection.
       Mesh mode changes state transport only; the normal traffic table and public access functions stay available.
       See doc/mesh/mesh_network_design.md before changing timing, slot count, radio settings, or fleet size.
@@ -79,6 +81,7 @@
   <datalink message="ACINFO"      fun="parse_acinfo_dl(buf)"/>
   <datalink message="ACINFO_LLA"  fun="parse_acinfo_dl(buf)"/>
   <datalink message="MESH_STATE"  fun="parse_acinfo_dl(buf)" cond="TRAFFIC_INFO_USE_MESH"/>
+  <datalink message="ALIVE"       fun="parse_acinfo_dl(buf)" class="telemetry" cond="TRAFFIC_INFO_USE_MESH"/>
   <datalink message="GPS_SMALL"   fun="parse_acinfo_dl(buf)" class="telemetry"/>
   <datalink message="GPS"         fun="parse_acinfo_dl(buf)" class="telemetry"/>
   <datalink message="GPS_LLA"     fun="parse_acinfo_dl(buf)" class="telemetry"/>

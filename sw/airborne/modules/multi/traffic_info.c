@@ -327,9 +327,12 @@ static bool mesh_position_fix_seen;
 #if MESH_AUTO_TELEMETRY_AVAILABLE
 static uint64_t mesh_last_peer_ms;
 static uint64_t mesh_alive_retry_ms;
-#if MESH_AUTO_TELEMETRY_HAS_MANIFOLD
-static uint64_t mesh_manifold_hold_until_ms;
-#endif
+static uint64_t mesh_boot_announce_ms;
+static uint64_t mesh_boot_state_ms;
+static uint64_t mesh_boot_state_recovery_ms;
+static bool mesh_boot_announce_pending;
+static bool mesh_boot_state_pending;
+static bool mesh_boot_state_recovery_pending;
 #endif
 
 static uint32_t mesh_multiplex_encode(int32_t course_ddeg,
@@ -341,8 +344,19 @@ static uint8_t mesh_local_tx_in_flight(uint64_t now_ms);
 
 #if MESH_AUTO_TELEMETRY_AVAILABLE
 #define MESH_ALIVE_RETRY_MS 30000u
+#define MESH_BOOT_ANNOUNCE_WINDOW_MS 250u
+#define MESH_BOOT_STATE_WINDOW_MS 160u
+#define MESH_BOOT_STATE_RECOVERY_WINDOW_MS 4000u
 #define MESH_MANIFOLD_ENTER_NEIGHBOURS 12u
 #define MESH_MANIFOLD_EXIT_NEIGHBOURS 10u
+
+#if FIXEDWING_FIRMWARE
+#define MESH_BOOT_STATE_MSG_ID PPRZ_MSG_ID_MINIMAL_COM
+#elif ROTORCRAFT_FIRMWARE
+#define MESH_BOOT_STATE_MSG_ID PPRZ_MSG_ID_ROTORCRAFT_FP
+#else
+#define MESH_BOOT_STATE_MSG_ID 0u
+#endif
 
 static void mesh_auto_telemetry_periodic(uint64_t now_ms)
 {
@@ -376,11 +390,10 @@ static void mesh_auto_telemetry_periodic(uint64_t now_ms)
       MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_SOLO;
     } else {
 #if MESH_AUTO_TELEMETRY_HAS_MANIFOLD
-      const bool select_manifold = now_ms < mesh_manifold_hold_until_ms
-        || mesh_mode_should_use_manifold(
-          mesh_link.neighbours, manifold_mode,
-          MESH_MANIFOLD_ENTER_NEIGHBOURS,
-          MESH_MANIFOLD_EXIT_NEIGHBOURS);
+  const bool select_manifold = mesh_mode_should_use_manifold(
+  mesh_link.neighbours, manifold_mode,
+  MESH_MANIFOLD_ENTER_NEIGHBOURS,
+  MESH_MANIFOLD_EXIT_NEIGHBOURS);
       MESH_TELEMETRY_MODE = select_manifold ? MESH_TELEMETRY_MODE_MANIFOLD
                                             : MESH_TELEMETRY_MODE_MESH;
 #else
@@ -392,12 +405,52 @@ static void mesh_auto_telemetry_periodic(uint64_t now_ms)
   const bool any_gcs_ping_fresh =
     datalink_gcs_self_ping_is_fresh(MESH_GCS_PING_TIMEOUT_MS)
     || datalink_gcs_other_ping_is_fresh(MESH_GCS_PING_TIMEOUT_MS);
-  if (!any_gcs_ping_fresh
+  if (mesh_boot_announce_pending
+      && now_ms >= mesh_boot_announce_ms
+      && mesh_local_tx_in_flight(now_ms) == 0) {
+    pprz_msg_send_ALIVE(mesh_trans, mesh_dev, AC_ID, 16, MD5SUM);
+    mesh_link.local_tx_free_ms = now_ms + MESH_MODEM_DRAIN_MS;
+    mesh_alive_retry_ms = now_ms + MESH_ALIVE_RETRY_MS;
+    mesh_boot_announce_pending = false;
+    mesh_boot_state_ms = mesh_link.local_tx_free_ms
+      + mesh_mode_boot_spread_ms((uint32_t)AC_ID ^ UINT32_C(0xa5),
+                                 MESH_BOOT_STATE_WINDOW_MS);
+    mesh_boot_state_recovery_ms = mesh_boot_state_ms
+      + MESH_MODEM_DRAIN_MS
+      + mesh_mode_boot_spread_ms((uint32_t)AC_ID ^ UINT32_C(0x5a),
+                                 MESH_BOOT_STATE_RECOVERY_WINDOW_MS);
+  } else if (!mesh_boot_announce_pending
+      && !any_gcs_ping_fresh
       && now_ms >= mesh_alive_retry_ms
       && mesh_local_tx_in_flight(now_ms) == 0) {
     pprz_msg_send_ALIVE(mesh_trans, mesh_dev, AC_ID, 16, MD5SUM);
     mesh_link.local_tx_free_ms = now_ms + MESH_MODEM_DRAIN_MS;
     mesh_alive_retry_ms = now_ms + MESH_ALIVE_RETRY_MS;
+  }
+
+  if (mesh_boot_state_pending
+      && !mesh_boot_announce_pending
+      && now_ms >= mesh_boot_state_ms
+      && mesh_local_tx_in_flight(now_ms) == 0) {
+    const uint8_t sent = periodic_telemetry_send_message(
+      DefaultPeriodic, MESH_BOOT_STATE_MSG_ID, mesh_trans, mesh_dev);
+    if (sent != 0) {
+      mesh_link.local_tx_free_ms = now_ms
+        + (uint64_t)sent * MESH_MODEM_DRAIN_MS;
+    }
+    mesh_boot_state_pending = false;
+  }
+
+  if (mesh_boot_state_recovery_pending
+      && now_ms >= mesh_boot_state_recovery_ms
+      && mesh_local_tx_in_flight(now_ms) == 0) {
+    const uint8_t sent = periodic_telemetry_send_message(
+      DefaultPeriodic, MESH_BOOT_STATE_MSG_ID, mesh_trans, mesh_dev);
+    if (sent != 0) {
+      mesh_link.local_tx_free_ms = now_ms
+        + (uint64_t)sent * MESH_MODEM_DRAIN_MS;
+    }
+    mesh_boot_state_recovery_pending = false;
   }
 }
 
@@ -406,13 +459,7 @@ static void mesh_auto_telemetry_note_peer(uint64_t now_ms)
   mesh_last_peer_ms = now_ms;
   /* Do not wait for the next periodic selector pass when a peer appears. */
   if (MESH_TELEMETRY_MODE == MESH_TELEMETRY_MODE_SOLO) {
-#if MESH_AUTO_TELEMETRY_HAS_MANIFOLD
-    MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_MANIFOLD;
-    mesh_manifold_hold_until_ms = now_ms
-                                  + MESH_ENTRY_FRAMES * MESH_TDMA_SUPERFRAME_MS;
-#else
     MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_MESH;
-#endif
   }
 }
 #endif
@@ -1388,12 +1435,18 @@ void traffic_info_init(void)
 #if MESH_AUTO_TELEMETRY_AVAILABLE
 #if MESH_AUTO_TELEMETRY_HAS_MANIFOLD
   MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_MESH;
-  mesh_manifold_hold_until_ms = 0;
 #else
   MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_MESH;
 #endif
   mesh_last_peer_ms = traffic_monotonic_time_ms();
-  mesh_alive_retry_ms = traffic_monotonic_time_ms();
+  mesh_alive_retry_ms = UINT64_MAX;
+  mesh_boot_announce_ms = traffic_monotonic_time_ms()
+    + mesh_mode_boot_spread_ms(AC_ID, MESH_BOOT_ANNOUNCE_WINDOW_MS);
+  mesh_boot_state_ms = UINT64_MAX;
+  mesh_boot_state_recovery_ms = UINT64_MAX;
+  mesh_boot_announce_pending = true;
+  mesh_boot_state_pending = MESH_BOOT_STATE_MSG_ID != 0u;
+  mesh_boot_state_recovery_pending = MESH_BOOT_STATE_MSG_ID != 0u;
 #endif
 #endif
 
@@ -1436,6 +1489,16 @@ bool parse_acinfo_dl(uint8_t *buf)
       return FALSE;
     }
     switch (msg_id) {
+#if TRAFFIC_INFO_USE_MESH && MESH_AUTO_TELEMETRY_AVAILABLE
+      case DL_ALIVE:
+        /* Boot ALIVE is immediate weak presence evidence. It exits the
+         * high-rate solo profile, but never creates traffic state or claims a
+         * TDMA slot; only MESH_STATE remains authoritative for both. */
+        if (mesh_mode_is_peer_sender(sender_id, AC_ID)) {
+          mesh_auto_telemetry_note_peer(traffic_monotonic_time_ms());
+        }
+        return TRUE;
+#endif
       case DL_GPS_SMALL: {
         uint32_t multiplex_speed = DL_GPS_SMALL_multiplex_speed(buf);
 

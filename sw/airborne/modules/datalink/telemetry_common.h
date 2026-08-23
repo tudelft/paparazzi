@@ -77,9 +77,23 @@ extern void telemetry_reporting_task(void);
  */
 #if PERIODIC_TELEMETRY
 extern int16_t register_periodic_telemetry(struct periodic_telemetry *_pt, uint16_t _id, telemetry_cb _cb);
+
+/** Invoke every registered callback for one telemetry message immediately.
+ *
+ * @return Number of callbacks invoked, or zero when the message is absent.
+ */
+extern uint8_t periodic_telemetry_send_message(struct periodic_telemetry *_pt,
+                                               uint16_t _id,
+                                               struct transport_tx *trans,
+                                               struct link_device *dev);
 #else
 static inline int16_t register_periodic_telemetry(struct periodic_telemetry *_pt __attribute__((unused)),
     uint16_t _id __attribute__((unused)), telemetry_cb _cb __attribute__((unused))) { return -1; }
+static inline uint8_t periodic_telemetry_send_message(
+  struct periodic_telemetry *_pt __attribute__((unused)),
+  uint16_t _id __attribute__((unused)),
+  struct transport_tx *trans __attribute__((unused)),
+  struct link_device *dev __attribute__((unused))) { return 0; }
 #endif
 
 #if USE_PERIODIC_TELEMETRY_REPORT

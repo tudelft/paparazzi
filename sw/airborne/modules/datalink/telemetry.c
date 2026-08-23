@@ -71,6 +71,28 @@ int16_t register_periodic_telemetry(struct periodic_telemetry *_pt, uint16_t _id
   return -1;
 }
 
+uint8_t periodic_telemetry_send_message(struct periodic_telemetry *_pt,
+                                        uint16_t _id,
+                                        struct transport_tx *trans,
+                                        struct link_device *dev)
+{
+  if (_pt == NULL || trans == NULL || dev == NULL) {
+    return 0;
+  }
+  for (uint16_t i = 0; i < _pt->nb; i++) {
+    if (_pt->cbs[i].id != _id) {
+      continue;
+    }
+    uint8_t sent = 0;
+    while (sent < TELEMETRY_NB_CBS && _pt->cbs[i].slots[sent] != NULL) {
+      _pt->cbs[i].slots[sent](trans, dev);
+      sent++;
+    }
+    return sent;
+  }
+  return 0;
+}
+
 /** Peridioc task
  * Send a series of initialisation messages followed by a stream of periodic ones.
  */

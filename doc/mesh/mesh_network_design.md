@@ -392,14 +392,16 @@ can answer two questions locally:
 
 The airborne selector chooses `mesh_solo` when the GCS has recently pinged this
 aircraft, no recent PING targeted another aircraft, no peer owns a live mesh
-slot, and no `MESH_STATE` peer frame has been received for 16 seconds. A
+slot, and no peer frame has been received for 16 seconds. A
 synchronized mesh clock is deliberately not required for this one-aircraft
 case: there is no peer TDMA schedule to coordinate, and requiring GPS time would
 leave an indoor or GPS-denied bench test permanently on sparse telemetry. The
 `MESH_STATE` canary continues using the normal GPS, bounded-holdover, or
-randomized asynchronous mesh timing. A received peer `MESH_STATE` leaves solo
-mode immediately, conservatively via `mesh_manifold`; after membership converges,
-peer-count hysteresis selects the appropriate fleet profile. A manual selection
+randomized asynchronous mesh timing. A received peer `ALIVE` or `MESH_STATE`
+leaves solo mode immediately for `mesh`; peer-count hysteresis independently
+selects `mesh_manifold` only at the high-population threshold. `ALIVE` is weak
+presence evidence only: it never creates TCAS kinematics, assigns a slot, or
+shortens the three-superframe listen-before-claim interval. A manual selection
 of an unrelated diagnostic mode is preserved and disables automatic switching
 until a mesh mode is selected again.
 
@@ -414,9 +416,15 @@ Only existing messages are used. Fixed-wing sends `MINIMAL_COM` at 5 Hz,
 `ATTITUDE` at 2 Hz, `ENERGY` at 1 Hz, `DATALINK_REPORT` at 0.5 Hz, and `ALIVE`
 at 0.2 Hz. Rotorcraft uses the same schedule with native `ROTORCRAFT_FP` instead
 of `MINIMAL_COM`. `MESH_STATE` remains active as the safety/discovery canary in
-both modes. One standard `ALIVE` is sent when the mesh transport first becomes
-ready and retried every 30 seconds until the first GCS PING, allowing the normal
-server/link discovery cycle to start without a custom handshake.
+both modes. The mesh transport becomes ready on the first telemetry scheduler
+tick. Startup then sends one standard `ALIVE` within an AC_ID-derived 250 ms
+window, waits at least one 60 ms modem-drain interval, and sends one registered
+primary-state callback within a second 160 ms window. Thus the common single
+join submits useful GCS state in under 0.5 seconds without duplicating either
+firmware's state serializer. One independently spread state recovery follows
+within four seconds for simultaneous fleet power-up, where the first burst may
+collide. `ALIVE` is retried every 30 seconds until the first GCS PING, allowing
+the normal server/link discovery cycle to start without a custom handshake.
 
 The primary period was reduced from 250 ms to 200 ms, giving exactly 25% more
 scheduled state updates and 20% less maximum update latency. The auxiliary rates
