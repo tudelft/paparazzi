@@ -407,10 +407,6 @@ let parser_of_device = fun device ->
       XbeeTransport.parse (XB.use_message device)
 
 
-let hangup = fun _ ->
-  prerr_endline "Modem hangup. Exiting";
-  exit 1
-
 (*************** Sending messages over link ***********************************)
 
 let message_uplink = fun device ->
@@ -526,7 +522,7 @@ let () =
     (** Listen on a udp port or a serial device or on pipe *)
     let on_serial_device =
       String.length !port >= 4 && String.sub !port 0 4 = "/dev" in (* FIXME *)
-    let fd =
+    let open_fd () =
       if !udp then
         begin
           let sockaddr = Unix.ADDR_INET (Unix.inet_addr_any, !udp_port)
@@ -541,6 +537,7 @@ let () =
        else
           Unix.openfile !port [Unix.O_RDWR] 0o640
     in
+    let fd = open_fd () in
 
     (* Create the device object *)
     let baudrate = int_of_string !baudrate in
@@ -561,6 +558,24 @@ let () =
           | exc -> prerr_endline (Printexc.to_string exc)
       end;
       true (* Returns true to be called again *)
+    in
+    let hangup = fun _ ->
+      prerr_endline "Modem hangup. Waiting for serial device to reconnect";
+      Unix.close fd;
+      let rec restart retries =
+        if retries <= 0 then begin
+          prerr_endline "Serial device did not return within 30 seconds. Exiting";
+          exit 1
+        end;
+        Unix.sleep 1;
+        try
+          let probe = open_fd () in
+          Unix.close probe;
+          prerr_endline "Serial device restored. Restarting link";
+          Unix.execv Sys.argv.(0) Sys.argv
+        with Unix.Unix_error _ -> restart (retries - 1)
+      in
+      restart 30
     in
     ignore (Glib.Io.add_watch ~cond:[`HUP] ~callback:hangup (GMain.Io.channel_of_descr fd));
     ignore (Glib.Io.add_watch ~cond:[`IN] ~callback:read_fd (GMain.Io.channel_of_descr fd));
