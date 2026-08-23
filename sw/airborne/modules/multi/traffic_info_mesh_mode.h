@@ -31,21 +31,21 @@ static inline bool mesh_mode_should_use_solo(
          && input->peer_quiet_ms >= input->required_quiet_ms;
 }
 
-/** @brief Apply hysteresis to common-versus-dense telemetry selection.
+/** @brief Apply hysteresis to mesh-versus-manifold telemetry selection.
  *
  * @param[in] neighbours Number of distinct live aircraft peers.
- * @param[in] dense_active Whether the dense profile is currently selected.
- * @param[in] enter_neighbours Enter dense mode at or above this count.
- * @param[in] exit_neighbours Leave dense mode at or below this count.
- * @return @c true when the dense telemetry profile should be selected.
+ * @param[in] manifold_active Whether the manifold profile is currently selected.
+ * @param[in] enter_neighbours Enter manifold mode at or above this count.
+ * @param[in] exit_neighbours Leave manifold mode at or below this count.
+ * @return @c true when the manifold telemetry profile should be selected.
  */
-static inline bool mesh_mode_should_use_dense(uint8_t neighbours,
-                                               bool dense_active,
-                                               uint8_t enter_neighbours,
-                                               uint8_t exit_neighbours)
+static inline bool mesh_mode_should_use_manifold(uint8_t neighbours,
+                                                  bool manifold_active,
+                                                  uint8_t enter_neighbours,
+                                                  uint8_t exit_neighbours)
 {
-  return dense_active ? neighbours > exit_neighbours
-                      : neighbours >= enter_neighbours;
+  return manifold_active ? neighbours > exit_neighbours
+                         : neighbours >= enter_neighbours;
 }
 
 /** Closed interval for one randomized asynchronous transmission deadline. */

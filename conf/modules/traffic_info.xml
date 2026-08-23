@@ -19,10 +19,10 @@
       Estimator-derived global position remains valid only for MESH_POSITION_HOLDOVER_MS after GNSS loss;
       presence continues afterward, but stale kinematics are rejected by TCAS.
       Modem-cache back-pressure limits new state traffic before a five-frame E52 transmit cache can overflow.
-      With MESH_AUTO_TELEMETRY enabled, profiles defining mesh, mesh_dense, and mesh_solo are selected automatically.
-      Selection starts conservatively in mesh_dense, uses neighbour-count hysteresis for dense fleets,
+      With MESH_AUTO_TELEMETRY enabled, profiles defining mesh, mesh_manifold, and mesh_solo are selected automatically.
+      Selection starts conservatively in mesh_manifold, uses neighbour-count hysteresis for high-population fleets,
       and enters mesh_solo only after targeted GCS contact and a complete peer-quiet interval.
-      Profiles defining only mesh and mesh_solo remain supported without dense-fleet selection.
+      Profiles defining only mesh and mesh_solo remain supported without manifold selection.
       Mesh mode changes state transport only; the normal traffic table and public access functions stay available.
       See doc/mesh/mesh_network_design.md before changing timing, slot count, radio settings, or fleet size.
     </description>
@@ -59,7 +59,7 @@
     <define name="MESH_CACHE_HIGH_WATER" value="3"
       description="Stop local MESH_STATE admission at this estimated local depth; two hardware entries remain for unobservable relay and telemetry traffic"/>
     <define name="MESH_AUTO_TELEMETRY" value="FALSE|TRUE"
-      description="Automatically select mesh_solo, mesh, or mesh_dense from GCS and peer observations"/>
+      description="Automatically select mesh_solo, mesh, or mesh_manifold from GCS and peer observations"/>
     <define name="MESH_GCS_PING_TIMEOUT_MS" value="60000"
       description="Maximum age of GCS PING evidence used by automatic telemetry selection; covers two nominal 30 s E52 delivery intervals"/>
     <define name="MESH_SOLO_QUIET_MS" value="16000"

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE telemetry SYSTEM "../telemetry.dtd">
 <!--
-  openuas_mesh_swarm.xml
+  openuas_fixedwing_mesh.xml
 
   Phase values are generated and replay-verified with
   sw/tools/mesh/mesh_phase_optimizer.py. Re-solve and verify every affected
@@ -10,25 +10,25 @@
   Link      : EByte E52-400NW22S LoRa MESH, broadcast mode (AT+OPTION=3)
   Air rate  : 62500 bps  (SF5, BW 500 kHz, CR 4/5)
   UART      : 460800 baud 8N1
-  Network   : common 13 peers; dense 17 peers (16 aircraft + GCS), all routing
+  Network   : mesh 13 peers; manifold 17 peers (16 aircraft + GCS), all routing
   Flood tax : one transmission per routing peer for each originated broadcast
 
   Budget
-    common       : 57.8 % modeled channel utilisation at 13 peers
-    dense        : 59.4 % modeled channel utilisation at 17 peers
+    mesh         : 57.8 % modeled channel utilisation at 13 peers
+    manifold     : 59.4 % modeled channel utilisation at 17 peers
     steady state : 25 fair-share slots; 7 physical slots are churn headroom
     modem cache  : modeled peak 1; acceptance ceiling 3; hardware limit 5
 
   Automatic operating modes
-    mesh_dense : Conservative startup mode and the 13-16 aircraft profile.
-                 Entered at 12 observed aircraft peers and retained until the
-                 count falls below 10, providing hysteresis during churn.
-    mesh       : Normal 1-12 aircraft profile. It carries the same operational
-                 message set as mesh_dense at approximately twice its rates.
+    mesh_manifold : Conservative startup mode and the 13-16 aircraft profile.
+            Entered at 12 observed aircraft peers and retained until the
+            count falls below 10, providing hysteresis during churn.
+    mesh          : Normal 1-12 aircraft profile. It carries the same operational
+            message set as mesh_manifold at approximately twice its rates.
     mesh_solo  : High-rate two-node profile for one aircraft plus the GCS. It
                  requires fresh GCS contact, no other live aircraft or peer
                  slot, and one quiet 16 s superframe before entry. Any peer
-                 MESH_STATE exits solo immediately through mesh_dense.
+                 MESH_STATE exits solo immediately through mesh_manifold.
 
   Operator commands and their acknowledgements are asynchronous. Camera shots
   and TCAS advisories are event-driven, so none belongs in a periodic mode.
@@ -49,7 +49,7 @@
   <process name="Ap">
     <mode name="mesh" key_press="h">
       <!-- Normal 1-12 aircraft operation: complete operational visibility at
-           roughly twice the dense update rate while retaining event reserve. -->
+           roughly twice the manifold update rate while retaining event reserve. -->
       <message name="MESH_STATE"        period="2.0"     phase="0.005000"/>
       <message name="MINIMAL_COM"       period="10.0"    phase="0.201000"/>
       <message name="PPRZ_MODE"         period="40.0"    phase="0.112750"/>
@@ -75,7 +75,7 @@
       <message name="CALIBRATION"       period="320.0"   phase="0.232844"/>
       <message name="DL_VALUE"          period="320.0"   phase="0.248469"/>
     </mode>
-    <mode name="mesh_dense">
+    <mode name="mesh_manifold">
       <!-- Conservative startup and 13-16 aircraft operation: the complete
            operational set at lower rates to stay below 60% under flood load. -->
       <message name="MESH_STATE"        period="2.0"     phase="0.005000"/>

@@ -14,7 +14,7 @@ The flighted system has two cooperating layers. Paparazzi decides **when an
 aircraft may originate** a compact `MESH_STATE` packet. The E52 radio decides
 **how that packet is forwarded** across the broadcast mesh. The operator does
 not choose either layer: all nodes use one radio configuration, while aircraft
-automatically select solo, common, or dense telemetry.
+automatically select `mesh_solo`, `mesh`, or `mesh_manifold` telemetry.
 
 `MESH_STATE` is the primary peer-presence and motion stream. `GPS_LLA` is a
 slower full GPS report for the GCS. The implementation is divided as follows:
@@ -48,9 +48,9 @@ No ordering or sequential numbering is assumed.
 **Priority:** fault tolerance and multi-hop coverage first, then the highest
 state update rate that fits the E52 channel and five-frame transmit cache.
 
-**Modeled envelope:** 13 routing peers use the common fixed-wing profile at
+**Modeled envelope:** 13 routing peers use the `mesh` fixed-wing profile at
 57.7% modeled channel utilisation. Seventeen peers (16 aircraft and GCS)
-automatically use the dense profile at 59.4%. Both use 32 self-organised
+automatically use the `mesh_manifold` profile at 59.4%. Both use 32 self-organised
 slots, 25 steady fair-share slots, a 16 s superframe, and a 2 s `MESH_STATE`
 scheduler ceiling. These are software acceptance baselines, not substitutes
 for multi-modem bench testing or flight qualification.
@@ -364,18 +364,18 @@ and reuse-eight firmware in one mesh.
 
 There is no operator mode selection, custom wire protocol, additional ground
 application, or in-flight modem reconfiguration. Every scenario uses the same
-routing/broadcast E52 profile. Aircraft start conservatively in `mesh_dense`,
+routing/broadcast E52 profile. Aircraft start conservatively in `mesh_manifold`,
 then select one of three generated telemetry modes from observed peers:
 
 | Mode | Automatic condition | Purpose |
 | --- | --- | --- |
 | `mesh_solo` | GCS contact, no aircraft peer, 16 s quiet | 5 Hz direct-link state for the common <=1 km fallback |
 | `mesh` | up to 11 observed aircraft peers | normal 1-12 aircraft operation |
-| `mesh_dense` | enter at 12 peers, leave at 10 | bounded 13-16 aircraft operation with hysteresis |
+| `mesh_manifold` | enter at 12 peers, leave at 10 | bounded 13-16 aircraft operation with hysteresis |
 
-Startup remains in `mesh_dense` for the three-superframe listen-before-claim
+Startup remains in `mesh_manifold` for the three-superframe listen-before-claim
 interval. This prevents a newly powered fleet from briefly transmitting the
-more generous common profile before its membership map converges.
+more generous `mesh` profile before its membership map converges.
 
 The OCaml link sends one targeted `PING` every five seconds to the live aircraft
 that was least recently probed. The matching `PONG` still measures reachability
@@ -397,7 +397,7 @@ case: there is no peer TDMA schedule to coordinate, and requiring GPS time would
 leave an indoor or GPS-denied bench test permanently on sparse telemetry. The
 `MESH_STATE` canary continues using the normal GPS, bounded-holdover, or
 randomized asynchronous mesh timing. A received peer `MESH_STATE` leaves solo
-mode immediately, conservatively via `mesh_dense`; after membership converges,
+mode immediately, conservatively via `mesh_manifold`; after membership converges,
 peer-count hysteresis selects the appropriate fleet profile. A manual selection
 of an unrelated diagnostic mode is preserved and disables automatic switching
 until a mesh mode is selected again.
@@ -561,7 +561,7 @@ multiplies it by the E52 flood tax, solves Paparazzi phase offsets, replays the
 generated tick condition, simulates the five-frame modem cache, and writes the
 telemetry XML.
 
-The exact delivered common and dense gates are:
+The exact delivered `mesh` and `mesh_manifold` gates are:
 
 ```bash
 python3 sw/tools/mesh/mesh_phase_optimizer.py \
@@ -804,7 +804,7 @@ for seed in 1 2 3 4 5 6 7 8; do
     --frames 4000 --churn 0.05 --seed "$seed" --max-reuse 8 || exit 1
 done
 
-# 2a. Automatic mesh/mesh_dense/mesh_solo mode policy
+# 2a. Automatic mesh/mesh_manifold/mesh_solo mode policy
 tests/utils/test_mesh_mode_policy.run
 
 # 2b. Optimizer parser and airtime-accounting regressions
@@ -911,23 +911,23 @@ is the authority for that trade, and it must exit zero before flight.
 
 No modem reprovisioning between scenarios, additional application, or manual
 telemetry-mode change is needed. Build and flash aircraft with a telemetry
-profile containing `mesh`, `mesh_dense`, and `mesh_solo`, then start the normal
+profile containing `mesh`, `mesh_manifold`, and `mesh_solo`, then start the normal
 link/server/GCS session. Every E52 keeps the same all-routing, broadcast,
 62.5 kbit/s, 460800-baud profile.
 
-The aircraft starts in conservative `mesh_dense`. Once the standard link has
+The aircraft starts in conservative `mesh_manifold`. Once the standard link has
 discovered it and the radio-side membership map converges, it changes to
-`mesh`, or to `mesh_solo` after GCS contact and the 12-second peer-quiet
+`mesh`, or to `mesh_solo` after GCS contact and the 16-second peer-quiet
 interval. Starting another aircraft immediately leaves solo mode; joining and
-departing aircraft move the fleet between common and dense profiles with
+departing aircraft move the fleet between `mesh` and `mesh_manifold` with
 12-peer/10-peer hysteresis. All transitions are automatic and invisible to the
 operator.
 
 The supplied fixed-wing profiles use the generated `Ap` process. The dedicated
-`openuas_mesh_rotorcraft.xml` profile uses `Main` and native `ROTORCRAFT_FP`, so
+`openuas_rotorcraft_mesh.xml` profile uses `Main` and native `ROTORCRAFT_FP`, so
 the selector itself is firmware-neutral. The delivered mesh profiles define
 all three modes. Downstream two-mode profiles remain compatible and continue
-using common mesh telemetry where a specialized mode is absent.
+using `mesh` telemetry where a specialized mode is absent.
 
 Validation includes fixed-wing and rotorcraft builds, pure mode-policy tests,
 mesh churn and GPS-loss simulations, single-aircraft rate measurements, and a

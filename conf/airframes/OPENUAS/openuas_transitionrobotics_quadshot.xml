@@ -111,7 +111,7 @@
 
       <module name="telemetry" type="transparent">
         <configure name="MODEM_PORT" value="UART2"/>
-        <configure name="MODEM_BAUD" value="B57600"/>
+        <configure name="MODEM_BAUD" value="B460800"/>
       </module>
 
       <!-- <module name="gps" type="datalink"/>--><!-- for Optitrac systems use type datalink -->
@@ -232,7 +232,10 @@
     <!--  <define name="DC_SHUTTER_GPIO" value="GPIOB,GPIO22"/>--> <!-- should be value="CAM_SWITCH_GPIO"/>-->
     <!--</module>-->
 
-    <module name="traffic_info"/>
+    <module name="traffic_info">
+      <define name="TRAFFIC_INFO_USE_MESH" value="TRUE"/>
+      <define name="MESH_AUTO_TELEMETRY" value="TRUE"/>
+    </module>
     <module name="tcas"/>
 
   </firmware>

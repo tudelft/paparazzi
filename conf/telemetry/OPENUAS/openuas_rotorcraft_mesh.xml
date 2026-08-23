@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<!DOCTYPE telemetry SYSTEM "../telemetry.dtd">
+<!-- E52 mesh profile for rotorcraft firmware. Mode names intentionally
+  match the fixed-wing profile so traffic_info can select them generically.
+  MESH_STATE uses GNSS TDMA, bounded monotonic holdover, then randomized
+  GPS-free access without operator intervention. -->
+<telemetry>
+  <process name="Main">
+    <mode name="mesh">
+      <message name="MESH_STATE"        period="2.0"     phase="0.005000"/>
+      <message name="ROTORCRAFT_FP"     period="7.0"     phase="0.072857"/>
+      <message name="ATTITUDE"          period="14.0"    phase="0.215000"/>
+      <message name="ENERGY"            period="28.0"    phase="0.178929"/>
+      <message name="DATALINK_REPORT"   period="56.0"    phase="0.196607"/>
+      <message name="ALIVE"             period="56.0"    phase="0.160893"/>
+    </mode>
+    <mode name="mesh_manifold">
+      <!-- Native 13-16 aircraft schedule: 57.2% modeled channel use at 17 routing peers. -->
+      <message name="MESH_STATE"        period="2.0"     phase="0.005000"/>
+      <message name="ROTORCRAFT_FP"     period="14.0"    phase="0.072143"/>
+      <message name="ATTITUDE"          period="56.0"    phase="0.053750"/>
+      <message name="ENERGY"            period="56.0"    phase="0.089464"/>
+      <message name="DATALINK_REPORT"   period="112.0"   phase="0.080446"/>
+      <message name="ALIVE"             period="112.0"   phase="0.062589"/>
+    </mode>
+    <mode name="mesh_solo">
+      <!-- One rotorcraft plus GCS only: ROTORCRAFT_FP is the native primary
+           state packet; separate ATTITUDE would duplicate fields and airtime. -->
+      <message name="ROTORCRAFT_FP"     period="0.1875"  phase="0.050000"/>  <!-- 5.33 Hz position, velocity, attitude and guidance state. -->
+      <message name="ENERGY"            period="1.0"     phase="0.110000"/>
+      <message name="MINIMAL_COM"       period="1.0"     phase="0.310000"/>  <!-- Global position, mode, block, GPS fix and GCS strip data. -->
+      <message name="DATALINK_REPORT"   period="2.0"     phase="0.255000"/>
+      <message name="MESH_STATE"        period="2.0"     phase="0.355000"/>  <!-- Safety/discovery canary; TDMA gates actual emission. -->
+      <message name="ROTORCRAFT_CMD"    period="2.0"     phase="0.455000"/>
+      <message name="ROTORCRAFT_STATUS" period="2.0"     phase="0.755000"/>  <!-- RC, arming, failsafe, motor and GPS health. -->
+      <message name="ALIVE"             period="5.0"     phase="0.010000"/>
+      <message name="WP_MOVED"          period="8.0"     phase="0.213750"/>
+      <message name="AIR_DATA"          period="10.0"    phase="0.191000"/>
+      <message name="GPS_SOL"           period="10.0"    phase="0.391000"/>
+      <message name="STATE_FILTER_STATUS" period="10.0"  phase="0.591000"/>
+      <message name="DL_VALUE"          period="30.0"    phase="0.263667"/>
+      <!-- Camera shots and TCAS advisories remain event-driven. -->
+    </mode>
+  </process>
+</telemetry>

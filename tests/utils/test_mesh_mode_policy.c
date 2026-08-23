@@ -45,18 +45,18 @@ int main(void)
   input.peer_quiet_ms = input.required_quiet_ms + 60000;
   expect(mesh_mode_should_use_solo(&input), "long GPS-denied solo run was rejected");
   puts("ok 7 - solo selection is independent of mesh clock state");
-    expect(!mesh_mode_should_use_dense(11, false, 12, 10),
-      "dense mode entered below its threshold");
-    puts("ok 8 - common mode remains below dense threshold");
-    expect(mesh_mode_should_use_dense(12, false, 12, 10),
-      "dense mode did not enter at its threshold");
-    puts("ok 9 - dense mode enters at threshold");
-    expect(mesh_mode_should_use_dense(11, true, 12, 10),
-      "dense mode left inside the hysteresis band");
-    puts("ok 10 - dense mode holds inside hysteresis band");
-    expect(!mesh_mode_should_use_dense(10, true, 12, 10),
-      "dense mode did not leave at its exit threshold");
-    puts("ok 11 - dense mode leaves at exit threshold");
+    expect(!mesh_mode_should_use_manifold(11, false, 12, 10),
+      "manifold mode entered below its threshold");
+    puts("ok 8 - mesh mode remains below manifold threshold");
+    expect(mesh_mode_should_use_manifold(12, false, 12, 10),
+      "manifold mode did not enter at its threshold");
+    puts("ok 9 - manifold mode enters at threshold");
+    expect(mesh_mode_should_use_manifold(11, true, 12, 10),
+      "manifold mode left inside the hysteresis band");
+    puts("ok 10 - manifold mode holds inside hysteresis band");
+    expect(!mesh_mode_should_use_manifold(10, true, 12, 10),
+      "manifold mode did not leave at its exit threshold");
+    puts("ok 11 - manifold mode leaves at exit threshold");
       struct mesh_async_interval interval =
         mesh_async_interval_for_peers(0, false, 16000, 24000);
       expect(interval.min_ms == 16000 && interval.max_ms == 24000,

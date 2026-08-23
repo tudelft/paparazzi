@@ -57,7 +57,7 @@ Useful variations::
     ./mesh_phase_optimizer.py --relay-nodes 3        # only GCS + 2 relays route
     ./mesh_phase_optimizer.py --nodes 17 --utilisation 0.30
     ./mesh_phase_optimizer.py --period GPS_LLA=16 --period WP_MOVED=32
-    ./mesh_phase_optimizer.py --emit-xml conf/telemetry/OPENUAS/openuas_mesh_swarm.xml
+    ./mesh_phase_optimizer.py --emit-xml conf/telemetry/OPENUAS/openuas_fixedwing_mesh.xml
 """
 
 from __future__ import annotations
