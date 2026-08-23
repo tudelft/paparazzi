@@ -20,7 +20,7 @@
       presence continues afterward, but stale kinematics are rejected by TCAS.
       Modem-cache back-pressure limits new state traffic before a five-frame E52 transmit cache can overflow.
       With MESH_AUTO_TELEMETRY enabled, profiles defining mesh, mesh_manifold, and mesh_solo are selected automatically.
-      Selection starts conservatively in mesh_manifold, uses neighbour-count hysteresis for high-population fleets,
+      Selection starts in mesh, uses neighbour-count hysteresis for high-population fleets,
       and enters mesh_solo only after targeted GCS contact and a complete peer-quiet interval.
       Profiles defining only mesh and mesh_solo remain supported without manifold selection.
       Mesh mode changes state transport only; the normal traffic table and public access functions stay available.

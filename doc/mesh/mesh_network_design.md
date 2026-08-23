@@ -364,8 +364,8 @@ and reuse-eight firmware in one mesh.
 
 There is no operator mode selection, custom wire protocol, additional ground
 application, or in-flight modem reconfiguration. Every scenario uses the same
-routing/broadcast E52 profile. Aircraft start conservatively in `mesh_manifold`,
-then select one of three generated telemetry modes from observed peers:
+routing/broadcast E52 profile. Aircraft start in `mesh`, then select one of
+three generated telemetry modes from observed peers:
 
 | Mode | Automatic condition | Purpose |
 | --- | --- | --- |
@@ -373,9 +373,10 @@ then select one of three generated telemetry modes from observed peers:
 | `mesh` | up to 11 observed aircraft peers | normal 1-12 aircraft operation |
 | `mesh_manifold` | enter at 12 peers, leave at 10 | bounded 13-16 aircraft operation with hysteresis |
 
-Startup remains in `mesh_manifold` for the three-superframe listen-before-claim
-interval. This prevents a newly powered fleet from briefly transmitting the
-more generous `mesh` profile before its membership map converges.
+Telemetry starts in `mesh` so useful flight state reaches the GCS promptly.
+The independent TDMA network-entry logic still listens for three superframes
+before claiming slots, preventing newly powered peers from making conflicting
+slot assumptions before their membership maps converge.
 
 The OCaml link sends one targeted `PING` every five seconds to the live aircraft
 that was least recently probed. The matching `PONG` still measures reachability
@@ -915,13 +916,11 @@ profile containing `mesh`, `mesh_manifold`, and `mesh_solo`, then start the norm
 link/server/GCS session. Every E52 keeps the same all-routing, broadcast,
 62.5 kbit/s, 460800-baud profile.
 
-The aircraft starts in conservative `mesh_manifold`. Once the standard link has
-discovered it and the radio-side membership map converges, it changes to
-`mesh`, or to `mesh_solo` after GCS contact and the 16-second peer-quiet
-interval. Starting another aircraft immediately leaves solo mode; joining and
-departing aircraft move the fleet between `mesh` and `mesh_manifold` with
-12-peer/10-peer hysteresis. All transitions are automatic and invisible to the
-operator.
+The aircraft starts in `mesh` and changes to `mesh_solo` after GCS contact and
+the 16-second peer-quiet interval. Starting another aircraft immediately leaves
+solo mode; joining and departing aircraft move the fleet between `mesh` and
+`mesh_manifold` with 12-peer/10-peer hysteresis. All transitions are automatic
+and invisible to the operator.
 
 The supplied fixed-wing profiles use the generated `Ap` process. The dedicated
 `openuas_rotorcraft_mesh.xml` profile uses `Main` and native `ROTORCRAFT_FP`, so

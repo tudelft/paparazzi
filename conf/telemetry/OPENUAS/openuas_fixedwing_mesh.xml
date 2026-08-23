@@ -20,10 +20,10 @@
     modem cache  : modeled peak 1; acceptance ceiling 3; hardware limit 5
 
   Automatic operating modes
-    mesh_manifold : Conservative startup mode and the 13-16 aircraft profile.
+      mesh_manifold : Conservative 13-16 aircraft profile.
             Entered at 12 observed aircraft peers and retained until the
             count falls below 10, providing hysteresis during churn.
-    mesh          : Normal 1-12 aircraft profile. It carries the same operational
+      mesh          : Startup and normal 1-12 aircraft profile. It carries the same operational
             message set as mesh_manifold at approximately twice its rates.
     mesh_solo  : High-rate two-node profile for one aircraft plus the GCS. It
                  requires fresh GCS contact, no other live aircraft or peer
@@ -76,7 +76,7 @@
       <message name="DL_VALUE"          period="320.0"   phase="0.248469"/>
     </mode>
     <mode name="mesh_manifold">
-      <!-- Conservative startup and 13-16 aircraft operation: the complete
+      <!-- Conservative 13-16 aircraft operation: the complete
            operational set at lower rates to stay below 60% under flood load. -->
       <message name="MESH_STATE"        period="2.0"     phase="0.005000"/>
       <message name="MINIMAL_COM"       period="20.0"    phase="0.350500"/>

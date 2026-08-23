@@ -1387,9 +1387,8 @@ void traffic_info_init(void)
   mesh_link.last_emit_key = UINT32_MAX;
 #if MESH_AUTO_TELEMETRY_AVAILABLE
 #if MESH_AUTO_TELEMETRY_HAS_MANIFOLD
-  MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_MANIFOLD;
-  mesh_manifold_hold_until_ms = traffic_monotonic_time_ms()
-                                + MESH_ENTRY_FRAMES * MESH_TDMA_SUPERFRAME_MS;
+  MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_MESH;
+  mesh_manifold_hold_until_ms = 0;
 #else
   MESH_TELEMETRY_MODE = MESH_TELEMETRY_MODE_MESH;
 #endif
