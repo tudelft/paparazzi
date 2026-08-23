@@ -109,7 +109,7 @@
       <message name="MESH_STATE"        period="2.0"     phase="0.005000"/>  <!-- Safety/discovery canary; TDMA gates actual emission. -->
       <message name="MINIMAL_COM"       period="0.20"    phase="0.100000"/>  <!-- 5 Hz position, speed, mode, block, voltage and flight time. -->
       <message name="RANGEFINDER"       period="2.0"     phase="0.150000"/>
-      <message name="ATTITUDE"          period="0.50"    phase="0.500000"/>  <!-- 2 Hz, offset from MINIMAL_COM. -->
+      <message name="ATTITUDE"          period="0.50"    phase="0.500000"/>  <!-- Proven 2 Hz profile, offset from MINIMAL_COM. -->
       <message name="AIRSPEED"          period="2.0"     phase="0.560000"/>
       <message name="ENERGY"            period="1.0"     phase="0.540000"/>
       <message name="NAVIGATION"        period="4.0"     phase="0.700000"/>

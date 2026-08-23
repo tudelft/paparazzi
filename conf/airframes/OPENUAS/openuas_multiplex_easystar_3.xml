@@ -185,6 +185,9 @@
       </module>
 
       <module name="geo_mag"/>
+      <module name="sys_mon">
+        <define name="SYS_MON_SCHEDULED_TELEMETRY" value="TRUE"/>
+      </module>
 
       <!--
       <module name="takeoff_detect">
