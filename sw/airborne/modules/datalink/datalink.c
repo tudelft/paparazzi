@@ -83,6 +83,9 @@ void datalink_parse_PING(struct link_device *dev, struct transport_tx *trans, ui
   if (receiver != AC_ID && receiver != PPRZLINK_MSG_BROADCAST) {
     return;
   }
+  /* PING is also the recovery handshake when the GCS received state but
+   * missed this aircraft's startup ALIVE while the radio was booting. */
+  pprz_msg_send_ALIVE(trans, dev, AC_ID, 16, MD5SUM);
   // Reply to the sender of the message
   struct pprzlink_msg msg;
   msg.trans = trans;

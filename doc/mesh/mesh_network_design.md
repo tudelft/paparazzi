@@ -379,10 +379,11 @@ before claiming slots, preventing newly powered peers from making conflicting
 slot assumptions before their membership maps converge.
 
 The OCaml link sends one targeted `PING` every five seconds to the live aircraft
-that was least recently probed. The matching `PONG` still measures reachability
-and RTT, but aggregate liveness traffic remains one request/response pair per
-cycle rather than growing linearly with fleet size. New aircraft are selected
-first because their last-ping timestamp is zero. Incoming `MESH_STATE` also
+that was least recently probed. The aircraft returns its MD5-bearing `ALIVE`
+before `PONG`, so server restarts and a startup identity packet lost while the
+radio boots recover automatically. Aggregate liveness traffic remains one
+request/two-response exchange per cycle rather than growing linearly with fleet
+size. Incoming `MESH_STATE` also
 refreshes the ground link's live-aircraft table without being republished on
 Ivy. Because E52 broadcast traffic is heard by every mesh member, each aircraft
 can answer two questions locally:
@@ -407,10 +408,12 @@ until a mesh mode is selected again.
 
 The ground link probes only aircraft that are still live. Without that rule, an
 aircraft which landed hours earlier would remain in the link table and suppress
-solo mode forever. `ALIVE` is a discovery and configuration-identity message,
-not the high-rate heartbeat: an aircraft retries it every 30 seconds only while
-no recent GCS probe has been heard. `MESH_STATE` is the authoritative aircraft
-presence and motion stream.
+solo mode forever. Before an aircraft's first `ALIVE`, state reception starts a
+serialized 500 ms discovery PING. This closes the historical deadlock where the
+server waited for `ALIVE`, while ordinary state made the link start PINGing and
+suppressed the aircraft's identity retry. `ALIVE` remains a discovery and
+configuration-identity message, not the high-rate heartbeat. `MESH_STATE` is
+the authoritative aircraft presence and motion stream.
 
 Only existing messages are used. Fixed-wing sends `MINIMAL_COM` at 5 Hz,
 `ATTITUDE` at 2 Hz, `ENERGY` at 1 Hz, `DATALINK_REPORT` at 0.5 Hz, and `ALIVE`

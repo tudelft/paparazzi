@@ -107,6 +107,7 @@ type status = {
   mutable ms_since_last_msg : int;
   mutable last_ping : float; (* s *)
   mutable last_pong : float; (* s *)
+  mutable identified : bool; (* server validated ALIVE and registered aircraft *)
   udp_peername : Unix.sockaddr option
 }
 
@@ -118,6 +119,7 @@ let initial_status = {
   tx_msg = 0;
   ms_since_last_msg = !dead_aircraft_time_ms;
   last_ping = 0.; last_pong = 0.;
+  identified = false;
   udp_peername = None
 }
 
@@ -143,6 +145,7 @@ let update_status = fun ?udp_peername ac_id buf_size is_pong ->
     status.last_pong <- Unix.gettimeofday ();;
 
 let status_ping_diff = 500 (* ms *)
+let discovery_ping_period = 500 (* ms *)
 
 let live_aircraft = fun ac_id ->
   try
@@ -437,36 +440,43 @@ let message_uplink = fun device ->
         | _ -> ())
     Dl_Pprz.messages
 
+let ping_aircraft = fun device ac_id status ->
+  let msg_id, _ = Dl_Pprz.message_of_name "PING" in
+  let s = Dl_Pprz.payload_of_values msg_id my_id ac_id [] in
+  send ac_id device s High;
+  status.last_ping <- Unix.gettimeofday ()
+
+let select_ping_candidate = fun require_identified ->
+  Hashtbl.fold
+    (fun ac_id status selected ->
+      if status.identified <> require_identified || not (live_aircraft ac_id)
+      then selected
+      else match selected with
+        | None -> Some (ac_id, status)
+        | Some (selected_id, selected_status) ->
+            if status.last_ping < selected_status.last_ping
+               || (status.last_ping = selected_status.last_ping
+                   && ac_id < selected_id)
+            then Some (ac_id, status)
+            else selected)
+    statuss None
+
+let send_discovery_ping = fun device ->
+  match select_ping_candidate false with
+    | None -> ()
+    | Some (ac_id, status) -> ping_aircraft device ac_id status
+
 let send_ping_msg = fun device ->
   (* Probe one live aircraft per cycle, choosing the one least recently
      probed. This is adaptive round-robin without assuming contiguous AC_IDs.
      It avoids an N-aircraft PING/PONG flood while retaining RTT coverage.
 
-     Aircraft presence comes from telemetry, especially MESH_STATE; PING is a
-     GCS-reachability probe. A new or returning aircraft announces itself with
-     telemetry (including the mesh ALIVE retry), starts with last_ping = 0,
-     and is therefore selected before already-probed peers. *)
-  let candidate =
-    Hashtbl.fold
-      (fun ac_id status selected ->
-        if not (live_aircraft ac_id) then selected
-        else match selected with
-          | None -> Some (ac_id, status)
-          | Some (selected_id, selected_status) ->
-              if status.last_ping < selected_status.last_ping
-                 || (status.last_ping = selected_status.last_ping
-                     && ac_id < selected_id)
-              then Some (ac_id, status)
-              else selected)
-      statuss None
-  in
-  match candidate with
+    Only aircraft whose MD5-bearing ALIVE reached the link join this normal
+    round robin. Unidentified state is handled by the faster discovery probe
+    above, so a missed startup ALIVE cannot delay server registration. *)
+  match select_ping_candidate true with
     | None -> ()
-    | Some (ac_id, status) ->
-        let msg_id, _ = Dl_Pprz.message_of_name "PING" in
-        let s = Dl_Pprz.payload_of_values msg_id my_id ac_id [] in
-        send ac_id device s High;
-        status.last_ping <- Unix.gettimeofday ()
+    | Some (ac_id, status) -> ping_aircraft device ac_id status
 
 
 (** Main *********************************************************************)
@@ -543,6 +553,17 @@ let () =
     let baudrate = int_of_string !baudrate in
     let device = { fd=fd; transport=transport; baud_rate=baudrate; channel= !channel } in
 
+    (* NEW_AIRCRAFT is emitted only after server-side MD5 validation and
+       registration. Until this acknowledgement arrives, keep discovery PINGs
+       active even when ALIVE crossed the link but the server rejected it. *)
+    let aircraft_identified = fun _sender vs ->
+      let ac_id = int_of_string (PprzLink.string_assoc "ac_id" vs) in
+      try
+        let status = Hashtbl.find statuss ac_id in
+        status.identified <- true
+      with Not_found -> () in
+    ignore (Ground_Pprz.message_bind "NEW_AIRCRAFT" aircraft_identified);
+
     (* The function to be called when data is available *)
     let read_fd =
       let buffered_parser =
@@ -589,6 +610,8 @@ let () =
       ignore (Glib.Timeout.add ~ms:!status_msg_period ~callback:(fun () -> send_status_msg (); true));
       ignore (Glib.Timeout.add ~ms:(!status_msg_period / 3) ~callback:(fun () -> update_ms_since_last_msg (); true));
       if !uplink then begin
+        ignore (Glib.Timeout.add ~ms:discovery_ping_period
+          ~callback:(fun () -> send_discovery_ping device; true));
         let start_ping = fun () ->
           ignore (Glib.Timeout.add ~ms:!ping_msg_period ~callback:(fun () -> send_ping_msg device; true));
           false in

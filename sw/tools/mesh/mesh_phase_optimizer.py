@@ -1004,6 +1004,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         (msgs[("datalink", "BLOCK")], args.control_rate),
         (msgs[("telemetry", "NAVIGATION")], args.control_rate),
         (msgs[("datalink", "PING")], 1.0 / args.ping_period),
+        (msgs[("telemetry", "ALIVE")], 1.0 / args.ping_period),
         (msgs[("telemetry", "PONG")], 1.0 / args.ping_period),
     ]
 
