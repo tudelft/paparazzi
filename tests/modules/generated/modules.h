@@ -111,7 +111,8 @@ static inline void modules_parse_datalink(uint8_t msg_id __attribute__ ((unused)
                                           uint8_t class_id __attribute__((unused)),
                                           struct link_device *dev __attribute__((unused)),
                                           struct transport_tx *trans __attribute__((unused)),
-                                          uint8_t *buf __attribute__((unused))) {
+                                          uint8_t *buf __attribute__((unused)),
+                                          uint8_t payload_len __attribute__((unused))) {
 }
 
 #endif

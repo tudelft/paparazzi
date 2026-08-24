@@ -215,7 +215,8 @@ void sensors_hitl_event(void)
 
   // parse incoming messages
   pprz_check_and_parse(&HITL_DEVICE.device, &sensors_hitl_tp, sensors_hitl_dl_buffer, &sensors_hitl_msg_available);
-  DlCheckAndParse(&HITL_DEVICE.device, &sensors_hitl_tp.trans_tx, sensors_hitl_dl_buffer, &sensors_hitl_msg_available, false);
+  DlCheckAndParse(&HITL_DEVICE.device, &sensors_hitl_tp.trans_tx, sensors_hitl_dl_buffer,
+                  sensors_hitl_tp.trans_rx.payload_len, &sensors_hitl_msg_available, false);
 }
 
 void imu_feed_gyro_accel(void) {}

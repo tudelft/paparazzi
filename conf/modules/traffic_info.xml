@@ -84,14 +84,14 @@
   <!-- At 100 Hz, the 10 ms sampling guard leaves the 500 ms slot within the modeled dense-fleet absolute flood bound. -->
   <periodic fun="traffic_info_mesh_periodic()" freq="100" autorun="TRUE" cond="TRAFFIC_INFO_USE_MESH"/>
 
-  <datalink message="ACINFO"      fun="parse_acinfo_dl(buf)"/>
-  <datalink message="ACINFO_LLA"  fun="parse_acinfo_dl(buf)"/>
-  <datalink message="MESH_STATE"  fun="parse_acinfo_dl(buf)" cond="TRAFFIC_INFO_USE_MESH"/>
-  <datalink message="ALIVE"       fun="parse_acinfo_dl(buf)" class="telemetry" cond="TRAFFIC_INFO_USE_MESH"/>
-  <datalink message="GPS_SMALL"   fun="parse_acinfo_dl(buf)" class="telemetry"/>
-  <datalink message="GPS"         fun="parse_acinfo_dl(buf)" class="telemetry"/>
-  <datalink message="GPS_LLA"     fun="parse_acinfo_dl(buf)" class="telemetry"/>
-  <datalink message="GPS_INT"     fun="parse_acinfo_dl(buf)" class="telemetry"/>
+  <datalink message="ACINFO"      fun="parse_acinfo_dl(buf)" min_len="24"/>
+  <datalink message="ACINFO_LLA"  fun="parse_acinfo_dl(buf)" min_len="23"/>
+  <datalink message="MESH_STATE"  fun="parse_acinfo_dl(buf)" min_len="22" cond="TRAFFIC_INFO_USE_MESH"/>
+  <datalink message="ALIVE"       fun="parse_acinfo_dl(buf)" class="telemetry" min_len="0" cond="TRAFFIC_INFO_USE_MESH"/>
+  <datalink message="GPS_SMALL"   fun="parse_acinfo_dl(buf)" class="telemetry" min_len="14"/>
+  <datalink message="GPS"         fun="parse_acinfo_dl(buf)" class="telemetry" min_len="27"/>
+  <datalink message="GPS_LLA"     fun="parse_acinfo_dl(buf)" class="telemetry" min_len="30"/>
+  <datalink message="GPS_INT"     fun="parse_acinfo_dl(buf)" class="telemetry" min_len="57"/>
 
   <makefile>
     <file name="traffic_info.c"/>

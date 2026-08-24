@@ -1,5 +1,6 @@
 /*
- * Copyright (C) Pascal Brisset, Antoine Drouin (2008), Kirk Scheper (2016)
+ * Copyright (C) Pascal Brisset, Antoine Drouin (2008), 
+ *               Kirk Scheper (2016), OpenUAS (2026)
  *
  * This file is part of paparazzi
  *
@@ -23,14 +24,17 @@
  * @author Pascal Brisset
  * @author Antoine Drouin
  * @author Kirk Scheper
- *
+ * @author OpenUAS
+ * 
  * The legacy path parses and stores standard traffic messages. When
  * TRAFFIC_INFO_USE_MESH is enabled, the same table also receives compact
  * MESH_STATE frames and originates local state through self-organising TDMA.
  */
 
 #include "modules/multi/traffic_info.h"
+#include "modules/multi/traffic_info_reclaim.h"
 #include "modules/multi/traffic_info_time.h"
+#include "modules/multi/traffic_info_units.h"
 
 #include "generated/airframe.h"     // AC_ID
 #include "generated/flight_plan.h"  // NAV_MSL0
@@ -126,10 +130,13 @@ bool traffic_info_capacity_exceeded;
 bool traffic_info_surveillance_established;
 static uint64_t traffic_position_received_ms[NB_ACS];
 static uint64_t traffic_velocity_received_ms[NB_ACS];
+static uint64_t traffic_slot_activity_ms[NB_ACS];
 static bool traffic_has_position_observation[NB_ACS];
 static bool traffic_has_velocity_observation[NB_ACS];
 static uint32_t traffic_source_itow[NB_ACS];
 static bool traffic_has_source_itow[NB_ACS];
+static uint64_t traffic_source_itow_started_ms[NB_ACS];
+static bool traffic_equal_itow_episode_active[NB_ACS];
 enum traffic_source_position_kind {
   TRAFFIC_SOURCE_POSITION_NONE,
   TRAFFIC_SOURCE_POSITION_UTM,
@@ -146,6 +153,14 @@ struct traffic_source_observation {
   uint8_t utm_zone;
 };
 static struct traffic_source_observation traffic_source_observation[NB_ACS];
+#if TRAFFIC_INFO_USE_MESH
+static uint64_t mesh_received_ms[NB_ACS];
+static bool mesh_has_valid_observation[NB_ACS];
+static bool mesh_peer_seen[NB_ACS];
+static uint8_t mesh_peer_clock_mode[NB_ACS];
+static uint64_t mesh_peer_clock_received_ms[NB_ACS];
+static uint64_t mesh_peer_holdover_started_ms[NB_ACS];
+#endif
 static uint64_t traffic_monotonic_epoch_ms;
 static uint32_t traffic_monotonic_last_ms;
 
@@ -173,6 +188,77 @@ static bool traffic_source_observation_changed(
          || observation->gspeed != stored->gspeed
          || observation->climb != stored->climb
          || observation->utm_zone != stored->utm_zone;
+}
+
+void WEAK traffic_info_slot_reassigned(uint8_t slot __attribute__((unused)))
+{
+}
+
+static void traffic_info_reset_slot(uint8_t slot, uint8_t id)
+{
+  const uint8_t old_id = ti_acs[slot].ac_id;
+  traffic_info_slot_reassigned(slot);
+  if (traffic_info_id_valid(old_id) && ti_acs_id[old_id] == slot) {
+    ti_acs_id[old_id] = 0;
+  }
+  memset(&ti_acs[slot], 0, sizeof(ti_acs[slot]));
+  traffic_position_received_ms[slot] = 0;
+  traffic_velocity_received_ms[slot] = 0;
+  traffic_slot_activity_ms[slot] = 0;
+  traffic_has_position_observation[slot] = false;
+  traffic_has_velocity_observation[slot] = false;
+  traffic_source_itow[slot] = 0;
+  traffic_has_source_itow[slot] = false;
+  traffic_source_itow_started_ms[slot] = 0;
+  traffic_equal_itow_episode_active[slot] = false;
+  memset(&traffic_source_observation[slot], 0,
+         sizeof(traffic_source_observation[slot]));
+#if TRAFFIC_INFO_USE_MESH
+  mesh_received_ms[slot] = 0;
+  mesh_has_valid_observation[slot] = false;
+  mesh_peer_seen[slot] = false;
+  mesh_peer_clock_mode[slot] = MESH_CLOCK_RECOVERY;
+  mesh_peer_clock_received_ms[slot] = 0;
+  mesh_peer_holdover_started_ms[slot] = 0;
+#endif
+  ti_acs[slot].ac_id = id;
+  ti_acs_id[id] = slot;
+}
+
+uint8_t ti_acs_slot(uint8_t id)
+{
+  if (!traffic_info_id_valid(id)) {
+    return TI_ACS_NONE;
+  }
+  uint8_t slot = ti_acs_id[id];
+  if (slot != 0 || id == TRAFFIC_INFO_GCS_ID) {
+    return slot;
+  }
+  if (ti_acs_idx < NB_ACS) {
+    slot = ti_acs_idx++;
+    traffic_info_reset_slot(slot, id);
+    return slot;
+  }
+
+  const uint64_t now_ms = traffic_monotonic_time_ms();
+  uint64_t oldest_activity_ms = UINT64_MAX;
+  uint8_t oldest_slot = TI_ACS_NONE;
+  for (uint8_t candidate = 2; candidate < ti_acs_idx; candidate++) {
+    const uint64_t activity_ms = traffic_slot_activity_ms[candidate];
+    if (traffic_info_reclaim_candidate_preferred(
+          now_ms, activity_ms, TRAFFIC_INFO_RECLAIM_MS,
+          oldest_slot != TI_ACS_NONE, oldest_activity_ms)) {
+      oldest_activity_ms = activity_ms;
+      oldest_slot = candidate;
+    }
+  }
+  if (oldest_slot == TI_ACS_NONE) {
+    traffic_info_capacity_exceeded = true;
+    return TI_ACS_NONE;
+  }
+  traffic_info_reset_slot(oldest_slot, id);
+  traffic_info_capacity_exceeded = false;
+  return oldest_slot;
 }
 
 /* Geoid height (msl) over ellipsoid [mm] */
@@ -304,12 +390,6 @@ _Static_assert(MESH_TDMA_NB_SLOTS * 1000u <
  * cache them so that the deferred emission can reuse the same downlink. */
 static struct transport_tx *mesh_trans;
 static struct link_device *mesh_dev;
-static uint64_t mesh_received_ms[NB_ACS];
-static bool mesh_has_valid_observation[NB_ACS];
-static bool mesh_peer_seen[NB_ACS];
-static uint8_t mesh_peer_clock_mode[NB_ACS];
-static uint64_t mesh_peer_clock_received_ms[NB_ACS];
-static uint64_t mesh_peer_holdover_started_ms[NB_ACS];
 static struct MeshClockState mesh_clock;
 static bool mesh_clock_sample_valid;
 static uint64_t mesh_last_network_ms;
@@ -930,7 +1010,8 @@ static inline uint32_t mesh_frame_of(uint64_t net_ms)
 static inline uint8_t mesh_slot_of(uint64_t net_ms)
 {
   const uint32_t frame_ms = (uint32_t)(net_ms % MESH_TDMA_SUPERFRAME_MS);
-  return (uint8_t)((frame_ms * MESH_TDMA_NB_SLOTS) / MESH_TDMA_SUPERFRAME_MS);
+  return (uint8_t)(((uint64_t)frame_ms * MESH_TDMA_NB_SLOTS)
+                   / MESH_TDMA_SUPERFRAME_MS);
 }
 
 static inline bool mesh_slot_is_stale(uint8_t s, uint32_t frame)
@@ -1387,10 +1468,14 @@ void traffic_info_init(void)
   memset(ti_acs_id, 0, NB_ACS_ID);
   memset(traffic_position_received_ms, 0, sizeof(traffic_position_received_ms));
   memset(traffic_velocity_received_ms, 0, sizeof(traffic_velocity_received_ms));
+  memset(traffic_slot_activity_ms, 0, sizeof(traffic_slot_activity_ms));
   memset(traffic_has_position_observation, 0, sizeof(traffic_has_position_observation));
   memset(traffic_has_velocity_observation, 0, sizeof(traffic_has_velocity_observation));
   memset(traffic_source_itow, 0, sizeof(traffic_source_itow));
   memset(traffic_has_source_itow, 0, sizeof(traffic_has_source_itow));
+  memset(traffic_source_itow_started_ms, 0, sizeof(traffic_source_itow_started_ms));
+    memset(traffic_equal_itow_episode_active, 0,
+      sizeof(traffic_equal_itow_episode_active));
   memset(traffic_source_observation, 0, sizeof(traffic_source_observation));
   traffic_info_capacity_exceeded = false;
   traffic_info_surveillance_established = false;
@@ -1501,6 +1586,10 @@ bool parse_acinfo_dl(uint8_t *buf)
 #endif
       case DL_GPS_SMALL: {
         uint32_t multiplex_speed = DL_GPS_SMALL_multiplex_speed(buf);
+        int32_t altitude_mm;
+        if (!traffic_info_cm_to_mm(DL_GPS_SMALL_alt(buf), &altitude_mm)) {
+          return FALSE;
+        }
 
         // decode compressed values
         int16_t course = (int16_t)((multiplex_speed >> 21) & 0x7FF); // bits 31-21 course in decideg
@@ -1516,7 +1605,7 @@ bool parse_acinfo_dl(uint8_t *buf)
         set_ac_info_lla_arrival(sender_id,
               DL_GPS_SMALL_lat(buf),
               DL_GPS_SMALL_lon(buf),
-              (int32_t)DL_GPS_SMALL_alt(buf) * 10,
+            altitude_mm,
               course,
               gspeed,
               climb);
@@ -1594,6 +1683,12 @@ bool parse_acinfo_dl(uint8_t *buf)
         if (!traffic_info_id_valid(sender_id)) {
           return FALSE;
         }
+        const uint8_t flags = DL_MESH_STATE_flags(buf);
+        int32_t altitude_mm = 0;
+        if ((flags & MESH_FLAG_POS_VALID) != 0
+            && !traffic_info_cm_to_mm(DL_MESH_STATE_alt(buf), &altitude_mm)) {
+          return FALSE;
+        }
       #if MESH_AUTO_TELEMETRY_AVAILABLE
         mesh_auto_telemetry_note_peer(traffic_monotonic_time_ms());
       #endif
@@ -1602,7 +1697,6 @@ bool parse_acinfo_dl(uint8_t *buf)
          * someone else without also rewriting the frame header. */
         itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
 
-        const uint8_t flags = DL_MESH_STATE_flags(buf);
         const uint8_t clock_mode = DL_MESH_STATE_clock_mode(buf);
         const uint32_t recovery_frame = DL_MESH_STATE_recovery_frame(buf);
         const uint64_t local_ms = traffic_monotonic_time_ms();
@@ -1617,6 +1711,7 @@ bool parse_acinfo_dl(uint8_t *buf)
         if (slot == TI_ACS_NONE) {
           break;
         }
+        traffic_slot_activity_ms[slot] = local_ms;
         if (clock_mode <= MESH_CLOCK_RECOVERY) {
           mesh_peer_seen[slot] = true;
           if (clock_mode == MESH_CLOCK_ASYNC) {
@@ -1660,7 +1755,7 @@ bool parse_acinfo_dl(uint8_t *buf)
           ti_acs[slot].status = 0;
           ti_acs[slot].lla_pos_i.lat = DL_MESH_STATE_lat(buf);
           ti_acs[slot].lla_pos_i.lon = DL_MESH_STATE_lon(buf);
-          ti_acs[slot].lla_pos_i.alt = DL_MESH_STATE_alt(buf) * 10; /* cm -> mm */
+          ti_acs[slot].lla_pos_i.alt = altitude_mm;
           SetBit(ti_acs[slot].status, AC_INFO_POS_LLA_I);
           SetBit(ti_acs[slot].status, AC_INFO_VEL_LOCAL_F);
           SetBit(ti_acs[slot].status, AC_INFO_SOURCE_MESH);
@@ -1690,11 +1785,15 @@ bool parse_acinfo_dl(uint8_t *buf)
         if (!traffic_info_id_valid(sender_id)) {
           return FALSE;
         }
+        int32_t altitude_mm;
+        if (!traffic_info_cm_to_mm(DL_ACINFO_alt(buf), &altitude_mm)) {
+          return FALSE;
+        }
         itow = DL_ACINFO_itow(buf);
         set_ac_info_utm(sender_id,
                         DL_ACINFO_utm_east(buf),
                         DL_ACINFO_utm_north(buf),
-                        DL_ACINFO_alt(buf) * 10,
+                        altitude_mm,
                         DL_ACINFO_utm_zone(buf),
                         DL_ACINFO_course(buf),
                         DL_ACINFO_speed(buf),
@@ -1707,11 +1806,15 @@ bool parse_acinfo_dl(uint8_t *buf)
         if (!traffic_info_id_valid(sender_id)) {
           return FALSE;
         }
+        int32_t altitude_mm;
+        if (!traffic_info_cm_to_mm(DL_ACINFO_LLA_alt(buf), &altitude_mm)) {
+          return FALSE;
+        }
         itow = DL_ACINFO_LLA_itow(buf);
         set_ac_info_lla(sender_id,
                   DL_ACINFO_LLA_lat(buf),
                   DL_ACINFO_LLA_lon(buf),
-                  DL_ACINFO_LLA_alt(buf) * 10,
+                  altitude_mm,
                   DL_ACINFO_LLA_course(buf),
                   DL_ACINFO_LLA_speed(buf),
                   DL_ACINFO_LLA_climb(buf),
@@ -1808,6 +1911,7 @@ void traffic_info_touch(uint8_t slot)
     const uint64_t now_ms = traffic_monotonic_time_ms();
     traffic_position_received_ms[slot] = now_ms;
     traffic_velocity_received_ms[slot] = now_ms;
+    traffic_slot_activity_ms[slot] = now_ms;
     traffic_has_position_observation[slot] = true;
     traffic_has_velocity_observation[slot] = true;
     if (slot >= 2) {
@@ -1827,7 +1931,9 @@ void traffic_info_touch_position(uint8_t slot)
       mesh_has_valid_observation[slot] = false;
     }
 #endif
-    traffic_position_received_ms[slot] = traffic_monotonic_time_ms();
+    const uint64_t now_ms = traffic_monotonic_time_ms();
+    traffic_position_received_ms[slot] = now_ms;
+    traffic_slot_activity_ms[slot] = now_ms;
     traffic_has_position_observation[slot] = true;
     if (slot >= 2 && traffic_has_velocity_observation[slot]) {
       traffic_info_surveillance_established = true;
@@ -1846,7 +1952,9 @@ void traffic_info_touch_velocity(uint8_t slot)
       mesh_has_valid_observation[slot] = false;
     }
 #endif
-    traffic_velocity_received_ms[slot] = traffic_monotonic_time_ms();
+    const uint64_t now_ms = traffic_monotonic_time_ms();
+    traffic_velocity_received_ms[slot] = now_ms;
+    traffic_slot_activity_ms[slot] = now_ms;
     traffic_has_velocity_observation[slot] = true;
     if (slot >= 2 && traffic_has_position_observation[slot]) {
       traffic_info_surveillance_established = true;
@@ -1953,11 +2061,21 @@ void set_ac_info_utm(uint8_t id, int32_t utm_east, int32_t utm_north, int32_t al
   };
   const bool payload_changed =
     traffic_source_observation_changed(slot, &observation);
-  if (traffic_has_source_itow[slot]
-      && !traffic_info_itow_accepts_observation(itow,
-                                                 traffic_source_itow[slot],
-                                                 payload_changed)) {
-    return; // don't update on old data
+  const uint64_t now_ms = traffic_monotonic_time_ms();
+  const bool newer_itow = traffic_has_source_itow[slot]
+                          && traffic_info_itow_is_newer(itow, traffic_source_itow[slot]);
+  if (traffic_has_source_itow[slot] && !newer_itow) {
+    const bool equal_itow = itow % TRAFFIC_INFO_GPS_WEEK_MS
+                            == traffic_source_itow[slot] % TRAFFIC_INFO_GPS_WEEK_MS;
+    if (!equal_itow || !traffic_info_equal_tow_episode_accepts(
+          payload_changed, traffic_equal_itow_episode_active[slot], now_ms,
+          traffic_source_itow_started_ms[slot], TRAFFIC_INFO_EQUAL_TOW_COMPAT_MS)) {
+      return; // don't update on old data
+    }
+    if (!traffic_equal_itow_episode_active[slot]) {
+      traffic_equal_itow_episode_active[slot] = true;
+      traffic_source_itow_started_ms[slot] = now_ms;
+    }
   }
 
   ti_acs[slot].status = 0;
@@ -1995,6 +2113,9 @@ void set_ac_info_utm(uint8_t id, int32_t utm_east, int32_t utm_north, int32_t al
 
   ti_acs[slot].itow = itow;
   traffic_source_itow[slot] = itow;
+  if (!traffic_has_source_itow[slot] || newer_itow) {
+    traffic_equal_itow_episode_active[slot] = false;
+  }
   traffic_has_source_itow[slot] = true;
   traffic_source_observation[slot] = observation;
   traffic_info_touch(slot);
@@ -2025,11 +2146,21 @@ void set_ac_info_lla(uint8_t id, int32_t lat, int32_t lon, int32_t alt,
   };
   const bool payload_changed =
     traffic_source_observation_changed(slot, &observation);
-  if (traffic_has_source_itow[slot]
-      && !traffic_info_itow_accepts_observation(itow,
-                                                 traffic_source_itow[slot],
-                                                 payload_changed)) {
-    return; // don't update on old data
+  const uint64_t now_ms = traffic_monotonic_time_ms();
+  const bool newer_itow = traffic_has_source_itow[slot]
+                          && traffic_info_itow_is_newer(itow, traffic_source_itow[slot]);
+  if (traffic_has_source_itow[slot] && !newer_itow) {
+    const bool equal_itow = itow % TRAFFIC_INFO_GPS_WEEK_MS
+                            == traffic_source_itow[slot] % TRAFFIC_INFO_GPS_WEEK_MS;
+    if (!equal_itow || !traffic_info_equal_tow_episode_accepts(
+          payload_changed, traffic_equal_itow_episode_active[slot], now_ms,
+          traffic_source_itow_started_ms[slot], TRAFFIC_INFO_EQUAL_TOW_COMPAT_MS)) {
+      return; // don't update on old data
+    }
+    if (!traffic_equal_itow_episode_active[slot]) {
+      traffic_equal_itow_episode_active[slot] = true;
+      traffic_source_itow_started_ms[slot] = now_ms;
+    }
   }
 
   ti_acs[slot].status = 0;
@@ -2045,6 +2176,9 @@ void set_ac_info_lla(uint8_t id, int32_t lat, int32_t lon, int32_t alt,
 
   ti_acs[slot].itow = itow;
   traffic_source_itow[slot] = itow;
+  if (!traffic_has_source_itow[slot] || newer_itow) {
+    traffic_equal_itow_episode_active[slot] = false;
+  }
   traffic_has_source_itow[slot] = true;
   traffic_source_observation[slot] = observation;
   traffic_info_touch(slot);

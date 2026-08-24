@@ -550,6 +550,7 @@ void gec_dl_event(void)
                                gec_tp.pprz_tp.trans_rx.payload_len);
           // pass to datalink
           DlCheckAndParse(&DOWNLINK_DEVICE.device, &gec_tp.trans_tx, datalink_get_buffer(),
+                          gec_tp.pprz_tp.trans_rx.payload_len,
                           &dl_msg_available, GEC_UPDATE_DL);
         }
         break;

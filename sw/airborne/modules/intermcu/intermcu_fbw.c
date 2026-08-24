@@ -143,7 +143,8 @@ void intermcu_event(void)
     uint8_t class_id = pprzlink_get_msg_class_id(imcu_msg_buf);
     if (class_id == DL_intermcu_CLASS_ID) {
       // parse intermcu messages and call callbacks
-      dl_parse_msg(intermcu.device, &intermcu.transport.trans_tx, imcu_msg_buf);
+      dl_parse_msg_with_length(intermcu.device, &intermcu.transport.trans_tx, imcu_msg_buf,
+                               intermcu.transport.trans_rx.payload_len);
 #if TELEMETRY_INTERMCU
     } else {
       // forward all other messages if needed

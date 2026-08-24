@@ -214,12 +214,13 @@ let make_event = fun f cond ->
   }
 
 
-type datalink = { message: string; func: string; dl_class: string option; cond: string option }
+type datalink = { message: string; func: string; dl_class: string option; min_len: string option; cond: string option }
 
-let make_datalink = fun f m cl cond ->
+let make_datalink = fun f m cl min_len cond ->
   { message = m;
     func = f;
     dl_class = cl;
+    min_len = min_len;
     cond = cond
   }
 
@@ -330,8 +331,9 @@ let rec parse_xml m = function
     let message = Xml.attrib xml "message"
     and func = Xml.attrib xml "fun"
     and dl_class = ExtXml.attrib_opt xml "class"
+    and min_len = ExtXml.attrib_opt xml "min_len"
     and c = ExtXml.attrib_opt xml "cond" in
-    { m with datalinks = make_datalink func  message dl_class c :: m.datalinks }
+    { m with datalinks = make_datalink func message dl_class min_len c :: m.datalinks }
   | Xml.Element ("makefile", _, _) as xml ->
     { m with makefiles = parse_makefile empty_makefile xml :: m.makefiles }
   | _ -> failwith "Module.parse_xml: unreachable"

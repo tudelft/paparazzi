@@ -64,7 +64,8 @@ void extra_pprz_dl_init(void)
 void extra_pprz_dl_event(void)
 {
   pprz_check_and_parse(&EXTRA_DOWNLINK_DEVICE.device, &extra_pprz_tp, extra_dl_buffer, &extra_dl_msg_available);
-  DlCheckAndParse(&EXTRA_DOWNLINK_DEVICE.device, &extra_pprz_tp.trans_tx, extra_dl_buffer, &extra_dl_msg_available, EXTRA_PPRZ_UPDATE_DL);
+  DlCheckAndParse(&EXTRA_DOWNLINK_DEVICE.device, &extra_pprz_tp.trans_tx, extra_dl_buffer,
+                  extra_pprz_tp.trans_rx.payload_len, &extra_dl_msg_available, EXTRA_PPRZ_UPDATE_DL);
 }
 
 void extra_pprz_dl_periodic(void)

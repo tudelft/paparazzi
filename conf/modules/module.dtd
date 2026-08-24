@@ -62,6 +62,7 @@ cond CDATA #IMPLIED>
 message CDATA #REQUIRED
 fun CDATA #REQUIRED
 class CDATA #IMPLIED
+min_len CDATA #IMPLIED
 cond CDATA #IMPLIED>
 
 <!ATTLIST makefile

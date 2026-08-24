@@ -104,7 +104,8 @@ void intermcu_event(void)
 
       if (class_id == DL_intermcu_CLASS_ID) {
         // parse intermcu messages and call callbacks
-        dl_parse_msg(intermcu.device, &intermcu.transport.trans_tx, imcu_msg_buf);
+        dl_parse_msg_with_length(intermcu.device, &intermcu.transport.trans_tx, imcu_msg_buf,
+                                 intermcu.transport.trans_rx.payload_len);
       } else {
         // reset datalink_time if message is not intermcu class
         datalink_time = 0;

@@ -53,6 +53,10 @@ extern uint8_t* datalink_get_buffer(void);
 /** Should be called when chars are available in datalink uffer */
 extern void dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint8_t *buf);
 
+/** Parse a message while retaining its received payload length. */
+extern void dl_parse_msg_with_length(struct link_device *dev, struct transport_tx *trans,
+                                     uint8_t *buf, uint8_t payload_len);
+
 #if USE_NPS
 extern bool datalink_enabled;
 #endif
@@ -77,7 +81,8 @@ extern bool datalink_gcs_self_ping_is_fresh(uint32_t timeout_ms);
 extern bool datalink_gcs_other_ping_is_fresh(uint32_t timeout_ms);
 
 /** Check for new message and parse */
-static inline void DlCheckAndParse(struct link_device *dev, struct transport_tx *trans, uint8_t *buf, bool *msg_available, bool update_dl)
+static inline void DlCheckAndParse(struct link_device *dev, struct transport_tx *trans, uint8_t *buf,
+                                   uint8_t payload_len, bool *msg_available, bool update_dl)
 {
   // make it possible to disable datalink in NPS sim
 #if USE_NPS
@@ -93,7 +98,7 @@ static inline void DlCheckAndParse(struct link_device *dev, struct transport_tx 
       datalink_time = 0;
       datalink_nb_msgs++;
     }
-    dl_parse_msg(dev, trans, buf);
+    dl_parse_msg_with_length(dev, trans, buf, payload_len);
     *msg_available = false;
   }
 }

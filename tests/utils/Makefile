@@ -33,7 +33,7 @@ export PAPARAZZI_HOME
 
 #####################################################
 # If you add more test files you add their names here
-TESTS = test_framed_ring_buffer.run test_mesh_clock.run test_mesh_mode_policy.run test_tcas_policy.run
+TESTS = test_framed_ring_buffer.run test_mesh_clock.run test_mesh_mode_policy.run test_tcas_policy.run test_traffic_info_reclaim.run test_traffic_info_units.run
 
 ###################################################
 # You should not need to touch the rest of the file
@@ -69,6 +69,18 @@ test_mesh_mode_policy.run: test_mesh_mode_policy.c \
 	$(PAPARAZZI_SRC)/sw/airborne/modules/multi/traffic_info_mesh_mode.h
 	@echo BUILD $@
 	$(Q)$(CC) $(FLAGS) -Wextra -Werror -I$(PAPARAZZI_SRC)/sw/airborne $< -o $@
+
+test_traffic_info_units.run: test_traffic_info_units.c \
+	$(PAPARAZZI_SRC)/sw/airborne/modules/multi/traffic_info_units.h
+	@echo BUILD $@
+	$(Q)$(CC) $(FLAGS) -Wextra -Werror -fsanitize=undefined \
+		-I$(PAPARAZZI_SRC)/sw/airborne $< -o $@
+
+test_traffic_info_reclaim.run: test_traffic_info_reclaim.c \
+	$(PAPARAZZI_SRC)/sw/airborne/modules/multi/traffic_info_reclaim.h
+	@echo BUILD $@
+	$(Q)$(CC) $(FLAGS) -Wextra -Werror -fsanitize=undefined \
+		-I$(PAPARAZZI_SRC)/sw/airborne $< -o $@
 
 %.run: %.c
 	@echo BUILD $@

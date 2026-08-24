@@ -331,11 +331,17 @@ let print_datalink_functions = fun out modules ->
   lprintf out "\n#include \"pprzlink/dl_protocol.h\"\n";
   lprintf out "\n#include \"pprzlink/intermcu_msg.h\"\n";
   lprintf out "#include \"generated/airframe.h\"\n";
+  lprintf out "#if PPRZLINK_DEFAULT_VER == 2\n";
+  lprintf out "#define MODULES_DATALINK_HEADER_LEN 4u\n";
+  lprintf out "#else\n";
+  lprintf out "#define MODULES_DATALINK_HEADER_LEN 2u\n";
+  lprintf out "#endif\n";
   lprintf out "static inline void modules_parse_datalink(uint8_t msg_id __attribute__((unused)),
                                           uint8_t class_id __attribute__((unused)),
                                           struct link_device *dev __attribute__((unused)),
                                           struct transport_tx *trans __attribute__((unused)),
-                                          uint8_t *buf __attribute__((unused))) {\n";
+                                          uint8_t *buf __attribute__((unused)),
+                                          uint8_t payload_len __attribute__((unused))) {\n";
   right ();
   let msgs = Hashtbl.create 3 in
   List.iter (fun m ->
@@ -343,7 +349,7 @@ let print_datalink_functions = fun out modules ->
       if not (Hashtbl.mem msgs d.Module.dl_class) then
         Hashtbl.add msgs d.Module.dl_class (Hashtbl.create 15);
       let c = Hashtbl.find msgs d.Module.dl_class in
-      let new_cb = (d.Module.func, d.Module.cond) in
+      let new_cb = (d.Module.func, d.Module.cond, d.Module.min_len) in
       if Hashtbl.mem c d.Module.message then
         Hashtbl.replace c d.Module.message (new_cb :: Hashtbl.find c d.Module.message)
       else
@@ -363,8 +369,14 @@ let print_datalink_functions = fun out modules ->
       if compare msg_name "*" != 0 then begin (* skip wildcard *)
         lprintf out "case DL_%s: {\n" msg_name;
         right ();
-        List.iter (fun (cb, cond) ->
+        List.iter (fun (cb, cond, min_len) ->
+          (match min_len with
+           | None -> ()
+           | Some len -> lprintf out "if (payload_len >= MODULES_DATALINK_HEADER_LEN + %s) {\n" len; right ());
           lprintf_with_cond out cb cond;
+          (match min_len with
+           | None -> ()
+           | Some _ -> left (); lprintf out "}\n");
         ) (Hashtbl.find msg_tbl msg_name);
         lprintf out "break;\n";
         left ();
@@ -376,7 +388,15 @@ let print_datalink_functions = fun out modules ->
     lprintf out "}\n"; (* close msg switch *)
     Hashtbl.iter (fun msg_name _ ->
       if compare msg_name "*" = 0 then (* callbacks for wildcard *)
-        List.iter (fun (cb, cond) -> lprintf_with_cond out cb cond) (Hashtbl.find msg_tbl msg_name)
+        List.iter (fun (cb, cond, min_len) ->
+          (match min_len with
+           | None -> ()
+           | Some len -> lprintf out "if (payload_len >= MODULES_DATALINK_HEADER_LEN + %s) {\n" len; right ());
+          lprintf_with_cond out cb cond;
+          (match min_len with
+           | None -> ()
+           | Some _ -> left (); lprintf out "}\n")
+        ) (Hashtbl.find msg_tbl msg_name)
     ) msg_tbl;
     left ();
     lprintf out "  break;\n";
@@ -386,7 +406,8 @@ let print_datalink_functions = fun out modules ->
   left ();
   lprintf out "}\n"; (* close class switch *)
   left ();
-  lprintf out "}\n" (* close function *)
+  lprintf out "}\n"; (* close function *)
+  lprintf out "#undef MODULES_DATALINK_HEADER_LEN\n"
 
 let parse_modules out modules =
   print_headers out modules;

@@ -325,7 +325,9 @@ let () =
     let abs_modules_h = aircraft_gen_dir // modules_h in
     generate_config_element loaded_modules
       (fun e -> Gen_modules.generate e "" abs_modules_h)
-      [ abs_modules_h, List.map (fun m -> m.Module.xml_filename) loaded_modules ];
+      [ abs_modules_h,
+        Sys.executable_name
+        :: List.map (fun m -> m.Module.xml_filename) loaded_modules ];
     Printf.printf " done\n%!";
     
 

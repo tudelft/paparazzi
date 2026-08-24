@@ -1,5 +1,6 @@
 /*
- * Copyright (C) Pascal Brisset, Antoine Drouin (2008), Kirk Scheper (2016), OpenUAS (2026)
+ * Copyright (C) Pascal Brisset, Antoine Drouin (2008), 
+ *               Kirk Scheper (2016), OpenUAS (2026)
  *
  * This file is part of paparazzi.
  *
@@ -25,7 +26,8 @@
  * @author Pascal Brisset
  * @author Antoine Drouin
  * @author Kirk Scheper
- *
+ * @author OpenUAS
+ * 
  * The legacy API stores positions and velocities received through ACINFO and
  * GPS-family messages. Define TRAFFIC_INFO_USE_MESH to add compact MESH_STATE
  * reception and self-organising TDMA transmission without changing that API.
@@ -59,6 +61,16 @@
 #endif
 #ifndef NB_ACS
 #define NB_ACS 24
+#endif
+
+/** Maximum local interval in which changing data may reuse one source TOW. */
+#ifndef TRAFFIC_INFO_EQUAL_TOW_COMPAT_MS
+#define TRAFFIC_INFO_EQUAL_TOW_COMPAT_MS 5000u
+#endif
+
+/** Minimum inactivity before a full table may reuse a remote-aircraft slot. */
+#ifndef TRAFFIC_INFO_RECLAIM_MS
+#define TRAFFIC_INFO_RECLAIM_MS 300000u
 #endif
 
 #if NB_ACS_ID <= TRAFFIC_INFO_MAX_AC_ID
@@ -227,6 +239,12 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
  */
 #define MESH_SLOT_FREE TRAFFIC_INFO_RESERVED_ID
 
+#if MESH_TDMA_SUPERFRAME_MS < 1
+#error "MESH_TDMA_SUPERFRAME_MS must be positive"
+#endif
+#if MESH_TDMA_NB_SLOTS < 1
+#error "MESH_TDMA_NB_SLOTS must be positive"
+#endif
 #if MESH_TDMA_SUPERFRAME_MS < MESH_TDMA_NB_SLOTS
 #error "MESH_TDMA_SUPERFRAME_MS is too short for MESH_TDMA_NB_SLOTS"
 #endif
@@ -238,6 +256,12 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
 #endif
 #if MESH_TDMA_MAX_REUSE < 1
 #error "MESH_TDMA_MAX_REUSE must be at least 1"
+#endif
+#if MESH_SLOT_HOLD_SPAN < 1
+#error "MESH_SLOT_HOLD_SPAN must be positive"
+#endif
+#if MESH_PRIMARY_HOLD_SPAN < 1
+#error "MESH_PRIMARY_HOLD_SPAN must be positive"
 #endif
 #if MESH_REMAINDER_EPOCH_FRAMES <= (2 * MESH_SLOT_AGE_FRAMES + MESH_TDMA_NB_SLOTS)
 #error "MESH_REMAINDER_EPOCH_FRAMES is too short for safe remainder rotation"
@@ -488,23 +512,10 @@ extern void traffic_info_init(void);
  * @return slot index in ::ti_acs, or #TI_ACS_NONE when the aircraft is unknown
  *         and the table is full
  */
-static inline uint8_t ti_acs_slot(uint8_t id)
-{
-  if (!traffic_info_id_valid(id)) {
-    return TI_ACS_NONE;
-  }
-  uint8_t slot = ti_acs_id[id];
-  if (slot == 0 && id != 0) {         /* not registered yet */
-    if (ti_acs_idx >= NB_ACS) {
-      traffic_info_capacity_exceeded = true;
-      return TI_ACS_NONE;             /* table full, refuse the new arrival */
-    }
-    slot = ti_acs_idx++;
-    ti_acs_id[id] = slot;
-    ti_acs[slot].ac_id = id;
-  }
-  return slot;
-}
+extern uint8_t ti_acs_slot(uint8_t id);
+
+/** Reset module-private state before a compact traffic slot is reassigned. */
+extern void traffic_info_slot_reassigned(uint8_t slot);
 
 /** Resolve an already registered traffic ID without inserting a new record. */
 static inline uint8_t ti_acs_registered_slot(uint8_t id)

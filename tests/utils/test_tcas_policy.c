@@ -83,16 +83,16 @@ int main(void)
     fputs("ambiguous half-week TOW was accepted as newer\n", stderr);
     return EXIT_FAILURE;
   }
-  if (!traffic_info_itow_accepts_observation(1u, 1u, true)) {
-    fputs("changing legacy track with frozen TOW was rejected\n", stderr);
+  if (!traffic_info_equal_tow_episode_accepts(true, false, 10000u, 0u, 5000u)) {
+    fputs("first changed equal-TOW observation did not start compatibility\n", stderr);
     return EXIT_FAILURE;
   }
-  if (traffic_info_itow_accepts_observation(1u, 1u, false)) {
-    fputs("unchanged duplicate observation was accepted\n", stderr);
+  if (!traffic_info_equal_tow_episode_accepts(true, true, 15000u, 10000u, 5000u)) {
+    fputs("equal-TOW observation was rejected at compatibility boundary\n", stderr);
     return EXIT_FAILURE;
   }
-  if (traffic_info_itow_accepts_observation(100u, 101u, true)) {
-    fputs("changed but older observation was accepted\n", stderr);
+  if (traffic_info_equal_tow_episode_accepts(true, true, 15001u, 10000u, 5000u)) {
+    fputs("equal-TOW observation outlived compatibility episode\n", stderr);
     return EXIT_FAILURE;
   }
 

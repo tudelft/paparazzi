@@ -40,6 +40,7 @@ bool dl_msg_available;
 uint16_t datalink_time;
 uint16_t datalink_nb_msgs;
 static uint8_t dl_buffer[DATALINK_MSG_SIZE]  __attribute__((aligned));
+static uint8_t dl_payload_len;
 static uint32_t datalink_last_gcs_self_ping_ms;
 static uint32_t datalink_last_gcs_other_ping_ms;
 static bool datalink_has_gcs_self_ping;
@@ -58,6 +59,7 @@ void datalink_init(void)
   datalink_last_gcs_other_ping_ms = 0;
   datalink_has_gcs_self_ping = false;
   datalink_has_gcs_other_ping = false;
+  dl_payload_len = 0;
 }
 
 void datalink_periodic(void)
@@ -124,9 +126,10 @@ uint8_t* datalink_get_buffer(void)
 
 void datalink_fill_buffer(uint8_t *buf, uint16_t len)
 {
-  // TODO: replace with a memcpy for efficiency
-  uint16_t i = 0;
-  for (i = 0; i < len; i++) {
+  if (len > sizeof(dl_buffer)) {
+    return;
+  }
+  for (uint16_t i = 0; i < len; i++) {
     dl_buffer[i] = buf[i];
   }
   dl_msg_available = true;
@@ -137,6 +140,20 @@ void WEAK dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint
   uint8_t msg_id = pprzlink_get_msg_id(buf);
   uint8_t class_id = pprzlink_get_msg_class_id(buf);
   /* Parse modules datalink */
-  modules_parse_datalink(msg_id, class_id, dev, trans, buf);
+  modules_parse_datalink(msg_id, class_id, dev, trans, buf, dl_payload_len);
+}
+
+void dl_parse_msg_with_length(struct link_device *dev, struct transport_tx *trans,
+                              uint8_t *buf, uint8_t payload_len)
+{
+#if PPRZLINK_DEFAULT_VER == 2
+  if (payload_len < 4u) {
+#else
+  if (payload_len < 2u) {
+#endif
+    return;
+  }
+  dl_payload_len = payload_len;
+  dl_parse_msg(dev, trans, buf);
 }
 

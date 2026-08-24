@@ -7,6 +7,7 @@
       NO_ALARM means represented surveillance was evaluated without an advisory.
       UNAVAILABLE means surveillance cannot support a no-conflict conclusion.
       RA_NONE disables vertical avoidance control but does not itself prove separation.
+      Fixed-schema TCAS messages are length-checked before generated accessors or callbacks run.
       Fixed-wing executes RAs in automatic altitude control; rotorcraft executes them in NAV altitude mode.
       Climb-rate, guided, hover, manual-throttle, failsafe, and kill modes are never overridden.
       Operational use requires scenario, scheduler, loss-burst, and hardware-in-the-loop qualification.
@@ -21,8 +22,8 @@
   <init fun="tcas_init()"/>
   <periodic fun="tcas_periodic_task_1Hz()" freq="1"/>
   <periodic fun="tcas_periodic_task_4Hz()" freq="4"/>
-  <datalink message="TCAS_RESOLVE" fun="parseTcasResolve(buf)"/>
-  <datalink message="TCAS_RA" fun="parseTcasRA(buf)"/>
+  <datalink message="TCAS_RESOLVE" fun="parseTcasResolve(buf)" min_len="3"/>
+  <datalink class="telemetry" message="TCAS_RA" fun="parseTcasRA(buf)" min_len="2"/>
   <makefile>
     <file name="tcas.c"/>
     <define name="TCAS"/>

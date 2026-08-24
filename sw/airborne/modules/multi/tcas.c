@@ -67,6 +67,22 @@ static bool tcas_resolve_received[NB_ACS];
 /** Local receipt time of each peer resolution, in monotonic milliseconds. */
 static uint32_t tcas_resolve_received_ms[NB_ACS];
 
+void traffic_info_slot_reassigned(uint8_t slot)
+{
+  if (slot < NB_ACS) {
+    if (tcas_ac_RA == ti_acs[slot].ac_id) {
+      tcas_status = TCAS_UNAVAILABLE;
+      tcas_ac_RA = AC_ID;
+      tcas_resolve = RA_NONE;
+      tcas_command_valid = false;
+    }
+    tcas_acs_status[slot].status = TCAS_NO_ALARM;
+    tcas_acs_status[slot].resolve = RA_NONE;
+    tcas_resolve_received[slot] = false;
+    tcas_resolve_received_ms[slot] = 0;
+  }
+}
+
 #ifndef TCAS_TAU_TA     // Traffic Advisory
 #define TCAS_TAU_TA 2*CARROT
 #endif
