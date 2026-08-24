@@ -41,7 +41,7 @@
 /** Flag provided to control calls to ::dl_parse_msg. NOT used in this module*/
 extern bool dl_msg_available;
 
-/** time in seconds since last datalink message was received */
+/** Seconds since the last accepted primary uplink frame; an age, not a loss flag. */
 extern uint16_t datalink_time;
 
 /** number of datalink/uplink messages received */
@@ -88,6 +88,8 @@ static inline void DlCheckAndParse(struct link_device *dev, struct transport_tx 
 
   if (*msg_available) {
     if (update_dl) {
+      /* Reset before command-specific parsing: receiving a complete accepted
+       * frame proves the uplink path works even if that command is ignored. */
       datalink_time = 0;
       datalink_nb_msgs++;
     }

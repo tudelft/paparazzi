@@ -504,6 +504,9 @@ let select_ping_candidate = fun require_identified ->
 
 let send_discovery_ping = fun device ->
   let now = Serial.monotonic_time () in
+  (* Identity traffic is fleet-wide serialized and excludes stale aircraft.
+     This bounds E52 request/response bursts while 4/8/16/30-second retries
+     still recover a lost ALIVE_REQ or ALIVE without operator intervention. *)
   let candidate =
     Hashtbl.fold
       (fun ac_id status selected ->
@@ -684,6 +687,8 @@ let () =
         reconnecting := true;
         device_closed := true;
         prerr_endline "Modem connection lost. Waiting for serial device to reconnect";
+        (* Retire the old descriptor before probing. Re-exec after a successful
+           probe rebuilds all GLib watches and parser state around the new fd. *)
         (try Unix.close fd with Unix.Unix_error (Unix.EBADF, _, _) -> ());
         let rec restart retries =
           if retries <= 0 then begin

@@ -11,14 +11,20 @@
       When the table is full, new records are rejected while known aircraft continue updating in either mode.
       Set TRAFFIC_INFO_USE_LOG to TRUE only when traffic logging is required.
       Set TRAFFIC_INFO_USE_MESH to TRUE to add compact MESH_STATE reception and self-organising TDMA transmission.
-      Mesh mode is intended for low-bandwidth broadcast radios such as the EByte E52 LoRa mesh family.
+      Mesh mode targets low-bandwidth radios that provide transparent all-to-all broadcast,
+      bounded multi-hop forwarding, duplicate suppression, and characterized airtime and queue behavior.
+      The current measured reference profile uses EByte E52-400NW22S hardware; another radio may be used
+      only after its forwarding delay, framing overhead, carrier access, queue depth, overflow policy,
+      RF budget, and legal operating profile are modeled and the optimizer, simulations, fleet bench,
+      and controlled-flight acceptance procedure are repeated.
       MESH_STATE is the authoritative mesh presence and TCAS-kinematics stream; GPS_LLA remains secondary GCS telemetry.
       It requires a telemetry profile containing MESH_STATE and identical timing and message definitions on every peer.
       The periodic mesh task runs at 100 Hz, retains the startup GNSS epoch during bounded monotonic holdover,
       and uses population-aware randomized access when no safe network clock remains.
       Estimator-derived global position remains valid only for MESH_POSITION_HOLDOVER_MS after GNSS loss;
       presence continues afterward, but stale kinematics are rejected by TCAS.
-      Modem-cache back-pressure limits new state traffic before a five-frame E52 transmit cache can overflow.
+      Radio-queue back-pressure limits new state traffic before the five-frame reference-hardware cache can overflow;
+      configure these bounds from measurements when using different hardware.
       With MESH_AUTO_TELEMETRY enabled, profiles defining mesh, mesh_manifold, and mesh_solo are selected automatically.
       Selection starts in mesh, uses neighbour-count hysteresis for high-population fleets,
       and enters mesh_solo only after targeted GCS contact and a complete peer-quiet interval.
@@ -26,7 +32,7 @@
       Startup sends a bounded, AC_ID-spread ALIVE and primary state pair, then one wider-spread state recovery for simultaneous fleet power-up.
       Profiles defining only mesh and mesh_solo remain supported without manifold selection.
       Mesh mode changes state transport only; the normal traffic table and public access functions stay available.
-      See doc/mesh/mesh_network_design.md before changing timing, slot count, radio settings, or fleet size.
+      See doc/mesh/mesh_network_design.md before changing hardware, timing, slot count, radio settings, or fleet size.
     </description>
     <define name="TRAFFIC_INFO_USE_LOG" value="FALSE|TRUE" description="Enable traffic info logging"/>
     <define name="TRAFFIC_INFO_USE_MESH" value="FALSE|TRUE"
@@ -57,13 +63,13 @@
     <define name="MESH_RECOVERY_MIN_LEAD_FRAMES" value="7"
       description="Minimum recovery-target lead beyond all fallback leases"/>
     <define name="MESH_MODEM_DRAIN_MS" value="60"
-      description="Estimated time for one frame to leave the modem transmit cache"/>
+      description="Estimated time for one frame to leave the radio transmit queue"/>
     <define name="MESH_CACHE_HIGH_WATER" value="3"
       description="Stop local MESH_STATE admission at this estimated local depth; two hardware entries remain for unobservable relay and telemetry traffic"/>
     <define name="MESH_AUTO_TELEMETRY" value="FALSE|TRUE"
       description="Automatically select mesh_solo, mesh, or mesh_manifold from GCS and peer observations"/>
     <define name="MESH_GCS_PING_TIMEOUT_MS" value="60000"
-      description="Maximum age of GCS PING evidence used by automatic telemetry selection; covers two nominal 30 s E52 delivery intervals"/>
+      description="Maximum age of GCS PING evidence used by automatic telemetry selection; covers two nominal 30 s reference-profile delivery intervals"/>
     <define name="MESH_SOLO_QUIET_MS" value="16000"
       description="Peer-free interval required before selecting mesh_solo"/>
   </doc>

@@ -58,6 +58,8 @@ static void send_downlink(struct transport_tx *trans, struct link_device *dev)
     last_up_nb_msgs = 0;
 #endif
 
+    /* The historical field name is uplink_lost_time, but its value is the raw
+     * accepted-uplink age. Consumers must apply their own explicit threshold. */
     pprz_msg_send_DATALINK_REPORT(trans, dev, AC_ID, &datalink_time, &datalink_nb_msgs, &dev->nb_msgs, &down_rate,
                                   &up_rate, &dev->nb_ovrn);
   }

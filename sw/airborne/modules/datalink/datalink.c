@@ -68,6 +68,9 @@ void datalink_periodic(void)
 void datalink_parse_ALIVE_REQ(struct link_device *dev, struct transport_tx *trans, uint8_t *buf)
 {
   const uint8_t receiver = pprzlink_get_msg_receiver_id(buf);
+  /* Identity recovery is separate from link-health probing: ALIVE carries the
+   * schema/configuration MD5, while PONG below is deliberately the only PING
+   * response. Keeping one response per request avoids adjacent radio bursts. */
   if (pprzlink_get_msg_sender_id(buf) == 0
       && (receiver == AC_ID || receiver == PPRZLINK_MSG_BROADCAST)) {
     pprz_msg_send_ALIVE(trans, dev, AC_ID, 16, MD5SUM);
