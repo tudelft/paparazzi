@@ -52,7 +52,11 @@ static inline uint64_t mesh_clock_difference_ms(uint64_t first, uint64_t second)
   return first >= second ? first - second : second - first;
 }
 
-/** Whether holdover must leave TDMA before the next complete superframe. */
+/** Whether holdover must leave TDMA before the next complete superframe.
+ *
+ * Leaving one superframe early lets fallback propagate before peers can use
+ * divergent clocks to claim the same deterministic slot.
+ */
 static inline bool mesh_clock_holdover_expiring(const struct MeshClockState *clock,
                                                 uint64_t local_ms,
                                                 uint32_t holdover_max_ms,
@@ -76,7 +80,11 @@ static inline bool mesh_clock_frame_is_later(uint32_t candidate, uint32_t curren
          && (current == 0 || (int32_t)(candidate - current) > 0);
 }
 
-/** Select the next shared recovery epoch; zero remains an inactive sentinel. */
+/** Select the next shared recovery epoch; zero remains an inactive sentinel.
+ *
+ * Epoch alignment gives all recovering nodes one independently computable
+ * boundary, avoiding piecemeal return to GPS-scheduled TDMA.
+ */
 static inline uint32_t mesh_clock_next_recovery_frame(uint32_t frame,
                                                       uint32_t epoch_frames)
 {
@@ -88,7 +96,13 @@ static inline uint32_t mesh_clock_next_recovery_frame(uint32_t frame,
   return target;
 }
 
-/** Validate and, when necessary, safely advance a received recovery target. */
+/** Validate and, when necessary, safely advance a received recovery target.
+ *
+ * Targets must be aligned, unambiguously future in serial-number arithmetic,
+ * and near enough to prevent a malformed peer from delaying recovery without
+ * bound. A valid but short lead is moved to the next common epoch so fallback
+ * leases can expire before deterministic slot ownership resumes.
+ */
 static inline uint32_t mesh_clock_sanitize_recovery_frame(uint32_t frame,
                                                           uint32_t candidate,
                                                           uint32_t epoch_frames,
@@ -110,6 +124,12 @@ static inline uint32_t mesh_clock_sanitize_recovery_frame(uint32_t frame,
 }
 
 /** Update the mesh clock and return its current network timestamp.
+ *
+ * GPS loss first preserves the established schedule through bounded holdover.
+ * Forced or expired fallback uses local monotonic time and resets slots because
+ * ownership learned in another clock domain is no longer collision-safe.
+ * Stable GPS must persist through @p acquire_ms before re-entry; a correction
+ * larger than @p step_max_ms also invalidates existing slot leases.
  *
  * @param[in,out] clock Clock policy state.
  * @param[in] local_ms Monotonic time since boot.

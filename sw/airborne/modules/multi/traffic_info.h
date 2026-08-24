@@ -40,7 +40,7 @@
 #include "math/pprz_geodetic_int.h"
 #include "math/pprz_geodetic_float.h"
 #include "modules/gps/gps.h"
-#include "modules/multi/traffic_info_mesh_clock.h"
+#include "modules/multi/traffic_info_mesh.h"
 
 #ifndef TRAFFIC_INFO_USE_MESH
 #define TRAFFIC_INFO_USE_MESH 0
@@ -105,303 +105,6 @@ static inline bool traffic_info_aircraft_id_valid(uint8_t id)
  */
 #define TI_ACS_NONE 0xFF
 
-#if TRAFFIC_INFO_USE_MESH
-/**
- * @defgroup mesh_state Optional MESH_STATE transport
- * @brief Compact state exchange for narrowband broadcast mesh radios.
- *
- * MESH_STATE is a 22 byte (30 bytes on the wire) replacement for ACINFO_LLA,
- * designed for the EByte E52-xxxNWxxS class of LoRa MESH modems running in
- * broadcast mode.  See the message definition in messages.xml for the exact
- * bit layout.
- *
- * Two mechanisms protect the modem's 5-frame transmit cache:
- *
- *  1. a GPS time-of-week synchronised TDMA slot, so that at most one node in
- *     the whole mesh originates a broadcast at any instant.  Without it, k
- *     simultaneous originations put k relay frames into *every* node's cache
- *     at once, which is exactly how "OUT OF CACHE" (and the resulting global
- *     buffer flush) happens;
- *  2. a leaky-bucket governor that tracks how many frames are estimated to be
- *     still inside the modem and refuses to hand over a new one above the high
- *     water mark.
- *
- * Enable this group with @c TRAFFIC_INFO_USE_MESH. Both mechanisms are O(1),
- * branch-light, and use only statically allocated storage.
- * @{
- */
-
-/** Length of one TDMA superframe in ms.
- *
- *  Fixed and identical on every node. It is NOT tied to the node count: with
- *  nodes joining and leaving freely there is no fixed count to tie it to. */
-#ifndef MESH_TDMA_SUPERFRAME_MS
-#define MESH_TDMA_SUPERFRAME_MS 16000
-#endif
-
-/** Slots per superframe, i.e. the maximum number of nodes the mesh can carry
- *  at full membership. Sized well above the expected population so that
- *  arrivals always find a free slot. */
-#ifndef MESH_TDMA_NB_SLOTS
-#define MESH_TDMA_NB_SLOTS 32
-#endif
-
-/** Slots distributed by the fair-share allocator.
- *
- * The remaining physical slots absorb short-lived membership disagreement
- * during joins and partitions. They stay available for primary selection and
- * collision recovery, but healthy peers do not target them as steady-state
- * quota. */
-#ifndef MESH_TDMA_FAIR_SLOTS
-#define MESH_TDMA_FAIR_SLOTS 25
-#endif
-
-/** Maximum slots one node may occupy when the mesh is sparsely populated.
- *  This is what converts spare membership into update rate: with N slots and
- *  k nodes present each node claims up to N/k of them, so the position rate
- *  rises automatically as nodes leave and falls back as they return. The
- *  fair-share budget leaves physical slots free for churn headroom. */
-#ifndef MESH_TDMA_MAX_REUSE
-#define MESH_TDMA_MAX_REUSE 8
-#endif
-
-/** Superframes a node listens before claiming more than its primary slot.
- *
- *  Network entry. Without it a fleet powering up together would each see an
- *  empty map, each conclude it was alone, each grab the maximum share, and
- *  collide on every slot - and since a collision delivers nothing, none of
- *  them would ever discover the others. AIS solves it the same way. */
-#ifndef MESH_ENTRY_FRAMES
-#define MESH_ENTRY_FRAMES 3
-#endif
-
-/** Lease on the PRIMARY slot, in superframes. Long: it exists only to break a
- *  primary-versus-primary deadlock, where the two nodes are mutually deaf and
- *  no evidence of the clash is available to anybody. In a healthy mesh a node
- *  keeps its slot across the whole flight. */
-#ifndef MESH_PRIMARY_HOLD_MIN
-#define MESH_PRIMARY_HOLD_MIN 120
-#endif
-#ifndef MESH_PRIMARY_HOLD_SPAN
-#define MESH_PRIMARY_HOLD_SPAN 120
-#endif
-
-/** Lease on an opportunistic (secondary) slot, in superframes: held for
- *  MIN..MIN+SPAN-1 and then surrendered. Randomised per node so that two nodes
- *  which ended up sharing a slot - the one collision nobody can observe,
- *  because a collision is silent to everybody - lapse at different times and
- *  diverge. The same mechanism AIS uses to time out slot reservations. */
-#ifndef MESH_SLOT_HOLD_MIN
-#define MESH_SLOT_HOLD_MIN 6
-#endif
-#ifndef MESH_SLOT_HOLD_SPAN
-#define MESH_SLOT_HOLD_SPAN 8
-#endif
-
-/** Superframes a slot stays reserved after its owner was last heard.
- *  Long enough to ride out a few lost frames, short enough that a landed or
- *  departed node releases its slot promptly. */
-#ifndef MESH_SLOT_AGE_FRAMES
-#define MESH_SLOT_AGE_FRAMES 4
-#endif
-
-/** Superframes between one-rank rotations of remainder-slot entitlement.
- *
- * The interval exceeds quiet-slot ageing plus a serialized expansion turn for
- * every possible member. Only one rank enters and one leaves the winner set at
- * each boundary, avoiding fleet-wide claim churn. */
-#ifndef MESH_REMAINDER_EPOCH_FRAMES
-#define MESH_REMAINDER_EPOCH_FRAMES \
-  (4 * MESH_SLOT_AGE_FRAMES + 2 * MESH_TDMA_NB_SLOTS + 1)
-#endif
-
-/** Nominal slot length in ms. Informational only: it can be fractional, so the
- *  slot index is computed by exact integer scaling in traffic_info.c rather
- *  than by dividing through this. */
-#define MESH_TDMA_SLOT_MS (MESH_TDMA_SUPERFRAME_MS / MESH_TDMA_NB_SLOTS)
-
-/** Maximum age of valid mesh kinematics before another source may take over. */
-#ifndef TRAFFIC_INFO_MESH_DROP_MS
-#define TRAFFIC_INFO_MESH_DROP_MS \
-  (2u * MESH_TDMA_SUPERFRAME_MS + MESH_TDMA_SLOT_MS + 1000u)
-#endif
-
-/** Marker for "no node owns this slot".
- *
- * NOT zero. Zero is the ground station's AC_ID, a real and needed identity, and
- * a node that used 0 for "empty" would be unable to represent the ground
- * station in the slot map at all - it would read every slot the GCS occupies as
- * free and transmit straight over it.
- *
- * This module's enforced ID policy reserves 0xFF for PPRZLink broadcast and
- * internal sentinels. The aircraft generator and airborne compile guard both
- * reject AC_ID 255, so it can never be a valid mesh sender or slot owner.
- */
-#define MESH_SLOT_FREE TRAFFIC_INFO_RESERVED_ID
-
-#if MESH_TDMA_SUPERFRAME_MS < 1
-#error "MESH_TDMA_SUPERFRAME_MS must be positive"
-#endif
-#if MESH_TDMA_NB_SLOTS < 1
-#error "MESH_TDMA_NB_SLOTS must be positive"
-#endif
-#if MESH_TDMA_SUPERFRAME_MS < MESH_TDMA_NB_SLOTS
-#error "MESH_TDMA_SUPERFRAME_MS is too short for MESH_TDMA_NB_SLOTS"
-#endif
-#if MESH_TDMA_NB_SLOTS > 255
-#error "MESH_TDMA_NB_SLOTS must fit in uint8_t"
-#endif
-#if MESH_TDMA_FAIR_SLOTS < 1 || MESH_TDMA_FAIR_SLOTS > MESH_TDMA_NB_SLOTS
-#error "MESH_TDMA_FAIR_SLOTS must be between 1 and MESH_TDMA_NB_SLOTS"
-#endif
-#if MESH_TDMA_MAX_REUSE < 1
-#error "MESH_TDMA_MAX_REUSE must be at least 1"
-#endif
-#if MESH_SLOT_HOLD_SPAN < 1
-#error "MESH_SLOT_HOLD_SPAN must be positive"
-#endif
-#if MESH_PRIMARY_HOLD_SPAN < 1
-#error "MESH_PRIMARY_HOLD_SPAN must be positive"
-#endif
-#if MESH_REMAINDER_EPOCH_FRAMES <= (2 * MESH_SLOT_AGE_FRAMES + MESH_TDMA_NB_SLOTS)
-#error "MESH_REMAINDER_EPOCH_FRAMES is too short for safe remainder rotation"
-#endif
-
-/** Maximum GPS-to-monotonic clock correction tolerated without relearning slots. */
-#ifndef MESH_CLOCK_STEP_MAX_MS
-#define MESH_CLOCK_STEP_MAX_MS 10
-#endif
-
-/** Maximum bounded TDMA holdover after losing GPS time. */
-#ifndef MESH_CLOCK_HOLDOVER_MAX_MS
-#define MESH_CLOCK_HOLDOVER_MAX_MS 60000u
-#endif
-
-/** Continuous valid-GPS interval required before entering GPS TDMA. */
-#ifndef MESH_CLOCK_ACQUIRE_MS
-#define MESH_CLOCK_ACQUIRE_MS 2000u
-#endif
-
-/** Maximum time estimator-derived global kinematics remain publishable after
- * the last 3D GNSS fix. This does not extend TDMA clock authority. Set to zero
- * when the estimator cannot dead-reckon in its initialized global frame. */
-#ifndef MESH_POSITION_HOLDOVER_MS
-#define MESH_POSITION_HOLDOVER_MS MESH_TDMA_SUPERFRAME_MS
-#endif
-
-/** Randomized origination interval when no bounded network clock exists. */
-#ifndef MESH_ASYNC_MIN_INTERVAL_MS
-#define MESH_ASYNC_MIN_INTERVAL_MS 16000u
-#endif
-#ifndef MESH_ASYNC_MAX_INTERVAL_MS
-#define MESH_ASYNC_MAX_INTERVAL_MS 24000u
-#endif
-
-/** Keep fleet-wide fallback active after the last GPS-denied advertisement. */
-#ifndef MESH_ASYNC_PEER_HOLD_MS
-#define MESH_ASYNC_PEER_HOLD_MS \
-  (2u * MESH_ASYNC_MAX_INTERVAL_MS + MESH_TDMA_SUPERFRAME_MS)
-#endif
-
-/** Fixed GPS-frame epoch used by all peers to select one recovery target. */
-#ifndef MESH_RECOVERY_EPOCH_FRAMES
-#define MESH_RECOVERY_EPOCH_FRAMES 8u
-#endif
-
-/** Minimum target lead, including one frame beyond the fallback lease. */
-#ifndef MESH_RECOVERY_MIN_LEAD_FRAMES
-#define MESH_RECOVERY_MIN_LEAD_FRAMES \
-  (MESH_ASYNC_PEER_HOLD_MS / MESH_TDMA_SUPERFRAME_MS + 2u)
-#endif
-
-#if MESH_CLOCK_HOLDOVER_MAX_MS == 0
-#error "MESH_CLOCK_HOLDOVER_MAX_MS must be positive"
-#endif
-#if MESH_CLOCK_HOLDOVER_MAX_MS <= MESH_TDMA_SUPERFRAME_MS
-#error "MESH_CLOCK_HOLDOVER_MAX_MS must exceed one complete superframe"
-#endif
-#if MESH_CLOCK_ACQUIRE_MS == 0
-#error "MESH_CLOCK_ACQUIRE_MS must be positive"
-#endif
-#if MESH_POSITION_HOLDOVER_MS > MESH_CLOCK_HOLDOVER_MAX_MS
-#error "MESH_POSITION_HOLDOVER_MS must not outlive bounded clock holdover"
-#endif
-#if MESH_ASYNC_MIN_INTERVAL_MS == 0
-#error "MESH_ASYNC_MIN_INTERVAL_MS must be positive"
-#endif
-#if MESH_ASYNC_MAX_INTERVAL_MS < MESH_ASYNC_MIN_INTERVAL_MS
-#error "MESH_ASYNC_MAX_INTERVAL_MS must be at least MESH_ASYNC_MIN_INTERVAL_MS"
-#endif
-#if MESH_ASYNC_PEER_HOLD_MS <= MESH_ASYNC_MAX_INTERVAL_MS
-#error "MESH_ASYNC_PEER_HOLD_MS must exceed one maximum fallback interval"
-#endif
-#if MESH_RECOVERY_EPOCH_FRAMES <= \
-  (MESH_ASYNC_PEER_HOLD_MS / MESH_TDMA_SUPERFRAME_MS)
-#error "MESH_RECOVERY_EPOCH_FRAMES must exceed the denied-peer lease"
-#endif
-#if MESH_RECOVERY_MIN_LEAD_FRAMES <= \
-  (MESH_ASYNC_PEER_HOLD_MS / MESH_TDMA_SUPERFRAME_MS)
-#error "MESH_RECOVERY_MIN_LEAD_FRAMES must exceed the denied-peer lease"
-#endif
-
-/** Estimated time for one frame to leave the modem transmit cache, in ms.
- *  Air time of the longest frame plus the worst case CSMA back-off plus one
- *  relay of a neighbour's frame. */
-#ifndef MESH_MODEM_DRAIN_MS
-#define MESH_MODEM_DRAIN_MS 60
-#endif
-
-/** Stop local MESH_STATE admission at this estimated local queue depth.
- *
- * The E52 does not expose its total queue occupancy, including relay and other
- * telemetry frames. Keeping this below the five-item hardware limit reserves
- * two entries for those unobservable producers. Raising it cannot create TDMA
- * slots or airtime; it only reduces protection against a destructive cache
- * flush.
- */
-#ifndef MESH_CACHE_HIGH_WATER
-#define MESH_CACHE_HIGH_WATER 3
-#endif
-
-#ifndef MESH_AUTO_TELEMETRY
-#define MESH_AUTO_TELEMETRY FALSE
-#endif
-
-#ifndef MESH_GCS_PING_TIMEOUT_MS
-#define MESH_GCS_PING_TIMEOUT_MS 60000u
-#endif
-
-#ifndef MESH_SOLO_QUIET_MS
-#define MESH_SOLO_QUIET_MS MESH_TDMA_SUPERFRAME_MS
-#endif
-
-#if MESH_CACHE_HIGH_WATER >= 5
-#error "MESH_CACHE_HIGH_WATER must stay below the 5 frame hardware cache"
-#endif
-
-/** Unified, firmware-independent mode stored in the MESH_STATE flags field. */
-#define MESH_MODE_MANUAL    0u
-#define MESH_MODE_ASSISTED  1u
-#define MESH_MODE_AUTO      2u
-#define MESH_MODE_HOME      3u
-#define MESH_MODE_NOGPS     4u
-#define MESH_MODE_FAILSAFE  5u
-#define MESH_MODE_KILL      6u
-#define MESH_MODE_UNKNOWN   7u
-
-#define MESH_FLAG_MODE_MASK  0x07u
-#define MESH_FLAG_ROTORCRAFT 0x08u
-#define MESH_FLAG_POS_VALID  0x10u
-#define MESH_FLAG_AIRBORNE   0x20u
-#define MESH_FLAG_ALERT      0x40u
-#define MESH_FLAG_EMERGENCY  0x80u
-
-/** Periodic task driving the mesh transmit slot. Call at 20 Hz or faster. */
-extern void traffic_info_mesh_periodic(void);
-
-/** @} */
-#endif /* TRAFFIC_INFO_USE_MESH */
-
 /**
  * @defgroup ac_info Traffic-aircraft state representations
  * @brief Storage and lazy conversion of traffic positions and velocities.
@@ -416,7 +119,6 @@ extern void traffic_info_mesh_periodic(void);
 #define AC_INFO_VEL_ENU_I 6
 #define AC_INFO_VEL_ENU_F 7
 #define AC_INFO_VEL_LOCAL_F 8
-#define AC_INFO_SOURCE_MESH 9
 
 /* Velocity validity is represented by status bits, not vector magnitude.
  * A measured (0, 0, 0) velocity is a valid stationary traffic track. */
@@ -495,7 +197,9 @@ struct acInfo {
 extern uint8_t ti_acs_idx;
 extern uint8_t ti_acs_id[];
 extern struct acInfo ti_acs[];
+/** An unknown aircraft could not obtain a slot; traffic may be unrepresented. */
 extern bool traffic_info_capacity_exceeded;
+/** Sticky evidence that a remote track has supplied position and velocity. */
 extern bool traffic_info_surveillance_established;
 
 extern void traffic_info_init(void);
@@ -503,10 +207,10 @@ extern void traffic_info_init(void);
 /**
  * Resolve an aircraft id to its slot in ::ti_acs, inserting it if needed.
  *
- * Replaces the open coded `if (ti_acs_idx < NB_ACS) { ... }` guard that used
- * to wrap every setter. That guard also blocked *updates to already known*
- * aircraft once the table was full, which silently froze the whole traffic
- * picture instead of only refusing the new arrival.
+ * Known IDs always retain their slot. When the table is full, the least
+ * recently active remote slot is reused only after #TRAFFIC_INFO_RECLAIM_MS;
+ * GCS and ownship slots are never reclaimed. This keeps current tracks moving
+ * without silently replacing active traffic.
  *
  * @param[in] id aircraft id, 0 is the GCS and always maps to slot 0
  * @return slot index in ::ti_acs, or #TI_ACS_NONE when the aircraft is unknown
@@ -514,7 +218,14 @@ extern void traffic_info_init(void);
  */
 extern uint8_t ti_acs_slot(uint8_t id);
 
-/** Reset module-private state before a compact traffic slot is reassigned. */
+/** Notify slot-indexed consumers immediately before a slot is cleared.
+ *
+ * Overrides must discard all state associated with @p slot. At callback time,
+ * `ti_acs[slot].ac_id` still identifies the previous owner, allowing TCAS and
+ * similar consumers to invalidate global state that refers to that aircraft.
+ *
+ * @param[in] slot Traffic-table slot about to be assigned or reused.
+ */
 extern void traffic_info_slot_reassigned(uint8_t slot);
 
 /** Resolve an already registered traffic ID without inserting a new record. */
@@ -552,15 +263,15 @@ static inline uint8_t ti_acs_legacy_read_slot(uint8_t id)
  */
 extern bool parse_acinfo_dl(uint8_t *buf);
 
-/** Return local monotonic age of the latest accepted traffic observation.
+/** Return local monotonic age of the complete position/velocity pair.
  *
- * This age is independent of GPS time-of-week rollover and is suitable for
- * safety freshness decisions. It is updated only when a setter accepts the
- * observation, not when an out-of-order packet is rejected.
+ * The older component determines age, so refreshing only position or velocity
+ * cannot make an incomplete stale pair appear current. The clock is monotonic,
+ * independent of source TOW rollover, and advances only for accepted data.
  *
  * @param[in] ac_id Traffic ID to query.
  * @param[out] age_ms Age in milliseconds, saturated at UINT32_MAX.
- * @return @c true when the traffic record has an accepted observation.
+ * @return @c true when both position and velocity have accepted observations.
  */
 extern bool traffic_info_get_age(uint8_t ac_id, uint32_t *age_ms);
 
@@ -581,48 +292,23 @@ extern bool traffic_info_get_snapshot(uint8_t ac_id,
                                       struct EnuCoor_f *velocity,
                                       uint32_t *age_ms);
 
-/** Mark a traffic-table slot as having received complete position/velocity. */
+/** Mark both components current after one coherent observation was stored.
+ *
+ * This is the only touch operation that can establish surveillance by itself.
+ */
 extern void traffic_info_touch(uint8_t slot);
 
-/** Mark only the position component of a traffic observation as current. */
+/** Mark only position current.
+ *
+ * When a legacy update supersedes mesh ownership, the opposite mesh component
+ * is invalidated so checked snapshots cannot combine different sources.
+ */
 extern void traffic_info_touch_position(uint8_t slot);
 
-/** Mark only the velocity component of a traffic observation as current. */
+/** Mark only velocity current; see traffic_info_touch_position() for why a
+ * source change invalidates the opposite component.
+ */
 extern void traffic_info_touch_velocity(uint8_t slot);
-
-#if TRAFFIC_INFO_USE_MESH
-/** Copy a mesh observation and project it forward at constant velocity.
- *
- * The stored observation is never modified. Prediction starts from the latest
- * valid MESH_STATE position on every call and is clamped to @p max_prediction_ms.
- *
- * @param[in] ac_id Aircraft ID to query.
- * @param[in] max_prediction_ms Maximum constant-velocity projection interval.
- * @param[out] position Predicted local ENU position in meters.
- * @param[out] velocity Observed local ENU velocity in meters per second.
- * @param[out] age_ms Local monotonic age of the observation in milliseconds.
- * @return @c true for a valid mesh observation, otherwise @c false.
- */
-extern bool traffic_info_get_mesh_snapshot(uint8_t ac_id, uint32_t max_prediction_ms,
-                                           struct EnuCoor_f *position,
-                                           struct EnuCoor_f *velocity,
-                                           uint32_t *age_ms);
-
-/** Return the age of an aircraft's last valid MESH_STATE observation.
- *
- * Unlike heartbeat reception age, this timestamp is not refreshed by an
- * invalid-position frame. Safety consumers can therefore distinguish a short
- * sensor outage from a track whose last usable kinematics have expired.
- *
- * @param[in] ac_id Aircraft ID to query.
- * @param[out] age_ms Local monotonic age of the last valid observation.
- * @return @c true when this mesh track has had a valid observation.
- */
-extern bool traffic_info_get_mesh_valid_age(uint8_t ac_id, uint32_t *age_ms);
-
-/** Return whether the latest observation for an aircraft came from MESH_STATE. */
-extern bool traffic_info_is_mesh_track(uint8_t ac_id);
-#endif
 
 /************************ Set functions ****************************/
 
@@ -637,6 +323,11 @@ extern bool traffic_info_is_mesh_track(uint8_t ac_id);
  * @param[in] gspeed Ground speed in cm/s
  * @param[in] climb Climb rate in cm/s
  * @param[in] itow GPS time of week in ms
+ *
+ * Older source-TOW samples are rejected. Changed equal-TOW samples remain
+ * compatible only for #TRAFFIC_INFO_EQUAL_TOW_COMPAT_MS, preventing a frozen
+ * sender clock from refreshing one track indefinitely. Fresh mesh data, when
+ * enabled, remains authoritative until its configured drop horizon.
  */
 extern void set_ac_info_utm(uint8_t id, int32_t utm_east, int32_t utm_north, int32_t alt, uint8_t utm_zone,
                             int16_t course, uint16_t gspeed, int16_t climb, uint32_t itow);
@@ -651,13 +342,16 @@ extern void set_ac_info_utm(uint8_t id, int32_t utm_east, int32_t utm_north, int
  * @param[in] gspeed Ground speed in cm/s
  * @param[in] climb Climb rate in cm/s
  * @param[in] itow GPS time of week in ms
+ *
+ * Ordering and mesh-authority rules are identical to set_ac_info_utm().
  */
 extern void set_ac_info_lla(uint8_t id, int32_t lat, int32_t lon, int32_t alt,
                             int16_t course, uint16_t gspeed, int16_t climb, uint32_t itow);
 
 /** Set LLA traffic received without a source timestamp.
  *
- * Arrival-stamped observations never replace a source-TOW ordered stream.
+ * Arrival-stamped observations never replace a source-TOW ordered stream;
+ * otherwise a delayed low-information packet could overwrite ordered data.
  */
 extern void set_ac_info_lla_arrival(uint8_t id, int32_t lat, int32_t lon, int32_t alt,
                                     int16_t course, uint16_t gspeed, int16_t climb);
@@ -781,7 +475,7 @@ static inline void acInfoSetVelocityEnu_i(uint8_t ac_id, struct EnuCoor_i *enu_v
     return;
   }
   VECT3_COPY(ti_acs[slot].enu_vel_i, *enu_vel);
-  /* clear bits for all position representations and only set the new one */
+  /* Keep exactly one velocity representation authoritative. */
   ti_acs[slot].status = (ti_acs[slot].status & ~AC_INFO_VELOCITY_MASK)
                         | (1u << AC_INFO_VEL_ENU_I);
   ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
@@ -799,7 +493,7 @@ static inline void acInfoSetVelocityEnu_f(uint8_t ac_id, struct EnuCoor_f *enu_v
     return;
   }
   VECT3_COPY(ti_acs[slot].enu_vel_f, *enu_vel);
-  /* clear bits for all position representations and only set the new one */
+  /* Keep exactly one velocity representation authoritative. */
   ti_acs[slot].status = (ti_acs[slot].status & ~AC_INFO_VELOCITY_MASK)
                         | (1u << AC_INFO_VEL_ENU_F);
   ti_acs[slot].itow = gps_tow_from_sys_ticks(sys_time.nb_tick);
@@ -809,6 +503,13 @@ static inline void acInfoSetVelocityEnu_f(uint8_t ac_id, struct EnuCoor_f *enu_v
 
 /*************** Reference frame conversion functions ***************/
 
+/** Lazily derive missing traffic representations.
+ *
+ * Conversion requires a valid source representation and, for local frames,
+ * an initialized ownship origin. These legacy functions return no status;
+ * callers must inspect the requested validity bit afterward. Safety-critical
+ * consumers should prefer traffic_info_get_snapshot().
+ */
 extern void acInfoCalcPositionUtm_i(uint8_t ac_id);
 extern void acInfoCalcPositionUtm_f(uint8_t ac_id);
 extern void acInfoCalcPositionLla_i(uint8_t ac_id);

@@ -31,7 +31,11 @@ static inline bool mesh_mode_should_use_solo(
          && input->peer_quiet_ms >= input->required_quiet_ms;
 }
 
-/** @brief Decide whether a received frame is airborne peer evidence. */
+/** @brief Decide whether a received frame is airborne peer evidence.
+ *
+ * Zero and `UINT8_MAX` are protocol sentinels, while the local ID is loopback;
+ * counting any of them would suppress solo mode without a real peer.
+ */
 static inline bool mesh_mode_is_peer_sender(uint8_t sender_id,
                                             uint8_t local_id)
 {
@@ -39,7 +43,11 @@ static inline bool mesh_mode_is_peer_sender(uint8_t sender_id,
          && sender_id != local_id;
 }
 
-/** Spread simultaneous boot traffic deterministically over a bounded window. */
+/** Spread simultaneous boot traffic deterministically over a bounded window.
+ *
+ * Identity-derived jitter avoids a shared random-state dependency while still
+ * separating repeated fleet-wide power-up announcements.
+ */
 static inline uint32_t mesh_mode_boot_spread_ms(uint32_t identity,
                                                 uint32_t window_ms)
 {
@@ -52,6 +60,9 @@ static inline uint32_t mesh_mode_boot_spread_ms(uint32_t identity,
 }
 
 /** @brief Apply hysteresis to mesh-versus-manifold telemetry selection.
+ *
+ * Distinct enter and exit thresholds prevent profile flapping when membership
+ * hovers at the boundary.
  *
  * @param[in] neighbours Number of distinct live aircraft peers.
  * @param[in] manifold_active Whether the manifold profile is currently selected.
@@ -75,6 +86,9 @@ struct mesh_async_interval {
 };
 
 /** @brief Decide whether estimator kinematics may outlive the GNSS fix.
+ *
+ * A short inclusive grace period bridges ordinary fix churn; after it expires,
+ * advertising dead-reckoned position would conceal loss of navigation quality.
  *
  * @param[in] fix_seen Whether this boot has observed a valid 3D GNSS fix.
  * @param[in] elapsed_ms Monotonic time since that last valid fix.

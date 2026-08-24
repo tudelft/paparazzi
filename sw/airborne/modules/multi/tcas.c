@@ -67,6 +67,12 @@ static bool tcas_resolve_received[NB_ACS];
 /** Local receipt time of each peer resolution, in monotonic milliseconds. */
 static uint32_t tcas_resolve_received_ms[NB_ACS];
 
+/** Invalidate every TCAS reference before a compact traffic slot is reused.
+ *
+ * TCAS sidecars are indexed by slot for bounded embedded storage. Leaving any
+ * state behind would transfer an advisory or peer resolution to an unrelated
+ * aircraft that inherits the slot.
+ */
 void traffic_info_slot_reassigned(uint8_t slot)
 {
   if (slot < NB_ACS) {

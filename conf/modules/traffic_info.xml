@@ -78,6 +78,7 @@
   </dep>
   <header>
     <file name="traffic_info.h"/>
+    <file name="traffic_info_mesh_mode.h"/>
   </header>
   <init fun="traffic_info_init()"/>
   <periodic fun="traffic_info_log()" start="traffic_info_log_start()" stop="traffic_info_log_stop()" autorun="FALSE"/>
@@ -95,6 +96,7 @@
 
   <makefile>
     <file name="traffic_info.c"/>
+    <file name="traffic_info_mesh.c"/>
     <define name="TRAFFIC_INFO"/>
     <test firmware="rotorcraft">
       <define name="TRAFFIC_INFO_USE_LOG"/>
