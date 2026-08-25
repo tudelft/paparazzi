@@ -56,28 +56,28 @@ test_framed_ring_buffer.run: $(PAPARAZZI_SRC)/sw/airborne/utils/framed_ring_buff
 
 test_tcas_policy.run: test_tcas_policy.c \
 	$(PAPARAZZI_SRC)/sw/airborne/modules/multi/tcas_policy.h \
-	$(PAPARAZZI_SRC)/sw/airborne/modules/multi/traffic_info_time.h
+	$(PAPARAZZI_SRC)/sw/airborne/modules/multi/traffic_info_policy.h
 	@echo BUILD $@
 	$(Q)$(CC) $(FLAGS) -Wextra -Werror -I$(PAPARAZZI_SRC)/sw/airborne $< -o $@
 
 test_mesh_clock.run: test_mesh_clock.c \
-	$(PAPARAZZI_SRC)/sw/airborne/modules/multi/traffic_info_mesh_clock.h
+	$(PAPARAZZI_SRC)/sw/airborne/modules/multi/traffic_info_mesh_policy.h
 	@echo BUILD $@
 	$(Q)$(CC) $(FLAGS) -Wextra -Werror -I$(PAPARAZZI_SRC)/sw/airborne $< -o $@
 
 test_mesh_mode_policy.run: test_mesh_mode_policy.c \
-	$(PAPARAZZI_SRC)/sw/airborne/modules/multi/traffic_info_mesh_mode.h
+	$(PAPARAZZI_SRC)/sw/airborne/modules/multi/traffic_info_mesh_policy.h
 	@echo BUILD $@
 	$(Q)$(CC) $(FLAGS) -Wextra -Werror -I$(PAPARAZZI_SRC)/sw/airborne $< -o $@
 
 test_traffic_info_units.run: test_traffic_info_units.c \
-	$(PAPARAZZI_SRC)/sw/airborne/modules/multi/traffic_info_units.h
+	$(PAPARAZZI_SRC)/sw/airborne/modules/multi/traffic_info_policy.h
 	@echo BUILD $@
 	$(Q)$(CC) $(FLAGS) -Wextra -Werror -fsanitize=undefined \
 		-I$(PAPARAZZI_SRC)/sw/airborne $< -o $@
 
 test_traffic_info_reclaim.run: test_traffic_info_reclaim.c \
-	$(PAPARAZZI_SRC)/sw/airborne/modules/multi/traffic_info_reclaim.h
+	$(PAPARAZZI_SRC)/sw/airborne/modules/multi/traffic_info_policy.h
 	@echo BUILD $@
 	$(Q)$(CC) $(FLAGS) -Wextra -Werror -fsanitize=undefined \
 		-I$(PAPARAZZI_SRC)/sw/airborne $< -o $@

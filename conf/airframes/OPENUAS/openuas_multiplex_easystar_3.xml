@@ -423,6 +423,7 @@
     <module name="traffic_info">
       <define name="TRAFFIC_INFO_USE_MESH" value="TRUE"/>
       <define name="MESH_AUTO_TELEMETRY" value="TRUE"/>
+      <define name="MESH_SOLO_QUIET_MS" value="5000"/>
     </module>
     <module name="tcas"/>
 

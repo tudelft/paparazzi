@@ -8,8 +8,10 @@
       The traditional mode is the default: it accepts ACINFO, ACINFO_LLA, GPS_SMALL, GPS, GPS_LLA, and GPS_INT.
       Existing airframes need no changes and retain the original traffic_info behavior when mesh is disabled.
       NB_ACS sets the record count and must not exceed 255; aircraft AC_ID values are limited to 1 through 254.
-      When the table is full, new records are rejected while known aircraft continue updating in either mode.
+      When the table is full, known aircraft continue updating and only sufficiently inactive remote slots are reclaimed;
+      otherwise new records are rejected without disturbing active traffic.
       Set TRAFFIC_INFO_USE_LOG to TRUE only when traffic logging is required.
+      
       Set TRAFFIC_INFO_USE_MESH to TRUE to add compact MESH_STATE reception and self-organising TDMA transmission.
       Mesh mode targets low-bandwidth radios that provide transparent all-to-all broadcast,
       bounded multi-hop forwarding, duplicate suppression, and characterized airtime and queue behavior.
@@ -78,7 +80,6 @@
   </dep>
   <header>
     <file name="traffic_info.h"/>
-    <file name="traffic_info_mesh_mode.h"/>
   </header>
   <init fun="traffic_info_init()"/>
   <periodic fun="traffic_info_log()" start="traffic_info_log_start()" stop="traffic_info_log_stop()" autorun="FALSE"/>

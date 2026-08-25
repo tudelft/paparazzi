@@ -6,7 +6,7 @@ This note records the files retained by the production broadcast-mesh refactor. 
 | --- | --- | --- |
 | Build and wire schema | `Makefile.ac`, `conf/messages_mesh_new.xml` (`conf/messages.xml` selects it) | Add `ALIVE_REQ` ID 195 and regenerate the active protocol header before aircraft MD5 generation. |
 | Airborne datalink | `sw/airborne/modules/datalink/datalink.c`, `datalink.h`, `downlink.c` | Split identity from health, retain targeted PING evidence for automatic modes, and preserve uplink-age semantics. |
-| Mesh and TCAS | `sw/airborne/modules/multi/traffic_info.c`, `traffic_info.h`, `traffic_info_mesh_clock.h`, `traffic_info_mesh_mode.h`, `tcas.c`, `tcas_policy.h` | Provide self-organising slots, GPS holdover and fallback, automatic telemetry modes, checked traffic snapshots, and fail-closed TCAS policy. |
+| Mesh and TCAS | `sw/airborne/modules/multi/traffic_info.c`, `traffic_info.h`, `traffic_info_policy.h`, `traffic_info_mesh.c`, `traffic_info_mesh.h`, `traffic_info_mesh_policy.h`, `tcas.c`, `tcas_policy.h` | Provide self-organising slots, GPS holdover and fallback, automatic telemetry modes, checked traffic snapshots, and fail-closed TCAS policy. |
 | Ground link | `sw/ground_segment/tmtc/link.ml`, `parse_messages_v1.ml` | Provide serialized identity recovery, durable snapshot reconciliation, monotonic completed RTT, restart-safe serial handling, and unchanged uplink-age forwarding. |
 | Serial library | `sw/lib/ocaml/serial.ml`, `serial.mli`, `cserial.c` | Add 460800 baud, bounds checks, monotonic time, and exclusive radio ownership. |
 | Cockpit | `sw/ground_segment/cockpit/src/widgets/link_status.cpp` | Present the raw counter accurately as `Uplink age [s]`. |

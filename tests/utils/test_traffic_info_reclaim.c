@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "modules/multi/traffic_info_reclaim.h"
+#include "modules/multi/traffic_info_policy.h"
 
 static void expect(const char *name, bool actual, bool expected)
 {

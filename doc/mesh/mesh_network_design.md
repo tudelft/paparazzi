@@ -105,7 +105,7 @@ slower full GPS report for the GCS. The implementation is divided as follows:
 | Airborne MAC, packet encoding, traffic storage | [`traffic_info.c`](../../sw/airborne/modules/multi/traffic_info.c) |
 | Public traffic and TCAS API | [`traffic_info.h`](../../sw/airborne/modules/multi/traffic_info.h) |
 | TCAS freshness and fail-closed policy | [`tcas.c`](../../sw/airborne/modules/multi/tcas.c) |
-| GPS, holdover, fallback, and recovery policy | [`traffic_info_mesh_clock.h`](../../sw/airborne/modules/multi/traffic_info_mesh_clock.h) |
+| GPS, holdover, fallback, recovery, and telemetry-mode policy | [`traffic_info_mesh_policy.h`](../../sw/airborne/modules/multi/traffic_info_mesh_policy.h) |
 | Reference-radio provisioning | [`e52_provision.py`](../../sw/tools/mesh/e52_provision.py) |
 | Capacity and command reserve | [`mesh_phase_optimizer.py`](../../sw/tools/mesh/mesh_phase_optimizer.py) |
 | Join, leave, and collision recovery | [`mesh_slot_sim.py`](../../sw/tools/mesh/mesh_slot_sim.py) |
@@ -1264,6 +1264,12 @@ declaring that wireless networks have finally agreed to behave.
 
 These are the three highest-value next steps. They are deliberately not
 described as current capabilities.
+
+The separate
+[Hybrid Real and Simulated Traffic Domain](hybrid_real_sim_traffic_implementation_guide.md)
+guide specifies a future virtual-modem and physical-radio gateway for live
+interaction among real, SIM, NPS, mesh, and legacy aircraft. It is an
+implementation and qualification plan, not flighted behavior.
 
 ### 10.1 Put the complete fleet on the bench
 

@@ -29,8 +29,8 @@
 
 #include "modules/multi/traffic_info.h"
 #include "modules/multi/traffic_info_internal.h"
-#include "modules/multi/traffic_info_mesh_mode.h"
-#include "modules/multi/traffic_info_units.h"
+#include "modules/multi/traffic_info_mesh_policy.h"
+#include "modules/multi/traffic_info_policy.h"
 
 #include "generated/airframe.h"
 

@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "modules/multi/traffic_info_units.h"
+#include "modules/multi/traffic_info_policy.h"
 
 static void expect_conversion(const char *name, int32_t centimeters,
                               bool expected_valid, int32_t expected_mm)

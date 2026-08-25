@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "modules/multi/traffic_info_mesh_mode.h"
+#include "modules/multi/traffic_info_mesh_policy.h"
 
 static void expect(bool condition, const char *message)
 {

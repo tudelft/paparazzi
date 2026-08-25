@@ -32,9 +32,7 @@
 
 #include "modules/multi/traffic_info.h"
 #include "modules/multi/traffic_info_internal.h"
-#include "modules/multi/traffic_info_reclaim.h"
-#include "modules/multi/traffic_info_time.h"
-#include "modules/multi/traffic_info_units.h"
+#include "modules/multi/traffic_info_policy.h"
 
 #include "generated/airframe.h"     // AC_ID
 #include "generated/flight_plan.h"  // NAV_MSL0

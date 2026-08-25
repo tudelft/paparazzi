@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "modules/multi/traffic_info_mesh_clock.h"
+#include "modules/multi/traffic_info_mesh_policy.h"
 
 #define HOLDOVER_MS 60000u
 #define ACQUIRE_MS 2000u

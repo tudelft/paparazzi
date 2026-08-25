@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include "modules/multi/tcas_policy.h"
-#include "modules/multi/traffic_info_time.h"
+#include "modules/multi/traffic_info_policy.h"
 
 #define FRESH_MS 4000u
 #define DROP_MS 25375u

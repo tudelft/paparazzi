@@ -28,7 +28,6 @@
 
 #if TRAFFIC_INFO_USE_MESH
 #include "math/pprz_geodetic_float.h"
-#include "modules/multi/traffic_info_mesh_clock.h"
 
 /**
  * @defgroup mesh_state Optional MESH_STATE transport
