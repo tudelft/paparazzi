@@ -46,6 +46,10 @@
     <configure name="PERIODIC_FREQUENCY" value="500"/>
     <configure name="AHRS_PROPAGATE_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
     <configure name="AHRS_CORRECT_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
+    <configure name="NAVIGATION_FREQUENCY" value="20"/>
+    <configure name="CONTROL_FREQUENCY" value="100"/>
+    <configure name="TELEMETRY_FREQUENCY" value="50"/>
+    <configure name="MODULES_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
     <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="30"/> -->
 
     <target name="ap" board="lisa_mx_2.1_chibios">
@@ -65,7 +69,7 @@
       <!-- <configure name="MODULES_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/> -->
       <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/> --><!-- set to 50 if using QMC?-->
 
-      <configure name="USE_MAGNETOMETER" value="TRUE"/><!-- only when everything else works... improve -->
+      <configure name="USE_MAGNETOMETER" value="FALSE"/><!-- Keep QMC acquisition enabled, but use GNSS course for AHRS yaw initially -->
 
       <!-- ***** First sensor modules... ***** -->
       
@@ -86,7 +90,7 @@
 
       <module name="airspeed" type="sdp3x">
         <configure name="SDP3X_I2C_DEV" value="i2c2"/>
-        <define name="SDP3X_LOWPASS_TAU" value="0.11"/>
+        <define name="SDP3X_LOWPASS_TAU" value="0.15"/>
         <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
         <define name="USE_AIRSPEED" value="TRUE"/>
         <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/>
@@ -272,7 +276,8 @@
       <define name="INS_BARO_ID" value="BARO_SIM_SENDER_ID"/>
       <module name="telemetry" type="transparent"/>
       <module name="imu" type="nps"/>
-      <module name="gps" type="ublox"/>
+      <module name="gps" type="sim"/>
+      <define name="USE_NPS_AIRSPEED"/>
       <!--
       <define name="USE_NPS_AIRSPEED"/>
       <define name="USE_NPS_AOA"/>
@@ -309,13 +314,11 @@
     <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
     <!-- <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN"/> -->
     <!-- <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/> -->
-    <configure name="USE_MAGNETOMETER" value="TRUE"/>
-    <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/>
-
-    <module name="stabilization" type="float_quat"/>
+    <configure name="USE_MAGNETOMETER" value="FALSE"/>
+    <define name="USE_MAGNETOMETER_ONGROUND" value="FALSE"/>
 
     <module name="ahrs" type="float_dcm">
-      <configure name="USE_MAGNETOMETER" value="TRUE"/><!-- AS in USE the device for readings , not the value in AHRS yet -->
+      <configure name="USE_MAGNETOMETER" value="FALSE"/>
       <define name="USE_AHRS_GPS_ACCELERATIONS"/>
       <define name="AHRS_DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
       <!-- <define name="AHRS_DCM_MAG_ID" value="MAG_IST8310_SENDER_ID"/> -->
@@ -327,7 +330,7 @@
     <module name="auto1_commands"/> 
     <!-- FIXME since not working in JSBSim target with RC controller steering in Simulator-->
     <module name="air_data"/>
-    <module name="control" type="new"/>
+    <module name="control" type="energyadaptive"/>
     <module name="navigation"/>
     <module name="nav" type="line"/>
     <module name="nav" type="line_border"/>
@@ -664,7 +667,7 @@
 
   <section name="AIR_DATA" prefix="AIR_DATA_">
     <define name="CALC_AIRSPEED" value="TRUE"/>
-    <define name="CALC_TAS_FACTOR" value="FALSE"/>
+    <define name="CALC_TAS_FACTOR" value="TRUE"/>
     <define name="CALC_AMSL_BARO" value="TRUE"/>
   </section>
 
@@ -750,120 +753,77 @@
   <section name="HORIZONTAL CONTROL" prefix="H_CTL_">
 
     <define name="COURSE_PGAIN" value="0.9"/>
-    <define name="COURSE_DGAIN" value="0.10"/>
+    <define name="COURSE_DGAIN" value="0.05"/>
     <define name="COURSE_TAU" value="0.7"/>
 
     <define name="COURSE_PRE_BANK_CORRECTION" value="0.99"/>
 
-    <define name="ROLL_MAX_SETPOINT" value="60" unit="deg"/>
-    <define name="PITCH_MAX_SETPOINT" value="60" unit="deg"/>
-    <define name="PITCH_MIN_SETPOINT" value="-60" unit="deg"/>
+    <define name="ROLL_MAX_SETPOINT" value="45" unit="deg"/>
+    <define name="PITCH_MAX_SETPOINT" value="30" unit="deg"/>
+    <define name="PITCH_MIN_SETPOINT" value="-25" unit="deg"/>
 
     <define name="PITCH_PGAIN" value="10000."/>
-    <define name="PITCH_DGAIN" value="10."/>
-    <define name="PITCH_IGAIN" value="10."/>
-    <define name="PITCH_KFFA" value="0."/>
+    <define name="PITCH_DGAIN" value="500."/>
+    <define name="PITCH_IGAIN" value="400."/>
+    <define name="PITCH_KFFA" value="40."/>
     <define name="PITCH_KFFD" value="0."/>
+    <define name="REF_W_Q" value="6."/>
 
-    <define name="ELEVATOR_OF_ROLL" value="0" unit="PPRZ_MAX"/>
-    <define name="ROLL_SLEW" value="0.1"/>
+    <define name="PITCH_OF_ROLL" value="0.04" unit="rad"/>
+    <define name="ROLL_SLEW" value="0.2"/>
     <define name="ROLL_ATTITUDE_GAIN" value="12000."/>
-    <define name="ROLL_RATE_GAIN" value="1500."/>
-    <define name="ROLL_IGAIN" value="30."/>
-    <define name="ROLL_KFFA" value="50."/>
-    <define name="ROLL_KFFD" value="1."/>
+    <define name="ROLL_RATE_GAIN" value="900."/>
+    <define name="ROLL_IGAIN" value="100."/>
+    <define name="ROLL_KFFA" value="140."/>
+    <define name="ROLL_KFFD" value="0."/>
 
   </section>
 
-  <!--  We have value of Classic as well as ETECS, this since airframe is first flown "Classic" the ETECS, make tunng a bit easier
-   It is NOT (yet?) switchable on the fly in flight -->
-
+  <!-- Energy-adaptive ETECS baseline from the EasyStar 3 JSBSim model:
+       0.70 kg, 0.28 m2 wing, 1.37 m span, stock 3S / 7x6 power system.
+       Model trim: 10 m/s 20%, 12 m/s 28%, 14 m/s 41%, 16 m/s 62% throttle;
+       12 m/s pitch 3.2 deg, best L/D about 11 at 7.5 m/s, max climb about
+       4.5 m/s. Gains below keep substantial control margin for real flight. -->
   <section name="VERTICAL CONTROL" prefix="V_CTL_">
 
     <define name="POWER_CTL_BAT_NOMINAL" value="11.7" unit="volt"/>
-
-    <!-- Classic -->
-    <!-- outer loop proportional gain -->
-    <define name="ALTITUDE_PGAIN" value="0.05"/> <!--unit="(m/s)/m"-->
-
-    <!-- disable climb rate limiter -->
-    <define name="AUTO_CLIMB_LIMIT" value="1.5*V_CTL_ALTITUDE_MAX_CLIMB"/> <!-- auto throttle -->
-
-    <!-- Cruise throttle + limits -->
-    <define name="AUTO_THROTTLE_MIN_CRUISE_THROTTLE" value="0.45" unit="%"/>
-    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.6" unit="%"/>
-    <define name="AUTO_THROTTLE_MAX_CRUISE_THROTTLE" value="0.85" unit="%"/>
-
-    <define name="AUTO_THROTTLE_LOITER_TRIM" value="1000" unit="pprz_t"/>
-    <define name="AUTO_THROTTLE_DASH_TRIM" value="-2000" unit="pprz_t"/>
-
-    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.30" unit="%/(m/s)"/> 
-
-    <!-- Climb loop (throttle) -->
-    <define name="AUTO_THROTTLE_PGAIN" value="0.04" unit="%/(m/s)"/>
-    <define name="AUTO_THROTTLE_IGAIN" value="0.005"/>
-    <define name="AUTO_THROTTLE_DGAIN" value="0.001"/>
-    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.01" unit="rad/(m/s)"/>
-    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.0" unit="rad"/> <!-- default 0.0 -->
-
-    <define name="THROTTLE_SLEW_LIMITER" value="0.9" unit="m/s/s"/>    <!-- Limiter for e.g. a powerful motor -->
-
-    <!-- airspeed control -->
-    <define name="AUTO_AIRSPEED_SETPOINT" value="12.0" unit="m/s"/>    <!-- make sure this value is above stall speed -->
-
-    <define name="AUTO_AIRSPEED_THROTTLE_PGAIN" value="0.07" unit="%/(m/s)"/>
-    <define name="AUTO_AIRSPEED_THROTTLE_DGAIN" value="0.06"/>
-    <define name="AUTO_AIRSPEED_THROTTLE_IGAIN" value="0.002"/>
-    <define name="AUTO_AIRSPEED_PITCH_PGAIN" value="0.12" unit="degree/(m/s)"/>
-    <define name="AUTO_AIRSPEED_PITCH_DGAIN" value="0.001"/>
-    <define name="AUTO_AIRSPEED_PITCH_IGAIN" value="0.02"/>
-
-    <define name="AIRSPEED_MAX" value="18.0" unit="m/s"/>
-    <define name="AIRSPEED_MIN" value="7.0" unit="m/s"/>
-
-    <!-- pitch trim -->
-    <define name="PITCH_LOITER_TRIM" value="0.5" unit="deg"/> <!-- Non ETECS -->
-    <define name="PITCH_DASH_TRIM" value="0." unit="deg"/> <!-- Non ETECS -->
-
-    <!-- groundspeed control -->
-    <define name="AUTO_GROUNDSPEED_SETPOINT" value="6.0" unit="m/s"/>
-    <define name="AUTO_GROUNDSPEED_PGAIN" value="0.8"/>
-    <define name="AUTO_GROUNDSPEED_IGAIN" value="0.2"/>
-
-    <define name="AIRSPEED_PGAIN" value="0.15"/>
-
-    <!-- Only for control classic as in not new or enegry etc.-->
-    <define name="AUTO_AIRSPEED_PGAIN" value="0.18" unit="%/(m/s)"/>
-    <define name="AUTO_AIRSPEED_IGAIN" value="0.2"/>
-
-    <!-- outer loop saturation -->
+    <define name="ALTITUDE_PGAIN" value="0.5"/>
+    <define name="ALTITUDE_ACCEL_CAPTURE" value="0.7" unit="m/s2"/>
     <define name="ALTITUDE_MAX_CLIMB" value="2.0" unit="m/s"/>
-    <define name="MAX_ACCELERATION" value="1.6" unit="G"/>
+    <define name="ALTITUDE_MAX_CLIMB_DOT" value="3.0" unit="m/s2"/>
+    <define name="MAX_ACCELERATION" value="0.35" unit="G"/>
+    <define name="GLIDE_RATIO" value="11."/>
 
-    <!-- auto pitch inner loop -->
+    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.28" unit="%"/>
+    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.056" unit="rad"/>
+    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.16" unit="%/(m/s)"/>
+    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.083" unit="rad/(m/s)"/>
 
-    <!-- Climb loop (pitch) -->
-    <define name="AUTO_PITCH_PGAIN" value="0.015"/>
-    <define name="AUTO_PITCH_DGAIN" value="0.01"/>
-    <define name="AUTO_PITCH_IGAIN" value="0.001"/>
-    <!--define name="AUTO_PITCH_CLIMB_THROTTLE_INCREMENT" value="0.14"/-->
-    <define name="AUTO_PITCH_MAX_PITCH" value="30" unit="deg"/>
-    <define name="AUTO_PITCH_MIN_PITCH" value="-30" unit="deg"/>
+    <define name="AIRSPEED_PGAIN" value="0.20"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.055" unit="%/(m/s)"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.01"/>
+    <define name="AUTO_PITCH_OF_AIRSPEED_PGAIN" value="0.03"/>
+    <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.004"/>
+    <define name="AUTO_PITCH_OF_AIRSPEED_DGAIN" value="0.03"/>
 
-    <!-- ============= ETECS ============= -->
-    <define name="ENERGY_TOT_PGAIN" value="0.35"/>
+    <define name="ENERGY_TOT_PGAIN" value="0.42"/>
     <define name="ENERGY_TOT_IGAIN" value="0.20"/>
-    <define name="ENERGY_DIFF_PGAIN" value="0.40"/>
+    <define name="ENERGY_DIFF_PGAIN" value="0.55"/>
     <define name="ENERGY_DIFF_IGAIN" value="0.10"/>
 
-    <define name="GLIDE_RATIO" value="6."/><!-- 6 to 1 -->
+    <define name="ENERGY_BANK_THROTTLE_GAIN" value="0.05"/>
+    <define name="ENERGY_BANK_WASHOUT_GAIN" value="0.20"/>
+    <define name="ENERGY_BANK_WASHOUT_TAU" value="2.0"/>
+    <define name="ENERGY_BANK_PITCH_GAIN" value="0.12"/>
 
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.08"/>
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.02"/>
+    <define name="AUTO_GROUNDSPEED_SETPOINT" value="6.0" unit="m/s"/>
+    <define name="AUTO_GROUNDSPEED_PGAIN" value="0.75"/>
+    <define name="AUTO_GROUNDSPEED_IGAIN" value="0.20"/>
 
-    <define name="AUTO_PITCH_OF_AIRSPEED_PGAIN" value="0.01"/>
-    <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.003"/>
-    <define name="AUTO_PITCH_OF_AIRSPEED_DGAIN" value="0.03"/>
+    <define name="THROTTLE_SLEW_LIMITER" value="0.35" unit="s"/>
+    <define name="AUTO_AIRSPEED_SETPOINT" value="12.0" unit="m/s"/>
+    <define name="AIRSPEED_MAX" value="17.0" unit="m/s"/>
+    <define name="AIRSPEED_MIN" value="7.0" unit="m/s"/>
 
     <!-- landing control loop -->
     <define name="LANDING_THROTTLE_PGAIN" value="600.0"/>
@@ -911,17 +871,17 @@
   </section>
 
   <section name="MISC">
-    <!-- All for use with default motor and propeller -->
-    <define name="MINIMUM_AIRSPEED" value="9.0" unit="m/s"/>
-    <define name="NOMINAL_AIRSPEED" value="10.0" unit="m/s"/>
-    <define name="MAXIMUM_AIRSPEED" value="18.0" unit="m/s"/>
+    <!-- Model-based envelope for the stock 3S / 7x6 power system. -->
+    <define name="MINIMUM_AIRSPEED" value="7.0" unit="m/s"/>
+    <define name="NOMINAL_AIRSPEED" value="12.0" unit="m/s"/>
+    <define name="MAXIMUM_AIRSPEED" value="17.0" unit="m/s"/>
 
     <define name="CLIMB_AIRSPEED" value="10.0" unit="m/s"/>
     <define name="TRACKING_AIRSPEED" value="14.0" unit="m/s"/>
-    <define name="GLIDE_AIRSPEED" value="9.5" unit="m/s"/>
-    <define name="STALL_AIRSPEED" value="8.0" unit="m/s"/>
-    <define name="RACE_AIRSPEED" value="15.0" unit="m/s"/>
-    <define name="MIN_SPEED_FOR_TAKEOFF" value="9.0" unit="m/s"/>
+    <define name="GLIDE_AIRSPEED" value="7.5" unit="m/s"/>
+    <define name="STALL_AIRSPEED" value="5.3" unit="m/s"/>
+    <define name="RACE_AIRSPEED" value="16.0" unit="m/s"/>
+    <define name="MIN_SPEED_FOR_TAKEOFF" value="8.0" unit="m/s"/>
     <define name="AIRSPEED_SETPOINT_SLEW" value="0.3" unit="m/s/s"/>
 
     <!--default is 1 -->
@@ -1026,13 +986,12 @@
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">
-    <define name="JSBSIM_LAUNCHSPEED" value="MIN_SPEED_FOR_TAKEOFF"/>
+    <define name="JSBSIM_LAUNCHSPEED" value="10.0"/>
     <!-- <define name="JSBSIM_MODEL" value="YardStik" type="string"/> -->
     <define name="JSBSIM_MODEL" value="openuas_jsbsim_multiplex_easystar3" type="string"/>
     <!-- <define name="JSBSIM_MODEL" value="AGGIEAIR/minion" type="string"/> -->
     <define name="COMMANDS_NB" value="4"/>
     <define name="ACTUATOR_NAMES" value="throttle-cmd-norm, aileron-cmd-norm, elevator-cmd-norm, rudder-cmd-norm" type="string[]"/>
-    <define name="JS_AXIS_MODE" value="4"/>
     <define name="BYPASS_AHRS" value="TRUE"/>
     <define name="BYPASS_INS" value="TRUE"/>
 
@@ -1045,10 +1004,6 @@
     <define name="JS_AXIS_YAW_REVERSED" value="1"/>
     <define name="JS_AXIS_MODE" value="4"/>
     <define name="JS_AXIS_FLAPS" value="6"/>
-
-    <define name="JSBSIM_ROLL_TRIM" value="0.008"/>
-    <define name="JSBSIM_PITCH_TRIM" value="0.0375"/>
-    <define name="JSBSIM_YAW_TRIM" value="0.001"/>
   </section>
 
 </airframe>

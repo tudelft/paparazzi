@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!DOCTYPE telemetry SYSTEM "../telemetry.dtd">
+
+<telemetry>
+  <process name="Ap">
+    <mode name="default">
+      <message name="COMMANDS" period="0.02"/>
+      <message name="H_CTL_A" period="0.02"/>
+      <message name="DESIRED" period="0.05"/>
+      <message name="AIRSPEED" period="0.05"/>
+      <message name="ENERGY" period="0.05"/>
+      <message name="PPRZ_MODE" period="0.20"/>
+      <message name="NAVIGATION" period="0.20"/>
+      <message name="ATTITUDE" period="0.05"/>
+    </mode>
+  </process>
+  <process name="Fbw">
+    <mode name="default">
+      <message name="COMMANDS" period="0.02"/>
+      <message name="FBW_STATUS" period="0.20"/>
+    </mode>
+  </process>
+</telemetry>

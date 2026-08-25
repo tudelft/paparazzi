@@ -7,7 +7,12 @@
     <fileheader>
         <author>OpenUAS</author>
         <fileversion>2.0</fileversion>
-        <description>Multiplex EasyStar 3 RC Foam plane</description>
+        <description>
+            Multiplex EasyStar 3 foam pusher: 1.37 m span, 0.70 kg all-up
+            mass, 0.28 m2 wing, Roxxy C28-30 1100KV motor and 7x6 folding
+            propeller on 3S. The aerodynamic stall is 5.3 m/s at CLmax 1.45;
+            normal autonomous operation uses a conservative 7 m/s minimum.
+        </description>
         <note>Reference Frame: Origin (0,0,0) at Nose Tip. X=Aft, Y=Right, Z=Up</note>
     </fileheader>
 
@@ -72,7 +77,7 @@
             <location unit="IN">
                 <x> 14.50 </x>
                 <y>-26.89 </y>
-                <z>  1.50 </z>
+                <z> -1.50 </z>
             </location>
             <static_friction>  0.30 </static_friction>
             <dynamic_friction> 0.20 </dynamic_friction>
@@ -83,7 +88,7 @@
             <location unit="IN">
                 <x> 14.50 </x>
                 <y> 26.89 </y>
-                <z>  1.50 </z>
+                <z> -1.50 </z>
             </location>
             <static_friction>  0.30 </static_friction>
             <dynamic_friction> 0.20 </dynamic_friction>
@@ -150,6 +155,7 @@
             <summer name="Pitch Trim Sum">
                 <input> fcs/elevator-cmd-norm </input>
                 <input> fcs/pitch-trim-cmd-norm </input>
+                <bias> -0.051 </bias>
                 <clipto>
                     <min> -1.0 </min>
                     <max>  1.0 </max>
@@ -249,9 +255,9 @@
                 </product>
             </function>
             <location unit="IN">
-                <x> 21.00 </x>
+                <x> 14.57 </x>
                 <y>  0.00 </y>
-                <z>  4.00 </z>
+                <z> -0.50 </z>
             </location>
             <direction>
                 <x> 0.9976 </x>
@@ -284,12 +290,35 @@
 
         <axis name="LIFT">
             <function name="aero/coefficient/CLalpha">
-                <description>Lift due to Alpha</description>
+                <description>Lift due to alpha, including the stall break</description>
                 <product>
                     <property> aero/qbar-psf </property>
                     <property> metrics/Sw-sqft </property>
-                    <property> aero/alpha-rad </property>
-                    <value> 4.84 </value>
+                    <table>
+                        <independentVar> aero/alpha-rad </independentVar>
+                        <tableData>
+                            -0.3000  -0.7000
+                            -0.2000  -0.9680
+                             0.0000   0.0000
+                             0.2000   0.9680
+                             0.3000   1.4500
+                             0.3600   1.2500
+                             0.5200   0.9500
+                             0.9000   0.5500
+                        </tableData>
+                    </table>
+                </product>
+            </function>
+        </axis>
+
+        <axis name="SIDE">
+            <function name="aero/coefficient/CYb">
+                <description>Side force due to sideslip</description>
+                <product>
+                    <property> aero/qbar-psf </property>
+                    <property> metrics/Sw-sqft </property>
+                    <property> aero/beta-rad </property>
+                    <value> -0.223 </value>
                 </product>
             </function>
         </axis>
@@ -328,6 +357,16 @@
         </axis>
 
         <axis name="ROLL">
+            <function name="aero/coefficient/Clb">
+                <description>Dihedral roll moment due to sideslip</description>
+                <product>
+                    <property> aero/qbar-psf </property>
+                    <property> metrics/Sw-sqft </property>
+                    <property> metrics/bw-ft </property>
+                    <property> aero/beta-rad </property>
+                    <value> -0.069 </value>
+                </product>
+            </function>
             <function name="aero/coefficient/Clp">
                 <description>Roll damping</description>
                 <product>
@@ -337,6 +376,17 @@
                     <property> aero/bi2vel </property>
                     <property> velocities/p-aero-rad_sec </property>
                     <value> -0.40 </value>
+                </product>
+            </function>
+            <function name="aero/coefficient/Clr">
+                <description>Roll moment due to yaw rate</description>
+                <product>
+                    <property> aero/qbar-psf </property>
+                    <property> metrics/Sw-sqft </property>
+                    <property> metrics/bw-ft </property>
+                    <property> aero/bi2vel </property>
+                    <property> velocities/r-aero-rad_sec </property>
+                    <value> 0.12 </value>
                 </product>
             </function>
             <function name="aero/coefficient/Clda">
@@ -352,6 +402,27 @@
         </axis>
 
         <axis name="YAW">
+            <function name="aero/coefficient/Cnb">
+                <description>Weathercock yaw moment due to sideslip</description>
+                <product>
+                    <property> aero/qbar-psf </property>
+                    <property> metrics/Sw-sqft </property>
+                    <property> metrics/bw-ft </property>
+                    <property> aero/beta-rad </property>
+                    <value> 0.037 </value>
+                </product>
+            </function>
+            <function name="aero/coefficient/Cnp">
+                <description>Yaw moment due to roll rate</description>
+                <product>
+                    <property> aero/qbar-psf </property>
+                    <property> metrics/Sw-sqft </property>
+                    <property> metrics/bw-ft </property>
+                    <property> aero/bi2vel </property>
+                    <property> velocities/p-aero-rad_sec </property>
+                    <value> -0.005 </value>
+                </product>
+            </function>
             <function name="aero/coefficient/Cnr">
                 <description>Yaw damping</description>
                 <product>
