@@ -39,11 +39,11 @@
 // Communication
 #include "modules/digital_cam/catia/protocol.h"
 
-#ifdef SITL
-#include "modules/digital_cam/catia/serial.h"
-#endif
-
 #include "state.h"
+
+#if FIXEDWING_FIRMWARE
+#include "modules/nav/common_nav.h"
+#endif
 
 
 #define CameraLinkDev (&((CAMERA_LINK).device))
@@ -124,14 +124,6 @@ void digital_cam_uart_init(void)
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_PAYLOAD, send_thumbnails);
 #endif
-
-#ifdef SITL
-#ifdef SITL_SERIAL
-    serial_init(SITL_SERIAL);
-#else
-    serial_init("/dev/ttyUSB0");
-#endif
-#endif
 }
 
 void digital_cam_uart_periodic(void)
@@ -156,7 +148,11 @@ void dc_send_command(uint8_t cmd)
       dc_shot_msg.data.psi = stateGetNedToBodyEulers_i()->psi;
       dc_shot_msg.data.vground = stateGetHorizontalSpeedNorm_i();
       dc_shot_msg.data.course = stateGetHorizontalSpeedDir_i();
+    #if FIXEDWING_FIRMWARE
+      dc_shot_msg.data.groundalt = POS_BFP_OF_REAL(stateGetPositionUtm_f()->alt - ground_alt);
+    #else
       dc_shot_msg.data.groundalt = POS_BFP_OF_REAL(state.alt_agl_f);
+    #endif
 
       MoraHeader(MORA_SHOOT, MORA_SHOOT_MSG_SIZE);
       for (int i = 0; i < (MORA_SHOOT_MSG_SIZE); i++) {

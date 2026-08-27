@@ -60,11 +60,11 @@
       <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
       <configure name="AHRS_CORRECT_FREQUENCY" value="500"/>
       <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="100"/> -->
-      <configure name="NAVIGATION_FREQUENCY" value="20"/>
+      <!-- <configure name="NAVIGATION_FREQUENCY" value="20"/> -->
        <!-- Keep 100 Hz: the ETECS gains and time constants below were validated
          in NPS with this value and the AHRS-triggered attitude loop. -->
        <configure name="CONTROL_FREQUENCY" value="100"/>
-      <configure name="TELEMETRY_FREQUENCY" value="50"/>
+      <!-- <configure name="TELEMETRY_FREQUENCY" value="50"/> -->
       <configure name="MODULES_FREQUENCY" value="500"/>
 
       <!-- OSD CONFIGURATION -->
@@ -251,10 +251,10 @@
       <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
       <configure name="AHRS_CORRECT_FREQUENCY" value="500"/>
       <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="200"/>
-      <configure name="NAVIGATION_FREQUENCY" value="20"/>
+      <!-- <configure name="NAVIGATION_FREQUENCY" value="20"/> -->
       <configure name="CONTROL_FREQUENCY" value="100"/>
-      <configure name="TELEMETRY_FREQUENCY" value="50"/>
-      <configure name="MODULES_FREQUENCY" value="500"/>
+      <!-- <configure name="TELEMETRY_FREQUENCY" value="50"/> -->
+      <!-- <configure name="MODULES_FREQUENCY" value="500"/> -->
       <module name="fdm" type="jsbsim"/>
       <module name="radio_control" type="ppm"/>
       <define name="RADIO_MANUALRELEASE" value="RADIO_AUX4"/>
@@ -262,11 +262,11 @@
       <!-- <module name="telemetry" type="transparent">
         <configure name="MODEM_PORT" value="/dev/ttyUSB0"/>
       </module> -->
-      <module name="imu" type="nps"/>
-      <module name="gps" type="sim"/>
+      <!-- <module name="imu" type="nps"/> -->
+      <!-- <module name="gps" type="sim"/> -->
       <define name="USE_NPS_AIRSPEED"/>
       <define name="USE_AIRSPEED" value="TRUE"/>
-      <module name="udp"/>
+      <!-- <module name="udp"/> -->
        <!--<module name="uart"/>--><!-- TODO: Exteral HITL PC debugging e.g a photocam trigger etc -->
     </target>
 
@@ -340,16 +340,19 @@
     </module> -->
 
     <!-- When a compute board with camera is connected -->
-    <!-- <module name="digital_cam_uart"> -->
-      <!-- <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/> -->
-      <!-- <configure name="CAMERA_PORT" value="UART1"/> -->
-      <!--<define name="SITL_SERIAL" value="/dev/ttyUSB0"/>--><!-- For SITL testing with FORC on desk taking pictures -->
-    <!-- </module> -->
+    <!-- For SITL testing with FORC on desk taking pictures SITL_SERIAL-->
+    <module name="digital_cam_uart">
+      <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/>
+      <configure name="CAMERA_PORT" value="UART1"/>
+      <configure name="SITL_SERIAL" value="/dev/ttyUSB0"/>
+    </module>
 
     <module name="traffic_info">
-      <define name="TRAFFIC_INFO_USE_MESH" value="TRUE"/>
-      <define name="MESH_AUTO_TELEMETRY" value="TRUE"/>
+      <!-- <define name="TRAFFIC_INFO_USE_MESH" value="TRUE"/> -->
+      <!-- <define name="MESH_AUTO_TELEMETRY" value="TRUE"/> -->
+      <!-- <define name="MESH_SOLO_QUIET_MS" value="5000"/> -->
     </module>
+
     <module name="tcas"/>
 
     <!--

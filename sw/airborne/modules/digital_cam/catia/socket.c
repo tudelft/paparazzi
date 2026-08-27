@@ -14,7 +14,7 @@
 #define SOCKET_PORT 32000
 
 static int socket_fd;
-static struct sockaddr_in socket_server, socket_client;
+static struct sockaddr_in socket_server;
 
 void socket_init(int is_server)
 {

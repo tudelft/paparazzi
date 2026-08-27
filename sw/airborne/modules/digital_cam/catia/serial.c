@@ -25,7 +25,7 @@
 
 int fd; /* File descriptor for the port */
 
-int serial_init(char *port_name)
+int serial_init(const char *port_name)
 {
   struct termios orig_termios, cur_termios;
 
@@ -34,7 +34,7 @@ int serial_init(char *port_name)
   fd = open(port_name, O_RDWR | O_NOCTTY | O_NONBLOCK);
 
   if (fd == -1) {
-    printf("opening modem serial device : fd < 0\n");
+    fprintf(stderr, "CATIA:\tfailed to open serial device %s: %s\n", port_name, strerror(errno));
     return -1;
   }
 

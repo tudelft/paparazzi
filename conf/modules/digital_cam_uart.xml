@@ -32,7 +32,7 @@
     </dl_settings>
   </settings>
   <dep>
-    <depends>digital_cam_common</depends>
+    <depends>digital_cam_common,uart</depends>
     <conflicts>digital_cam_gpio,digital_cam_servo,digital_cam_i2c,digital_cam_pprzlink</conflicts>
   </dep>
   <header>
@@ -41,10 +41,6 @@
   <init fun="digital_cam_uart_init()"/>
   <periodic fun="digital_cam_uart_periodic()" freq="10" autorun="TRUE"/>
   <event fun="digital_cam_uart_event()"/>
-  <makefile target="sim|nps">
-    <file name="catia/serial.c"/>
-    <define name="UART5_DEV" value="ttyUSB0"/>
-  </makefile>
   <makefile target="ap|sim|nps">
     <file name="uart_cam_ctrl.c"/>
     <file name="catia/protocol.c"/>
@@ -56,6 +52,10 @@
       <define name="CAMERA_LINK" value="uart0"/>
       <define name="USE_UART0"/>
     </test>
+  </makefile>
+  <makefile target="sim|nps">
+    <configure name="SITL_SERIAL" default="/dev/ttyUSB0"/>
+    <define name="$(CAMERA_PORT_UPPER)_DEV" value="$(SITL_SERIAL)"/>
   </makefile>
 </module>
 

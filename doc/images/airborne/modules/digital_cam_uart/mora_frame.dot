@@ -1,0 +1,76 @@
+digraph MoraFrame {
+  graph [
+    label="MORA Serial Frame and Camera Metadata",
+    labelloc=t,
+    fontname="DejaVu Sans Bold",
+    fontsize=24,
+    bgcolor="#F7FAFC",
+    pad=0.35,
+    nodesep=0.35,
+    ranksep=0.65,
+    splines=ortho
+  ];
+  node [shape=plain, fontname="DejaVu Sans", fontsize=11, fontcolor="#0B1F33"];
+  edge [fontname="DejaVu Sans", fontsize=10, fontcolor="#334155", color="#64748B", penwidth=1.4, arrowsize=0.7];
+
+  frame [label=<
+    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="12" COLOR="#334155">
+      <TR>
+        <TD BGCOLOR="#0B1F33"><FONT COLOR="white"><B>STX</B></FONT></TD>
+        <TD BGCOLOR="#334155"><FONT COLOR="white"><B>LENGTH</B></FONT></TD>
+        <TD BGCOLOR="#D97706"><FONT COLOR="white"><B>MESSAGE ID</B></FONT></TD>
+        <TD BGCOLOR="#2563EB" COLSPAN="5"><FONT COLOR="white"><B>PAYLOAD</B></FONT></TD>
+        <TD BGCOLOR="#0F766E"><FONT COLOR="white"><B>CK_A</B></FONT></TD>
+        <TD BGCOLOR="#0F766E"><FONT COLOR="white"><B>CK_B</B></FONT></TD>
+      </TR>
+      <TR>
+        <TD BGCOLOR="#E2E8F0">0x99</TD>
+        <TD BGCOLOR="#E2E8F0">payload + 5</TD>
+        <TD BGCOLOR="#FFF2CC">1 = SHOOT</TD>
+        <TD BGCOLOR="#DCEBFF" COLSPAN="5">40-byte camera metadata</TD>
+        <TD BGCOLOR="#CCFBF1">Fletcher A</TD>
+        <TD BGCOLOR="#CCFBF1">Fletcher B</TD>
+      </TR>
+    </TABLE>
+  >];
+
+  payload [label=<
+    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="10" COLOR="#2563EB">
+      <TR><TD COLSPAN="5" BGCOLOR="#174EA6"><FONT COLOR="white"><B>MORA_SHOOT PAYLOAD   •   10 × int32_t</B></FONT></TD></TR>
+      <TR>
+        <TD BGCOLOR="#DCEBFF"><B>1  Photo number</B><BR/><FONT POINT-SIZE="9">nr</FONT></TD>
+        <TD BGCOLOR="#DCEBFF"><B>2  Latitude</B><BR/><FONT POINT-SIZE="9">lat</FONT></TD>
+        <TD BGCOLOR="#DCEBFF"><B>3  Longitude</B><BR/><FONT POINT-SIZE="9">lon</FONT></TD>
+        <TD BGCOLOR="#DCEBFF"><B>4  Altitude</B><BR/><FONT POINT-SIZE="9">alt</FONT></TD>
+        <TD BGCOLOR="#DCEBFF"><B>5  Roll</B><BR/><FONT POINT-SIZE="9">phi</FONT></TD>
+      </TR>
+      <TR>
+        <TD BGCOLOR="#EAF2FF"><B>6  Pitch</B><BR/><FONT POINT-SIZE="9">theta</FONT></TD>
+        <TD BGCOLOR="#EAF2FF"><B>7  Yaw</B><BR/><FONT POINT-SIZE="9">psi</FONT></TD>
+        <TD BGCOLOR="#EAF2FF"><B>8  Ground speed</B><BR/><FONT POINT-SIZE="9">vground</FONT></TD>
+        <TD BGCOLOR="#EAF2FF"><B>9  Course</B><BR/><FONT POINT-SIZE="9">course</FONT></TD>
+        <TD BGCOLOR="#EAF2FF"><B>10  AGL altitude</B><BR/><FONT POINT-SIZE="9">groundalt</FONT></TD>
+      </TR>
+    </TABLE>
+  >];
+
+  replies [label=<
+    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="10" COLOR="#C2412D">
+      <TR><TD COLSPAN="3" BGCOLOR="#9F2D20"><FONT COLOR="white"><B>MORA → PAPARAZZI REPLIES</B></FONT></TD></TR>
+      <TR>
+        <TD BGCOLOR="#FFE0D8"><B>MORA_STATUS  •  ID 4</B><BR/><FONT POINT-SIZE="9">CPU • threads • shots • extra</FONT></TD>
+        <TD BGCOLOR="#FFF0EC"><B>MORA_PAYLOAD  •  ID 3</B><BR/><FONT POINT-SIZE="9">70-byte image/vision payload</FONT></TD>
+        <TD BGCOLOR="#FFF7DF"><B>BUFFER_EMPTY  •  ID 2</B><BR/><FONT POINT-SIZE="9">request next payload fragment</FONT></TD>
+      </TR>
+    </TABLE>
+  >];
+
+  checksum [shape=note, style="filled", fillcolor="#CCFBF1", color="#0F766E", fontcolor="#115E59", label="Checksum covers LENGTH, MESSAGE ID, and PAYLOAD\nCK_A accumulates bytes; CK_B accumulates CK_A"];
+  direction [shape=note, style="filled", fillcolor="#FFF7DF", color="#D97706", fontcolor="#854D0E", label="Paparazzi → MORA: shoot command + flight metadata\nMORA → Paparazzi: status and optional payload data"];
+
+  frame -> payload [label="SHOOT payload detail", color="#2563EB"];
+  payload -> replies [style=invis];
+  frame -> checksum [label="integrity", color="#0F766E"];
+  payload -> direction [label="link roles", color="#D97706"];
+  {rank=same; checksum; direction;}
+}

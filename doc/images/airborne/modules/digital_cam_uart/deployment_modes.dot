@@ -1,0 +1,68 @@
+digraph DeploymentModes {
+  graph [
+    label="MORA Camera Link Deployment Modes",
+    labelloc=t,
+    fontname="DejaVu Sans Bold",
+    fontsize=24,
+    bgcolor="#F7FAFC",
+    pad=0.35,
+    nodesep=0.55,
+    ranksep=0.7,
+    splines=ortho,
+    compound=true
+  ];
+  node [shape=box, style="rounded,filled", fontname="DejaVu Sans", fontsize=12, fontcolor="#0B1F33", color="#64748B", fillcolor="#FFFFFF", penwidth=1.5, margin="0.18,0.12"];
+  edge [fontname="DejaVu Sans", fontsize=10, fontcolor="#334155", color="#475569", penwidth=1.8, arrowsize=0.8, dir=both];
+
+  subgraph cluster_physical {
+    label="A. PHYSICAL MORA DEPLOYMENT";
+    fontname="DejaVu Sans Bold";
+    fontsize=16;
+    fontcolor="#174EA6";
+    color="#2563EB";
+    fillcolor="#EAF2FF";
+    style="rounded,filled";
+    penwidth=2.2;
+    margin=22;
+
+    sim_pc [label="Simulation PC\nNPS or SIM", fillcolor="#FFFFFF", color="#2563EB"];
+    uart5 [label="Paparazzi UART5\nUART5_DEV = /dev/ttyUSB0", fillcolor="#DCEBFF", color="#2563EB"];
+    ftdi [label="FTDI USB ↔ serial\n115200 baud", fillcolor="#FFF2CC", color="#C47A00"];
+    wire [label="Physical serial cable", shape=box, style="rounded,filled", fillcolor="#FFF7DF", color="#D97706"];
+    mora_port [label="MORA serial device\ne.g. /dev/ttySAC0", fillcolor="#FFE0D8", color="#C2412D"];
+    mora_app [label="CATIA on MORA\nproduction camera control", fillcolor="#FFFFFF", color="#C2412D"];
+    real_cam [label="Real camera\nCHDK / PTP", fillcolor="#FFF0EC", color="#C2412D"];
+
+    sim_pc -> uart5 -> ftdi -> wire -> mora_port -> mora_app -> real_cam;
+  }
+
+  subgraph cluster_local {
+    label="B. LOCAL DEVELOPMENT ON ONE PC";
+    fontname="DejaVu Sans Bold";
+    fontsize=16;
+    fontcolor="#11613A";
+    color="#1B8A52";
+    fillcolor="#E7F8EE";
+    style="rounded,filled";
+    penwidth=2.2;
+    margin=22;
+
+    local_sim [label="NPS or SIM\nSITL_SERIAL = /tmp/catia-sim", fillcolor="#FFFFFF", color="#2563EB"];
+    sim_pty [label="/tmp/catia-sim\nPTY endpoint A", fillcolor="#DCEBFF", color="#2563EB"];
+    socat [label="socat PTY bridge\nspawned by CATIA --local", fillcolor="#FFF2CC", color="#C47A00"];
+    app_pty [label="/tmp/catia-app\nPTY endpoint B", fillcolor="#FFE0D8", color="#C2412D"];
+    local_catia [label="CATIA --local\nMORA behavior on development PC", fillcolor="#FFFFFF", color="#C2412D"];
+    fake [label="Fake camera resource\nthumbnail.jpg", fillcolor="#E7F8EE", color="#1B8A52"];
+    output [label="Captured test image\n/tmp/catia-shot-NNNNNN.jpg", fillcolor="#FFFFFF", color="#1B8A52"];
+
+    local_sim -> sim_pty -> socat -> app_pty -> local_catia;
+    fake -> local_catia [label="copy on shoot", dir=forward, color="#1B8A52"];
+    local_catia -> output [label="test artifact", dir=forward, color="#1B8A52"];
+  }
+
+  physical_note [label="Use for aircraft/companion integration\nNo CATIA process runs on the simulation PC", shape=note, fillcolor="#FFF7DF", color="#D97706", fontcolor="#854D0E"];
+  local_note [label="Use for rapid CATIA/MORA development\nNo cross-compile or external hardware required", shape=note, fillcolor="#E7F8EE", color="#1B8A52", fontcolor="#11613A"];
+
+  wire -> physical_note [style=dashed, dir=none, color="#D97706"];
+  socat -> local_note [style=dashed, dir=none, color="#1B8A52"];
+}

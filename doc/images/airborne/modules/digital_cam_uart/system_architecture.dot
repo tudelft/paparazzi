@@ -1,0 +1,124 @@
+digraph SystemArchitecture {
+  graph [
+    label="Paparazzi UART Camera System Architecture",
+    labelloc=t,
+    labeljust=c,
+    fontname="DejaVu Sans Bold",
+    fontsize=24,
+    bgcolor="#F7FAFC",
+    color="#CBD5E1",
+    pad=0.35,
+    nodesep=0.48,
+    ranksep=0.72,
+    splines=ortho,
+    compound=true
+  ];
+  node [
+    shape=box,
+    style="rounded,filled",
+    fontname="DejaVu Sans",
+    fontsize=12,
+    fontcolor="#0B1F33",
+    color="#64748B",
+    fillcolor="#FFFFFF",
+    penwidth=1.5,
+    margin="0.18,0.11"
+  ];
+  edge [
+    fontname="DejaVu Sans",
+    fontsize=10,
+    fontcolor="#334155",
+    color="#475569",
+    penwidth=1.6,
+    arrowsize=0.8
+  ];
+
+  subgraph cluster_mission {
+    label="MISSION AND SURVEY LOGIC";
+    fontname="DejaVu Sans Bold";
+    fontsize=15;
+    fontcolor="#11613A";
+    color="#1B8A52";
+    fillcolor="#E7F8EE";
+    style="rounded,filled";
+    penwidth=2;
+    margin=18;
+
+    survey [label="Survey / line primitive\nnav_survey_poly_osam_run()", fillcolor="#FFFFFF", color="#1B8A52"];
+    line_start [label="LINE_START_FUNCTION\ndc_autoshoot = PERIODIC", fillcolor="#D6F5E2", color="#15803D"];
+    line_stop [label="LINE_STOP_FUNCTION\ndc_autoshoot = STOP", fillcolor="#D6F5E2", color="#15803D"];
+    survey -> line_start [label="line begins", color="#15803D"];
+    survey -> line_stop [label="line ends", color="#15803D"];
+  }
+
+  subgraph cluster_paparazzi {
+    label="PAPARAZZI AUTOPILOT   •   AP / NPS / SIM";
+    fontname="DejaVu Sans Bold";
+    fontsize=15;
+    fontcolor="#174EA6";
+    color="#2563EB";
+    fillcolor="#EAF2FF";
+    style="rounded,filled";
+    penwidth=2;
+    margin=18;
+
+    dc [label="digital_cam_common\ndc.c", fillcolor="#FFFFFF", color="#2563EB"];
+    periodic [label="dc_periodic()\nperiod • distance • survey • circle", fillcolor="#DCEBFF", color="#2563EB"];
+    uart_ctrl [label="digital_cam_uart\nuart_cam_ctrl.c", fillcolor="#FFFFFF", color="#2563EB"];
+    state [label="Aircraft state\nLLA • attitude • speed • AGL", fillcolor="#DCEBFF", color="#2563EB"];
+    protocol [label="MORA frame codec\nprotocol.c / protocol.h", fillcolor="#FFFFFF", color="#2563EB"];
+    uart [label="CAMERA_LINK\nUART device interface", fillcolor="#FFF2CC", color="#C47A00"];
+
+    dc -> periodic [label="10 Hz module call"];
+    periodic -> uart_ctrl [label="DC_SHOOT", color="#C2410C", fontcolor="#9A3412", penwidth=2.2];
+    state -> uart_ctrl [label="10 metadata fields"];
+    uart_ctrl -> protocol [label="encode MORA_SHOOT"];
+    protocol -> uart [label="framed bytes", color="#C47A00"];
+    uart -> protocol [label="STATUS / PAYLOAD", color="#0F766E", fontcolor="#0F766E"];
+    protocol -> uart_ctrl [label="decoded reply", color="#0F766E", fontcolor="#0F766E"];
+  }
+
+  subgraph cluster_config {
+    label="BUILD AND AIRFRAME CONFIGURATION";
+    fontname="DejaVu Sans Bold";
+    fontsize=15;
+    fontcolor="#854D0E";
+    color="#D97706";
+    fillcolor="#FFF7DF";
+    style="rounded,filled";
+    penwidth=2;
+    margin=18;
+
+    airframe [label="EasyStar airframe\nCAMERA_PORT = UART5\nSITL_SERIAL = device path", fillcolor="#FFFFFF", color="#D97706"];
+    module [label="digital_cam_uart.xml\nUART dependency • sources • defines", fillcolor="#FFFFFF", color="#D97706"];
+    airframe -> module [label="configure"];
+  }
+
+  subgraph cluster_mora {
+    label="MORA COMPANION COMPUTER";
+    fontname="DejaVu Sans Bold";
+    fontsize=15;
+    fontcolor="#9F2D20";
+    color="#C2412D";
+    fillcolor="#FFF0EC";
+    style="rounded,filled";
+    penwidth=2;
+    margin=18;
+
+    serial_in [label="Serial endpoint\n115200 baud • raw 8N1", fillcolor="#FFFFFF", color="#C2412D"];
+    catia [label="CATIA application\nparse • trigger • acknowledge", fillcolor="#FFE0D8", color="#C2412D"];
+    camera [label="Camera backend\nCHDK hardware or fake JPEG", fillcolor="#FFFFFF", color="#C2412D"];
+    analysis [label="Image analysis\nSODA / future applications", fillcolor="#FFFFFF", color="#C2412D"];
+
+    serial_in -> catia [label="MORA_SHOOT"];
+    catia -> serial_in [label="MORA_STATUS / PAYLOAD", color="#0F766E", fontcolor="#0F766E"];
+    catia -> camera [label="capture"];
+    camera -> catia [label="image path"];
+    catia -> analysis [label="image + metadata", style=dashed];
+  }
+
+  line_start -> dc [label="enable", color="#15803D", ltail=cluster_mission, lhead=cluster_paparazzi];
+  line_stop -> dc [label="disable", color="#15803D", ltail=cluster_mission, lhead=cluster_paparazzi];
+  module -> uart [label="CAMERA_LINK = uart5\nUART5_DEV = SITL_SERIAL", color="#D97706", ltail=cluster_config, lhead=cluster_paparazzi];
+  uart -> serial_in [label="bidirectional serial", color="#C47A00", penwidth=2.5, ltail=cluster_paparazzi, lhead=cluster_mora];
+}

@@ -881,5 +881,51 @@
         <arg flag="-srtm"/>
       </program>
     </session>
+    <session name="IMAV2026 Sim New QTGUI">
+      <program name="Simulator">
+        <arg flag="-t" constant="sim"/>
+        <arg flag="-a" constant="Easystar_3"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS Classic">
+        <arg flag="--maximize"/>
+      </program>
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="Adam"/>
+      </program>
+      <program name="Environment Simulator (Legacy)"/>
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="ARDrone_2"/>
+      </program>
+    </session>
+    <session name="IMAV2026 NPS new QTGUI">
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="Easystar_3"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS Classic">
+        <arg flag="--maximize"/>
+      </program>
+      <program name="Environment Simulator (Legacy)"/>
+    </session>
   </section>
 </control_panel>

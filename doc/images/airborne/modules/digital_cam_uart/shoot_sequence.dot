@@ -1,0 +1,61 @@
+digraph ShootSequence {
+  graph [
+    label="Camera Shoot and Status Exchange",
+    labelloc=t,
+    fontname="DejaVu Sans Bold",
+    fontsize=24,
+    bgcolor="#F7FAFC",
+    pad=0.35,
+    nodesep=0.6,
+    ranksep=0.42,
+    splines=ortho
+  ];
+  node [shape=box, style="rounded,filled", fontname="DejaVu Sans", fontsize=11, fontcolor="#0B1F33", color="#64748B", fillcolor="#FFFFFF", penwidth=1.4, margin="0.16,0.10"];
+  edge [fontname="DejaVu Sans", fontsize=10, fontcolor="#334155", color="#475569", penwidth=1.6, arrowsize=0.75];
+
+  fp [label="FLIGHT PLAN", fillcolor="#D6F5E2", color="#15803D", fontname="DejaVu Sans Bold"];
+  dc [label="DIGITAL CAM\ndc.c", fillcolor="#DCEBFF", color="#2563EB", fontname="DejaVu Sans Bold"];
+  ctrl [label="UART CONTROL\nuart_cam_ctrl.c", fillcolor="#DCEBFF", color="#2563EB", fontname="DejaVu Sans Bold"];
+  link [label="SERIAL LINK\nUART / PTY", fillcolor="#FFF2CC", color="#C47A00", fontname="DejaVu Sans Bold"];
+  mora [label="MORA\nCATIA application", fillcolor="#FFE0D8", color="#C2412D", fontname="DejaVu Sans Bold"];
+  camera [label="CAMERA\nCHDK or fake JPEG", fillcolor="#E7F8EE", color="#1B8A52", fontname="DejaVu Sans Bold"];
+
+  {rank=same; fp; dc; ctrl; link; mora; camera;}
+  fp -> dc -> ctrl -> link -> mora -> camera [style=invis, weight=50];
+
+  start [label="1  Survey line starts\nLINE_START_FUNCTION", fillcolor="#E7F8EE", color="#1B8A52"];
+  mode [label="2  Enable periodic shooting\ndc_autoshoot = PERIODIC", fillcolor="#EAF2FF", color="#2563EB"];
+  due [label="3  Shoot interval becomes due\ndc_periodic()", fillcolor="#EAF2FF", color="#2563EB"];
+  metadata [label="4  Snapshot aircraft metadata\nphoto no. • LLA • attitude • speed • AGL", fillcolor="#EAF2FF", color="#2563EB"];
+  tx [label="5  Encode and transmit\nMORA_SHOOT • 45 bytes", fillcolor="#FFF7DF", color="#D97706"];
+  parse [label="6  Validate checksum\nand decode 10 fields", fillcolor="#FFF0EC", color="#C2412D"];
+  capture [label="7  Trigger image capture", fillcolor="#E7F8EE", color="#1B8A52"];
+  image [label="8  Return image path", fillcolor="#E7F8EE", color="#1B8A52"];
+  status [label="9  Send MORA_STATUS\nshots • threads • health", fillcolor="#FFF0EC", color="#C2412D"];
+  receive [label="10  Parse status / payload\nupdate module state", fillcolor="#EAF2FF", color="#2563EB"];
+  stop [label="11  Survey line ends\nLINE_STOP_FUNCTION", fillcolor="#E7F8EE", color="#1B8A52"];
+
+  start -> mode [color="#15803D"];
+  mode -> due [color="#2563EB"];
+  due -> metadata [color="#2563EB"];
+  metadata -> tx [color="#D97706"];
+  tx -> parse [color="#C47A00", penwidth=2.2];
+  parse -> capture [color="#C2412D"];
+  capture -> image [color="#1B8A52"];
+  image -> status [color="#C2412D"];
+  status -> receive [color="#0F766E", penwidth=2.2];
+  receive -> stop [color="#15803D"];
+
+  {rank=same; start; mode;}
+  {rank=same; due; metadata;}
+  {rank=same; tx; parse;}
+  {rank=same; capture; image;}
+  {rank=same; status; receive;}
+
+  fp -> start [style=dashed, arrowhead=none, color="#15803D"];
+  dc -> mode [style=dashed, arrowhead=none, color="#2563EB"];
+  ctrl -> metadata [style=dashed, arrowhead=none, color="#2563EB"];
+  link -> tx [style=dashed, arrowhead=none, color="#D97706"];
+  mora -> parse [style=dashed, arrowhead=none, color="#C2412D"];
+  camera -> capture [style=dashed, arrowhead=none, color="#1B8A52"];
+}

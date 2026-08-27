@@ -317,20 +317,16 @@
     <configure name="USE_MAGNETOMETER" value="FALSE"/>
     <define name="USE_MAGNETOMETER_ONGROUND" value="FALSE"/>
 
-    <module name="ahrs" type="float_dcm">
-      <configure name="USE_MAGNETOMETER" value="FALSE"/>
-      <define name="USE_AHRS_GPS_ACCELERATIONS"/>
-      <define name="AHRS_DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
-      <!-- <define name="AHRS_DCM_MAG_ID" value="MAG_IST8310_SENDER_ID"/> -->
-      <!-- <define name="AHRS_DCM_MAG_ID" value="MAG_RM3100_SENDER_ID"/> -->
-    </module>
+    <module name="control" type="energyadaptive"/>
+        <!-- Continuously estimates gyro bias, including unheated IMU warm-up drift. -->
+    <module name="ahrs" type="float_cmpl_quat"/>
 
     <module name="ins" type="alt_float"/>
 
     <module name="auto1_commands"/> 
     <!-- FIXME since not working in JSBSim target with RC controller steering in Simulator-->
     <module name="air_data"/>
-    <module name="control" type="energyadaptive"/>
+
     <module name="navigation"/>
     <module name="nav" type="line"/>
     <module name="nav" type="line_border"/>
@@ -418,16 +414,18 @@
     </module> -->
 
     <!-- When a compute board is connected -->
-    <!-- <module name="digital_cam_uart">
+    <module name="digital_cam_uart">
       <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/>
       <configure name="CAMERA_PORT" value="UART5"/>
-    </module> -->
+      <configure name="SITL_SERIAL" value="/dev/ttyUSB0"/>
+    </module>
 
     <module name="traffic_info">
       <define name="TRAFFIC_INFO_USE_MESH" value="TRUE"/>
       <define name="MESH_AUTO_TELEMETRY" value="TRUE"/>
       <define name="MESH_SOLO_QUIET_MS" value="5000"/>
     </module>
+    
     <module name="tcas"/>
 
     <!-- <module name="imu_quality_assessment"/>--><!-- Can be disabled after initial tuning -->

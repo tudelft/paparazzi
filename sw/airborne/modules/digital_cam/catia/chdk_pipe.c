@@ -125,6 +125,7 @@ static void wait_for_img(char *filename, int timeout)
  */
 static void wait_for_cmd(int timeout)
 {
+  (void)timeout;
   char ch;
   do {
     read(fo, &ch, 1);
