@@ -69,7 +69,7 @@
       <!-- <configure name="MODULES_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/> -->
       <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/> --><!-- set to 50 if using QMC?-->
 
-      <configure name="USE_MAGNETOMETER" value="FALSE"/><!-- Keep QMC acquisition enabled, but use GNSS course for AHRS yaw initially -->
+      <configure name="USE_MAGNETOMETER" value="TRUE"/><!-- Keep QMC acquisition enabled, but use GNSS course for AHRS yaw initially -->
 
       <!-- ***** First sensor modules... ***** -->
       
@@ -109,7 +109,7 @@
         <define name="QMC5883L_CHAN_Y" value="0"/>
         <define name="QMC5883L_CHAN_Z" value="2"/>
         <define name="QMC5883L_CHAN_X_SIGN" value="+"/>
-        <define name="QMC5883L_CHAN_Y_SIGN" value="-"/>
+        <define name="QMC5883L_CHAN_Y_SIGN" value="+"/>
         <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
         <!-- <define name="MODULE_QMC5883L_SYNC_SEND" value="1"/> -->
       </module>
@@ -184,8 +184,8 @@
         <!-- <configure name="MODEM_PORT" value="usb_serial"/>    -->
         <configure name="MODEM_PORT" value="UART2"/>
         <!-- <configure name="MODEM_BAUD" value="B9600"/> -->
-        <!--<configure name="MODEM_BAUD" value="B57600"/>--><!-- for direct cable desktest -->
-        <configure name="MODEM_BAUD" value="B460800"/><!-- for mesh test -->
+        <configure name="MODEM_BAUD" value="B57600"/><!-- for direct cable desktest -->
+        <!--<configure name="MODEM_BAUD" value="B460800"/>--><!-- for mesh test -->
       </module>
 
       <module name="geo_mag"/>
@@ -312,10 +312,11 @@
     <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="410"/> <!--unit="s/10" in tenth of seconds for engine kill or in ELECTRICAL_PERIODIC_FREQ-->
 
     <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
-    <!-- <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN"/> -->
-    <!-- <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/> -->
-    <configure name="USE_MAGNETOMETER" value="FALSE"/>
-    <define name="USE_MAGNETOMETER_ONGROUND" value="FALSE"/>
+    <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN"/>
+    <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/>
+
+    <configure name="USE_MAGNETOMETER" value="TRUE"/>
+    <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/>
 
     <module name="control" type="energyadaptive"/>
         <!-- Continuously estimates gyro bias, including unheated IMU warm-up drift. -->
@@ -420,13 +421,13 @@
       <configure name="SITL_SERIAL" value="/dev/ttyUSB0"/>
     </module>
 
-    <module name="traffic_info">
+    <!-- <module name="traffic_info">
       <define name="TRAFFIC_INFO_USE_MESH" value="TRUE"/>
       <define name="MESH_AUTO_TELEMETRY" value="TRUE"/>
       <define name="MESH_SOLO_QUIET_MS" value="5000"/>
-    </module>
+    </module> -->
     
-    <module name="tcas"/>
+    <!-- <module name="tcas"/> -->
 
     <!-- <module name="imu_quality_assessment"/>--><!-- Can be disabled after initial tuning -->
     <!-- <module name="tune_airspeed"/>--><!-- Can be disabled after initial tuning -->
@@ -470,6 +471,9 @@
       <configure name="RELATIVE_LOCALIZATION_FILTER_INITIAL_ESTIMATE" value="0.0"/>
     </module> 
     -->
+
+
+
 
   </firmware>
 
@@ -635,9 +639,9 @@
     <define name="BODY_TO_IMU_THETA" value="2.9" unit="deg"/><!-- could be moved from AUTO_THROTTLE_NOMINAL_CRUISE_PITCH -->
     <define name="BODY_TO_IMU_PSI" value="0.0" unit="deg"/><!--90-->
 
-    <define name="MAG_X_SIGN" value="1"/>
+    <!-- <define name="MAG_X_SIGN" value="1"/>
     <define name="MAG_Y_SIGN" value="-1"/>
-    <define name="MAG_Z_SIGN" value="-1"/>
+    <define name="MAG_Z_SIGN" value="-1"/> -->
 
     <!-- Calibrated on 20240910 11:45. Extrem hard-iron offset due to magnets close by, room for improvement-->
     <!-- <define name="IMU_MAG_CALIB" type="array">
@@ -651,6 +655,17 @@
         <field name="scale" value="{{27681,24283,48131},{2143,1853,3757}}"/>
       </field>
     </define> -->
+  <define name="IMU_MAG_CALIB" type="array">
+  <field type="struct">
+    <field name="abi_id" value="7"/>
+    <field name="calibrated" type="struct">
+      <field name="neutral" value="true"/>
+      <field name="scale_f" value="true"/>
+    </field>
+    <field name="neutral" value="495,558,856" type="int[]"/>
+    <field name="scale_f" value="{ 1.3909, 1.4296, 1.3986 }"/>
+  </field>
+</define>
 
     <!-- TODO: Calibrate QMC -->
     <!-- 
@@ -684,11 +699,11 @@
     <!-- As ID choose MAG_CALIB_UKF_ID when using the mag_clib_ukf module change your AHRS type-->
     <!--<define name="FC_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>-->
     <!--<define name="FC_MAG_ID" value="MAG_IST8310_SENDER_ID" />-->
-    <!--<define name="FC_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>-->
+    <define name="FC_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
     <!--<define name="FC_MAG_ID" value="MAG_QMC5883P_SENDER_ID"/> -->
     <!--<define name="FC_MAG_ID" value="MAG_RM3100_SENDER_ID"/>-->
 
-    <define name="AHRS_DCM_IMU_ID" value="ABI_BROADCAST"/>
+    <!-- <define name="AHRS_DCM_IMU_ID" value="ABI_BROADCAST"/> -->
     <!--<define name="DCM_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>-->
     <!-- <define name="DCM_MAG_ID" value="MAG_IST8310_SENDER_ID"/> -->
     <!--<define name="DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/> -->
@@ -744,7 +759,7 @@
     <!-- <define name="ID" value="AGL_RANGEFINDER_I2C_ID"/> --><!-- maybe?-->
     <!-- <define name="ID" value="ABI_BROADCAST"/> --><!-- already defined -->
     <define name="MAX_RANGE" value="$(RANGEFINDER_I2C_MAX_RANGE)/2" unit="m"/><!-- For AGL -->
-    <define name="MIN_RANGE" value="$(RANGEFINDER_I2C_MIN_RANGE)+4" unit="m"/><!-- For AGL -->
+    <define name="MIN_RANGE" value="$(RANGEFINDER_I2C_MIN_RANGE)" unit="m"/><!-- For AGL -->
     <define name="FILTER" value="0.1"/>
   </section>
 
