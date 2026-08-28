@@ -14,6 +14,15 @@
       The DA 5883 is not supported by this driver since we have not seen any samples of this DA version in the wild
 
       A documented 'B' version with "DB 5833" on the QFN package that responds to I2C address 0x0D. This works as per the QMC5883L datasheet.
+
+      FILTERING:
+      A 3 Hz second-order Butterworth low-pass filter is enabled by default. Live tests at 200 Hz reduced RMS noise by about 82%, peak-to-peak noise by 77-80%,
+      and maximum sample steps by 80-87%. It is enabled because the QMC5883L can exhibit sustained axis noise that is not removed by maximum sensor oversampling
+      or short median filters.
+
+      The filter penalty is approximately 75 ms group delay at low frequencies, 96 bytes of filter state, and 15 floating-point multiplications per sample 
+      (about 3000/s at 200 Hz), which is negligible CPU load on typical flight controllers. A 3 Hz cutoff was the measured compromise: higher cutoffs restored significant peaks,
+      while lower cutoffs added delay for little practical benefit. Set QMC5883L_USE_LOWPASS_FILTER to FALSE only when unfiltered response is explicitly required.
       
       TIP:
       An arbitrary rotation between the sensor frame and the IMU frame can be compensated with a MAG_TO_IMU rotation, defined by three euler angles. 
@@ -21,6 +30,7 @@
     </description>
     <configure name="MAG_QMC5883L_I2C_DEV" value="i2c1" description="I2C device to use (e.g. i2c2)"/>
     <define name="MODULE_QMC5883L_SYNC_SEND" value="TRUE|FALSE" description="Send IMU_RAW message with each new measurement for debugging purposes (default: FALSE)"/>
+    <define name="MODULE_QMC5883L_FILTER_SYNC_SEND" value="TRUE|FALSE" description="Send paired unfiltered ID 32 and filtered ID 7 IMU_MAG_RAW telemetry at 20 Hz (default: FALSE)"/>
     <define name="MODULE_QMC5883L_UPDATE_AHRS" value="TRUE|FALSE" description="Copy measurements to IMU and send as ABI message (default: FALSE)"/>
     <define name="QMC5883L_CHAN_X_SIGN" value="+|-" description="Set the polarity of x axis (default: +)"/>
     <define name="QMC5883L_CHAN_Y_SIGN" value="+|-" description="Set the polarity of y axis (default: +)"/>
@@ -28,6 +38,8 @@
     <define name="QMC5883L_CHAN_X" value="0|1|2" description="Channel id of x axis (default: 0)"/>
     <define name="QMC5883L_CHAN_Y" value="0|1|2" description="Channel id of y axis (default: 1)"/>
     <define name="QMC5883L_CHAN_Z" value="0|1|2" description="Channel id of z axis (default: 2)"/>
+    <define name="QMC5883L_USE_LOWPASS_FILTER" value="TRUE|FALSE" description="Apply a second-order Butterworth low-pass filter to sensor samples (default: TRUE)"/>
+    <define name="QMC5883L_LOWPASS_CUTOFF" value="3.0" description="Butterworth low-pass cutoff frequency in Hz"/>
     <section name="MAG_QMC" prefix="QMC5883L_">
       <define name="MAG_TO_IMU_PHI" value="0.0" description="Rotation between sensor frame and IMU frame (phi angle)"/>
       <define name="MAG_TO_IMU_THETA" value="0.0" description="Rotation between sensor frame and IMU frame (theta angle)"/>
@@ -45,6 +57,7 @@
   <init fun="mag_qmc5883l_module_init()"/>
   <periodic fun="mag_qmc5883l_module_periodic()" freq="MAG_QMC5883L_PERIODIC_FREQUENCY"/>
   <periodic fun="mag_qmc5883l_report()" freq="10" autorun="FALSE"/>
+  <periodic fun="mag_qmc5883l_filter_report()" freq="20"/>
   <event fun="mag_qmc5883l_module_event()"/>
   <makefile target="ap">
     <file name="mag_qmc5883l.c"/>

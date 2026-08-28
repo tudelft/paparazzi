@@ -134,3 +134,19 @@ void mag_qmc5883l_report(void)
   };
   DOWNLINK_SEND_IMU_MAG_RAW(DefaultChannel, DefaultDevice, &id, &mag.x, &mag.y, &mag.z);
 }
+
+void mag_qmc5883l_filter_report(void)
+{
+#if MODULE_QMC5883L_FILTER_SYNC_SEND
+  uint8_t unfiltered_id = MAG_QMC5883L_UNFILTERED_ID;
+  struct Int32Vect3 unfiltered = {
+    QMC5883L_CHAN_X_SIGN(int32_t)(mag_qmc5883l.unfiltered_data.value[QMC5883L_CHAN_X]),
+    QMC5883L_CHAN_Y_SIGN(int32_t)(mag_qmc5883l.unfiltered_data.value[QMC5883L_CHAN_Y]),
+    QMC5883L_CHAN_Z_SIGN(int32_t)(mag_qmc5883l.unfiltered_data.value[QMC5883L_CHAN_Z])
+  };
+  DOWNLINK_SEND_IMU_MAG_RAW(DefaultChannel, DefaultDevice, &unfiltered_id,
+                            &unfiltered.x, &unfiltered.y, &unfiltered.z);
+
+  mag_qmc5883l_report();
+#endif
+}

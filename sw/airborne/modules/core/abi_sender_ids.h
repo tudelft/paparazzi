@@ -440,6 +440,15 @@
 #define IMU_F1E_ID 30
 #endif
 
+// magnetometer low-pass prefiltering
+#ifndef IMU_MAG_LP_ID
+#define IMU_MAG_LP_ID 31
+#endif
+
+#ifndef MAG_QMC5883L_UNFILTERED_ID
+#define MAG_QMC5883L_UNFILTERED_ID 32
+#endif
+
 /*
  * ID for AHRS aligner
  */

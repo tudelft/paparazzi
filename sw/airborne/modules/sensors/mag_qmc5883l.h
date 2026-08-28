@@ -35,6 +35,7 @@ extern void mag_qmc5883l_module_init(void);
 extern void mag_qmc5883l_module_periodic(void);
 extern void mag_qmc5883l_module_event(void);
 extern void mag_qmc5883l_report(void);
+extern void mag_qmc5883l_filter_report(void);
 
 #endif /* MAG_QMC5883L_H */
 

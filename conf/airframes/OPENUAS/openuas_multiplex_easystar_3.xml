@@ -28,7 +28,7 @@
     + JP8 Closed and JP9 Opened so on UART1_VCC and UART5 is V_IN, thus 5V to RCRX and UWB module
     + Telemetry modem powered via V/GND pins of UART on FC is 3.3V
     + Uploading of the firmware via SWD (useing a BlackMagicProbe debug adapter)
-    + A GNSS device with QMC8553L magneto on the same PCB
+    + A GNSS device with QMC5883L magnetometer on the same PCB
     + GNSS on UART3 set to ~17Hz update rate, 3 constelations, SBAS enabled
     + Advised battery for this airframe is a 2200mAh 3S LiPo min. 20C
     + If testing "Classic" (as in not ETECS..) make sure to disable the settings/estimation/ac_char
@@ -50,7 +50,8 @@
     <configure name="CONTROL_FREQUENCY" value="100"/>
     <configure name="TELEMETRY_FREQUENCY" value="50"/>
     <configure name="MODULES_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/>
-    <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="30"/> -->
+    <configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="200"/>
+    <!-- Keep AHRS mag timing sample-based so delayed or dropped samples use the correct dt. -->
 
     <target name="ap" board="lisa_mx_2.1_chibios">
 
@@ -63,11 +64,7 @@
 
       <!-- <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/> --><!-- FIXME: Not working under Chibios -->
 
-      <!-- <configure name="NAVIGATION_FREQUENCY" value="50"/> -->
-      <!-- <configure name="CONTROL_FREQUENCY" value="125"/> -->
-      <!-- <configure name="TELEMETRY_FREQUENCY" value="50"/> -->
-      <!-- <configure name="MODULES_FREQUENCY" value="$(PERIODIC_FREQUENCY)"/> -->
-      <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/> --><!-- set to 50 if using QMC?-->
+      <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="200"/> --><!-- set to 200 if using QMC?-->
 
       <configure name="USE_MAGNETOMETER" value="TRUE"/><!-- Keep QMC acquisition enabled, but use GNSS course for AHRS yaw initially -->
 
@@ -90,20 +87,18 @@
 
       <module name="airspeed" type="sdp3x">
         <configure name="SDP3X_I2C_DEV" value="i2c2"/>
-        <define name="SDP3X_LOWPASS_TAU" value="0.15"/>
+        <define name="SDP3X_LOWPASS_TAU" value="0.15"/><!-- in case it is used -->
+        <!-- <define name="USE_AIRSPEED_LOWPASS_FILTER" value="FALSE"> -->
         <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
-        <define name="USE_AIRSPEED" value="TRUE"/>
+        <!-- <define name="USE_AIRSPEED" value="TRUE"/> --><!-- automaticaly set with one above -->
         <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/>
-        <!--<define name="SDP3X_SYNC_SEND" value="TRUE"/>--> <!-- Only enable while debugging -->
+        <define name="SDP3X_SYNC_SEND" value="TRUE"/> <!-- Only enable while debugging -->
       </module>
 
-      <!-- Magnetometer chip on GNSS board instead of FC --> 
+      <!-- Magnetometer chip available on GNSS board --> 
       <module name="mag" type="qmc5883l">
         <configure name="MAG_QMC5883L_I2C_DEV" value="i2c2"/>
-        <!-- <configure name="MAG_QMC5883L_PERIODIC_FREQUENCY" value="50"/> -->
-        <!-- <define name="QMC5883L_ADDR" value="0x1E"/> -->
         <define name="QMC5883L_ADDR" value="0x1A"/>
-        <!-- <define name="QMC5883L_ADDR" value="0x1B"/> -->
         <define name="MODULE_QMC5883L_UPDATE_AHRS" value="TRUE"/>
         <define name="QMC5883L_CHAN_X" value="1"/>
         <define name="QMC5883L_CHAN_Y" value="0"/>
@@ -111,40 +106,7 @@
         <define name="QMC5883L_CHAN_X_SIGN" value="+"/>
         <define name="QMC5883L_CHAN_Y_SIGN" value="+"/>
         <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
-        <!-- <define name="MODULE_QMC5883L_SYNC_SEND" value="1"/> -->
       </module>
-
-      <!-- <module name="mag" type="ist8310">
-        <configure name="MAG_IST8310_I2C_DEV" value="i2c2"/>
-        <configure name="MAG_IST8310_PERIODIC_FREQUENCY" value="10"/>
-        <define name="MODULE_IST8310_UPDATE_AHRS" value="TRUE"/>
-        <define name="IST8310_CHAN_X" value="1"/>
-        <define name="IST8310_CHAN_Y" value="0"/>
-        <define name="IST8310_CHAN_Z" value="2"/>
-        <define name="IST8310_CHAN_X_SIGN" value="+"/>
-        <define name="IST8310_CHAN_Y_SIGN" value="-"/>
-        <define name="IST8310_CHAN_Z_SIGN" value="+"/>
-        <define name="MODULE_IST8310_SYNC_SEND" value="TRUE"/>
-      </module>  -->
-
-      <!-- Optionally use alternative magnetometer if rate and quality of QMC5883l is insufficient --> 
-      <!-- MEDIAN_FILTER Enabled to avoid sporadic spikes in output-->
-      <!-- 
-      <module name="mag" type="rm3100">
-        <configure name="MAG_RM3100_I2C_DEV" value="i2c2"/>
-        <configure name="MAG_RM3100_PERIODIC_FREQUENCY" value="125"/>
-        <define name="RM3100_ADDR" value="RM3100_ADDR3"/>
-        <define name="RM3100_USE_MEDIAN_FILTER" value="TRUE"/>
-        <define name="RM3100_CHAN_X" value="1"/>
-        <define name="RM3100_CHAN_Y" value="0"/>
-        <define name="RM3100_CHAN_Z" value="2"/>
-        <define name="RM3100_CHAN_X_SIGN" value="-"/>
-        <define name="RM3100_CHAN_Y_SIGN" value="+"/>
-        <define name="RM3100_CHAN_Z_SIGN" value="-"/>
-        <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
-        <configure name="MODULE_RM3100_SYNC_SEND" value="TRUE"/>
-      </module> 
-      -->
 
       <!-- Build into the airframe is a rangfinder Surertech VB22A 0xA4 (0x52 7bit) -->
       <module name="rangefinder_i2c"> 
@@ -189,9 +151,9 @@
       </module>
 
       <module name="geo_mag"/>
-      <module name="sys_mon">
+      <!-- <module name="sys_mon">
         <define name="SYS_MON_SCHEDULED_TELEMETRY" value="TRUE"/>
-      </module>
+      </module> -->
 
       <!--
       <module name="takeoff_detect">
@@ -248,11 +210,6 @@
         </mode>
       </process>
       -->
-
-      <!-- I -->
-
-      <!-- Inter aircraft RSSI exchange -->
-      <!-- <module name="rssi"/> -->
 
     </target>
 
@@ -344,10 +301,10 @@
     <module name="nav" type="spiral_3D"/>
     <module name="nav" type="cube"/>
     <module name="nav" type="drop">
-      <define name="TRIGGER_DELAY" value="3.0" unit="s"/> <!--TODO get correct value;  time it take from shoot command till actual release of payload -->
-      <define name="VELOCITY_AT_RELEASE" value="14" unit="m/s"/><!-- TODO not implemented - to set to min airspeed -->
+      <define name="TRIGGER_DELAY" value="1.0" unit="s"/> <!--TODO get correct value;  time it take from shoot command till actual release of payload -->
+      <define name="VELOCITY_AT_RELEASE" value="11" unit="m/s"/><!-- TODO not implemented - to set to min airspeed -->
       <define name="ALPHA" value="44.18e-4"/><!-- TODO: adjust it for your specific payload -->
-      <define name="MASS" value="5.00e-3" unit="KG"/>
+      <define name="MASS" value="2.50e-3" unit="KG"/>
       <define name="SAFE_CLIMB" value="10" unit="m"/>
       <define name="CLIMB_TIME" value="3" unit="s"/>
     </module>
@@ -472,9 +429,6 @@
     </module> 
     -->
 
-
-
-
   </firmware>
 
   <!-- Define here to which CONNECTOR NUMBER the servo is connected to, on the autopilot circuit board -->
@@ -500,7 +454,8 @@
   </rc_commands>
 
   <!-- When flying autonomous it is sometimes needed to override certain commands via RC when tuning 
-  in this case yaw, is for example the curve is to wide and would go out of sight or other boundary -->
+  in this case yaw, is for example the curve is to wide and would go out of sight or other boundary 
+  Disable when all is dworking well -->
   <auto_rc_commands>
     <set command="YAW" value="@YAW"/>
   </auto_rc_commands>
@@ -557,7 +512,8 @@
     <set servo="S_AILERON_RIGHT" value="$aileron"/>
     <set servo="S_ELEVATOR" value="@PITCH+(-BRAKEGAIN*SPOILERON_BRAKE_FULL)"/>
     <set servo="S_RUDDER" value="$yaw_ctrl_sgl"/>
-    <set servo="S_LIGHT" value="((autopilot.mode == AP_MODE_AUTO2) ? MAX_PPRZ : @ACTIVELIGHTS)"/>
+    <!-- <set servo="S_LIGHT" value="((autopilot.mode == AP_MODE_AUTO2) ? MAX_PPRZ : @ACTIVELIGHTS)"/> -->
+    <set servo="S_LIGHT" value="((autopilot.mode == AP_MODE_AUTO2) ? MIN_PPRZ : MIN_PPRZ)"/><!-- Temporary off while desktests debug it is annoying-->
     
     <!-- Enable bare values below for debugging to validate the basics first. Make sure to disable the calculated ones above -->
     <!-- <set servo="S_THROTTLE" value="@THROTTLE"/> -->
@@ -835,8 +791,8 @@
 
     <define name="THROTTLE_SLEW_LIMITER" value="0.35" unit="s"/>
     <define name="AUTO_AIRSPEED_SETPOINT" value="12.0" unit="m/s"/>
-    <define name="AIRSPEED_MAX" value="17.0" unit="m/s"/>
     <define name="AIRSPEED_MIN" value="7.0" unit="m/s"/>
+    <define name="AIRSPEED_MAX" value="17.0" unit="m/s"/>
 
     <!-- landing control loop -->
     <define name="LANDING_THROTTLE_PGAIN" value="600.0"/>

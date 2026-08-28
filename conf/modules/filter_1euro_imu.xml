@@ -13,19 +13,27 @@
       - mincutoff that defines the minimum bandwith: reduce it if noise at low speed is a problem
       - beta that is the adaptation coefficient: increase it if lag at high speed is a problem
 
-      In order to use this filter for your IMU (on Gyro and Acell data, Mag passthrough), you only
+      In order to use this filter for your IMU (on Gyro, Accel and optionally Mag data), you only
       need to redefine the source of data in the ABI bindings of the AHRS/INS filter being used.
       For instance, if the 'ahrs_int_cmpl_quat' AHRS is used, this module should be loaded with
       the following options:
         define name="AHRS_ICQ_IMU_ID" value="IMU_F1E_ID"     
         define name="AHRS_ALIGNER_IMU_ID" value="IMU_F1E_ID"     
     </description>
+      <define name="IMU_F1E_BIND_ID" value="ABI sender ID" description="Gyro and accelerometer source to filter (default: ABI_BROADCAST)"/>
+      <define name="IMU_F1E_MAG_BIND_ID" value="ABI sender ID" description="Magnetometer source to filter (default: IMU_F1E_BIND_ID)"/>
+      <define name="FILTER_1EURO_MAG_SYNC_SEND" value="FALSE|TRUE" description="Send filtered IMU_MAG telemetry at 20 Hz for tuning (default: FALSE)"/>
     <section name="FILTER_1EURO" prefix="FILTER_1EURO_">
       <define name="ENABLED" value="FALSE|TRUE" description="activate or not the filter by default"/>
       <define name="GYRO_MINCUTOFF" value="10." description="minimum cutoff freq for gyro signal"/>
       <define name="GYRO_BETA" value="0.1" description="adaptation coefficient for gyro signal"/>
       <define name="ACCEL_MINCUTOFF" value="0.1" description="minimum cutoff freq for accel signal"/>
       <define name="ACCEL_BETA" value="0.01" description="adaptation coefficient for accel signal"/>
+      <define name="MAG_ENABLED" value="FALSE|TRUE" description="activate or not the magnetometer filter (default: FALSE)"/>
+      <define name="MAG_MINCUTOFF" value="1.0" description="minimum cutoff freq for magnetometer signal"/>
+      <define name="MAG_BETA" value="0.01" description="adaptation coefficient for magnetometer signal"/>
+      <define name="MAG_DCUTOFF" value="1.0" description="derivative cutoff freq for magnetometer signal"/>
+      <define name="MAG_MEDIAN" value="FALSE|TRUE" description="apply a three-sample median prefilter to reject isolated magnetometer spikes (default: FALSE)"/>
       <define name="FREQ" value="512" description="set fixed frequency, if not defined but INS/AHRS_PROPAGATE_FREQUENCY is defined it is used, otherwise autofreq is used"/>
     </section>
   </doc>
@@ -37,6 +45,10 @@
         <dl_setting min="0.0001" max="1." step="0.001" var="filter_1e_imu.gyro_beta" module="imu/filter_1euro_imu" shortname="gyro beta" handler="update_gyro_beta"/>
         <dl_setting min="0.01" max="10." step="0.001" var="filter_1e_imu.accel_mincutoff" module="imu/filter_1euro_imu" shortname="accel mincutoff" handler="update_accel_mincutoff"/>
         <dl_setting min="0.0001" max=".1" step="0.001" var="filter_1e_imu.accel_beta" module="imu/filter_1euro_imu" shortname="accel beta" handler="update_accel_beta"/>
+        <dl_setting min="0" max="1" step="1" var="filter_1e_imu.mag_enabled" module="imu/filter_1euro_imu" shortname="mag enable" values="DISABLED|ENABLED" handler="reset_mag"/>
+        <dl_setting min="0.01" max="20." step="0.01" var="filter_1e_imu.mag_mincutoff" module="imu/filter_1euro_imu" shortname="mag mincutoff" handler="update_mag_mincutoff"/>
+        <dl_setting min="0" max="1." step="0.001" var="filter_1e_imu.mag_beta" module="imu/filter_1euro_imu" shortname="mag beta" handler="update_mag_beta"/>
+        <dl_setting min="0.01" max="20." step="0.01" var="filter_1e_imu.mag_dcutoff" module="imu/filter_1euro_imu" shortname="mag dcutoff" handler="update_mag_dcutoff"/>
       </dl_settings>
     </dl_settings>
   </settings>
@@ -47,6 +59,7 @@
     <file name="filter_1euro_imu.h"/>
   </header>
   <init fun="filter_1euro_imu_init()"/>
+  <periodic fun="filter_1euro_imu_report_mag()" freq="20"/>
   <makefile>
     <file name="filter_1euro_imu.c"/>
   </makefile>

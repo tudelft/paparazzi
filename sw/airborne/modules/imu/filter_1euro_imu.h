@@ -30,17 +30,22 @@
 
 struct Filter1eImu {
   bool enabled;
+  bool mag_enabled;
   float gyro_mincutoff;
   float gyro_beta;
   float gyro_dcutoff;
   float accel_mincutoff;
   float accel_beta;
   float accel_dcutoff;
+  float mag_mincutoff;
+  float mag_beta;
+  float mag_dcutoff;
 };
 
 extern struct Filter1eImu filter_1e_imu;
 
 extern void filter_1euro_imu_init(void);
+extern void filter_1euro_imu_report_mag(void);
 
 /**
  * settings handlers
@@ -52,6 +57,10 @@ extern void filter_1euro_imu_update_gyro_dcutoff(float dcutoff);
 extern void filter_1euro_imu_update_accel_mincutoff(float mincutoff);
 extern void filter_1euro_imu_update_accel_beta(float beta);
 extern void filter_1euro_imu_update_accel_dcutoff(float dcutoff);
+extern void filter_1euro_imu_reset_mag(float enabled);
+extern void filter_1euro_imu_update_mag_mincutoff(float mincutoff);
+extern void filter_1euro_imu_update_mag_beta(float beta);
+extern void filter_1euro_imu_update_mag_dcutoff(float dcutoff);
 
 #endif
 

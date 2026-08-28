@@ -26,6 +26,27 @@
 
 #include "peripherals/qmc5883l.h"
 
+#ifndef QMC5883L_USE_LOWPASS_FILTER
+#define QMC5883L_USE_LOWPASS_FILTER TRUE
+#endif
+
+#ifndef QMC5883L_LOWPASS_CUTOFF
+#define QMC5883L_LOWPASS_CUTOFF 3.f
+#endif
+
+#ifndef MAG_QMC5883L_PERIODIC_FREQUENCY
+#define MAG_QMC5883L_PERIODIC_FREQUENCY 50.f
+#endif
+
+#if QMC5883L_USE_LOWPASS_FILTER
+#include "filters/low_pass_filter.h"
+#endif
+
+#if QMC5883L_USE_LOWPASS_FILTER
+static Butterworth2LowPass qmc5883l_lowpass[3];
+static bool qmc5883l_lowpass_initialized;
+#endif
+
 /* Registers Axis X,Y,Z */
 #define QMC5883L_REG_DATXL  0x00
 #define QMC5883L_REG_DATXM  0x01
@@ -36,6 +57,7 @@
 
 /* Register I2C bus transaction Status */
 #define QMC5883L_REG_STATUS 0x06
+#define QMC5883L_STATUS_DRDY 0x01
 #define QMC5883L_STATUS_OVL  0x02
 
 /* Registers Temperature, relative thus not so useful ATM, therefore not implemented in reading */
@@ -66,6 +88,9 @@
 
 void qmc5883l_init(struct Qmc5883l *mag, struct i2c_periph *i2c_p, uint8_t addr, uint8_t data_rate)
 {
+#if QMC5883L_USE_LOWPASS_FILTER
+  qmc5883l_lowpass_initialized = false;
+#endif
   /* set i2c_peripheral */
   mag->i2c_p = i2c_p;
   /* set i2c address */
@@ -130,23 +155,9 @@ void qmc5883l_read(struct Qmc5883l *mag)
     return;
   }
 
-  /* get 3 x 2 bytes data = 6 Bytes and one status byte = 7 */
-  mag->i2c_trans.buf[0] = QMC5883L_REG_DATXL;
-  mag->i2c_trans.buf[1] = QMC5883L_REG_DATXM;
-  mag->i2c_trans.buf[2] = QMC5883L_REG_DATYL;
-  mag->i2c_trans.buf[3] = QMC5883L_REG_DATYM;
-  mag->i2c_trans.buf[4] = QMC5883L_REG_DATZL;
-  mag->i2c_trans.buf[5] = QMC5883L_REG_DATZM;
-
-  /* Chip transaction status, not used ATM in case of driver mishap once can considder using it */
-  mag->i2c_trans.buf[6] = QMC5883L_REG_STATUS;
-  // Add some code if you experience reading issue
-  // DRDY = ((mag->i2c_trans.buf[6]) >> 0) & 1;
-  // OVL = ((mag->i2c_trans.buf[6]) >> 1) & 1;
-  // DOR = ((uint8_t)(mag->i2c_trans.buf[6]) >> 2) & 1;
-
-  i2c_transceive(mag->i2c_p, &(mag->i2c_trans), mag->i2c_trans.slave_addr, 1, 7);
-  mag->status = QMC5883L_STATUS_MEAS;
+  mag->i2c_trans.buf[0] = QMC5883L_REG_STATUS;
+  i2c_transceive(mag->i2c_p, &(mag->i2c_trans), mag->i2c_trans.slave_addr, 1, 1);
+  mag->status = QMC5883L_STATUS_CHECK;
 }
 /* Convert and align raw values */
 #define Int16FromBuf(_buf,_idx) ((int16_t)(_buf[_idx] | (_buf[_idx+1] << 8)))
@@ -160,14 +171,43 @@ void qmc5883l_event(struct Qmc5883l *mag)
 
   switch (mag->status) {
 
+    case QMC5883L_STATUS_CHECK:
+      if (mag->i2c_trans.status == I2CTransSuccess) {
+        const uint8_t sample_status = mag->i2c_trans.buf[0];
+        mag->i2c_trans.status = I2CTransDone;
+        if ((sample_status & (QMC5883L_STATUS_DRDY | QMC5883L_STATUS_OVL)) == QMC5883L_STATUS_DRDY) {
+          mag->i2c_trans.buf[0] = QMC5883L_REG_DATXL;
+          i2c_transceive(mag->i2c_p, &(mag->i2c_trans), mag->i2c_trans.slave_addr, 1, 6);
+          mag->status = QMC5883L_STATUS_MEAS;
+        } else {
+          mag->status = QMC5883L_STATUS_IDLE;
+        }
+      } else if (mag->i2c_trans.status == I2CTransFailed) {
+        mag->status = QMC5883L_STATUS_IDLE;
+      }
+      break;
+
     case QMC5883L_STATUS_MEAS:
       if (mag->i2c_trans.status == I2CTransSuccess) {
-        mag->data.vect.x = Int16FromBuf(mag->i2c_trans.buf, 0);
-        mag->data.vect.y = Int16FromBuf(mag->i2c_trans.buf, 2);
-        mag->data.vect.z = Int16FromBuf(mag->i2c_trans.buf, 4);
-
-        const uint8_t sample_status = mag->i2c_trans.buf[6];
-        mag->data_available = (sample_status & QMC5883L_STATUS_OVL) == 0;
+        mag->unfiltered_data.vect.x = Int16FromBuf(mag->i2c_trans.buf, 0);
+        mag->unfiltered_data.vect.y = Int16FromBuf(mag->i2c_trans.buf, 2);
+        mag->unfiltered_data.vect.z = Int16FromBuf(mag->i2c_trans.buf, 4);
+        mag->data.vect = mag->unfiltered_data.vect;
+#if QMC5883L_USE_LOWPASS_FILTER
+        if (!qmc5883l_lowpass_initialized) {
+          const float tau = 1.f / (2.f * M_PI * QMC5883L_LOWPASS_CUTOFF);
+          const float sample_time = 1.f / MAG_QMC5883L_PERIODIC_FREQUENCY;
+          init_butterworth_2_low_pass(&qmc5883l_lowpass[0], tau, sample_time, mag->data.vect.x);
+          init_butterworth_2_low_pass(&qmc5883l_lowpass[1], tau, sample_time, mag->data.vect.y);
+          init_butterworth_2_low_pass(&qmc5883l_lowpass[2], tau, sample_time, mag->data.vect.z);
+          qmc5883l_lowpass_initialized = true;
+        } else {
+          mag->data.vect.x = update_butterworth_2_low_pass(&qmc5883l_lowpass[0], mag->data.vect.x);
+          mag->data.vect.y = update_butterworth_2_low_pass(&qmc5883l_lowpass[1], mag->data.vect.y);
+          mag->data.vect.z = update_butterworth_2_low_pass(&qmc5883l_lowpass[2], mag->data.vect.z);
+        }
+#endif
+        mag->data_available = true;
         /* End of measure reading, go back to idle */
         mag->status = QMC5883L_STATUS_IDLE;
       }

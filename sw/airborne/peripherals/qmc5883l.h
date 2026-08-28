@@ -54,6 +54,7 @@
   QMC5883L_CONF_TMRC_DONE, // Is done set Datarate
   QMC5883L_CONF_CCM_DONE,  // Is done set Mode continuous or single CCM = Configure Continuous Measurement
   QMC5883L_STATUS_IDLE,    // Ready for data requests
+  QMC5883L_STATUS_CHECK,   // Check whether a fresh sample is ready
   QMC5883L_STATUS_MEAS     // Get data
 };
 
@@ -68,6 +69,10 @@ struct Qmc5883l {
     struct Int32Vect3 vect;           ///< data vector in mag coordinate system
     int32_t value[3];                 ///< data values accessible by channel index
   } data;
+  union {
+    struct Int32Vect3 vect;           ///< unfiltered data for diagnostics
+    int32_t value[3];
+  } unfiltered_data;
 };
 
 extern void qmc5883l_init(struct Qmc5883l *mag, struct i2c_periph *i2c_p, uint8_t addr, uint8_t data_rate);
