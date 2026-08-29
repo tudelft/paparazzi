@@ -33,7 +33,7 @@ export PAPARAZZI_HOME
 
 #####################################################
 # If you add more test files you add their names here
-TESTS = test_framed_ring_buffer.run test_mesh_clock.run test_mesh_mode_policy.run test_tcas_policy.run test_traffic_info_reclaim.run test_traffic_info_units.run
+TESTS = test_airspeed_sdp3x.run test_airspeed_sdp3x_driver.run test_airspeed_sdp3x_driver_bidirectional.run test_airspeed_sdp3x_driver_filter.run test_framed_ring_buffer.run test_mesh_clock.run test_mesh_mode_policy.run test_tcas_policy.run test_traffic_info_reclaim.run test_traffic_info_units.run
 
 ###################################################
 # You should not need to touch the rest of the file
@@ -53,6 +53,51 @@ test: build_tests
 	prove $(VERBOSE) --exec '' ./*.run
 
 test_framed_ring_buffer.run: $(PAPARAZZI_SRC)/sw/airborne/utils/framed_ring_buffer.c
+
+test_airspeed_sdp3x.run: test_airspeed_sdp3x.c \
+	$(PAPARAZZI_SRC)/sw/airborne/modules/sensors/airspeed_sdp3x.h
+	@echo BUILD $@
+	$(Q)$(CC) $(FLAGS) -Wextra -Werror -fsanitize=undefined \
+		-I$(PAPARAZZI_SRC)/sw/airborne -I$(PAPARAZZI_SRC)/sw/include $< -lm -o $@
+
+test_airspeed_sdp3x_driver.run: test_airspeed_sdp3x_driver.c \
+	$(PAPARAZZI_SRC)/sw/airborne/modules/sensors/airspeed_sdp3x.c
+	@echo BUILD $@
+	$(Q)$(CC) $(FLAGS) -Wextra -Werror -fsanitize=undefined \
+		-I$(PAPARAZZI_SRC)/tests/utils/sdp3x_stubs \
+		-I$(PAPARAZZI_SRC)/sw/airborne -I$(PAPARAZZI_SRC)/sw/include \
+		-DPERIODIC_TELEMETRY=0 -DUSE_AIRSPEED=1 -DUSE_AIRSPEED_SDP3X=1 \
+		-DUSE_AIRSPEED_LOWPASS_FILTER=0 -DSDP3X_SYNC_SEND=0 \
+		-DSDP3X_PERIODIC_PERIOD=0.01f -DSDP3X_I2C_DEV=i2c2 \
+		-DSDP3X_PRESSURE_SCALE=20 -DSDP3X_VERIFY_PRESSURE_SCALE=1 \
+		-DSDP3X_DYNAMIC_PRESSURE_SWAPPED=TRUE \
+		$^ -lm -o $@
+
+test_airspeed_sdp3x_driver_bidirectional.run: test_airspeed_sdp3x_driver.c \
+	$(PAPARAZZI_SRC)/sw/airborne/modules/sensors/airspeed_sdp3x.c
+	@echo BUILD $@
+	$(Q)$(CC) $(FLAGS) -Wextra -Werror -fsanitize=undefined \
+		-I$(PAPARAZZI_SRC)/tests/utils/sdp3x_stubs \
+		-I$(PAPARAZZI_SRC)/sw/airborne -I$(PAPARAZZI_SRC)/sw/include \
+		-DPERIODIC_TELEMETRY=0 -DUSE_AIRSPEED=1 -DUSE_AIRSPEED_SDP3X=1 \
+		-DUSE_AIRSPEED_LOWPASS_FILTER=0 -DSDP3X_SYNC_SEND=0 \
+		-DSDP3X_PERIODIC_PERIOD=0.01f -DSDP3X_I2C_DEV=i2c2 \
+		-DSDP3X_PRESSURE_SCALE=20 -DSDP3X_VERIFY_PRESSURE_SCALE=1 \
+		-DSDP3X_DYNAMIC_PRESSURE_SWAPPED=TRUE -DSDP3X_ENABLE_BIDIRECTIONAL=TRUE \
+		$^ -lm -o $@
+
+test_airspeed_sdp3x_driver_filter.run: test_airspeed_sdp3x_driver.c \
+	$(PAPARAZZI_SRC)/sw/airborne/modules/sensors/airspeed_sdp3x.c
+	@echo BUILD $@
+	$(Q)$(CC) $(FLAGS) -Wextra -Werror -fsanitize=undefined \
+		-I$(PAPARAZZI_SRC)/tests/utils/sdp3x_stubs \
+		-I$(PAPARAZZI_SRC)/sw/airborne -I$(PAPARAZZI_SRC)/sw/include \
+		-DPERIODIC_TELEMETRY=0 -DUSE_AIRSPEED=1 -DUSE_AIRSPEED_SDP3X=1 \
+		-DUSE_AIRSPEED_LOWPASS_FILTER=1 -DSDP3X_SYNC_SEND=0 \
+		-DSDP3X_PERIODIC_PERIOD=0.01f -DSDP3X_I2C_DEV=i2c2 \
+		-DSDP3X_PRESSURE_SCALE=20 -DSDP3X_VERIFY_PRESSURE_SCALE=1 \
+		-DSDP3X_DYNAMIC_PRESSURE_SWAPPED=TRUE -DSDP3X_TEST_FILTER_TRANSIENT=1 \
+		$^ -lm -o $@
 
 test_tcas_policy.run: test_tcas_policy.c \
 	$(PAPARAZZI_SRC)/sw/airborne/modules/multi/tcas_policy.h \

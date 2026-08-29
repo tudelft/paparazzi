@@ -65,8 +65,7 @@
       <!-- <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/> --><!-- FIXME: Not working under Chibios -->
 
       <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="200"/> --><!-- set to 200 if using QMC?-->
-
-      <configure name="USE_MAGNETOMETER" value="TRUE"/><!-- Keep QMC acquisition enabled, but use GNSS course for AHRS yaw initially -->
+      <configure name="USE_MAGNETOMETER" value="TRUE"/><!-- If FALSE Keep QMC acquisition enabled, but use GNSS course for AHRS yaw initially -->
 
       <!-- ***** First sensor modules... ***** -->
       
@@ -87,12 +86,18 @@
 
       <module name="airspeed" type="sdp3x">
         <configure name="SDP3X_I2C_DEV" value="i2c2"/>
-        <define name="SDP3X_LOWPASS_TAU" value="0.15"/><!-- in case it is used -->
-        <!-- <define name="USE_AIRSPEED_LOWPASS_FILTER" value="FALSE"> -->
+        <!-- SDP33: signed output, 20 counts/Pa, +/-1500 Pa (about 49.5 m/s EAS at MSL). -->
+        <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/>
+        
+        <define name="SDP3X_VERIFY_PRESSURE_SCALE" value="TRUE"/><!-- Reject data if the sensor does not report the expected SDP33 scale. -->
+        <!-- Installed pitot port order produces negative raw pressure for forward airflow. -->
+        <define name="SDP3X_DYNAMIC_PRESSURE_SWAPPED" value="TRUE"/>
+        <!-- <define name="USE_AIRSPEED_LOWPASS_FILTER" value="FALSE"/> --><!-- TRUE per default -->
+        <!-- Filter pressure at about 1 Hz; the published airspeed remains in m/s. -->
+        <define name="SDP3X_LOWPASS_TAU" value="0.15"/><!-- 0.15 is the default, but consider upto 0.10 if logs show noticeable airspeed-control lag-->
         <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
         <!-- <define name="USE_AIRSPEED" value="TRUE"/> --><!-- automaticaly set with one above -->
-        <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/>
-        <define name="SDP3X_SYNC_SEND" value="TRUE"/> <!-- Only enable while debugging -->
+        <!-- <define name="SDP3X_SYNC_SEND" value="TRUE"/> --><!-- Disable after debugging; sends unfiltered samples at 100 Hz. -->
       </module>
 
       <!-- Magnetometer chip available on GNSS board --> 
@@ -177,40 +182,6 @@
       </module>
       -->
 
-      <!-- An simple SD reader converter SD card slot connected over SPI bus to the MCU -->
-      <!-- For testflights this might come in handy to analyze flight data, when needed , enable it -->
-      <!-- 
-      <module name="tlsf"/>
-      <module name="pprzlog"/> 
-      <module name="logger" type="sd_chibios">
-        <configure name="SDLOG_LED" value="2"/>
-        <define naRM3100me="SDLOG_ENABLE_LOWBAT_FLUSH" value="FALSE"/>
-        <define name="SDLOG_START_DELAY" value="20" unit="s"/>
-      </module> 
-      -->
-
-      <!-- use the paprazzi/sd2log tool to convert log to be able to use in logplotter as normal -->
-      <!-- 
-      <module name="flight_recorder"/> 
-      -->
-
-      <!-- 
-      Below example of what to add to your telemetry_something.xml file
-      <process name="FlightRecorder">
-        <mode name="default">
-          <message name="FBW_STATUS"          period="1.2"/>
-          <message name="DL_VALUE"            period="0.5"/>
-          <message name="IMU_ACCEL"           period="0.05"/>
-          <message name="IMU_GYRO"            period="0.05"/>
-          <message name="IMU_MAG"             period="0.1"/>
-          <message name="IMU_ACCEL_RAW"       period="0.002"/>
-          <message name="IMU_GYRO_RAW"        period="0.002"/>
-          <message name="IMU_MAG_RAW"         period="0.002"/>
-          <message name="COMMANDS"            period=".002"/>
-        </mode>
-      </process>
-      -->
-
     </target>
 
     <target name="sim" board="pc">
@@ -275,8 +246,9 @@
     <configure name="USE_MAGNETOMETER" value="TRUE"/>
     <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/>
 
-    <module name="control" type="energyadaptive"/>
-        <!-- Continuously estimates gyro bias, including unheated IMU warm-up drift. -->
+    <module name="control" type="energyadaptive"/><!-- Better make sure your airspeed sensor working well -->
+
+    <!-- Continuously estimates gyro bias, including unheated IMU warm-up drift. -->
     <module name="ahrs" type="float_cmpl_quat"/>
 
     <module name="ins" type="alt_float"/>
@@ -328,52 +300,11 @@
     <!--<define name="TAKEOFF_DETECT_ALSO_IN_AUTO1" value="TRUE"/>-->    <!-- Sometimes throwing is not so easy :) so takeoff stabilized -->
     <!--</module>-->
 
-    <!-- Additional microSD card slot via wires connected to SPI bus connector of flightcontroller 
-    This is used for hightspeed value loggin onboard for analysis later on ground -->
-    <!-- 
-    <module name="tlsf"/>
-    <module name="pprzlog"/>
-    <module name="logger" type="sd_chibios">
-      <define name="SDLOG_ENABLE_LOWBAT_FLUSH" value="FALSE"/>
-      <define name="SDLOG_START_DELAY" value="3"/>
-      <define name="SDLOG_AUTO_FLUSH_PERIOD" value="4"/>
-    </module>
-    <module name="flight_recorder"/> 
-    -->
-
-    <!-- TODO: Determine which Slave ID -->
-    <!--
-    <module name="logger_sd_spi_direct.xml">
-      <configure name="SDLOGGER_DIRECT_SPI" value="spi1"/>
-      <configure name="SDLOGGER_DIRECT_SPI_SLAVE" value="SPI_SLAVE1"/>
-      <configure name="SDLOGGER_DIRECT_CONTROL_SWITCH" value="RADIO_AUX3"/>
-      <configure name="LOGGER_LED" value="3"/>
-    </module>
-    -->
-
-    <!-- Below As in telemetry file to add still...
-    <process name="Logger">
-      <mode name="default">
-        <message name="FBW_STATUS"          period="1.2"/>
-        <message name="DL_VALUE"            period="0.5"/>
-        <message name="IMU_ACCEL"           period="0.05"/>
-        <message name="IMU_GYRO"            period="0.05"/>
-        <message name="IMU_MAG"             period="0.1"/>
-        <message name="IMU_ACCEL_RAW"       period="0.002"/>
-        <message name="IMU_GYRO_RAW"        period="0.002"/>
-        <message name="IMU_MAG_RAW"         period="0.002"/>
-        <message name="COMMANDS"            period=".002"/>
-      </mode>
-    </process>
-    -->
-
-    <!-- <module name="digital_cam_video">
-      <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="5.0"/>
-    </module> -->
 
     <!-- When a compute board is connected -->
     <module name="digital_cam_uart">
       <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/>
+      <!-- <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="5.0"/> -->
       <configure name="CAMERA_PORT" value="UART5"/>
       <configure name="SITL_SERIAL" value="/dev/ttyUSB0"/>
     </module>
@@ -595,48 +526,24 @@
     <define name="BODY_TO_IMU_THETA" value="2.9" unit="deg"/><!-- could be moved from AUTO_THROTTLE_NOMINAL_CRUISE_PITCH -->
     <define name="BODY_TO_IMU_PSI" value="0.0" unit="deg"/><!--90-->
 
-    <!-- <define name="MAG_X_SIGN" value="1"/>
-    <define name="MAG_Y_SIGN" value="-1"/>
-    <define name="MAG_Z_SIGN" value="-1"/> -->
-
-    <!-- Calibrated on 20240910 11:45. Extrem hard-iron offset due to magnets close by, room for improvement-->
-    <!-- <define name="IMU_MAG_CALIB" type="array">
+    <!-- Calibrated on 20260828 14:45 -->
+    <define name="IMU_MAG_CALIB" type="array">
       <field type="struct">
-        <field name="abi_id" value="4"/>
+        <field name="abi_id" value="7"/>
         <field name="calibrated" type="struct">
           <field name="neutral" value="true"/>
-          <field name="scale" value="true"/>
+          <field name="scale_f" value="true"/>
         </field>
-        <field name="neutral" value="316,4,546" type="int[]"/>
-        <field name="scale" value="{{27681,24283,48131},{2143,1853,3757}}"/>
+        <field name="neutral" value="495,558,856" type="int[]"/>
+        <field name="scale_f" value="{ 1.3909, 1.4296, 1.3986 }"/>
       </field>
-    </define> -->
-  <define name="IMU_MAG_CALIB" type="array">
-  <field type="struct">
-    <field name="abi_id" value="7"/>
-    <field name="calibrated" type="struct">
-      <field name="neutral" value="true"/>
-      <field name="scale_f" value="true"/>
-    </field>
-    <field name="neutral" value="495,558,856" type="int[]"/>
-    <field name="scale_f" value="{ 1.3909, 1.4296, 1.3986 }"/>
-  </field>
-</define>
-
-    <!-- TODO: Calibrate QMC -->
-    <!-- 
-    <define name="MAG_X_NEUTRAL" value="0"/>
-    <define name="MAG_Y_NEUTRAL" value="0"/>
-    <define name="MAG_Z_NEUTRAL" value="0"/>
-    <define name="MAG_X_SENS" value="3.9" integer="16"/>
-    <define name="MAG_Y_SENS" value="3.9" integer="16"/>
-    <define name="MAG_Z_SENS" value="3.9" integer="16"/> -->
+    </define>
 
   </section>
 
   <section name="AIR_DATA" prefix="AIR_DATA_">
     <define name="CALC_AIRSPEED" value="TRUE"/>
-    <define name="CALC_TAS_FACTOR" value="TRUE"/>
+    <define name="CALC_TAS_FACTOR" value="FALSE"/>
     <define name="CALC_AMSL_BARO" value="TRUE"/>
   </section>
 
@@ -652,19 +559,11 @@
     <define name="AHRS_MAG_UPDATE_ALL_AXES" value="TRUE"/>
     <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>
     <!--<define name="AHRS_FC_IMU_ID" value="ABI_BROADCAST"/>--> <!-- ABI sender id of IMU to use Change if you change your AHRS type -->
-    <!-- As ID choose MAG_CALIB_UKF_ID when using the mag_clib_ukf module change your AHRS type-->
-    <!--<define name="FC_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>-->
-    <!--<define name="FC_MAG_ID" value="MAG_IST8310_SENDER_ID" />-->
     <define name="FC_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
-    <!--<define name="FC_MAG_ID" value="MAG_QMC5883P_SENDER_ID"/> -->
-    <!--<define name="FC_MAG_ID" value="MAG_RM3100_SENDER_ID"/>-->
 
+    <!-- In case the DCM is used again for tests -->
     <!-- <define name="AHRS_DCM_IMU_ID" value="ABI_BROADCAST"/> -->
-    <!--<define name="DCM_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>-->
-    <!-- <define name="DCM_MAG_ID" value="MAG_IST8310_SENDER_ID"/> -->
-    <!--<define name="DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/> -->
-    <!--<define name="DCM_MAG_ID" value="MAG_QMC5883P_SENDER_ID"/>-->
-    <!--<define name="DCM_MAG_ID" value="MAG_RM3100_SENDER_ID"/>-->
+    <!-- <define name="DCM_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/> -->
 
     <!-- 
     <define name="PROPAGATE_LOW_PASS_RATES" value="TRUE"/>
@@ -676,20 +575,17 @@
     <!-- Use the geo_mag module if you have a GNSS, and bettee replace the values with your local magnetic field to be sure -->
     <!-- North, East and Vertical Components do e.g : Normalize[{20120.6, -495.1, 44295.2}]  you get values as below -->
 
+    <!-- TODO: Local Magnetic field FR2026 STRASB -->
+    <!-- <define name="H_X" value="0.413550"/>
+    <define name="H_Y" value="-0.010176"/>
+    <define name="H_Z" value="0.910424"/> -->
+
     <!-- Local Magnetic field DE2026 -->
     <define name="H_X" value="0.413550"/>
     <define name="H_Y" value="-0.010176"/>
     <define name="H_Z" value="0.910424"/>
 
   </section>
-
-  <!-- For e.g. Rotation between sensor frame and IMU frame (phi angle) is not axis aligned , eg for whatever reason 25 deg ofset etc. -->
-  <!-- In this airframe set differently, by the signs of the sensor since they are aligned axis only sign and sensor axis are different-->
-  <!-- <section name="MAG_QMC5883L" prefix="QMC5883L_">
-      <define name="MAG_TO_IMU_PHI" value="0.0"/>
-      <define name="MAG_TO_IMU_THETA" value="0.0"/>
-      <define name="MAG_TO_IMU_PSI" value="0.0"/>
-  </section> -->
 
   <section name="INS" prefix="INS_">
     <define name="BODY_TO_GPS_X" value="0.0" unit="m"/>

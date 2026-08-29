@@ -27,17 +27,61 @@
 
 #include "std.h"
 
+#define SDP3X_SCALE_PRESSURE_SDP31 60U
+#define SDP3X_SCALE_PRESSURE_SDP32 240U
+#define SDP3X_SCALE_PRESSURE_SDP33 20U
+
+static inline int16_t sdp3x_decode_int16(const uint8_t msb, const uint8_t lsb)
+{
+  const uint16_t word = ((uint16_t)msb << 8) | (uint16_t)lsb;
+  return (word & 0x8000U) ? (int16_t)((int32_t)word - 65536L) : (int16_t)word;
+}
+
+static inline bool sdp3x_crc_valid(const uint8_t data[], unsigned size, uint8_t checksum)
+{
+  uint8_t crc = 0xff;
+  for (unsigned i = 0; i < size; i++) {
+    crc ^= data[i];
+    for (uint8_t bit = 0; bit < 8; bit++) {
+      crc = (crc & 0x80U) ? (uint8_t)((crc << 1) ^ 0x31U) : (uint8_t)(crc << 1);
+    }
+  }
+  return crc == checksum;
+}
+
+static inline bool sdp3x_scale_is_valid(uint16_t scale)
+{
+  return scale == SDP3X_SCALE_PRESSURE_SDP31 ||
+         scale == SDP3X_SCALE_PRESSURE_SDP32 ||
+         scale == SDP3X_SCALE_PRESSURE_SDP33;
+}
+
+static inline float sdp3x_pressure_from_raw(int16_t raw, float pressure_scale, bool dynamic_pressure_swapped)
+{
+  const float pressure = (float)raw / pressure_scale;
+  return dynamic_pressure_swapped ? -pressure : pressure;
+}
+
+static inline float sdp3x_pressure_for_airspeed(float pressure, bool bidirectional)
+{
+  return bidirectional || pressure > 0.f ? pressure : 0.f;
+}
+
+static inline float sdp3x_eas_from_pressure(float pressure, float airspeed_scale)
+{
+  const float magnitude = sqrtf(fabsf(pressure) * airspeed_scale);
+  return pressure < 0.f ? -magnitude : magnitude;
+}
+
 struct AirspeedSdp3x {
   float pressure;              ///< (differential) pressure in Pascal
-  float temperature;           ///< Temperature in deg Celcius
+  float temperature;           ///< Temperature in degrees Celsius
   float airspeed;              ///< Airspeed in m/s estimated from (differential) pressure.
-  float airspeed_scale;        ///< Quadratic scale factor to convert (differential) pressure to airspeed
-  float pressure_scale;        ///< Scaling factor from raw measurement to Pascal
+  float airspeed_scale;        ///< Equivalent airspeed scale in (m/s)^2/Pa
+  float pressure_scale;        ///< Sensor output scale in counts/Pa
   float pressure_offset;       ///< Offset in Pascal
   bool autoset_offset;         ///< Set offset value from current filtered value
-  bool sync_send;              ///< Flag to enable sending every new measurement via telemetry for debugging purpose
-  bool initialized;            ///< init flag
-  uint16_t raw_p;              ///< raw value from chip
+  uint16_t raw_p;              ///< Raw signed pressure word, stored as its 16-bit representation
 };
 
 extern struct AirspeedSdp3x sdp3x;
