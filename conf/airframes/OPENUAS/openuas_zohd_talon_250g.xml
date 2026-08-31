@@ -179,12 +179,25 @@
         <!-- <configure name="GPS_LED"  value="2"/> -->
       </module>
 
+      <!-- This GPS is a real M10N ublox, so setting can be saved, no need
+      for ubx_ucenter one has can set it oneself since we have all kinds
+      of nifty Galileo setting we rather keep that so no autosetting for now.
+      In milliseconds. 0x0033 = 51ms = ~19Hz , but make sure all gnss data
+      packets fit port baudrate else GNSS device buffer runs full, not good -->
+       
+      <module name="gps" type="ubx_ucenter">
+        <define name="GPS_UBX_NAV5_DYNAMICS" value="NAV5_DYN_AIRBORNE_4G"/>
+        <define name="GPS_UBX_UCENTER_RATE" value="125"/>      
+      </module> 
+      
       <module name="radio_control" type="sbus">
         <configure name="SBUS_PORT" value="UART2"/>
         <define name="RADIO_HATCH" value="RADIO_AUX2"/>
         <define name="RADIO_MANUALRELEASE" value="RADIO_AUX2"/>
         <define name="RADIO_BRAKE" value="RADIO_AUX4"/>
       </module>
+
+
 
       <!-- <module name="imu_quality_assessment"/> -->
 
