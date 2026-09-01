@@ -67,7 +67,7 @@
       <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="200"/> --><!-- set to 200 if using QMC?-->
       <configure name="USE_MAGNETOMETER" value="TRUE"/><!-- If FALSE Keep QMC acquisition enabled, but use GNSS course for AHRS yaw initially -->
 
-      <!-- ***** First sensor modules... ***** -->
+<!-- ***** First sensor modules... ***** -->
       
       <module name="imu" type="lisa_mx_v2.1">
         <define name="ASPIRIN_2_DISABLE_MAG" value="TRUE"/>
@@ -135,7 +135,7 @@
         <configure name="GPS_PORT" value="UART4"/><!-- Note that the GPS is on UART3 since UART4 is not re-mapped -->
       </module>
 
-      <!-- ***** ...then the rest ***** -->
+<!-- ***** ...then the rest ***** -->
 
       <module name="actuators" type="pwm">
         <define name="SERVO_HZ" value="40"/><!-- not higher than 40 else lightcontroller does not work -->
