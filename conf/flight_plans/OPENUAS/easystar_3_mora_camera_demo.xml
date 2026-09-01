@@ -1,0 +1,251 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="200" ground_alt="140" lat0="48.808252" lon0="7.856789" max_dist_from_home="800" name="IMAV2026" security_height="50" home_mode_height="70">
+  <header>
+#include "modules/datalink/datalink.h"
+#include "modules/digital_cam/dc.h"
+#define LINE_START_FUNCTION dc_autoshoot = DC_AUTOSHOOT_PERIODIC;
+#define LINE_STOP_FUNCTION dc_autoshoot = DC_AUTOSHOOT_STOP;
+  </header>
+
+  <waypoints>
+    <waypoint name="HOME" x="0" y="0" height="2."/>
+    <waypoint name="STDBY" x="20." y="80." height="70."/>
+    <waypoint name="1" x="-20." y="114."/>
+    <waypoint name="2" x="203." y="112."/>
+    <waypoint name="S1" x="-151." y="80."/>
+    <waypoint name="S2" x="162." y="237."/>
+    <waypoint name="AF" x="-21." y="66." alt="215."/>
+    <waypoint name="TD" x="-127." y="0." alt="185."/>
+    <waypoint name="CLIMB" x="53." y="146." height="70."/>
+    <waypoint name="FLARE" x="-100." y="400." height="-40."/>
+    <!-- For a payload release one needs to add external release connected to servo output -->
+    <waypoint name="WAIT" x="-70." y="-70." height="115."/>
+    <waypoint name="_BASELEG" x="56." y="367."/>
+    <waypoint name="START" x="60." y="-120." height="65."/>
+    <!-- Note that 80m is the release height, and if e.g. one is not allowed to go below 60 meters, one needs at least 5m GPS height fluctuation into account
+    Also if we steeply move UP from START to RELEASE the release will be more accurate possibly -->
+    <waypoint name="RELEASE" x="20." y="-45." height="80."/> <!-- along line start to release this is the end point -->
+    <!-- Position where target would be located.  -->
+    <!-- Note that 0m is the target height, on the ground, and allowed -->
+    <waypoint name="TARGET" x="200." y="200." height="0."/>
+    <!-- Can be used for out of Soft Geofence tests -->
+    <waypoint name="TESTTOOFAR" x="-48." y="537."/>
+
+    <!--
+    Ignored the following areas, they are not needed in the flight plan:
+    - Waiting area and spectator area
+    - Team preparation area
+    - Toilette & food area
+    -->
+
+    <!-- STRASBOURG Todo separate file -->
+    <!-- Hard geofence sector corners, so that the aircraft is never allowed outside, needs forcedcrash-->
+    <waypoint name="GF1" lat="48.80570456695289" lon="7.84961762660713"/>
+    <waypoint name="GF2" lat="48.81084279436229" lon="7.84723708200721"/>
+    <waypoint name="GF3" lat="48.81380786901547" lon="7.86121460297154"/>
+    <waypoint name="GF4" lat="48.80863939598765" lon="7.86403963556767"/>
+
+    <!-- Soft geofence sector corners, as a backup just in case something is amiss and we still can fly plane back -->
+    <waypoint name="SGF1" lat="48.80570456695289" lon="7.84961762660713"/>
+    <waypoint name="SGF2" lat="48.81084279436229" lon="7.84723708200721"/>
+    <waypoint name="SGF3" lat="48.81380786901547" lon="7.86121460297154"/>
+    <waypoint name="SGF4" lat="48.80863939598765" lon="7.86403963556767"/>
+
+    <!-- Flight zone, only inside there are useful targets, for going round overpass allowed-->
+    <waypoint name="FZ1" lat="48.81085705131392" lon="7.85104316760250"/>
+    <waypoint name="FZ2" lat="48.80624566949345" lon="7.85172516481609"/>
+    <waypoint name="FZ3" lat="48.80644449303783" lon="7.85281750022357"/>
+    <waypoint name="FZ4" lat="48.80700442812408" lon="7.85227393518809"/>
+    <waypoint name="FZ5" lat="48.80852715461505" lon="7.85924210211808"/>
+    <waypoint name="FZ6" lat="48.80902410515276" lon="7.85906300339434"/>
+    <waypoint name="FZ7" lat="48.80930449429145" lon="7.85930000122145"/>
+    <waypoint name="FZ8" lat="48.81250109175638" lon="7.85962794135288"/>
+    <waypoint name="FZ9" lat="48.81089414069912" lon="7.85196675859237"/>
+
+    <!-- Mapping area 1 (Mission 1) -->
+    <waypoint name="MA1" lat="48.80693509354554" lon="7.85164127905473"/>
+    <waypoint name="MA2" lat="48.80768200909922" lon="7.85500210052321"/>
+    <waypoint name="MA3" lat="48.81139279833167" lon="7.85440157563368"/>
+    <waypoint name="MA4" lat="48.81085311865281" lon="7.85105155114396"/>
+
+    <!-- Mapping area 2 (Mission 1) -->
+    <waypoint name="MX1" lat="48.80762099075623" lon="7.85503862863751"/>
+    <waypoint name="MX2" lat="48.80853085515681" lon="7.85922936963215"/>
+    <waypoint name="MX3" lat="48.80902546150865" lon="7.85905139132392"/>
+    <waypoint name="MX4" lat="48.80930953485449" lon="7.85929233676662"/>
+    <waypoint name="MX5" lat="48.81249409545106" lon="7.85962245499655"/>
+    <waypoint name="MX6" lat="48.81139512077117" lon="7.85441047025036"/>
+
+    <!-- Fire zone (Mission 2) -->
+    <waypoint name="FIRE1" lat="48.80902783246171" lon="7.85289329256999"/>
+    <waypoint name="FIRE2" lat="48.80916266922539" lon="7.85391504353729"/>
+    <waypoint name="FIRE3" lat="48.81072613097682" lon="7.85342158470375"/>
+    <waypoint name="FIRE4" lat="48.81060036833018" lon="7.85241003689887"/>
+
+    <!-- Dead man area (Mission 4) -->
+    <waypoint name="DMA1"  lat="48.81063598702768" lon="7.851967313095118"/>
+    <waypoint name="DMA2"  lat="48.81068663657088" lon="7.851885616275968"/>
+    <waypoint name="DMA3"  lat="48.81071785511318" lon="7.851748680628827"/>
+    <waypoint name="DMA4"  lat="48.81070426216232" lon="7.851595892999059"/>
+    <waypoint name="DMA5"  lat="48.81066424008195" lon="7.851485853499867"/>
+    <waypoint name="DMA6"  lat="48.81059602654957" lon="7.851402498090652"/>
+    <waypoint name="DMA7"  lat="48.81054910018192" lon="7.851379107966034"/>
+    <waypoint name="DMA8"  lat="48.81043958522253" lon="7.851372347815815"/>
+    <waypoint name="DMA9"  lat="48.81036165071058" lon="7.851395505300484"/>
+    <waypoint name="DMA10" lat="48.81027524700231" lon="7.851452462913910"/>
+    <waypoint name="DMA11" lat="48.81022286394178" lon="7.851536359937978"/>
+    <waypoint name="DMA12" lat="48.81019431297392" lon="7.851643730785032"/>
+    <waypoint name="DMA13" lat="48.81019700000000" lon="7.851758099999999"/>
+    <waypoint name="DMA14" lat="48.81022950962421" lon="7.851884013744701"/>
+    <waypoint name="DMA15" lat="48.81028099708648" lon="7.851985427377592"/>
+    <waypoint name="DMA16" lat="48.81037442226479" lon="7.852043721827000"/>
+    <waypoint name="DMA17" lat="48.81047316755133" lon="7.852047122386534"/>
+    <waypoint name="DMA18" lat="48.81056314958684" lon="7.852020166194695"/>
+
+    <!-- Drop zone (Mission 3) -->
+    <waypoint name="DROP1" lat="48.80625637325760" lon="7.851733579757754"/>
+    <waypoint name="DROP2" lat="48.80629723694464" lon="7.851972690092925"/>
+    <waypoint name="DROP3" lat="48.80690569624477" lon="7.851858729534955"/>
+    <waypoint name="DROP4" lat="48.80684704383820" lon="7.851642524745504"/>
+
+    <!-- Takeoff and Landing zone Multirotor -->
+    <waypoint name="TLMR1" lat="48.80642425852793" lon="7.852095289137102"/>
+    <waypoint name="TLMR2" lat="48.80647391182048" lon="7.852394923506179"/>
+    <waypoint name="TLMR3" lat="48.80663346155104" lon="7.852326710895678"/>
+    <waypoint name="TLMR4" lat="48.80659080367964" lon="7.852030820403031"/>
+
+    <!-- Takeoff and Landing zone VTOL Fixed-wing -->
+    <waypoint name="TLFW1" lat="48.80768085648797" lon="7.851538570590959"/>
+    <waypoint name="TLFW2" lat="48.80774095849599" lon="7.852196652380861"/>
+    <waypoint name="TLFW3" lat="48.80906601377884" lon="7.852087722616552"/>
+    <waypoint name="TLFW4" lat="48.80899886628665" lon="7.851348534388965"/>
+
+  </waypoints>
+
+  <sectors>
+    <!-- _ in front means waypoint is not visible, therefore corners cannot be accidentally changed -->
+    <sector color="white" name="Geofence">
+      <corner name="GF1"/>
+      <corner name="GF2"/>
+      <corner name="GF3"/>
+      <corner name="GF4"/>
+    </sector>
+    <sector color="black" name="Flight_zone">
+      <corner name="FZ1"/>
+      <corner name="FZ2"/>
+      <corner name="FZ3"/>
+      <corner name="FZ4"/>
+      <corner name="FZ5"/>
+      <corner name="FZ6"/>
+      <corner name="FZ7"/>
+      <corner name="FZ8"/>
+      <corner name="FZ9"/>
+    </sector>
+    <sector color="lightblue" name="Mapping_area_1">
+      <corner name="MA1"/>
+      <corner name="MA2"/>
+      <corner name="MA3"/>
+      <corner name="MA4"/>
+    </sector>
+    <sector color="gray" name="Mapping_area_2">
+      <corner name="MX1"/>
+      <corner name="MX2"/>
+      <corner name="MX3"/>
+      <corner name="MX4"/>
+      <corner name="MX5"/>
+      <corner name="MX6"/>
+    </sector>
+    <sector color="red" name="Fire_zone">
+      <corner name="FIRE1"/>
+      <corner name="FIRE2"/>
+      <corner name="FIRE3"/>
+      <corner name="FIRE4"/>
+    </sector>
+    <sector color="green" name="Dead_man_area">
+      <corner name="DMA1"/>
+      <corner name="DMA2"/>
+      <corner name="DMA3"/>
+      <corner name="DMA4"/>
+      <corner name="DMA5"/>
+      <corner name="DMA6"/>
+      <corner name="DMA7"/>
+      <corner name="DMA8"/>
+      <corner name="DMA9"/>
+      <corner name="DMA10"/>
+      <corner name="DMA11"/>
+      <corner name="DMA12"/>
+      <corner name="DMA13"/>
+      <corner name="DMA14"/>
+      <corner name="DMA15"/>
+      <corner name="DMA16"/>
+      <corner name="DMA17"/>
+      <corner name="DMA18"/>
+    </sector>
+    <sector color="purple" name="Drop_zone">
+      <corner name="DROP1"/>
+      <corner name="DROP2"/>
+      <corner name="DROP3"/>
+      <corner name="DROP4"/>
+    </sector>
+    <sector color="pink" name="Takeoff_Landing_zone_Multirotor">
+      <corner name="TLMR1"/>
+      <corner name="TLMR2"/>
+      <corner name="TLMR3"/>
+      <corner name="TLMR4"/>
+    </sector>
+    <sector color="yellow" name="Takeoff_Landing_zone_Fixedwing">
+      <corner name="TLFW1"/>
+      <corner name="TLFW2"/>
+      <corner name="TLFW3"/>
+      <corner name="TLFW4"/>
+    </sector>
+  </sectors>
+
+  <exceptions>
+  <!--
+    <exception cond="And((datalink_time) @GT 300, autopilot.launch @GT 0) " deroute="Standby"/>
+    <exception cond="LOW_BAT_LEVEL @GT PowerVoltage()" deroute="Standby"/>
+    <exception cond="Or(! InsideMissionBoundary(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 600) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Waiting for RC Transmitter')) @AND !(nav_block == IndexOfBlock('Takeoff')) @AND !(nav_block == IndexOfBlock('land')) @AND !(nav_block == IndexOfBlock('Final')) @AND !(nav_block == IndexOfBlock('Flare'))" deroute="Standby"/>
+  -->
+  </exceptions>
+  <blocks>
+    <block name="Wait GPS">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetGroundReferenceHere()"/>
+      <!--call_once fun="NavSetAltitudeReferenceHere()"/-->
+    </block>
+    <block name="Holding point">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <attitude roll="0" throttle="0" vmode="throttle"/>
+    </block>
+    <block name="Takeoff" strip_icon="takeoff.png" strip_button="Takeoff (wp CLIMB)">
+      <set var="autopilot.kill_throttle" value="0"/>
+      <set var="autopilot.flight_time" value="0"/>
+      <set var="autopilot.launch" value="1"/>
+      <exception cond="GetPosAlt() @GT GetAltRef()+25" deroute="Standby"/>
+      <go wp="CLIMB"/>
+    </block>
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <circle radius="nav_radius" wp="STDBY"/>
+    </block>
+    <block name="StartCameraSurvey">
+      <call_once fun="dc_send_command(DC_SHOOT)"/>
+      <set value="DC_AUTOSHOOT_PERIODIC" var="dc_autoshoot"/>
+      <call_once fun="nav_survey_poly_osam_setup(WP_MA1, 4, 45, 0)"/>
+      <deroute block="Searching"/>
+    </block>
+    <block name="Searching" strip_button="Run Camera Survey" strip_icon="survey.png">
+      <exception cond="PolySurveySweepBackNum >= 1" deroute="ReturnToBase"/>
+      <call fun="nav_survey_poly_osam_run()"/>
+    </block>
+    <block name="ReturnToBase">
+      <call_once fun="dc_stop()"/>
+      <deroute block="Standby"/>
+    </block>
+  </blocks>
+</flight_plan>

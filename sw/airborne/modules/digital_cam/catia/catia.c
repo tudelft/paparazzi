@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <stdbool.h>
 #include <string.h>
+#include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -40,6 +41,10 @@
 #define CATIA_LOCAL_APP_DEVICE "/tmp/catia-app"
 #endif
 
+#ifndef CATIA_LOCAL_LOCK_FILE
+#define CATIA_LOCAL_LOCK_FILE "/tmp/catia-local.lock"
+#endif
+
 #ifndef CATIA_FAKE_IMAGE
 #define CATIA_FAKE_IMAGE "fake-camera.jpg"
 #endif
@@ -48,6 +53,7 @@ static void *handle_msg_shoot(void *ptr);
 static inline void send_msg_image_buffer(void);
 static inline void send_msg_status(void);
 static void print_usage(const char *program);
+static int lock_local_instance(void);
 static pid_t start_local_serial_bridge(void);
 static int wait_for_path(const char *path);
 static int copy_fake_image(const char *source, char *destination, size_t destination_size, int image_number);
@@ -62,6 +68,7 @@ static bool local_bridge_requested;
 static bool local_bridge_owned;
 static volatile sig_atomic_t keep_running = 1;
 static pid_t socat_pid = -1;
+static int local_lock_fd = -1;
 static const char *fake_image = CATIA_FAKE_IMAGE;
 
 int main(int argc, char *argv[])
@@ -121,6 +128,9 @@ int main(int argc, char *argv[])
       return 2;
     }
     if (local_bridge_requested) {
+      if (lock_local_instance() != 0) {
+        return 1;
+      }
       socat_pid = start_local_serial_bridge();
       if (socat_pid < 0) {
         return 1;
@@ -157,6 +167,8 @@ int main(int argc, char *argv[])
   shooting_idx = 0;
   shooting_count = 0;
   shooting_thread_count = 0;
+
+  printf("Started OK\n");
 
   // MAIN loop
   while (keep_running) {
@@ -257,6 +269,9 @@ static void *handle_msg_shoot(void *ptr)
     chdk_pipe_shoot(filename);
   }
   printf("CATIA-%d:\tShooting: got image %s\n", shoot->data.nr, filename);
+  if (filename[0] != '\0') {
+    printf("Photo take %d\n", shoot->data.nr);
+  }
 
   pthread_mutex_lock(&mut);
   is_shooting = 0;
@@ -331,6 +346,23 @@ static void print_usage(const char *program)
   printf("  --local           create %s <-> %s and use a fake camera\n",
          CATIA_LOCAL_SIM_DEVICE, CATIA_LOCAL_APP_DEVICE);
   printf("  --fake-image FILE image copied for each shot in local mode (default: %s)\n", CATIA_FAKE_IMAGE);
+}
+
+static int lock_local_instance(void)
+{
+  local_lock_fd = open(CATIA_LOCAL_LOCK_FILE, O_RDWR | O_CREAT, 0644);
+  if (local_lock_fd < 0) {
+    fprintf(stderr, "CATIA:\tfailed to open local instance lock %s: %s\n",
+            CATIA_LOCAL_LOCK_FILE, strerror(errno));
+    return -1;
+  }
+  if (flock(local_lock_fd, LOCK_EX | LOCK_NB) != 0) {
+    fprintf(stderr, "CATIA:\tlocal mode is already running; stop it before starting another instance\n");
+    close(local_lock_fd);
+    local_lock_fd = -1;
+    return -1;
+  }
+  return 0;
 }
 
 static pid_t start_local_serial_bridge(void)
@@ -430,6 +462,10 @@ static void stop_local_serial_bridge(void)
     unlink(CATIA_LOCAL_SIM_DEVICE);
     unlink(CATIA_LOCAL_APP_DEVICE);
     local_bridge_owned = false;
+  }
+  if (local_lock_fd >= 0) {
+    close(local_lock_fd);
+    local_lock_fd = -1;
   }
 }
 

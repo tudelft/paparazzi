@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 PAPARAZZI_HOME=$(cd -- "$SCRIPT_DIR/../.." && pwd)
-AIRCRAFT="Easystar_3_Camera_Demo"
+AIRCRAFT="Easystar_3"
 CAMERA_DEVICE="/tmp/catia-sim"
 
 cd "$PAPARAZZI_HOME"
@@ -28,4 +28,4 @@ make AIRCRAFT="$AIRCRAFT" clean_ac
 make AIRCRAFT="$AIRCRAFT" SITL_SERIAL="$CAMERA_DEVICE" nps.compile
 
 echo "EasyStar MORA demo: starting NPS camera survey"
-exec "var/aircrafts/$AIRCRAFT/nps/simsitl" --norc --rc_script 0 --time_factor 2
+exec "var/aircrafts/$AIRCRAFT/nps/simsitl" --norc --rc_script 0 --time_factor 1

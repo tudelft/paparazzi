@@ -13,7 +13,7 @@ sys.path.insert(0, str(PAPARAZZI_HOME / "var/lib/python"))
 from pprzlink.ivy import IvyMessagesInterface
 from pprzlink.message import PprzMessage
 
-AIRCRAFT_ID = 155
+AIRCRAFT_ID = 135
 TAKEOFF_BLOCK = 1
 SURVEY_ALTITUDE_MSL = 245
 IVY_BUS = "127.255.255.255:2010"

@@ -48,7 +48,7 @@
     <target name="ap" board="matek_f405_te_sd">
 
       <!--<define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>-->
-      <define name="DEBUG" value="0"/><!--Enable for debug output -->
+      <define name="DEBUG" value="FALSE"/><!--Set to TRUE for debug output -->
       <!--<define name="USE_PERIODIC_TELEMETRY_REPORT" value="TRUE"/> -->
 
       <configure name="CPU_LED" value="1"/><!-- Multicolor -->
@@ -128,9 +128,6 @@
         <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
       </module>
 
-          <!-- TODO Calibrate! -->
-
-
       <module name="airspeed" type="sdp3x">
         <configure name="SDP3X_I2C_DEV" value="i2c1"/>
         <!-- SDP33: signed output, 20 counts/Pa, +/-1500 Pa (about 49.5 m/s EAS at MSL). -->
@@ -153,10 +150,10 @@
         <configure name="RANGEFINDER_I2C_USE_FOR_AGL" value="FALSE"/>
         <configure name="RANGEFINDER_I2C_COMPENSATE_ROTATION" value="TRUE"/>
         <configure name="RANGEFINDER_I2C_PERIODIC_FREQUENCY" value="100"/><!-- 200Hz possible according to datasheet -->
-        <define name="RANGEFINDER_I2C_USE_FILTER" value="FALSE"/><!-- no need VB22A filters internally quite well for our purposes -->
+        <define name="RANGEFINDER_I2C_USE_FILTER" value="FALSE"/>
         <define name="RANGEFINDER_I2C_MEDIAN_SIZE" value="5"/>
         <define name="RANGEFINDER_I2C_MIN_RANGE" value="0.005" unit="m"/>
-        <define name="RANGEFINDER_I2C_MAX_RANGE" value="15.0" unit="m"/><!-- For e.g. VB22A Theoretically 20m at 90% reflectivity but in reality less -->
+        <define name="RANGEFINDER_I2C_MAX_RANGE" value="8.0" unit="m"/>
         <define name="RANGEFINDER_I2C_OFFSET" value="0.0" unit="m"/>
         <define name="RANGEFINDER_I2C_SCALE" value="0.001"/><!-- Since VB22A sensor is set to emit in millimeters per default-->
         <define name="RANGEFINDER_I2C_READ_MODE_SINGLE" value="0x00"/><!-- Specifically to read for a VB22A sensor -->
@@ -315,14 +312,12 @@
           <!-- float_cmpl_quat enables GPS coordinated-turn compensation by default
             for fixed-wing firmware; the old DCM-only defines do not apply. -->
     <!-- If AHRS_MAG_CORRECT_FREQUENCY is set outside of target no need USE_MAGNETOMETER it is assumed TRUE -->
-    <configure name="USE_MAGNETOMETER" value="TRUE"/>
+    <configure name="USE_MAGNETOMETER" value="FALSE"/>
 
     <!-- *** Modules used for all targets, also simulation -->
 
     <module name="actuators" type="pwm"/>
-
     <module name="air_data"/>
-
     <module name="control" type="energyadaptive"/>
 
     <!-- Continuously estimates gyro bias, including unheated IMU warm-up drift. -->
@@ -331,10 +326,10 @@
     <module name="ins" type="alt_float"/>
 
     <module name="navigation"/>
-    <!-- <module name="nav" type="drop"/>
+    <!-- <module name="nav" type="drop"/>-->
     <module name="nav" type="line"/>
     <module name="nav" type="line_border"/>
-    <module name="nav" type="line_osam"/> -->
+    <module name="nav" type="line_osam"/>
 
     <!-- needed to be able to survey an area -->
     <module name="nav" type="survey_polygon">
@@ -343,11 +338,11 @@
     <module name="nav" type="survey_poly_osam"/>
 
     <!-- In case we need it to survey an area -->
-    <!-- <module name="nav" type="smooth"/>
+    <module name="nav" type="smooth"/>
     <module name="nav" type="vertical_raster"/>
     <module name="nav" type="flower"/>
     <module name="nav" type="spiral_3D"/>
-    <module name="nav" type="cube"/> -->
+    <module name="nav" type="cube"/>
 
     <!-- <module name="nav" type="launcher"/> -->
     <!-- <module name="nav" type="skid_landing"/> -->
@@ -363,7 +358,7 @@
     <!-- When a compute board with camera is connected -->
     <!-- For SITL testing with FORC on desk taking pictures SITL_SERIAL-->
     <!-- <module name="digital_cam_uart">
-      <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/>
+      <define name="DC_AUTOSHOOT_PERIOD" value="3.0" unit="sec"/>
       <configure name="CAMERA_PORT" value="UART1"/>
       <configure name="SITL_SERIAL" value="/dev/ttyUSB0"/>
     </module> -->
@@ -552,14 +547,6 @@
 
   </section> 
 
-  <!-- <section name="CAMERA" prefix="CAM_">-->  
-    <!-- <include href="conf/airframes/OPENUAS/calib/cam_calib_$AC_ID.xml" /> -->
-    <!-- <field type="struct">
-      <field name="abi_id" value="111"/>
-    </field>
-  </section>   -->
-
-
   <section name="AHRS" prefix="AHRS_">
     <!-- AHRS filter tuning values -->
     <define name="ACCEL_OMEGA" value="0.08"/>
@@ -576,6 +563,11 @@
     <define name="MAG_UPDATE_ALL_AXES" value="TRUE"/>
     <define name="GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>
     <define name="FC_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
+
+    <!-- TODO: Local Magnetic field FR2026 Strasbourg -->
+    <!-- <define name="H_X" value="0.413550"/>
+    <define name="H_Y" value="-0.010176"/>
+    <define name="H_Z" value="0.910424"/> -->
 
     <!-- Local Magnetic field DE2026 -->
     <define name="H_X" value="0.413550"/>

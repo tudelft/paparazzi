@@ -65,7 +65,7 @@
       <!-- <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/> --><!-- FIXME: Not working under Chibios -->
 
       <!-- <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="200"/> --><!-- set to 200 if using QMC?-->
-      <configure name="USE_MAGNETOMETER" value="TRUE"/><!-- If FALSE Keep QMC acquisition enabled, but use GNSS course for AHRS yaw initially -->
+      <configure name="USE_MAGNETOMETER" value="FALSE"/><!-- If FALSE keep acquisition enabled, but use GNSS course for AHRS yaw initially -->
 
 <!-- ***** First sensor modules... ***** -->
       
@@ -80,7 +80,7 @@
          <configure name="BMP_I2C_DEV" value="i2c2"/>
          <configure name="USE_BARO_BOARD" value="TRUE"/>
          <!-- <configure name="INS_BARO_ID" value="BARO_BMP_SENDER_ID"/> -->
-         <!-- <define name="USE_BARO_MEDIAN_FILTER" value="TRUE"/> -->
+         <define name="USE_BARO_MEDIAN_FILTER" value="TRUE"/>
          <!-- <define name="SENSOR_SYNC_SEND" value="TRUE"/>  -->
       </module>
 
@@ -94,7 +94,7 @@
         <define name="SDP3X_DYNAMIC_PRESSURE_SWAPPED" value="TRUE"/>
         <!-- <define name="USE_AIRSPEED_LOWPASS_FILTER" value="FALSE"/> --><!-- TRUE per default -->
         <!-- Filter pressure at about 1 Hz; the published airspeed remains in m/s. -->
-        <define name="SDP3X_LOWPASS_TAU" value="0.15"/><!-- 0.15 is the default, but consider upto 0.10 if logs show noticeable airspeed-control lag-->
+        <define name="SDP3X_LOWPASS_TAU" value="0.13"/><!-- 0.15 is the default, but consider upto 0.10 if logs show noticeable airspeed-control lag-->
         <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
         <!-- <define name="USE_AIRSPEED" value="TRUE"/> --><!-- automaticaly set with one above -->
         <!-- <define name="SDP3X_SYNC_SEND" value="TRUE"/> --><!-- Disable after debugging; sends unfiltered samples at 100 Hz. -->
@@ -117,13 +117,13 @@
       <module name="rangefinder_i2c"> 
         <configure name="RANGEFINDER_I2C_PORT" value="i2c2"/>
         <configure name="RANGEFINDER_I2C_ADDR" value="0xA4"/> <!-- 0x52 in 7 bit -->
-        <configure name="RANGEFINDER_I2C_USE_FOR_AGL" value="FALSE"/>
+        <configure name="RANGEFINDER_I2C_USE_FOR_AGL" value="TRUE"/>
         <configure name="RANGEFINDER_I2C_COMPENSATE_ROTATION" value="TRUE"/>
         <configure name="RANGEFINDER_I2C_PERIODIC_FREQUENCY" value="100"/><!-- 200Hz possible according to datasheet -->
-        <define name="RANGEFINDER_I2C_USE_FILTER" value="FALSE"/><!-- no need VB22A filters internally quite well for our purposes -->
+        <define name="RANGEFINDER_I2C_USE_FILTER" value="FALSE"/><!-- not always needed VB22A filters internally quite well -->
         <define name="RANGEFINDER_I2C_MEDIAN_SIZE" value="5"/>
         <define name="RANGEFINDER_I2C_MIN_RANGE" value="0.005" unit="m"/>
-        <define name="RANGEFINDER_I2C_MAX_RANGE" value="15.0" unit="m"/><!-- For e.g. VB22A Theoretically 20m at 90% reflectivity but in reality less -->
+        <define name="RANGEFINDER_I2C_MAX_RANGE" value="8.0" unit="m"/><!-- For e.g. VB22A Theoretically 20m at 90% reflectivity in daylight real useful range ~ 8m upto 0m-->
         <define name="RANGEFINDER_I2C_OFFSET" value="0.0" unit="m"/>
         <define name="RANGEFINDER_I2C_SCALE" value="0.001"/><!-- Since VB22A sensor is set to emit in millimeters per default-->
         <define name="RANGEFINDER_I2C_READ_MODE_SINGLE" value="0x00"/><!-- Specifically to read for a VB22A sensor -->
@@ -156,9 +156,9 @@
       </module>
 
       <module name="geo_mag"/>
-      <!-- <module name="sys_mon">
-        <define name="SYS_MON_SCHEDULED_TELEMETRY" value="TRUE"/>
-      </module> -->
+      <!-- <module name="sys_mon">-->
+        <!-- <define name="SYS_MON_SCHEDULED_TELEMETRY" value="TRUE"/> -->
+      <!--</module> -->
 
       <!--
       <module name="takeoff_detect">
@@ -171,7 +171,7 @@
       -->
 
       <!-- Only enable with a module that supports v_ctl_auto_airspeed_setpoint-->
-      <!--
+      
       <module name="flight_benchmark">
         <define name="BENCHMARK_AIRSPEED" value="TRUE"/>
         <define name="BENCHMARK_ALTITUDE" value="TRUE"/>
@@ -180,7 +180,7 @@
         <define name="BENCHMARK_TOLERANCE_ALTITUDE" value="4" unit="m"/>
         <define name="BENCHMARK_TOLERANCE_POSITION" value="6" unit="m"/>
       </module>
-      -->
+      
 
     </target>
 
@@ -243,8 +243,8 @@
     <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN"/>
     <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/>
 
-    <configure name="USE_MAGNETOMETER" value="TRUE"/>
-    <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/>
+    <configure name="USE_MAGNETOMETER" value="FALSE"/>
+    <define name="USE_MAGNETOMETER_ONGROUND" value="FALSE"/>
 
     <module name="control" type="energyadaptive"/><!-- Better make sure your airspeed sensor working well -->
 
@@ -287,7 +287,7 @@
 
     <module name="photogrammetry_calculator"/>
 
-    <!-- <module name="agl_dist"/> -->
+    <module name="agl_dist"/>
 
     <!-- Quite a good alternative for the catapult module in this case -->
     <!--<module name="takeoff_detect">-->
@@ -300,24 +300,24 @@
     <!--<define name="TAKEOFF_DETECT_ALSO_IN_AUTO1" value="TRUE"/>-->    <!-- Sometimes throwing is not so easy :) so takeoff stabilized -->
     <!--</module>-->
 
-
     <!-- When a compute board is connected -->
     <module name="digital_cam_uart">
       <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/>
       <!-- <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="5.0"/> -->
-      <configure name="CAMERA_PORT" value="UART5"/>
-      <configure name="SITL_SERIAL" value="/dev/ttyUSB0"/>
+      <configure name="CAMERA_PORT" value="UART5"/> <!-- For the real Flightcontroller to MORA connection-->
+      <configure name="SITL_SERIAL" value="/tmp/catia-sim"/><!-- for local PC -->
+      <configure name="SITL_SERIAL" value="/dev/ttyUSB0"/><!-- for actual device via FTDO to NORA on desk -->
     </module>
 
-    <!-- <module name="traffic_info">
-      <define name="TRAFFIC_INFO_USE_MESH" value="TRUE"/>
-      <define name="MESH_AUTO_TELEMETRY" value="TRUE"/>
-      <define name="MESH_SOLO_QUIET_MS" value="5000"/>
-    </module> -->
+    <!-- <module name="traffic_info"> -->
+      <!-- <define name="TRAFFIC_INFO_USE_MESH" value="TRUE"/> -->
+      <!-- <define name="MESH_AUTO_TELEMETRY" value="TRUE"/> -->
+      <!-- <define name="MESH_SOLO_QUIET_MS" value="5000"/> -->
+    <!--</module> -->
     
     <!-- <module name="tcas"/> -->
 
-    <!-- <module name="imu_quality_assessment"/>--><!-- Can be disabled after initial tuning -->
+    <module name="imu_quality_assessment"/><!-- Can be disabled after initial tuning -->
     <!-- <module name="tune_airspeed"/>--><!-- Can be disabled after initial tuning -->
 
     <define name="RADIO_MANUALLIGHT" value="RADIO_AUX2"/>
@@ -444,7 +444,7 @@
     <set servo="S_ELEVATOR" value="@PITCH+(-BRAKEGAIN*SPOILERON_BRAKE_FULL)"/>
     <set servo="S_RUDDER" value="$yaw_ctrl_sgl"/>
     <!-- <set servo="S_LIGHT" value="((autopilot.mode == AP_MODE_AUTO2) ? MAX_PPRZ : @ACTIVELIGHTS)"/> -->
-    <set servo="S_LIGHT" value="((autopilot.mode == AP_MODE_AUTO2) ? MIN_PPRZ : MIN_PPRZ)"/><!-- Temporary off while desktests debug it is annoying-->
+    <set servo="S_LIGHT" value="((autopilot.mode == AP_MODE_AUTO2) ? MIN_PPRZ : MIN_PPRZ)"/><!-- Switched off Temporary while desktests debug it is annoying-->
     
     <!-- Enable bare values below for debugging to validate the basics first. Make sure to disable the calculated ones above -->
     <!-- <set servo="S_THROTTLE" value="@THROTTLE"/> -->
@@ -494,7 +494,6 @@
     <define name="IMU_GYRO_R_SENS_DEN" value="1000"/>
   </section> -->
 
-  <!-- External QMC5338L TODO: Calibrate -->
   <!-- External RM3100 TODO: Calibrate -->
 
   <section name="IMU" prefix="IMU_">
@@ -576,7 +575,7 @@
     <!-- Use the geo_mag module if you have a GNSS, and bettee replace the values with your local magnetic field to be sure -->
     <!-- North, East and Vertical Components do e.g : Normalize[{20120.6, -495.1, 44295.2}]  you get values as below -->
 
-    <!-- TODO: Local Magnetic field FR2026 STRASB -->
+    <!-- TODO: Local Magnetic field FR2026 Strasbourg -->
     <!-- <define name="H_X" value="0.413550"/>
     <define name="H_Y" value="-0.010176"/>
     <define name="H_Z" value="0.910424"/> -->
@@ -609,17 +608,15 @@
 
   <section name="AGL" prefix="AGL_DIST_SONAR_">
     <define name="ID" value="RANGEFINDER_I2C_SENDER_ID"/>
-    <!-- <define name="ID" value="AGL_RANGEFINDER_I2C_ID"/> --><!-- maybe?-->
-    <!-- <define name="ID" value="ABI_BROADCAST"/> --><!-- already defined -->
     <define name="MAX_RANGE" value="$(RANGEFINDER_I2C_MAX_RANGE)/2" unit="m"/><!-- For AGL -->
-    <define name="MIN_RANGE" value="$(RANGEFINDER_I2C_MIN_RANGE)" unit="m"/><!-- For AGL -->
+    <define name="MIN_RANGE" value="$(RANGEFINDER_I2C_MIN_RANGE)+0.7" unit="m"/><!-- For AGL -->
     <define name="FILTER" value="0.1"/>
   </section>
 
   <section name="HORIZONTAL CONTROL" prefix="H_CTL_">
 
-    <define name="COURSE_PGAIN" value="0.9"/>
-    <define name="COURSE_DGAIN" value="0.05"/>
+    <define name="COURSE_PGAIN" value="0.96"/>
+    <define name="COURSE_DGAIN" value="0.10"/>
     <define name="COURSE_TAU" value="0.7"/>
 
     <define name="COURSE_PRE_BANK_CORRECTION" value="0.99"/>
@@ -665,12 +662,12 @@
     <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.16" unit="%/(m/s)"/>
     <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.083" unit="rad/(m/s)"/>
 
-    <define name="AIRSPEED_PGAIN" value="0.20"/>
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.055" unit="%/(m/s)"/>
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.01"/>
-    <define name="AUTO_PITCH_OF_AIRSPEED_PGAIN" value="0.03"/>
-    <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.004"/>
-    <define name="AUTO_PITCH_OF_AIRSPEED_DGAIN" value="0.03"/>
+    <define name="AIRSPEED_PGAIN" value="0.22"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.060" unit="%/(m/s)"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.04"/>
+    <define name="AUTO_PITCH_OF_AIRSPEED_PGAIN" value="0.05"/>
+    <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.007"/>
+    <define name="AUTO_PITCH_OF_AIRSPEED_DGAIN" value="0.04"/>
 
     <define name="ENERGY_TOT_PGAIN" value="0.42"/>
     <define name="ENERGY_TOT_IGAIN" value="0.20"/>
@@ -686,10 +683,10 @@
     <define name="AUTO_GROUNDSPEED_PGAIN" value="0.75"/>
     <define name="AUTO_GROUNDSPEED_IGAIN" value="0.20"/>
 
-    <define name="THROTTLE_SLEW_LIMITER" value="0.35" unit="s"/>
+    <define name="THROTTLE_SLEW_LIMITER" value="0.30" unit="s"/>
     <define name="AUTO_AIRSPEED_SETPOINT" value="12.0" unit="m/s"/>
     <define name="AIRSPEED_MIN" value="7.0" unit="m/s"/>
-    <define name="AIRSPEED_MAX" value="17.0" unit="m/s"/>
+    <define name="AIRSPEED_MAX" value="17.0" unit="m/s"/><!-- THe max we want, not what is possible possible is 20 m/s-->
 
     <!-- landing control loop -->
     <define name="LANDING_THROTTLE_PGAIN" value="600.0"/>
@@ -745,10 +742,10 @@
     <define name="CLIMB_AIRSPEED" value="10.0" unit="m/s"/>
     <define name="TRACKING_AIRSPEED" value="14.0" unit="m/s"/>
     <define name="GLIDE_AIRSPEED" value="7.5" unit="m/s"/>
-    <define name="STALL_AIRSPEED" value="5.3" unit="m/s"/>
+    <define name="STALL_AIRSPEED" value="5.6" unit="m/s"/>
     <define name="RACE_AIRSPEED" value="16.0" unit="m/s"/>
     <define name="MIN_SPEED_FOR_TAKEOFF" value="8.0" unit="m/s"/>
-    <define name="AIRSPEED_SETPOINT_SLEW" value="0.3" unit="m/s/s"/>
+    <define name="AIRSPEED_SETPOINT_SLEW" value="0.25" unit="m/s/s"/>
 
     <!--default is 1 -->
     <!--TODO:  maybe not needed anymore
@@ -764,8 +761,7 @@
     <define name="HOME_RADIUS" value="DEFAULT_CIRCLE_RADIUS" unit="m"/>
     <define name="LANDING_CIRCLE_RADIUS" value="35.0" unit="m"/>
     <define name="MIN_CIRCLE_RADIUS" value="30.0" unit="m"/>
-
-    <define name="CARROT" value="6.0" unit="s"/>
+    <define name="CARROT" value="5.0" unit="s"/>
 
     <define name="UNLOCKED_HOME_MODE" value="TRUE"/>
     <define name="RC_LOST_MODE" value="AP_MODE_AUTO2"/>
@@ -776,7 +772,7 @@
     <!-- <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/> -->
  
     <define name="NO_XBEE_API_INIT" value="TRUE"/>
-    <define name="ARRIVED_AT_WAYPOINT" value="15.0" unit="m"/>
+    <define name="ARRIVED_AT_WAYPOINT" value="10.0" unit="m"/>
   </section>
 
   <section name="PHOTOGRAMMETRY" prefix="PHOTOGRAMMETRY_">
@@ -815,7 +811,7 @@
     <define name="ANGLE" value="4" unit="deg"/>
     <define name="INTERCEPT_AF_SD" value="80" unit="m"/>
     <!--<define name="INTERCEPT_RATE" value="0.624" unit="m/s/s"/>-->
-    <define name="TARGET_SPEED" value="NOMINAL_AIRSPEED" unit="m/s"/>
+    <define name="TARGET_SPEED" value="GLIDE_AIRSPEED+1" unit="m/s"/>
   </section>
 
   <!-- 
