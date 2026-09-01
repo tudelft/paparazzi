@@ -1,0 +1,19 @@
+
+<airframe>
+  <section name="IMU" prefix="IMU_">
+    <define name="IMU_MAG_CALIB" type="array">
+      <field type="struct">
+        <field name="abi_id" value="7"/>
+        <field name="calibrated" type="struct">
+          <field name="neutral" value="true"/>
+          <field name="scale_f" value="true"/>
+        </field>
+        <field name="neutral" value="495,558,856" type="int[]"/>
+        <field name="scale_f" value="{ 1.3909, 1.4296, 1.3986 }"/>
+      </field>
+    </define>
+  </section>
+</airframe>
+
+
+

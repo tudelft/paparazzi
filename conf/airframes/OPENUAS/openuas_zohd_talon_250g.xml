@@ -128,6 +128,9 @@
         <define name="QMC5883L_CHAN_Z_SIGN" value="+"/>
       </module>
 
+          <!-- TODO Calibrate! -->
+
+
       <module name="airspeed" type="sdp3x">
         <configure name="SDP3X_I2C_DEV" value="i2c1"/>
         <!-- SDP33: signed output, 20 counts/Pa, +/-1500 Pa (about 49.5 m/s EAS at MSL). -->
@@ -547,20 +550,15 @@
     <define name="BODY_TO_IMU_THETA" value="0.0" unit="deg"/>
     <define name="BODY_TO_IMU_PSI" value="0.0" unit="deg"/>
 
-    <!-- TODO Calibrate!  -->
-    <define name="IMU_MAG_CALIB" type="array">
-      <field type="struct">
-        <field name="abi_id" value="7"/>
-        <field name="calibrated" type="struct">
-          <field name="neutral" value="true"/>
-          <field name="scale_f" value="true"/>
-        </field>
-        <field name="neutral" value="495,558,856" type="int[]"/>
-        <field name="scale_f" value="{ 1.3909, 1.4296, 1.3986 }"/>
-      </field>
-    </define>
+  </section> 
 
-  </section>
+  <!-- <section name="CAMERA" prefix="CAM_">-->  
+    <!-- <include href="conf/airframes/OPENUAS/calib/cam_calib_$AC_ID.xml" /> -->
+    <!-- <field type="struct">
+      <field name="abi_id" value="111"/>
+    </field>
+  </section>   -->
+
 
   <section name="AHRS" prefix="AHRS_">
     <!-- AHRS filter tuning values -->
@@ -870,5 +868,7 @@
     <define name="BYPASS_AHRS" value="TRUE"/>
     <define name="BYPASS_INS" value="TRUE"/>
   </section>
+
+  <include href="conf/airframes/OPENUAS/diff/mag_calib_$AC_ID.xml"/>
 
 </airframe>
