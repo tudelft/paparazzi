@@ -55,7 +55,7 @@
 <path fill="#14532d" stroke="#4ade80" stroke-width="1.6" d="M169.58,-494.15C169.58,-494.15 36.42,-494.15 36.42,-494.15 30.42,-494.15 24.42,-488.15 24.42,-482.15 24.42,-482.15 24.42,-437.87 24.42,-437.87 24.42,-431.87 30.42,-425.87 36.42,-425.87 36.42,-425.87 169.58,-425.87 169.58,-425.87 175.58,-425.87 181.58,-431.87 181.58,-437.87 181.58,-437.87 181.58,-482.15 181.58,-482.15 181.58,-488.15 175.58,-494.15 169.58,-494.15"/>
 <text xml:space="preserve" text-anchor="middle" x="103" y="-475.53" font-family="DejaVu Sans" font-size="10.50" fill="#f8fafc">LOCAL / TEST</text>
 <text xml:space="preserve" text-anchor="middle" x="103" y="-462.78" font-family="DejaVu Sans" font-size="10.50" fill="#f8fafc">select testphotos/*.jpg</text>
-<text xml:space="preserve" text-anchor="middle" x="103" y="-450.03" font-family="DejaVu Sans" font-size="10.50" fill="#f8fafc">or &#45;&#45;fake&#45;image</text>
+<text xml:space="preserve" text-anchor="middle" x="103" y="-450.03" font-family="DejaVu Sans" font-size="10.50" fill="#f8fafc">or &#45;&#45;mock&#45;image</text>
 <text xml:space="preserve" text-anchor="middle" x="103" y="-437.28" font-family="DejaVu Sans" font-size="10.50" fill="#f8fafc">copy to photox/%05d.jpg</text>
 </g>
 <!-- dispatcher&#45;&gt;local -->
@@ -97,7 +97,7 @@
 <title>transform</title>
 <path fill="#581c87" stroke="#d8b4fe" stroke-width="1.6" d="M386.71,-390.87C386.71,-390.87 197.29,-390.87 197.29,-390.87 191.29,-390.87 185.29,-384.87 185.29,-378.87 185.29,-378.87 185.29,-296.34 185.29,-296.34 185.29,-290.34 191.29,-284.34 197.29,-284.34 197.29,-284.34 386.71,-284.34 386.71,-284.34 392.71,-284.34 398.71,-290.34 398.71,-296.34 398.71,-296.34 398.71,-378.87 398.71,-378.87 398.71,-384.87 392.71,-390.87 386.71,-390.87"/>
 <text xml:space="preserve" text-anchor="middle" x="292" y="-372.25" font-family="DejaVu Sans" font-size="10.50" fill="#f8fafc">5 &#160;OPTIONAL TEST TRANSFORM</text>
-<text xml:space="preserve" text-anchor="middle" x="292" y="-359.5" font-family="DejaVu Sans" font-size="10.50" fill="#f8fafc">&#45;&#45;faketransform</text>
+<text xml:space="preserve" text-anchor="middle" x="292" y="-359.5" font-family="DejaVu Sans" font-size="10.50" fill="#f8fafc">&#45;&#45;mocktransform</text>
 <text xml:space="preserve" text-anchor="middle" x="292" y="-346.75" font-family="DejaVu Sans" font-size="10.50" fill="#f8fafc">roll + pitch + yaw perspective</text>
 <text xml:space="preserve" text-anchor="middle" x="292" y="-334" font-family="DejaVu Sans" font-size="10.50" fill="#f8fafc">auto FOV + borderless cover crop</text>
 <text xml:space="preserve" text-anchor="middle" x="292" y="-321.25" font-family="DejaVu Sans" font-size="10.50" fill="#f8fafc">near horizon: synth terrain or black</text>

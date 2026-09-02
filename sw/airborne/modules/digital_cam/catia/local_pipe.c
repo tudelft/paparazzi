@@ -16,8 +16,8 @@
 #define CATIA_LOCAL_PHOTO_DIR "photox"
 #endif
 
-#ifndef CATIA_FAKE_IMAGE
-#define CATIA_FAKE_IMAGE "fake-camera.jpg"
+#ifndef CATIA_MOCK_IMAGE
+#define CATIA_MOCK_IMAGE "mock-camera.jpg"
 #endif
 
 #ifndef PATH_MAX
@@ -33,11 +33,11 @@ static int select_random_test_photo(char *path, size_t path_size);
 static bool is_readable_jpg(DIR *directory, const struct dirent *entry);
 static int random_index(size_t count, size_t *index);
 
-int local_pipe_init(const char *fake_image)
+int local_pipe_init(const char *mock_image)
 {
-  if (fake_image == NULL || access(fake_image, R_OK) != 0) {
-    fprintf(stderr, "LOCAL_PIPE:\tfailed to access fake image %s: %s\n",
-            fake_image != NULL ? fake_image : "(null)", strerror(errno));
+  if (mock_image == NULL || access(mock_image, R_OK) != 0) {
+    fprintf(stderr, "LOCAL_PIPE:\tfailed to access mock image %s: %s\n",
+            mock_image != NULL ? mock_image : "(null)", strerror(errno));
     return -1;
   }
 
@@ -45,16 +45,16 @@ int local_pipe_init(const char *fake_image)
     return -1;
   }
 
-  source_image = fake_image;
+  source_image = mock_image;
   test_photo_directory[0] = '\0';
   printf("LOCAL_PIPE:\tphoto directory: %s\n", CATIA_LOCAL_PHOTO_DIR);
   return 0;
 }
 
-int local_pipe_test_init(const char *fake_image)
+int local_pipe_test_init(const char *mock_image)
 {
-  if (fake_image != NULL) {
-    return local_pipe_init(fake_image);
+  if (mock_image != NULL) {
+    return local_pipe_init(mock_image);
   }
 
   if (prepare_photo_directory() != 0) {
@@ -67,8 +67,8 @@ int local_pipe_test_init(const char *fake_image)
   }
   if (photo_count == 0) {
     fprintf(stderr, "LOCAL_PIPE:\tno readable .jpg files found beside the executable; using %s\n",
-            CATIA_FAKE_IMAGE);
-    return local_pipe_init(CATIA_FAKE_IMAGE);
+                CATIA_MOCK_IMAGE);
+              return local_pipe_init(CATIA_MOCK_IMAGE);
   }
 
   source_image = NULL;
@@ -120,7 +120,7 @@ int local_pipe_shoot(char *filename, size_t filename_size, int image_number)
 
   int source_fd = open(current_source, O_RDONLY);
   if (source_fd < 0) {
-    fprintf(stderr, "LOCAL_PIPE:\tfailed to open fake image %s: %s\n", current_source, strerror(errno));
+    fprintf(stderr, "LOCAL_PIPE:\tfailed to open mock image %s: %s\n", current_source, strerror(errno));
     return -1;
   }
 

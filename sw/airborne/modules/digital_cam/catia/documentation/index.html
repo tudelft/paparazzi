@@ -187,7 +187,7 @@ Run these commands from the Paparazzi repository root.</p>
 <pre><code class="language-sh">sw/airborne/modules/digital_cam/catia/run_local_demo.sh
 </code></pre>
 <p>The script builds CATIA, creates the local serial bridge, and starts CATIA with
-the bundled fake image. It also enables <code>--debug</code>. Leave this terminal running
+the bundled mock image. It also enables <code>--debug</code>. Leave this terminal running
 while NPS is running.</p>
 <p>The important startup line is:</p>
 <pre><code class="language-text">Started OK
@@ -234,7 +234,7 @@ the simulator serial bridge; <code>--chdk</code> and <code>--aicam</code> select
 <tr>
 <td>Complete local simulation</td>
 <td><code>catia --local</code></td>
-<td>Bundled fake JPEG</td>
+<td>Bundled mock JPEG</td>
 </tr>
 <tr>
 <td>CHDK on the default serial port</td>
@@ -314,12 +314,12 @@ SODA stages. It does <strong>not</strong> start CHDK or <code>rpicam-still</code
 <li>If the directory is absent or empty, CATIA uses the compiled default image.</li>
 </ol>
 <p>To force one particular file and skip test-set selection:</p>
-<pre><code class="language-sh">catia --aicam --test --fake-image /absolute/path/example.jpg
+<pre><code class="language-sh">catia --aicam --test --mock-image /absolute/path/example.jpg
 </code></pre>
 <h2 id="simulate-aircraft-attitude">Simulate Aircraft Attitude</h2>
-<p><code>--faketransform</code> makes a test image look as though it was captured at the
+<p><code>--mocktransform</code> makes a test image look as though it was captured at the
 aircraft attitude carried in the MORA shot:</p>
-<pre><code class="language-sh">catia --local --aicam --test --faketransform
+<pre><code class="language-sh">catia --local --aicam --test --mocktransform
 </code></pre>
 <p>The transform:</p>
 <ul>
@@ -412,7 +412,7 @@ CHDK supplies the final filename to CATIA.</p>
 <h3 id="optional-transform-and-exif">Optional transform and EXIF</h3>
 <p>After any backend returns a JPEG, the shared processing pipeline runs:</p>
 <ol>
-<li>With <code>--faketransform</code>, <code>image_fake_transform()</code> decodes the image, applies
+<li>With <code>--mocktransform</code>, <code>image_mock_transform()</code> decodes the image, applies
    the attitude homography and borderless cover crop, then re-encodes it using
    the vendored IJG libjpeg implementation.</li>
 <li><code>image_exif_write()</code> builds metadata with bundled libexif and inserts the
@@ -518,11 +518,11 @@ its source files ad hoc.</p>
 <td>Replace physical capture with a test JPEG</td>
 </tr>
 <tr>
-<td><code>--fake-image FILE</code></td>
+<td><code>--mock-image FILE</code></td>
 <td>Use one explicit JPEG instead of <code>testphotos</code></td>
 </tr>
 <tr>
-<td><code>--faketransform</code></td>
+<td><code>--mocktransform</code></td>
 <td>Apply test-only roll, pitch, and yaw transformation</td>
 </tr>
 <tr>

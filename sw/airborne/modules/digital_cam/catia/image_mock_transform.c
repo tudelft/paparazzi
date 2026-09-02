@@ -1,4 +1,4 @@
-#include "image_fake_transform.h"
+#include "image_mock_transform.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -97,7 +97,7 @@ static double mirror_coordinate(double coordinate, size_t extent);
 static int create_black_frame(const char *filename);
 static int replace_image_atomically(const char *filename, const struct decoded_image *image);
 
-int image_fake_transform(const char *filename, const union dc_shot_union *shot)
+int image_mock_transform(const char *filename, const union dc_shot_union *shot)
 {
   if (filename == NULL || shot == NULL) {
     errno = EINVAL;
@@ -110,7 +110,7 @@ int image_fake_transform(const char *filename, const union dc_shot_union *shot)
       || !isfinite(near_horizon_combined_tilt_deg)
       || near_horizon_combined_tilt_deg < 0.0
       || near_horizon_combined_tilt_deg > 180.0) {
-    fprintf(stderr, "FAKE_TRANSFORM:\tnear-horizon thresholds must be between 0 and 180 degrees\n");
+    fprintf(stderr, "MOCK_TRANSFORM:\tnear-horizon thresholds must be between 0 and 180 degrees\n");
     errno = EINVAL;
     return -1;
   }
@@ -125,31 +125,31 @@ int image_fake_transform(const char *filename, const union dc_shot_union *shot)
   double blur_factor = speed_m_s / 100.0;
   bool near_horizon = is_near_horizon(roll_rad, pitch_rad);
 
-  printf("FAKE_TRANSFORM:\talt %.3f m AGL %.3f m | roll %.3f pitch %.3f yaw %.3f deg | "
+  printf("MOCK_TRANSFORM:\talt %.3f m AGL %.3f m | roll %.3f pitch %.3f yaw %.3f deg | "
          "speed %.3f m/s course %.3f deg | blur factor %.6f (not applied)\n",
          altitude_m, ground_altitude_m,
          roll_rad * RAD_TO_DEG, pitch_rad * RAD_TO_DEG, yaw_rad * RAD_TO_DEG,
          speed_m_s, course_deg, blur_factor);
 
   if (near_horizon && near_horizon_case_black) {
-    printf("FAKE_TRANSFORM:\tnear-horizon attitude: generating black frame\n");
+    printf("MOCK_TRANSFORM:\tnear-horizon attitude: generating black frame\n");
     return create_black_frame(filename);
   }
 
   if (!near_horizon && fabs(roll_rad) < PROJECTION_EPSILON
       && fabs(pitch_rad) < PROJECTION_EPSILON && fabs(yaw_rad) < PROJECTION_EPSILON) {
-    return IMAGE_FAKE_TRANSFORM_SKIPPED;
+    return IMAGE_MOCK_TRANSFORM_SKIPPED;
   }
 
   FILE *input = fopen(filename, "rb");
   if (input == NULL) {
-    fprintf(stderr, "FAKE_TRANSFORM:\tfailed to open %s: %s\n", filename, strerror(errno));
+    fprintf(stderr, "MOCK_TRANSFORM:\tfailed to open %s: %s\n", filename, strerror(errno));
     return -1;
   }
 
   struct decoded_image source = {NULL, 0, 0};
   if (decode_jpeg(input, &source) != 0) {
-    fprintf(stderr, "FAKE_TRANSFORM:\tfailed to decode JPEG %s\n", filename);
+    fprintf(stderr, "MOCK_TRANSFORM:\tfailed to decode JPEG %s\n", filename);
     fclose(input);
     return -1;
   }
@@ -165,7 +165,7 @@ int image_fake_transform(const char *filename, const union dc_shot_union *shot)
   if (result < 0) {
     return -1;
   }
-  if (result == IMAGE_FAKE_TRANSFORM_SKIPPED) {
+  if (result == IMAGE_MOCK_TRANSFORM_SKIPPED) {
     return result;
   }
 
@@ -346,9 +346,9 @@ static int transform_pixels(const struct decoded_image *source, struct decoded_i
     fit.image_scale = 1.0;
     fit.offset_x = 0.0;
     fit.offset_y = 0.0;
-    printf("FAKE_TRANSFORM:\tnear-horizon attitude: synthesizing extended terrain\n");
+    printf("MOCK_TRANSFORM:\tnear-horizon attitude: synthesizing extended terrain\n");
   } else if (compute_projection_fit(source, rotation, focal_length, center_x, center_y, &fit) != 0) {
-    fprintf(stderr, "FAKE_TRANSFORM:\tattitude is outside the usable single-image camera model\n");
+    fprintf(stderr, "MOCK_TRANSFORM:\tattitude is outside the usable single-image camera model\n");
     return -1;
   }
 
@@ -365,7 +365,7 @@ static int transform_pixels(const struct decoded_image *source, struct decoded_i
     double cover_zoom = 1.0 / (fit.ray_scale * fit.image_scale);
     double pan_x = fit.offset_x + (fit.image_scale - 1.0) * center_x;
     double pan_y = fit.offset_y + (fit.image_scale - 1.0) * center_y;
-    printf("FAKE_TRANSFORM:\tborderless cover crop: %.3fx zoom, pan %.1f px x %.1f px\n",
+    printf("MOCK_TRANSFORM:\tborderless cover crop: %.3fx zoom, pan %.1f px x %.1f px\n",
            cover_zoom, pan_x, pan_y);
   }
 
@@ -415,7 +415,7 @@ static int transform_pixels(const struct decoded_image *source, struct decoded_i
       source_ray_z += source_ray_z_increment;
     }
   }
-  return IMAGE_FAKE_TRANSFORM_APPLIED;
+  return IMAGE_MOCK_TRANSFORM_APPLIED;
 }
 
 static double mirror_coordinate(double coordinate, size_t extent)
@@ -723,7 +723,7 @@ static int replace_image_atomically(const char *filename, const struct decoded_i
   }
   if (result != 0) {
     unlink(temporary_name);
-    fprintf(stderr, "FAKE_TRANSFORM:\tfailed to replace %s: %s\n", filename, strerror(errno));
+    fprintf(stderr, "MOCK_TRANSFORM:\tfailed to replace %s: %s\n", filename, strerror(errno));
   }
   free(temporary_name);
   return result;

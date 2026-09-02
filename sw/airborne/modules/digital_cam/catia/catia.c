@@ -20,7 +20,7 @@
 #include "serial.h"
 #include "chdk_pipe.h"
 #include "image_exif.h"
-#include "image_fake_transform.h"
+#include "image_mock_transform.h"
 #include "local_pipe.h"
 #include "protocol.h"
 #include "socket.h"
@@ -57,8 +57,8 @@
 #define CATIA_LOCAL_LOCK_FILE "/tmp/catia-local.lock"
 #endif
 
-#ifndef CATIA_FAKE_IMAGE
-#define CATIA_FAKE_IMAGE "fake-camera.jpg"
+#ifndef CATIA_MOCK_IMAGE
+#define CATIA_MOCK_IMAGE "mock-camera.jpg"
 #endif
 
 #ifndef CATIA_LOCAL_SODA
@@ -108,8 +108,8 @@ static bool local_bridge_owned;
 static volatile sig_atomic_t keep_running = 1;
 static pid_t socat_pid = -1;
 static int local_lock_fd = -1;
-static const char *fake_image = CATIA_FAKE_IMAGE;
-static bool fake_transform_enabled;
+static const char *mock_image = CATIA_MOCK_IMAGE;
+static bool mock_transform_enabled;
 static bool debug_enabled;
 static bool test_capture_enabled;
 
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 {
   const char *serial_device = CATIA_SERIAL_DEVICE;
   bool serial_was_selected = false;
-  bool fake_image_was_selected = false;
+  bool mock_image_was_selected = false;
   bool test_mode = false;
   uint64_t serial_byte_count = 0;
   uint64_t valid_frame_count = 0;
@@ -134,9 +134,9 @@ int main(int argc, char *argv[])
     {"chdk", no_argument, NULL, 'c'},
     {"aicam", no_argument, NULL, 'a'},
     {"test", no_argument, NULL, 't'},
-    {"faketransform", no_argument, NULL, 'f'},
+    {"mocktransform", no_argument, NULL, 'f'},
     {"debug", no_argument, NULL, 'd'},
-    {"fake-image", required_argument, NULL, 'i'},
+    {"mock-image", required_argument, NULL, 'i'},
     {"help", no_argument, NULL, 'h'},
     {NULL, 0, NULL, 0}
   };
@@ -169,14 +169,14 @@ int main(int argc, char *argv[])
         test_mode = true;
         break;
       case 'f':
-        fake_transform_enabled = true;
+        mock_transform_enabled = true;
         break;
       case 'd':
         debug_enabled = true;
         break;
       case 'i':
-        fake_image = optarg;
-        fake_image_was_selected = true;
+        mock_image = optarg;
+        mock_image_was_selected = true;
         break;
       case 'h':
         print_usage(argv[0]);
@@ -192,13 +192,13 @@ int main(int argc, char *argv[])
     return 2;
   }
 
-  if (fake_image_was_selected && !test_mode
+  if (mock_image_was_selected && !test_mode
       && (!local_mode || requested_camera_backend != CAMERA_BACKEND_UNSELECTED)) {
-    fprintf(stderr, "CATIA:\t--fake-image requires --test or --local without --chdk or --aicam\n");
+    fprintf(stderr, "CATIA:\t--mock-image requires --test or --local without --chdk or --aicam\n");
     return 2;
   }
-  if (fake_transform_enabled && !test_mode) {
-    fprintf(stderr, "CATIA:\t--faketransform requires --test\n");
+  if (mock_transform_enabled && !test_mode) {
+    fprintf(stderr, "CATIA:\t--mocktransform requires --test\n");
     return 2;
   }
 
@@ -250,22 +250,22 @@ int main(int argc, char *argv[])
     printf("CATIA DEBUG:\tenabled\n");
   }
   if (test_mode) {
-    if (fake_image_was_selected) {
-      printf("CATIA:\tcamera test mode: fake image %s\n", fake_image);
+    if (mock_image_was_selected) {
+      printf("CATIA:\tcamera test mode: mock image %s\n", mock_image);
     } else {
       printf("CATIA:\tcamera test mode: random image from testphotos when available\n");
     }
-    printf("CATIA:\tfake attitude transform: %s\n", fake_transform_enabled ? "enabled" : "disabled");
+    printf("CATIA:\tmock attitude transform: %s\n", mock_transform_enabled ? "enabled" : "disabled");
   }
   if (local_mode) {
     printf("CATIA:\tlocal simulator device: %s\n", CATIA_LOCAL_SIM_DEVICE);
   }
   const char *camera_source_image = NULL;
   if (selected_camera_backend == CAMERA_BACKEND_LOCAL && !test_mode) {
-    printf("CATIA:\tfake camera image: %s\n", fake_image);
-    camera_source_image = fake_image;
+    printf("CATIA:\tmock camera image: %s\n", mock_image);
+    camera_source_image = mock_image;
   } else if (test_mode) {
-    camera_source_image = fake_image_was_selected ? fake_image : NULL;
+    camera_source_image = mock_image_was_selected ? mock_image : NULL;
   }
   signal(SIGPIPE, SIG_IGN);
   if (camera.init(camera_source_image) != 0) {
@@ -423,17 +423,17 @@ static void *handle_msg_shoot(void *ptr)
     filename[0] = '\0';
   }
   printf("CATIA-%d:\tShooting: got image %s\n", shoot->data.nr, filename);
-  if (filename[0] != '\0' && fake_transform_enabled) {
-    int transform_result = image_fake_transform(filename, shoot);
+  if (filename[0] != '\0' && mock_transform_enabled) {
+    int transform_result = image_mock_transform(filename, shoot);
     if (transform_result < 0) {
-      fprintf(stderr, "CATIA-%d:\tfailed to apply fake attitude transform to %s\n",
+      fprintf(stderr, "CATIA-%d:\tfailed to apply mock attitude transform to %s\n",
               shoot->data.nr, filename);
       filename[0] = '\0';
-    } else if (transform_result == IMAGE_FAKE_TRANSFORM_SKIPPED) {
-      printf("CATIA-%d:\tShooting: fake attitude transform skipped; source image retained\n",
+    } else if (transform_result == IMAGE_MOCK_TRANSFORM_SKIPPED) {
+      printf("CATIA-%d:\tShooting: mock attitude transform skipped; source image retained\n",
              shoot->data.nr);
     } else {
-      printf("CATIA-%d:\tShooting: fake attitude transform applied\n", shoot->data.nr);
+      printf("CATIA-%d:\tShooting: mock attitude transform applied\n", shoot->data.nr);
     }
   }
   if (filename[0] != '\0') {
@@ -641,11 +641,11 @@ static void print_usage(const char *program)
          CATIA_LOCAL_SIM_DEVICE, CATIA_LOCAL_APP_DEVICE);
   printf("  --chdk            use the CHDK camera backend (default outside local mode)\n");
   printf("  --aicam           use the AI camera backend\n");
-  printf("  --test            process a fake image for local, CHDK, or AI-camera testing\n");
+  printf("  --test            process a mock image for local, CHDK, or AI-camera testing\n");
   printf("                    randomly selects testphotos/*.jpg beside this executable\n");
-  printf("  --faketransform   transform test image using shot roll, pitch, and yaw\n");
+  printf("  --mocktransform   transform test image using shot roll, pitch, and yaw\n");
   printf("  --debug           show serial, MORA frame, trigger, and capture diagnostics\n");
-  printf("  --fake-image FILE image used by local or test capture (default: %s)\n", CATIA_FAKE_IMAGE);
+  printf("  --mock-image FILE image used by local or test capture (default: %s)\n", CATIA_MOCK_IMAGE);
   printf("  --help            show this help\n");
 }
 

@@ -65,7 +65,7 @@ digraph CATIA {
     margin=16;
 
     local [
-      label="LOCAL / TEST\nselect testphotos/*.jpg\nor --fake-image\ncopy to photox/%05d.jpg",
+      label="LOCAL / TEST\nselect testphotos/*.jpg\nor --mock-image\ncopy to photox/%05d.jpg",
       fillcolor="#14532d",
       color="#4ade80"
     ];
@@ -86,7 +86,7 @@ digraph CATIA {
   }
 
   transform [
-    label="5  OPTIONAL TEST TRANSFORM\n--faketransform\nroll + pitch + yaw perspective\nauto FOV + borderless cover crop\nnear horizon: synth terrain or black\nvendored IJG libjpeg\nblur factor logged, not applied",
+    label="5  OPTIONAL TEST TRANSFORM\n--mocktransform\nroll + pitch + yaw perspective\nauto FOV + borderless cover crop\nnear horizon: synth terrain or black\nvendored IJG libjpeg\nblur factor logged, not applied",
     fillcolor="#581c87",
     color="#d8b4fe"
   ];

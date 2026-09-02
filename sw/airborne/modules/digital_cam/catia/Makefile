@@ -8,7 +8,7 @@ OPTFLAGS ?= -O2
 BUILD_DIR = .build
 
 CATIA_SERIAL_DEVICE ?= /dev/ttySAC0
-CATIA_FAKE_IMAGE ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/fake_image_01.jpg
+CATIA_MOCK_IMAGE ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/mock_image_01.jpg
 CATIA_LOCAL_SODA ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/soda_local
 CATIA_LOCAL_PHOTO_DIR ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/photox
 CATIA_AI_CAM_PHOTO_DIR ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/photos
@@ -23,7 +23,7 @@ CPPFLAGS = -I$(PAPARAZZI_HOME)/sw/ext -I$(LIBEXIF) -I$(LIBJPEG) \
 	-DNO_VERBOSE_TAG_DATA -DNO_VERBOSE_TAG_STRINGS
 CFLAGS = $(OPTFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined \
 	-DCATIA_SERIAL_DEVICE='"$(CATIA_SERIAL_DEVICE)"' \
-	-DCATIA_FAKE_IMAGE='"$(CATIA_FAKE_IMAGE)"' \
+	-DCATIA_MOCK_IMAGE='"$(CATIA_MOCK_IMAGE)"' \
 	-DCATIA_LOCAL_SODA='"$(CATIA_LOCAL_SODA)"' \
 	-DCATIA_LOCAL_PHOTO_DIR='"$(CATIA_LOCAL_PHOTO_DIR)"' \
 	-DCATIA_AI_CAM_PHOTO_DIR='"$(CATIA_AI_CAM_PHOTO_DIR)"' \
@@ -41,7 +41,7 @@ CFILES = ai_cam_pipe.c \
 	 serial.c \
 	 chdk_pipe.c \
 	 image_exif.c \
-	 image_fake_transform.c \
+	 image_mock_transform.c \
 	 local_pipe.c \
 	 socket.c \
 	 protocol.c
@@ -95,7 +95,7 @@ $(CONFIG_STAMP): FORCE
 	  'LDFLAGS=$(LDFLAGS)' \
 	  'LDLIBS=$(LDLIBS)' \
 	  'CATIA_SERIAL_DEVICE=$(CATIA_SERIAL_DEVICE)' \
-	  'CATIA_FAKE_IMAGE=$(CATIA_FAKE_IMAGE)' \
+	  'CATIA_MOCK_IMAGE=$(CATIA_MOCK_IMAGE)' \
 	  'CATIA_LOCAL_SODA=$(CATIA_LOCAL_SODA)' \
 	  'CATIA_LOCAL_PHOTO_DIR=$(CATIA_LOCAL_PHOTO_DIR)' \
 	  'CATIA_AI_CAM_PHOTO_DIR=$(CATIA_AI_CAM_PHOTO_DIR)' \

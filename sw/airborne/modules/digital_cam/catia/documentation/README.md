@@ -29,7 +29,7 @@ sw/airborne/modules/digital_cam/catia/run_local_demo.sh
 ```
 
 The script builds CATIA, creates the local serial bridge, and starts CATIA with
-the bundled fake image. It also enables `--debug`. Leave this terminal running
+the bundled mock image. It also enables `--debug`. Leave this terminal running
 while NPS is running.
 
 The important startup line is:
@@ -87,7 +87,7 @@ the simulator serial bridge; `--chdk` and `--aicam` select physical cameras.
 
 | Goal | Command | Image source |
 | --- | --- | --- |
-| Complete local simulation | `catia --local` | Bundled fake JPEG |
+| Complete local simulation | `catia --local` | Bundled mock JPEG |
 | CHDK on the default serial port | `catia --chdk` | CHDK capture and download |
 | Raspberry Pi camera | `catia --aicam` | `rpicam-still` |
 | NPS transport with AI camera | `catia --local --aicam` | `rpicam-still` |
@@ -176,16 +176,16 @@ Selection rules are deliberately simple:
 To force one particular file and skip test-set selection:
 
 ```sh
-catia --aicam --test --fake-image /absolute/path/example.jpg
+catia --aicam --test --mock-image /absolute/path/example.jpg
 ```
 
 ## Simulate Aircraft Attitude
 
-`--faketransform` makes a test image look as though it was captured at the
+`--mocktransform` makes a test image look as though it was captured at the
 aircraft attitude carried in the MORA shot:
 
 ```sh
-catia --local --aicam --test --faketransform
+catia --local --aicam --test --mocktransform
 ```
 
 The transform:
@@ -281,7 +281,7 @@ CHDK supplies the final filename to CATIA.
 
 After any backend returns a JPEG, the shared processing pipeline runs:
 
-1. With `--faketransform`, `image_fake_transform()` decodes the image, applies
+1. With `--mocktransform`, `image_mock_transform()` decodes the image, applies
    the attitude homography and borderless cover crop, then re-encodes it using
    the vendored IJG libjpeg implementation.
 2. `image_exif_write()` builds metadata with bundled libexif and inserts the
@@ -357,8 +357,8 @@ make -C sw/airborne/modules/digital_cam/catia \
 | `--chdk` | Select the CHDK camera backend |
 | `--aicam` | Select the Raspberry Pi camera backend |
 | `--test` | Replace physical capture with a test JPEG |
-| `--fake-image FILE` | Use one explicit JPEG instead of `testphotos` |
-| `--faketransform` | Apply test-only roll, pitch, and yaw transformation |
+| `--mock-image FILE` | Use one explicit JPEG instead of `testphotos` |
+| `--mocktransform` | Apply test-only roll, pitch, and yaw transformation |
 | `--debug` | Show serial traffic, MORA frame, trigger, and capture diagnostics |
 | `--help` | Print the built-in command help |
 
