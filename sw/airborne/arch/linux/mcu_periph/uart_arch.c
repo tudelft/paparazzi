@@ -37,24 +37,68 @@
 #include "serial_port.h"
 #include "rt_priority.h"
 
+#include <poll.h>
 #include <pthread.h>
-#include <sys/select.h>
 
 #ifndef UART_THREAD_PRIO
 #define UART_THREAD_PRIO 11
 #endif
 
-static void uart_receive_handler(struct uart_periph *periph);
+#ifndef UART_RECONNECT_INTERVAL_USEC
+#define UART_RECONNECT_INTERVAL_USEC 200000
+#endif
+
+#ifndef UART_RX_BATCH_SIZE
+#define UART_RX_BATCH_SIZE 256
+#endif
+
+static void uart_receive_handler(struct uart_periph *periph, int expected_fd);
 static void *uart_thread(void *data __attribute__((unused)));
+static void uart_periph_open(struct uart_periph *periph);
+static void uart_periph_close_locked(struct uart_periph *periph);
+static size_t uart_periph_index(const struct uart_periph *periph);
 static pthread_mutex_t uart_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static struct uart_periph *const uart_peripherals[] = {
+#if USE_UART0
+  &uart0,
+#endif
+#if USE_UART1
+  &uart1,
+#endif
+#if USE_UART2
+  &uart2,
+#endif
+#if USE_UART3
+  &uart3,
+#endif
+#if USE_UART4
+  &uart4,
+#endif
+#if USE_UART5
+  &uart5,
+#endif
+#if USE_UART6
+  &uart6,
+#endif
+#if USE_UART7
+  &uart7,
+#endif
+#if USE_UART8
+  &uart8,
+#endif
+};
+
+#define UART_PERIPHERAL_COUNT (sizeof(uart_peripherals) / sizeof(uart_peripherals[0]))
+static bool uart_reconnect_requested[UART_PERIPHERAL_COUNT];
+static bool uart_connection_was_established[UART_PERIPHERAL_COUNT];
+static uint64_t uart_connection_generation[UART_PERIPHERAL_COUNT];
 
 //#define TRACE(fmt,args...)    fprintf(stderr, fmt, args)
 #define TRACE(fmt,args...)
 
 void uart_arch_init(void)
 {
-  pthread_mutex_init(&uart_mutex, NULL);
-
   pthread_t tid;
   if (pthread_create(&tid, NULL, uart_thread, NULL) != 0) {
     fprintf(stderr, "uart_arch_init: Could not create UART reading thread.\n");
@@ -69,179 +113,70 @@ static void *uart_thread(void *data __attribute__((unused)))
 {
   get_rt_prio(UART_THREAD_PRIO);
 
-  /* file descriptor list */
-  fd_set fds_master;
-  /* maximum file descriptor number */
-  int fdmax = 0;
-
-  /* clear the fd list */
-  FD_ZERO(&fds_master);
-  /* add used fds */
-  int __attribute__((unused)) fd;
-#if USE_UART0
-  if (uart0.reg_addr != NULL) {
-    fd = ((struct SerialPort *)uart0.reg_addr)->fd;
-    FD_SET(fd, &fds_master);
-    if (fd > fdmax) {
-      fdmax = fd;
-    }
-  }
-#endif
-#if USE_UART1
-  if (uart1.reg_addr != NULL) {
-    fd = ((struct SerialPort *)uart1.reg_addr)->fd;
-    FD_SET(fd, &fds_master);
-    if (fd > fdmax) {
-      fdmax = fd;
-    }
-  }
-#endif
-#if USE_UART2
-  if (uart2.reg_addr != NULL) {
-    fd = ((struct SerialPort *)uart2.reg_addr)->fd;
-    FD_SET(fd, &fds_master);
-    if (fd > fdmax) {
-      fdmax = fd;
-    }
-  }
-#endif
-#if USE_UART3
-  if (uart3.reg_addr != NULL) {
-    fd = ((struct SerialPort *)uart3.reg_addr)->fd;
-    FD_SET(fd, &fds_master);
-    if (fd > fdmax) {
-      fdmax = fd;
-    }
-  }
-#endif
-#if USE_UART4
-  if (uart4.reg_addr != NULL) {
-    fd = ((struct SerialPort *)uart4.reg_addr)->fd;
-    FD_SET(fd, &fds_master);
-    if (fd > fdmax) {
-      fdmax = fd;
-    }
-  }
-#endif
-#if USE_UART5
-  if (uart5.reg_addr != NULL) {
-    fd = ((struct SerialPort *)uart5.reg_addr)->fd;
-    FD_SET(fd, &fds_master);
-    if (fd > fdmax) {
-      fdmax = fd;
-    }
-  }
-#endif
-#if USE_UART6
-  if (uart6.reg_addr != NULL) {
-    fd = ((struct SerialPort *)uart6.reg_addr)->fd;
-    FD_SET(fd, &fds_master);
-    if (fd > fdmax) {
-      fdmax = fd;
-    }
-  }
-#endif
-#if USE_UART7
-  if (uart7.reg_addr != NULL) {
-    fd = ((struct SerialPort *)uart7.reg_addr)->fd;
-    FD_SET(fd, &fds_master);
-    if (fd > fdmax) {
-      fdmax = fd;
-    }
-  }
-#endif
-#if USE_UART8
-  if (uart8.reg_addr != NULL) {
-    fd = ((struct SerialPort *)uart8.reg_addr)->fd;
-    FD_SET(fd, &fds_master);
-    if (fd > fdmax) {
-      fdmax = fd;
-    }
-  }
-#endif
-
-  /* fds to be read, modified after each select */
-  fd_set fds;
-
   while (1) {
-    /* reset list of fds to check */
-    fds = fds_master;
+    for (size_t index = 0; index < UART_PERIPHERAL_COUNT; index++) {
+      struct uart_periph *periph = uart_peripherals[index];
+      pthread_mutex_lock(&uart_mutex);
+      if (uart_reconnect_requested[index]) {
+        fprintf(stderr, "UART: connection to %s lost; reconnecting\n", periph->dev);
+        uart_periph_close_locked(periph);
+        uart_reconnect_requested[index] = false;
+      }
+      bool should_open = periph->reg_addr == NULL && periph->dev[0] != '\0' && periph->baudrate > 0;
+      pthread_mutex_unlock(&uart_mutex);
+      if (should_open) {
+        uart_periph_open(periph);
+      }
+    }
 
-    if (select(fdmax + 1, &fds, NULL, NULL, NULL) < 0) {
-      fprintf(stderr, "uart_thread: select failed!");
-    } else {
-#if USE_UART0
-      if (uart0.reg_addr != NULL) {
-        fd = ((struct SerialPort *)uart0.reg_addr)->fd;
-        if (FD_ISSET(fd, &fds)) {
-          uart_receive_handler(&uart0);
+    struct pollfd poll_fds[UART_PERIPHERAL_COUNT];
+    struct uart_periph *polled_peripherals[UART_PERIPHERAL_COUNT];
+    uint64_t polled_generations[UART_PERIPHERAL_COUNT];
+    nfds_t poll_count = 0;
+    pthread_mutex_lock(&uart_mutex);
+    for (size_t index = 0; index < UART_PERIPHERAL_COUNT; index++) {
+      struct uart_periph *periph = uart_peripherals[index];
+      if (periph->reg_addr != NULL) {
+        int fd = ((struct SerialPort *)periph->reg_addr)->fd;
+        if (fd >= 0) {
+          poll_fds[poll_count].fd = fd;
+          poll_fds[poll_count].events = POLLIN;
+          poll_fds[poll_count].revents = 0;
+          polled_peripherals[poll_count] = periph;
+          polled_generations[poll_count] = uart_connection_generation[index];
+          poll_count++;
         }
       }
-#endif
-#if USE_UART1
-      if (uart1.reg_addr != NULL) {
-        fd = ((struct SerialPort *)uart1.reg_addr)->fd;
-        if (FD_ISSET(fd, &fds)) {
-          uart_receive_handler(&uart1);
-        }
+    }
+    pthread_mutex_unlock(&uart_mutex);
+
+    int poll_result = poll(poll_fds, poll_count, UART_RECONNECT_INTERVAL_USEC / 1000);
+    if (poll_result < 0) {
+      if (errno != EINTR) {
+        fprintf(stderr, "uart_thread: poll failed: %s\n", strerror(errno));
       }
-#endif
-#if USE_UART2
-      if (uart2.reg_addr != NULL) {
-        fd = ((struct SerialPort *)uart2.reg_addr)->fd;
-        if (FD_ISSET(fd, &fds)) {
-          uart_receive_handler(&uart2);
+      continue;
+    }
+    if (poll_result == 0) {
+      continue;
+    }
+
+    for (nfds_t index = 0; index < poll_count; index++) {
+      if ((poll_fds[index].revents & (POLLERR | POLLHUP | POLLNVAL)) != 0) {
+        pthread_mutex_lock(&uart_mutex);
+        struct uart_periph *periph = polled_peripherals[index];
+        size_t peripheral_index = uart_periph_index(periph);
+        if (periph->reg_addr != NULL
+          && peripheral_index < UART_PERIPHERAL_COUNT
+          && uart_connection_generation[peripheral_index] == polled_generations[index]
+            && ((struct SerialPort *)periph->reg_addr)->fd == poll_fds[index].fd) {
+          fprintf(stderr, "UART: connection to %s closed; reconnecting\n", periph->dev);
+          uart_periph_close_locked(periph);
         }
+        pthread_mutex_unlock(&uart_mutex);
+      } else if ((poll_fds[index].revents & POLLIN) != 0) {
+        uart_receive_handler(polled_peripherals[index], poll_fds[index].fd);
       }
-#endif
-#if USE_UART3
-      if (uart3.reg_addr != NULL) {
-        fd = ((struct SerialPort *)uart3.reg_addr)->fd;
-        if (FD_ISSET(fd, &fds)) {
-          uart_receive_handler(&uart3);
-        }
-      }
-#endif
-#if USE_UART4
-      if (uart4.reg_addr != NULL) {
-        fd = ((struct SerialPort *)uart4.reg_addr)->fd;
-        if (FD_ISSET(fd, &fds)) {
-          uart_receive_handler(&uart4);
-        }
-      }
-#endif
-#if USE_UART5
-      if (uart5.reg_addr != NULL) {
-        fd = ((struct SerialPort *)uart5.reg_addr)->fd;
-        if (FD_ISSET(fd, &fds)) {
-          uart_receive_handler(&uart5);
-        }
-      }
-#endif
-#if USE_UART6
-      if (uart6.reg_addr != NULL) {
-        fd = ((struct SerialPort *)uart6.reg_addr)->fd;
-        if (FD_ISSET(fd, &fds)) {
-          uart_receive_handler(&uart6);
-        }
-      }
-#endif
-#if USE_UART7
-      if (uart7.reg_addr != NULL) {
-        fd = ((struct SerialPort *)uart7.reg_addr)->fd;
-        if (FD_ISSET(fd, &fds)) {
-          uart_receive_handler(&uart7);
-        }
-      }
-#endif
-#if USE_UART8
-      if (uart8.reg_addr != NULL) {
-        fd = ((struct SerialPort *)uart8.reg_addr)->fd;
-        if (FD_ISSET(fd, &fds)) {
-          uart_receive_handler(&uart8);
-        }
-      }
-#endif
     }
   }
 
@@ -250,62 +185,111 @@ static void *uart_thread(void *data __attribute__((unused)))
 
 // open serial link
 // close first if already openned
-static void uart_periph_open(struct uart_periph *periph, uint32_t baud)
+static void uart_periph_open(struct uart_periph *periph)
 {
-  periph->baudrate = baud;
+  pthread_mutex_lock(&uart_mutex);
 
-  struct SerialPort *port;
-  // close serial port if already open
+  // Another thread may have opened the port after the retry decision.
   if (periph->reg_addr != NULL) {
-    port = (struct SerialPort *)(periph->reg_addr);
-    serial_port_close(port);
-    serial_port_free(port);
+    pthread_mutex_unlock(&uart_mutex);
+    return;
   }
   // open serial port
-  port = serial_port_new();
+  struct SerialPort *port = serial_port_new();
+  if (port == NULL) {
+    pthread_mutex_unlock(&uart_mutex);
+    return;
+  }
   // use register address to store SerialPort structure pointer...
   periph->reg_addr = (void *)port;
 
-  //TODO: set device name in application and pass as argument
-  // FIXME: paparazzi baud is 9600 for B9600 while open_raw needs 12 for B9600
-  // /printf("opening %s on uart0 at termios.h baud value=%d\n", periph->dev, baud);
-  int ret = serial_port_open_raw(port, periph->dev, baud);
+  // TODO: Normalize quoted and unquoted UARTx_DEV definitions before adding a runtime path override.
+  int ret = serial_port_open_raw(port, periph->dev, periph->baudrate);
   if (ret != 0) {
     TRACE("Error opening %s code %d\n", periph->dev, ret);
     serial_port_free(port);
     periph->reg_addr = NULL;
+  } else {
+    for (size_t index = 0; index < UART_PERIPHERAL_COUNT; index++) {
+      if (uart_peripherals[index] == periph) {
+        fprintf(stderr, "UART: %s to %s\n",
+                uart_connection_was_established[index] ? "reconnected" : "connected",
+                periph->dev);
+        uart_connection_was_established[index] = true;
+        break;
+      }
+    }
   }
+  pthread_mutex_unlock(&uart_mutex);
+}
+
+static void uart_periph_close_locked(struct uart_periph *periph)
+{
+  if (periph->reg_addr == NULL) {
+    return;
+  }
+  struct SerialPort *port = (struct SerialPort *)periph->reg_addr;
+  serial_port_close(port);
+  serial_port_free(port);
+  periph->reg_addr = NULL;
+  size_t index = uart_periph_index(periph);
+  if (index < UART_PERIPHERAL_COUNT) {
+    uart_connection_generation[index]++;
+  }
+}
+
+static size_t uart_periph_index(const struct uart_periph *periph)
+{
+  for (size_t index = 0; index < UART_PERIPHERAL_COUNT; index++) {
+    if (uart_peripherals[index] == periph) {
+      return index;
+    }
+  }
+  return UART_PERIPHERAL_COUNT;
 }
 
 void uart_periph_set_baudrate(struct uart_periph *periph, uint32_t baud)
 {
-  periph->baudrate = baud;
-
-  // open serial port if not done
-  if (periph->reg_addr == NULL) {
-    uart_periph_open(periph, baud);
-  }
-  if (periph->reg_addr == NULL) {
-    // periph not started, do nothiing
+  pthread_mutex_lock(&uart_mutex);
+  if (!serial_port_baudrate_supported(baud)) {
+    pthread_mutex_unlock(&uart_mutex);
     return;
   }
-  struct SerialPort *port = (struct SerialPort *)(periph->reg_addr);
-  serial_port_set_baudrate(port, baud);
+  periph->baudrate = baud;
+  if (periph->reg_addr != NULL) {
+    struct SerialPort *port = (struct SerialPort *)periph->reg_addr;
+    if (serial_port_set_baudrate(port, baud) != 0) {
+      uart_periph_close_locked(periph);
+    }
+  }
+  bool should_open = periph->reg_addr == NULL && periph->dev[0] != '\0';
+  pthread_mutex_unlock(&uart_mutex);
+  if (should_open) {
+    uart_periph_open(periph);
+  }
 }
 
 void uart_periph_set_bits_stop_parity(struct uart_periph *periph, uint8_t bits, uint8_t stop, uint8_t parity)
 {
+  pthread_mutex_lock(&uart_mutex);
   if (periph->reg_addr == NULL) {
-    // periph not started, do nothiing
+    pthread_mutex_unlock(&uart_mutex);
     return;
   }
-  struct SerialPort *port = (struct SerialPort *)(periph->reg_addr);
-  serial_port_set_bits_stop_parity(port, bits, stop, parity);
+  struct SerialPort *port = (struct SerialPort *)periph->reg_addr;
+  if (serial_port_set_bits_stop_parity(port, bits, stop, parity) != 0) {
+    uart_periph_close_locked(periph);
+  }
+  pthread_mutex_unlock(&uart_mutex);
 }
 
 void uart_put_byte(struct uart_periph *periph, long fd __attribute__((unused)), uint8_t data)
 {
-  if (periph->reg_addr == NULL) { return; } // device not initialized ?
+  pthread_mutex_lock(&uart_mutex);
+  if (periph->reg_addr == NULL) {
+    pthread_mutex_unlock(&uart_mutex);
+    return;
+  }
 
   /* write single byte to serial port */
   struct SerialPort *port = (struct SerialPort *)(periph->reg_addr);
@@ -313,26 +297,37 @@ void uart_put_byte(struct uart_periph *periph, long fd __attribute__((unused)), 
   int ret = 0;
   do {
     ret = write((int)(port->fd), &data, 1);
-  } while (ret < 1 && errno == EAGAIN); //FIXME: max retry
+  } while (ret < 0 && errno == EINTR);
 
-  if (ret < 1) {
+  if (ret < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
     TRACE("uart_put_byte: write %d failed [%d: %s]\n", data, ret, strerror(errno));
+    for (size_t index = 0; index < UART_PERIPHERAL_COUNT; index++) {
+      if (uart_peripherals[index] == periph) {
+        uart_reconnect_requested[index] = true;
+        break;
+      }
+    }
   }
+  pthread_mutex_unlock(&uart_mutex);
 }
 
 
-static void __attribute__((unused)) uart_receive_handler(struct uart_periph *periph)
+static void __attribute__((unused)) uart_receive_handler(struct uart_periph *periph, int expected_fd)
 {
   unsigned char c = 'D';
 
-  if (periph->reg_addr == NULL) { return; } // device not initialized ?
-
-  struct SerialPort *port = (struct SerialPort *)(periph->reg_addr);
-  int fd = port->fd;
-
   pthread_mutex_lock(&uart_mutex);
 
-  while (read(fd, &c, 1) > 0) {
+  if (periph->reg_addr == NULL
+      || ((struct SerialPort *)periph->reg_addr)->fd != expected_fd) {
+    pthread_mutex_unlock(&uart_mutex);
+    return;
+  }
+
+  ssize_t read_result;
+    size_t received = 0;
+    while (received < UART_RX_BATCH_SIZE
+      && (read_result = read(expected_fd, &c, 1)) > 0) {
     uint16_t temp = (periph->rx_insert_idx + 1) % UART_RX_BUFFER_SIZE;
     // check for more room in queue
     if (temp != periph->rx_extract_idx) {
@@ -341,6 +336,12 @@ static void __attribute__((unused)) uart_receive_handler(struct uart_periph *per
     } else {
       TRACE("uart_receive_handler: rx_buf full! discarding received byte: %x %c\n", c, c);
     }
+    received++;
+  }
+  if (read_result == 0
+      || (read_result < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)) {
+    fprintf(stderr, "UART: connection to %s closed; reconnecting\n", periph->dev);
+    uart_periph_close_locked(periph);
   }
   pthread_mutex_unlock(&uart_mutex);
 }

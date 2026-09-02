@@ -2,9 +2,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
+#include <poll.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
 #include <signal.h>
 #include <unistd.h>
@@ -22,8 +26,12 @@ const char *setup =
   "lua props=require(\"propcase\");print(\"SetupScript\");set_prop(props.ISO_MODE,3200);set_prop(props.FLASH_MODE,2);set_prop(props.RESOLUTION,0);set_prop(props.DATE_STAMP,0);set_prop(props.AF_ASSIST_BEAM,0);set_prop(props.QUALITY,0);print(\"Ready\");\n";
 
 static int fo, fi;
-static void wait_for_cmd(int timeout);
-static void wait_for_img(char *filename, int timeout);
+static int write_command(const char *command, size_t length);
+static int make_deadline(struct timespec *deadline, int timeout_seconds);
+static int milliseconds_until(const struct timespec *deadline);
+static int read_character(char *character, const struct timespec *deadline);
+static int wait_for_cmd(int timeout_seconds);
+static int wait_for_img(char *filename, int timeout_seconds);
 static pid_t popen2(const char *command, int *infp, int *outfp);
 
 /*void main(int argc, char ** argv, char ** envp)
@@ -57,20 +65,26 @@ void chdk_pipe_init(void)
   wait_for_cmd(10);
 
   /* Connect to the camera */
-  write(fi, "connect\n", 8);
-  wait_for_cmd(10);
+  if (write_command("connect\n", sizeof("connect\n") - 1) != 0 || wait_for_cmd(10) != 0) {
+    fprintf(stderr, "CHDK_PIPE:\tfailed to connect to camera\n");
+    exit(1);
+  }
 
   /* Kill all running scripts */
   //write(fi, "killscript\n", 11);
   //wait_for_cmd(10);
 
   /* Start recording mode */
-  write(fi, "rec\n", 4);
-  wait_for_cmd(10);
+  if (write_command("rec\n", sizeof("rec\n") - 1) != 0 || wait_for_cmd(10) != 0) {
+    fprintf(stderr, "CHDK_PIPE:\tfailed to enter record mode\n");
+    exit(1);
+  }
 
   /* Start rsint mode */
-  write(fi, setup, strlen(setup));
-  wait_for_cmd(strlen(setup));
+  if (write_command(setup, strlen(setup)) != 0 || wait_for_cmd(10) != 0) {
+    fprintf(stderr, "CHDK_PIPE:\tfailed to configure camera\n");
+    exit(1);
+  }
 }
 
 /**
@@ -83,7 +97,9 @@ void chdk_pipe_deinit(void)
   //wait_for_cmd(10);
 
   /* Quit SHELL */
-  write(fi, "quit\n", 3);
+  if (write_command("quit\n", sizeof("quit\n") - 1) != 0) {
+    fprintf(stderr, "CHDK_PIPE:\tfailed to stop camera shell\n");
+  }
 }
 
 /**
@@ -91,45 +107,117 @@ void chdk_pipe_deinit(void)
  */
 void chdk_pipe_shoot(char *filename)
 {
-  write(fi, "rs /root\n", 9);
-  wait_for_img(filename, 10);
+  filename[0] = '\0';
+  if (write_command("rs /root\n", sizeof("rs /root\n") - 1) != 0
+      || wait_for_img(filename, 10) != 0) {
+    fprintf(stderr, "CHDK_PIPE:\timage capture timed out or failed\n");
+    filename[0] = '\0';
+  }
 }
 
-/**
- * Wait for the image to be available
- * TODO: add timeout
- */
-static void wait_for_img(char *filename, int timeout)
+static int write_command(const char *command, size_t length)
+{
+  size_t written = 0;
+  while (written < length) {
+    ssize_t result = write(fi, &command[written], length - written);
+    if (result < 0 && errno == EINTR) {
+      continue;
+    }
+    if (result <= 0) {
+      return -1;
+    }
+    written += (size_t)result;
+  }
+  return 0;
+}
+
+static int make_deadline(struct timespec *deadline, int timeout_seconds)
+{
+  if (clock_gettime(CLOCK_MONOTONIC, deadline) != 0) {
+    return -1;
+  }
+  deadline->tv_sec += timeout_seconds;
+  return 0;
+}
+
+static int milliseconds_until(const struct timespec *deadline)
+{
+  struct timespec now;
+  if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) {
+    return -1;
+  }
+  int64_t seconds = (int64_t)deadline->tv_sec - (int64_t)now.tv_sec;
+  int64_t nanoseconds = (int64_t)deadline->tv_nsec - (int64_t)now.tv_nsec;
+  int64_t milliseconds = seconds * 1000 + nanoseconds / 1000000;
+  if (milliseconds <= 0) {
+    return 0;
+  }
+  return milliseconds > INT_MAX ? INT_MAX : (int)milliseconds;
+}
+
+static int read_character(char *character, const struct timespec *deadline)
+{
+  struct pollfd descriptor = {.fd = fo, .events = POLLIN, .revents = 0};
+  int result;
+  do {
+    int timeout = milliseconds_until(deadline);
+    if (timeout <= 0) {
+      return -1;
+    }
+    result = poll(&descriptor, 1, timeout);
+  } while (result < 0 && errno == EINTR);
+  if (result <= 0 || (descriptor.revents & (POLLERR | POLLHUP | POLLNVAL)) != 0) {
+    return -1;
+  }
+  do {
+    result = (int)read(fo, character, 1);
+  } while (result < 0 && errno == EINTR);
+  return result == 1 ? 0 : -1;
+}
+
+static int wait_for_img(char *filename, int timeout_seconds)
 {
   int hash_cnt = 0;
   char ch;
   int filename_idx = 0;
+  struct timespec deadline;
+  if (make_deadline(&deadline, timeout_seconds) != 0) {
+    return -1;
+  }
 
   while (hash_cnt < 4) {
-    if (read(fo, &ch, 1)) {
-      if (ch == '#') {
-        hash_cnt++;
-      } else if (hash_cnt >= 2 && ch != '#') {
-        filename[filename_idx++] = ch;
-      }
+    if (read_character(&ch, &deadline) != 0) {
+      return -1;
+    }
+    if (ch == '#') {
+      hash_cnt++;
+    } else if (hash_cnt >= 2 && filename_idx < MAX_FILENAME - 1) {
+      filename[filename_idx++] = ch;
     }
   }
 
   filename[filename_idx] = 0;
-  wait_for_cmd(timeout);
+  do {
+    if (read_character(&ch, &deadline) != 0) {
+      return -1;
+    }
+  } while (ch != '>');
+  return 0;
 }
 
-/**
- * Wait for the commandline to be available
- * TODO: add timeout
- */
-static void wait_for_cmd(int timeout)
+static int wait_for_cmd(int timeout_seconds)
 {
-  (void)timeout;
   char ch;
+  struct timespec deadline;
+  if (make_deadline(&deadline, timeout_seconds) != 0) {
+    return -1;
+  }
   do {
-    read(fo, &ch, 1);
+    if (read_character(&ch, &deadline) != 0) {
+      return -1;
+    }
   } while (ch != '>');
+  return 0;
 }
 
 /**

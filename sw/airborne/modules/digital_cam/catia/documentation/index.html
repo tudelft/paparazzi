@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="CATIA camera pipeline setup, testing, capture, EXIF, and SODA guide">
+  <title>CATIA Camera Pipeline Guide</title>
+  <style>
+:root {
+  color-scheme: light;
+  --ink: #14213d;
+  --muted: #53627a;
+  --paper: #f7f9fc;
+  --surface: #ffffff;
+  --line: #d8e0ea;
+  --cyan: #007f8b;
+  --green: #237a45;
+  --amber: #a85c00;
+  --code: #101827;
+  --code-ink: #dce8f5;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    linear-gradient(90deg, rgba(0, 127, 139, 0.045) 1px, transparent 1px),
+    linear-gradient(rgba(0, 127, 139, 0.045) 1px, transparent 1px),
+    var(--paper);
+  background-size: 28px 28px;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  line-height: 1.65;
+}
+a { color: var(--cyan); }
+code, pre { font-family: "IBM Plex Mono", "Liberation Mono", monospace; }
+.masthead { color: white; background: #11243c; border-bottom: 5px solid #20b6bb; }
+.masthead-inner {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 48px 0 38px;
+}
+.eyebrow {
+  margin: 0 0 8px;
+  color: #78e3df;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.masthead h1 { margin: 0; color: white; font-size: clamp(2.25rem, 7vw, 4.7rem); }
+.lede { max-width: 760px; margin: 14px 0 0; color: #cfdae8; font-size: 1.12rem; }
+.layout {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 850px);
+  gap: 48px;
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 38px 0 80px;
+}
+nav { position: sticky; top: 24px; align-self: start; }
+nav strong {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+nav ul { margin: 0; padding: 0; list-style: none; }
+.toc > ul > li > a { display: none; }
+.toc ul ul { display: block; margin: 0; padding: 0; list-style: none; }
+nav a {
+  display: block;
+  padding: 8px 12px;
+  border-left: 2px solid var(--line);
+  color: var(--ink);
+  text-decoration: none;
+}
+nav a:hover { border-color: var(--cyan); color: var(--cyan); background: white; }
+main { min-width: 0; }
+main > h1 { display: none; }
+h1, h2, h3 { line-height: 1.18; letter-spacing: 0; }
+h2 {
+  margin: 54px 0 16px;
+  padding-bottom: 9px;
+  border-bottom: 2px solid var(--line);
+  font-size: 1.75rem;
+  scroll-margin-top: 24px;
+}
+main > h2:first-of-type { margin-top: 0; }
+h3 { margin: 30px 0 10px; font-size: 1.18rem; scroll-margin-top: 24px; }
+p { margin: 10px 0 16px; }
+blockquote {
+  margin: 18px 0;
+  padding: 14px 18px;
+  border-left: 4px solid var(--amber);
+  background: #fff7e8;
+}
+blockquote:first-of-type { border-color: var(--cyan); background: #edf8f8; }
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 28px auto 48px;
+  border: 1px solid #1a334f;
+  background: #07111f;
+}
+pre {
+  overflow-x: auto;
+  margin: 14px 0 20px;
+  padding: 16px 18px;
+  border-left: 4px solid #20b6bb;
+  color: var(--code-ink);
+  background: var(--code);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+code:not(pre code) { padding: 0.12em 0.34em; color: #8c3142; background: #f0e9ec; }
+table { width: 100%; border-collapse: collapse; margin: 18px 0 26px; background: white; }
+th, td { padding: 11px 13px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { color: white; background: #233a56; }
+tbody tr:nth-child(even) { background: #f4f7fa; }
+ul, ol { padding-left: 24px; }
+hr { border: 0; border-top: 2px solid var(--line); }
+footer { padding: 25px 20px; color: #ccd8e6; background: #11243c; text-align: center; }
+@media (max-width: 820px) {
+  .layout { grid-template-columns: 1fr; gap: 24px; }
+  nav { position: static; }
+  .toc > ul > li > ul { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .masthead-inner { padding-top: 34px; }
+}
+@media (max-width: 520px) {
+  .layout, .masthead-inner { width: min(100% - 24px, 1180px); }
+  .toc > ul > li > ul { grid-template-columns: 1fr; }
+  .masthead h1 { font-size: 2.25rem; }
+  th, td { padding: 8px; }
+}
+</style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <p class="eyebrow">Paparazzi UAV / MORA / SODA</p>
+      <h1>CATIA Camera Pipeline</h1>
+      <p class="lede">From a flight-triggered shot to a georeferenced JPEG and image-analysis result. Start locally, then move to CHDK or Raspberry Pi camera hardware.</p>
+    </div>
+  </header>
+  <div class="layout">
+    <nav aria-label="Guide sections">
+      <strong>On this page</strong>
+      <div class="toc">
+<ul>
+<li><a href="#catia-camera-pipeline">CATIA Camera Pipeline</a><ul>
+<li><a href="#start-here-local-simulation">Start Here: Local Simulation</a></li>
+<li><a href="#choose-a-camera">Choose a Camera</a></li>
+<li><a href="#test-any-camera-selection">Test Any Camera Selection</a></li>
+<li><a href="#simulate-aircraft-attitude">Simulate Aircraft Attitude</a></li>
+<li><a href="#how-the-jpeg-is-saved">How the JPEG Is Saved</a></li>
+<li><a href="#performance-and-target-cpus">Performance and Target CPUs</a></li>
+<li><a href="#output-locations">Output Locations</a></li>
+<li><a href="#command-reference">Command Reference</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+<li><a href="#regenerate-the-diagram">Regenerate the Diagram</a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+    </nav>
+    <main><h1 id="catia-camera-pipeline">CATIA Camera Pipeline</h1>
+<blockquote>
+<p><strong>Camera Application Triggering Image Analysis</strong> receives a MORA shot from
+Paparazzi, obtains a JPEG, adds flight metadata, and passes the finished image
+to SODA.</p>
+</blockquote>
+<p><strong>Maintainers:</strong> edit this <code>README.md</code> and <code>catia-flow.dot</code>, then run
+<code>./update-documentation.sh</code>. The PNG, SVG, and HTML page are generated files.</p>
+<p><img alt="CATIA capture and processing flow" src="catia-flow.png"></p>
+<p><a href="index.html">Open the standalone HTML guide</a></p>
+<h2 id="start-here-local-simulation">Start Here: Local Simulation</h2>
+<p>This is the simplest way to verify the complete chain without camera hardware.
+Run these commands from the Paparazzi repository root.</p>
+<h3 id="1-build-catia">1. Build CATIA</h3>
+<pre><code class="language-sh">make -C sw/airborne/modules/digital_cam/catia
+</code></pre>
+<h3 id="2-start-the-local-camera-service">2. Start the local camera service</h3>
+<pre><code class="language-sh">sw/airborne/modules/digital_cam/catia/run_local_demo.sh
+</code></pre>
+<p>The script builds CATIA, creates the local serial bridge, and starts CATIA with
+the bundled fake image. It also enables <code>--debug</code>. Leave this terminal running
+while NPS is running.</p>
+<p>The important startup line is:</p>
+<pre><code class="language-text">Started OK
+</code></pre>
+<p>CATIA and NPS may now start in either order. The simulation UART retries while
+<code>/tmp/catia-sim</code> is absent and reconnects automatically after CATIA is stopped
+and started again. This allows CATIA to be rebuilt and restarted without
+interrupting a running simulation.</p>
+<p>After first receiving this feature, rebuild and restart NPS once so the running
+simulator contains the reconnect-capable UART implementation. Subsequent CATIA
+restarts do not require another NPS restart.</p>
+<h3 id="3-trigger-a-photo-from-paparazzi">3. Trigger a photo from Paparazzi</h3>
+<p>Start the aircraft simulation and trigger <code>DC_SHOOT</code>, for example through the
+camera flight-plan block. NPS sends the shot index, position, altitude,
+attitude, speed, and course to CATIA.</p>
+<p>For every completed capture, CATIA prints:</p>
+<pre><code class="language-text">Photo take 6
+</code></pre>
+<p>The corresponding local image is:</p>
+<pre><code class="language-text">sw/airborne/modules/digital_cam/catia/photox/00006.jpg
+</code></pre>
+<h3 id="4-confirm-the-complete-chain">4. Confirm the complete chain</h3>
+<p>A healthy local capture ends with messages similar to:</p>
+<pre><code class="language-text">Shooting: got image .../photox/00006.jpg
+Shooting: EXIF metadata added
+Photo take 6
+SODA: I looked at the image. Cool, right?
+Shooting: soda return 0 ...
+</code></pre>
+<p>Stop CATIA with <code>Ctrl+C</code>. CATIA also stops the local <code>socat</code> bridge that it
+created.</p>
+<h2 id="choose-a-camera">Choose a Camera</h2>
+<p>CATIA separates the serial transport from the camera backend. <code>--local</code> creates
+the simulator serial bridge; <code>--chdk</code> and <code>--aicam</code> select physical cameras.</p>
+<table>
+<thead>
+<tr>
+<th>Goal</th>
+<th>Command</th>
+<th>Image source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Complete local simulation</td>
+<td><code>catia --local</code></td>
+<td>Bundled fake JPEG</td>
+</tr>
+<tr>
+<td>CHDK on the default serial port</td>
+<td><code>catia --chdk</code></td>
+<td>CHDK capture and download</td>
+</tr>
+<tr>
+<td>Raspberry Pi camera</td>
+<td><code>catia --aicam</code></td>
+<td><code>rpicam-still</code></td>
+</tr>
+<tr>
+<td>NPS transport with AI camera</td>
+<td><code>catia --local --aicam</code></td>
+<td><code>rpicam-still</code></td>
+</tr>
+<tr>
+<td>NPS transport with CHDK</td>
+<td><code>catia --local --chdk</code></td>
+<td>CHDK capture and download</td>
+</tr>
+</tbody>
+</table>
+<p>When running <code>catia</code> directly from the repository root, use its full path:</p>
+<pre><code class="language-sh">sw/airborne/modules/digital_cam/catia/catia --aicam
+</code></pre>
+<p>For readability, later examples shorten this path to <code>catia</code>. Run those
+examples from the CATIA directory, add that directory to <code>PATH</code>, or substitute
+the full repository-relative path shown above.</p>
+<p>Use a specific real serial endpoint with either physical camera:</p>
+<pre><code class="language-sh">sw/airborne/modules/digital_cam/catia/catia \
+  --serial /dev/ttyUSB0 \
+  --aicam
+</code></pre>
+<p><code>--serial</code> and <code>--local</code> cannot be combined because <code>--local</code> owns its PTY
+bridge.</p>
+<h3 id="ai-camera-command">AI camera command</h3>
+<p>The AI-camera backend starts <code>rpicam-still</code> directly, without a shell:</p>
+<pre><code class="language-sh">rpicam-still \
+  -o photos/%06d.jpg \
+  --width 4056 \
+  --height 3040 \
+  --hflip \
+  --vflip
+</code></pre>
+<p>CATIA waits for the process to finish and rejects a missing, empty, or failed
+capture.</p>
+<h2 id="test-any-camera-selection">Test Any Camera Selection</h2>
+<p>Add <code>--test</code> to bypass camera hardware while retaining the selected backend in
+the logs. This is useful before connecting CHDK or Raspberry Pi hardware.</p>
+<pre><code class="language-sh">catia --local --test
+catia --chdk --test
+catia --aicam --test
+catia --local --chdk --test
+catia --local --aicam --test
+</code></pre>
+<p>In all five cases, CATIA uses a test JPEG and still performs the normal EXIF and
+SODA stages. It does <strong>not</strong> start CHDK or <code>rpicam-still</code>.</p>
+<h3 id="use-a-test-photo-set">Use a test-photo set</h3>
+<p>Create <code>testphotos</code> beside the built <code>catia</code> executable:</p>
+<pre><code class="language-text">sw/airborne/modules/digital_cam/catia/
+|-- catia
+`-- testphotos/
+   |-- coast.jpg
+   |-- field.jpg
+   `-- village.jpg
+</code></pre>
+<p>Then run, for example:</p>
+<pre><code class="language-sh">sw/airborne/modules/digital_cam/catia/catia --aicam --test
+</code></pre>
+<p>Selection rules are deliberately simple:</p>
+<ol>
+<li>Only readable files ending in <code>.jpg</code> are candidates; matching is
+   case-insensitive.</li>
+<li>With one candidate, CATIA always uses that image.</li>
+<li>With several candidates, CATIA randomly selects one for each shot.</li>
+<li>If the directory is absent or empty, CATIA uses the compiled default image.</li>
+</ol>
+<p>To force one particular file and skip test-set selection:</p>
+<pre><code class="language-sh">catia --aicam --test --fake-image /absolute/path/example.jpg
+</code></pre>
+<h2 id="simulate-aircraft-attitude">Simulate Aircraft Attitude</h2>
+<p><code>--faketransform</code> makes a test image look as though it was captured at the
+aircraft attitude carried in the MORA shot:</p>
+<pre><code class="language-sh">catia --local --aicam --test --faketransform
+</code></pre>
+<p>The transform:</p>
+<ul>
+<li>applies roll, pitch, and yaw with a pinhole-camera homography;</li>
+<li>uses bilinear pixel sampling;</li>
+<li>automatically zooms, recenters, and crops the projected view so no black
+   border is exposed;</li>
+<li>preserves the original width and height;</li>
+<li>runs before EXIF metadata and SODA;</li>
+<li>is disabled by default and requires <code>--test</code>.</li>
+</ul>
+<p>The automatic cover crop uses the largest borderless view available from the
+source image. This behaves like digital zoom: edge content can be cropped and
+some source resolution is traded for a complete camera frame. CATIA logs the
+applied zoom and pan for each transformed image. The virtual field of view and
+crop are optimized together to minimize resolution loss while preserving the
+requested roll, pitch, and yaw exactly.</p>
+<p>Near the pinhole projection horizon, a single source photo does not contain all
+terrain that the tilted camera would reveal. By default CATIA synthesizes the
+missing terrain with mirrored continuation of the source texture. This keeps
+the requested attitude, fills the entire frame, and avoids hard tile seams or
+black borders.</p>
+<p>Near-horizon detection uses three configurable limits. Reaching any limit
+activates the selected near-horizon behavior:</p>
+<table>
+<thead>
+<tr>
+<th>C define</th>
+<th>Make variable</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>near_horizon_roll_deg</code></td>
+<td><code>NEAR_HORIZON_ROLL_DEG</code></td>
+<td><code>75.0</code></td>
+<td>Absolute roll limit</td>
+</tr>
+<tr>
+<td><code>near_horizon_pitch_deg</code></td>
+<td><code>NEAR_HORIZON_PITCH_DEG</code></td>
+<td><code>75.0</code></td>
+<td>Absolute pitch limit</td>
+</tr>
+<tr>
+<td><code>near_horizon_combined_tilt_deg</code></td>
+<td><code>NEAR_HORIZON_COMBINED_TILT_DEG</code></td>
+<td><code>70.0</code></td>
+<td>Optical-axis tilt derived from roll and pitch</td>
+</tr>
+</tbody>
+</table>
+<p>The default is:</p>
+<pre><code class="language-c">#define near_horizon_case_black 0
+</code></pre>
+<p>Set it to <code>1</code> to skip terrain transformation and immediately generate a black
+JPEG with the same dimensions. This is faster and useful when near-horizon
+imagery should be treated as unavailable:</p>
+<pre><code class="language-sh">make -C sw/airborne/modules/digital_cam/catia \
+   NEAR_HORIZON_CASE_BLACK=1
+</code></pre>
+<p>Customize thresholds at build time, for example:</p>
+<pre><code class="language-sh">make -C sw/airborne/modules/digital_cam/catia \
+   NEAR_HORIZON_ROLL_DEG=70.0 \
+   NEAR_HORIZON_PITCH_DEG=65.0 \
+   NEAR_HORIZON_COMBINED_TILT_DEG=60.0
+</code></pre>
+<p>All thresholds are validated in the range <code>0..180</code> degrees.</p>
+<p>CATIA also calculates and logs:</p>
+<pre><code class="language-text">blur_factor = ground_speed_m_s / 100
+</code></pre>
+<p>The blur factor is reserved for future use. No blur is currently applied.</p>
+<h2 id="how-the-jpeg-is-saved">How the JPEG Is Saved</h2>
+<p>The answer depends on the selected source. CATIA does not use one universal
+JPEG-saving function.</p>
+<h3 id="local-and-test-images">Local and test images</h3>
+<p><code>local_pipe_shoot()</code> copies the chosen source JPEG to <code>photox/%05d.jpg</code>. It uses
+bounded POSIX <code>open()</code>, <code>read()</code>, and <code>write()</code> loops and handles partial writes.
+The bytes are already JPEG encoded; this stage does not decode or re-encode
+them.</p>
+<h3 id="raspberry-pi-ai-camera">Raspberry Pi AI camera</h3>
+<p><code>ai_cam_pipe_shoot()</code> uses <code>posix_spawnp()</code> to execute <code>rpicam-still</code> with a
+fixed argument list. <strong><code>rpicam-still</code> is the component that captures and JPEG
+encodes the image.</strong> The default result is <code>photos/%06d.jpg</code>.</p>
+<h3 id="chdk-camera">CHDK camera</h3>
+<p><code>chdk_pipe_shoot()</code> instructs the CHDK camera to capture and download a JPEG.
+CHDK supplies the final filename to CATIA.</p>
+<h3 id="optional-transform-and-exif">Optional transform and EXIF</h3>
+<p>After any backend returns a JPEG, the shared processing pipeline runs:</p>
+<ol>
+<li>With <code>--faketransform</code>, <code>image_fake_transform()</code> decodes the image, applies
+   the attitude homography and borderless cover crop, then re-encodes it using
+   the vendored IJG libjpeg implementation.</li>
+<li><code>image_exif_write()</code> builds metadata with bundled libexif and inserts the
+   EXIF APP1 segment.</li>
+<li>Both rewriting stages use a temporary file, <code>fsync()</code>, and atomic <code>rename()</code>;
+   consumers never see a partially rewritten destination.</li>
+<li>SODA starts only after the final JPEG and EXIF metadata are ready.</li>
+</ol>
+<p>The EXIF record includes GPS coordinates, MSL and ground altitude, roll, pitch,
+yaw, ground speed, course, shot index, and the original raw MORA fields.</p>
+<h2 id="performance-and-target-cpus">Performance and Target CPUs</h2>
+<p>The default build is tuned for both modern AMD64 Linux systems and ARM64 Linux
+on the Raspberry Pi Zero 2 W without embedding CPU-specific instructions:</p>
+<ul>
+<li>CATIA, SODA, bundled IJG libjpeg, and bundled libexif compile with <code>-O2</code>;</li>
+<li>the attitude warp advances its projective coordinates across each scanline;</li>
+<li>bilinear coordinates and weights are calculated once for all RGB channels;</li>
+<li>CATIA drains serial input in chunks instead of one byte per millisecond;</li>
+<li><code>poll()</code> sleeps until serial or UDP work arrives, reducing idle CPU use;</li>
+<li>SODA starts directly with <code>posix_spawnp()</code> instead of through a shell;</li>
+<li>processing workers are detached, bounded, and drained before shutdown;</li>
+<li>CHDK reads have monotonic whole-operation deadlines and checked I/O;</li>
+<li>SODA is terminated and reaped during shutdown, with a bounded grace period;</li>
+<li>project sources compile with warnings treated as errors, while bundled
+   third-party objects are isolated in the build.</li>
+</ul>
+<p>On the development AMD64 system, ten <code>1200x899</code> decode-transform-encode cycles
+improved from approximately <code>1.10 s</code> to <code>0.56 s</code> for a normal attitude and from
+<code>1.41 s</code> to <code>0.75 s</code> for synthesized terrain: about <code>49%</code> and <code>47%</code> less wall
+time respectively. The event-driven idle loop used zero measured CPU ticks in a
+three-second local sample and dispatched a test trigger in under one
+millisecond. These are local reference measurements, not Raspberry Pi
+guarantees.</p>
+<p>Override the portable optimization level when profiling or debugging:</p>
+<pre><code class="language-sh">make -C sw/airborne/modules/digital_cam/catia clean all OPTFLAGS=-O0
+</code></pre>
+<p>The repository contains an OpenCV-embedded libjpeg-turbo tree. It is not linked
+directly because that component requires CMake-generated headers plus different
+NASM/NEON SIMD source selection for AMD64 and ARM64. The current bundled IJG
+codec remains self-contained and cross-compiles reliably. A future switch to
+libjpeg-turbo should build it as a proper separate library rather than compile
+its source files ad hoc.</p>
+<h2 id="output-locations">Output Locations</h2>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Default output</th>
+<th>Filename example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Local or <code>--test</code></td>
+<td><code>catia/photox/</code></td>
+<td><code>00006.jpg</code></td>
+</tr>
+<tr>
+<td>AI camera</td>
+<td><code>catia/photos/</code></td>
+<td><code>000006.jpg</code></td>
+</tr>
+<tr>
+<td>CHDK</td>
+<td>Returned by CHDK</td>
+<td>Camera-defined</td>
+</tr>
+</tbody>
+</table>
+<p>Change paths or the camera command at build time:</p>
+<pre><code class="language-sh">make -C sw/airborne/modules/digital_cam/catia \
+  CATIA_LOCAL_PHOTO_DIR=/data/test-photos \
+  CATIA_AI_CAM_PHOTO_DIR=/data/camera-photos \
+  CATIA_AI_CAM_COMMAND=/usr/bin/rpicam-still
+</code></pre>
+<h2 id="command-reference">Command Reference</h2>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--local</code></td>
+<td>Create <code>/tmp/catia-sim</code> and <code>/tmp/catia-app</code> for local simulation</td>
+</tr>
+<tr>
+<td><code>--serial DEVICE</code></td>
+<td>Use a specific real serial endpoint</td>
+</tr>
+<tr>
+<td><code>--chdk</code></td>
+<td>Select the CHDK camera backend</td>
+</tr>
+<tr>
+<td><code>--aicam</code></td>
+<td>Select the Raspberry Pi camera backend</td>
+</tr>
+<tr>
+<td><code>--test</code></td>
+<td>Replace physical capture with a test JPEG</td>
+</tr>
+<tr>
+<td><code>--fake-image FILE</code></td>
+<td>Use one explicit JPEG instead of <code>testphotos</code></td>
+</tr>
+<tr>
+<td><code>--faketransform</code></td>
+<td>Apply test-only roll, pitch, and yaw transformation</td>
+</tr>
+<tr>
+<td><code>--debug</code></td>
+<td>Show serial traffic, MORA frame, trigger, and capture diagnostics</td>
+</tr>
+<tr>
+<td><code>--help</code></td>
+<td>Print the built-in command help</td>
+</tr>
+</tbody>
+</table>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="socket-bind-address-already-in-use"><code>Socket: bind: Address already in use</code></h3>
+<p>Another CATIA process is already using the socket. Stop the older process
+before starting another instance.</p>
+<pre><code class="language-sh">pgrep -af catia
+</code></pre>
+<h3 id="local-mode-is-already-running"><code>local mode is already running</code></h3>
+<p>Only one process may own the local PTY bridge. Stop the existing local CATIA
+process with <code>Ctrl+C</code>, then start the demo again.</p>
+<h3 id="no-image-appears">No image appears</h3>
+<p><code>run_local_demo.sh</code> enables <code>--debug</code> automatically. Check the log in this
+order:</p>
+<ol>
+<li><code>Started OK</code> confirms CATIA initialized.</li>
+<li><code>CATIA DEBUG: waiting for MORA data: 0 bytes, 0 valid frames, 0 rejected
+   frames</code> means CATIA is healthy but has not received camera traffic yet. A
+   reconnect-capable NPS instance will attach automatically within a short
+   interval; the next camera trigger should then appear.</li>
+<li><code>received MORA frame start</code> confirms serial bytes reached CATIA.</li>
+<li><code>rejected MORA frame</code> indicates framing or checksum failure.</li>
+<li><code>accepted MORA message id 1</code> and <code>photo trigger received</code> confirm a valid
+   shot command.</li>
+<li><code>SHOT NR</code> shows the decoded flight and attitude data.</li>
+<li><code>Shooting: got image ...</code> confirms capture or test-copy completion.</li>
+<li><code>EXIF metadata added</code> confirms metadata insertion.</li>
+<li><code>soda return 0</code> confirms analysis completed successfully.</li>
+</ol>
+<p>Enable the same diagnostics for a non-local command by adding <code>--debug</code>:</p>
+<pre><code class="language-sh">catia --aicam --debug
+</code></pre>
+<h3 id="restart-catia-without-restarting-nps">Restart CATIA without restarting NPS</h3>
+<p>The simulation UART checks for <code>/tmp/catia-sim</code> every 200 ms. When CATIA stops,
+NPS detects the closed PTY and keeps flying. Use this development loop:</p>
+<pre><code class="language-sh"># Stop CATIA with Ctrl+C, then rebuild and restart it:
+make -C sw/airborne/modules/digital_cam/catia
+sw/airborne/modules/digital_cam/catia/run_local_demo.sh
+</code></pre>
+<p>NPS remains running throughout. Camera commands issued while CATIA is stopped
+cannot be recovered, but later commands are delivered after reconnection.</p>
+<h3 id="build-shows-libexif-or-libjpeg-warnings">Build shows libexif or libjpeg warnings</h3>
+<p>The bundled third-party sources may emit compiler warnings. A successful build
+still creates the <code>catia</code> and <code>soda_local</code> executables. Errors reported against
+CATIA-owned sources should be investigated.</p>
+<h2 id="regenerate-the-diagram">Regenerate the Diagram</h2>
+<p>The Markdown guide and Graphviz DOT file are the canonical documentation
+sources. After changing CATIA behavior or commands, update both as needed and
+run this from the <code>documentation</code> directory:</p>
+<pre><code class="language-sh">./update-documentation.sh
+</code></pre>
+<p>The script validates its dependencies, renders <code>catia-flow.png</code> and
+<code>catia-flow.svg</code> with Graphviz, and rebuilds <code>index.html</code> from this Markdown
+file. It then checks that every generated file is nonempty.</p>
+<p>Required tools:</p>
+<ul>
+<li>Graphviz <code>dot</code>;</li>
+<li>Python 3;</li>
+<li>Python package <code>Markdown</code> (<code>python3 -m pip install Markdown</code>).</li>
+</ul>
+<p>Do not edit <code>index.html</code>, <code>catia-flow.png</code>, or <code>catia-flow.svg</code> directly; the
+next documentation update replaces them.</p></main>
+  </div>
+  <footer>CATIA documentation / Paparazzi UAV</footer>
+</body>
+</html>

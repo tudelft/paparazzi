@@ -26,7 +26,7 @@
       <while cond="!GpsFixValid()"/>
     </block>
     <block name="Geo init">
-      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <while cond="LessThan(NavBlockTime(), 5)"/>
       <call_once fun="NavSetGroundReferenceHere()"/>
     </block>
     <block name="Holding point">
@@ -47,11 +47,6 @@
       <call_once fun="dc_send_command(DC_SHOOT)"/>
       <set value="DC_AUTOSHOOT_PERIODIC" var="dc_autoshoot"/>
       <oval p1="1" p2="2" radius="nav_radius"/>
-    </block>
-    <block name="MOB" strip_button="Circle around here" strip_icon="mob.png" group="base_pattern">
-      <call_once fun="NavSetWaypointHere(WP_MOB)"/>
-      <set value="DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
-      <circle radius="nav_radius" wp="MOB"/>
     </block>
     <block name="Survey S1-S2" strip_button="Survey (wp S1-S2)" strip_icon="survey.png" group="extra_pattern">
       <survey_rectangle grid="150" wp1="S1" wp2="S2"/>

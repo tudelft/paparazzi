@@ -10,17 +10,10 @@ CAMERA_DEVICE="/tmp/catia-sim"
 cd "$PAPARAZZI_HOME"
 export PAPARAZZI_HOME
 
-echo "EasyStar MORA demo: waiting for CATIA endpoint $CAMERA_DEVICE"
-for attempt in $(seq 1 200); do
-  if [[ -e "$CAMERA_DEVICE" ]]; then
-    break
-  fi
-  read -r -t 0.1 _ || true
-done
-
-if [[ ! -e "$CAMERA_DEVICE" ]]; then
-  echo "EasyStar MORA demo: CATIA did not create $CAMERA_DEVICE" >&2
-  exit 1
+if [[ -e "$CAMERA_DEVICE" ]]; then
+  echo "EasyStar MORA demo: CATIA endpoint is ready at $CAMERA_DEVICE"
+else
+  echo "EasyStar MORA demo: CATIA is not running yet; UART will connect automatically"
 fi
 
 echo "EasyStar MORA demo: regenerating $AIRCRAFT for local UART camera"

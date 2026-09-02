@@ -1,1 +1,7 @@
 catia
+soda_local
+photox/
+photos/
+documentation/__pycache__/
+.near-horizon-*
+.build/

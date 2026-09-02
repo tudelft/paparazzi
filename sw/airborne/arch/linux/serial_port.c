@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -29,6 +30,31 @@
 static inline int uart_speed(int def)
 {
   switch (def) {
+  case B0: return 0;
+#ifdef B50
+  case B50: return 50;
+#endif
+#ifdef B75
+  case B75: return 75;
+#endif
+#ifdef B110
+  case B110: return 110;
+#endif
+#ifdef B134
+  case B134: return 134;
+#endif
+#ifdef B150
+  case B150: return 150;
+#endif
+#ifdef B200
+  case B200: return 200;
+#endif
+#ifdef B300
+  case B300: return 300;
+#endif
+#ifdef B600
+  case B600: return 600;
+#endif
     case B1200: return 1200;
     case B2400: return 2400;
     case B4800: return 4800;
@@ -39,11 +65,54 @@ static inline int uart_speed(int def)
     case B100000: return 100000;
     case B115200: return 115200;
     case B230400: return 230400;
+  #ifdef B460800
+    case B460800: return 460800;
+  #endif
+  #ifdef B500000
+    case B500000: return 500000;
+  #endif
+  #ifdef B576000
+    case B576000: return 576000;
+  #endif
 #ifdef B921600
     case B921600: return 921600;
 #endif
-    default: return 9600;
+  #ifdef B1000000
+    case B1000000: return 1000000;
+  #endif
+  #ifdef B1152000
+    case B1152000: return 1152000;
+  #endif
+  #ifdef B1500000
+    case B1500000: return 1500000;
+  #endif
+  #ifdef B2000000
+    case B2000000: return 2000000;
+  #endif
+  #ifdef B2500000
+    case B2500000: return 2500000;
+  #endif
+  #ifdef B3000000
+    case B3000000: return 3000000;
+  #endif
+  #ifdef B3500000
+    case B3500000: return 3500000;
+  #endif
+  #ifdef B4000000
+    case B4000000: return 4000000;
+  #endif
+    default: return -1;
   }
+}
+
+bool serial_port_baudrate_supported(speed_t speed)
+{
+#if USE_ARBITRARY_BAUDRATE
+  return uart_speed(speed) >= 0;
+#else
+  (void)speed;
+  return true;
+#endif
 }
 
 #define UBITS_7 7
@@ -110,6 +179,11 @@ void serial_port_flush_output(struct SerialPort *me)
 
 int  serial_port_open_raw(struct SerialPort *me, const char *device, speed_t speed)
 {
+  if (!serial_port_baudrate_supported(speed)) {
+    errno = EINVAL;
+    me->fd = -1;
+    return -1;
+  }
   if ((me->fd = open(device, O_RDWR | O_NONBLOCK | O_NOCTTY)) < 0) {
     TRACE(TRACE_ERROR, "%s, open failed: %s (%d)\n", device, strerror(errno), errno);
     return -1;
@@ -136,7 +210,7 @@ int  serial_port_open_raw(struct SerialPort *me, const char *device, speed_t spe
   me->cur_termios.c_cc[VTIME] = 0;
   me->cur_termios.c_cc[VMIN] = 0;
 
-  if (cfsetispeed(&me->cur_termios, speed)) {
+  if (cfsetispeed(&me->cur_termios, speed) || cfsetospeed(&me->cur_termios, speed)) {
     TRACE(TRACE_ERROR, "%s, set term speed failed: %s (%d)\n", device, strerror(errno), errno);
     close(me->fd);
     return -1;
@@ -166,7 +240,7 @@ int  serial_port_open(struct SerialPort *me, const char *device,
   }
   me->cur_termios = me->orig_termios;
   term_conf_callback(&me->cur_termios, &speed);
-  if (cfsetispeed(&me->cur_termios, speed)) {
+  if (cfsetispeed(&me->cur_termios, speed) || cfsetospeed(&me->cur_termios, speed)) {
     TRACE(TRACE_ERROR, "%s, set term speed failed: %s (%d)\n", device, strerror(errno), errno);
     close(me->fd);
     return -1;
@@ -213,9 +287,12 @@ int serial_port_set_baudrate(struct SerialPort *me, speed_t speed)
   if (!me || me->fd < 0) {
     return -1;
   }
-  if (cfsetispeed(&me->cur_termios, speed)) {
-    TRACE(TRACE_ERROR, "%s, set term speed failed: %s (%d)\n", device, strerror(errno), errno);
-    close(me->fd);
+  if (cfsetispeed(&me->cur_termios, speed) || cfsetospeed(&me->cur_termios, speed)) {
+    TRACE(TRACE_ERROR, "set term speed failed: %s (%d)\n", strerror(errno), errno);
+    return -1;
+  }
+  if (tcsetattr(me->fd, TCSADRAIN, &me->cur_termios)) {
+    TRACE(TRACE_ERROR, "setting term attributes failed: %s (%d)\n", strerror(errno), errno);
     return -1;
   }
   return 0;
@@ -290,6 +367,11 @@ void serial_port_flush_output(struct SerialPort *me)
 
 int  serial_port_open_raw(struct SerialPort *me, const char *device, speed_t speed)
 {
+  if (!serial_port_baudrate_supported(speed)) {
+    errno = EINVAL;
+    me->fd = -1;
+    return -1;
+  }
   if ((me->fd = open(device, O_RDWR | O_NONBLOCK | O_NOCTTY)) < 0) {
     TRACE(TRACE_ERROR, "%s, open failed: %s (%d)\n", device, strerror(errno), errno);
     return -1;
@@ -318,14 +400,22 @@ int  serial_port_open_raw(struct SerialPort *me, const char *device, speed_t spe
   me->cur_termios.c_cc[VTIME] = 0;
   me->cur_termios.c_cc[VMIN] = 0;
 
+  int baudrate = uart_speed(speed);
+  if (baudrate < 0) {
+    errno = EINVAL;
+    close(me->fd);
+    me->fd = -1;
+    return -1;
+  }
   me->cur_termios.c_cflag &= ~CBAUD;
   me->cur_termios.c_cflag |= BOTHER;
-  me->cur_termios.c_ispeed = uart_speed(speed); // set real speed
-  me->cur_termios.c_ospeed = uart_speed(speed); // set real speed
+  me->cur_termios.c_ispeed = baudrate;
+  me->cur_termios.c_ospeed = baudrate;
 
   if (ioctl(me->fd, TCSETS2, &me->cur_termios)) {
     perror("TCSETS2");
     close(me->fd);
+    me->fd = -1;
     return -1;
   }
 
@@ -334,7 +424,9 @@ int  serial_port_open_raw(struct SerialPort *me, const char *device, speed_t spe
   if (ioctl(me->fd, TCGETS2, &me->cur_termios))
   {
     perror("TCGETS2");
-    return 5;
+    close(me->fd);
+    me->fd = -1;
+    return -1;
   }
 
   return 0;
@@ -382,15 +474,19 @@ int serial_port_set_baudrate(struct SerialPort *me, speed_t speed)
     return -1;
   }
 
+  int baudrate = uart_speed(speed);
+  if (baudrate < 0) {
+    errno = EINVAL;
+    return -1;
+  }
   me->cur_termios.c_cflag &= ~CBAUD;
   me->cur_termios.c_cflag |= BOTHER;
-  me->cur_termios.c_ispeed = uart_speed(speed); // set real speed
-  me->cur_termios.c_ospeed = uart_speed(speed); // set real speed
+  me->cur_termios.c_ispeed = baudrate;
+  me->cur_termios.c_ospeed = baudrate;
 
   // set new parameters
   if (ioctl(me->fd, TCSETS2, &me->cur_termios)) {
     perror("TCSETS2");
-    close(me->fd);
     return -1;
   }
   return 0;
@@ -432,7 +528,6 @@ int serial_port_set_bits_stop_parity(struct SerialPort *me, const int bits, cons
   // set new parameters
   if (ioctl(me->fd, TCSETS2, &me->cur_termios)) {
     perror("TCSETS2");
-    close(me->fd);
     return -1;
   }
   return 0;

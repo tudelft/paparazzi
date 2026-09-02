@@ -303,10 +303,12 @@
     <!-- When a compute board is connected -->
     <module name="digital_cam_uart">
       <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/>
-      <!-- <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="5.0"/> -->
+      <!-- <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="5.0"/> --><!-- Unit: m -->
       <configure name="CAMERA_PORT" value="UART5"/> <!-- For the real Flightcontroller to MORA connection-->
+      <!-- <configure name="CAMERA_ID" value="LWIRCAM"/>
+      <configure name="CAMERA_ID" value="AICAM"/> -->
       <configure name="SITL_SERIAL" value="/tmp/catia-sim"/><!-- for local PC -->
-      <configure name="SITL_SERIAL" value="/dev/ttyUSB0"/><!-- for actual device via FTDO to NORA on desk -->
+      <!--<configure name="SITL_SERIAL" value="/dev/ttyUSB0"/>--><!-- for actual device via FTDO to NORA on desk -->
     </module>
 
     <!-- <module name="traffic_info"> -->

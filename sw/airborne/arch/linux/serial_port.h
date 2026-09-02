@@ -23,6 +23,8 @@
 #ifndef SERIAL_PORT_H
 #define SERIAL_PORT_H
 
+#include <stdbool.h>
+
 #if !USE_ARBITRARY_BAUDRATE
 #include <termios.h>
 
@@ -47,6 +49,7 @@ extern struct SerialPort *serial_port_new(void);
 extern void serial_port_free(struct SerialPort *me);
 extern void serial_port_flush(struct SerialPort *me);
 extern void serial_port_flush_output(struct SerialPort *me);
+extern bool serial_port_baudrate_supported(speed_t speed);
 extern int  serial_port_open_raw(struct SerialPort *me, const char *device, speed_t speed);
 extern int  serial_port_open(struct SerialPort *me, const char *device,
                              void(*term_conf_callback)(struct termios *, speed_t *));

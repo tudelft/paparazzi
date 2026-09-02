@@ -1,0 +1,124 @@
+digraph CATIA {
+  graph [
+    rankdir=TB,
+    bgcolor="#07111f",
+    pad="0.3",
+    nodesep="0.3",
+    ranksep="0.48",
+    fontname="DejaVu Sans",
+    label="CATIA  |  From flight event to analyzed image",
+    labelloc="t",
+    labeljust="c",
+    fontsize=22,
+    fontcolor="#f8fafc",
+    splines=ortho
+  ];
+
+  node [
+    shape=rect,
+    style="rounded,filled",
+    fontname="DejaVu Sans",
+    fontsize=10.5,
+    fontcolor="#f8fafc",
+    color="#475569",
+    penwidth=1.6,
+    margin="0.18,0.12"
+  ];
+
+  edge [
+    fontname="DejaVu Sans",
+    fontsize=9,
+    fontcolor="#cbd5e1",
+    color="#64748b",
+    penwidth=1.6,
+    arrowsize=0.75
+  ];
+
+  shot [
+    label="1  PAPARAZZI SHOT\nindex + GPS + altitude\nroll + pitch + yaw + speed + course",
+    fillcolor="#164e63",
+    color="#22d3ee"
+  ];
+
+  transport [
+    label="2  MORA TRANSPORT\nreal serial device  or  local PTY bridge",
+    fillcolor="#1e3a5f",
+    color="#60a5fa"
+  ];
+
+  dispatcher [
+    label="3  CATIA DISPATCHER\nchoose transport, camera, and test options",
+    fillcolor="#312e81",
+    color="#a5b4fc",
+    penwidth=2.2
+  ];
+
+  subgraph cluster_capture {
+    label="4  OBTAIN ONE JPEG";
+    labelloc="t";
+    fontsize=12;
+    fontname="DejaVu Sans Bold";
+    fontcolor="#dbeafe";
+    color="#334155";
+    fillcolor="#0b1728";
+    style="rounded,filled";
+    margin=16;
+
+    local [
+      label="LOCAL / TEST\nselect testphotos/*.jpg\nor --fake-image\ncopy to photox/%05d.jpg",
+      fillcolor="#14532d",
+      color="#4ade80"
+    ];
+
+    chdk [
+      label="CHDK\ncamera capture + download\nreturn camera filename",
+      fillcolor="#713f12",
+      color="#facc15"
+    ];
+
+    aicam [
+      label="AI CAMERA\nrpicam-still captures + encodes\nphotos/%06d.jpg",
+      fillcolor="#7c2d12",
+      color="#fb923c"
+    ];
+
+    {rank=same; local; chdk; aicam;}
+  }
+
+  transform [
+    label="5  OPTIONAL TEST TRANSFORM\n--faketransform\nroll + pitch + yaw perspective\nauto FOV + borderless cover crop\nnear horizon: synth terrain or black\nvendored IJG libjpeg\nblur factor logged, not applied",
+    fillcolor="#581c87",
+    color="#d8b4fe"
+  ];
+
+  exif [
+    label="6  EXIF METADATA\nGPS + altitude + attitude\nspeed + course + raw MORA\nbundled libexif",
+    fillcolor="#831843",
+    color="#f9a8d4"
+  ];
+
+  final [
+    label="7  FINAL JPEG\natomic replacement complete\nnever expose a partial rewrite",
+    fillcolor="#3f6212",
+    color="#bef264",
+    penwidth=2.2
+  ];
+
+  soda [
+    label="8  SODA\nrun image analysis\nreturn detections to Paparazzi",
+    fillcolor="#991b1b",
+    color="#fca5a5"
+  ];
+
+  shot -> transport;
+  transport -> dispatcher;
+  dispatcher -> local [color="#4ade80"];
+  dispatcher -> chdk [color="#facc15"];
+  dispatcher -> aicam [color="#fb923c"];
+  local -> transform [color="#4ade80"];
+  chdk -> transform [color="#facc15"];
+  aicam -> transform [color="#fb923c"];
+  transform -> exif [color="#d8b4fe"];
+  exif -> final [color="#f9a8d4"];
+  final -> soda [color="#bef264"];
+}
