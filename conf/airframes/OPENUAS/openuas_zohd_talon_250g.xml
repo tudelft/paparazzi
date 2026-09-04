@@ -439,6 +439,15 @@
 
   </firmware>
 
+  <!-- To look at the Spectrum analyzer of a uBlox M10 this comes in handy -->
+  <!-- Also, all of a configuration needs to be uploaded to the uBlox M10 GNSS module, this is done via the uBlox UCenter software -->
+  <firmware name="setup">
+    <target name="usb_tunnel" board="matek_f405_te_sd">
+      <configure name="TUNNEL_PORT" value="UART4"/>
+      <configure name="TUNNEL_BAUD" value="B460800"/>
+    </target>
+  </firmware>
+
   <!-- Setup ONLY used to SETUP the Hardware settings GNSS Modem -->
   <!-- <firmware name="setup">
     <target name="tunnel" board="matek_f405_te_sd" />

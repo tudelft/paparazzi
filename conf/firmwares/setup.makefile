@@ -40,6 +40,8 @@ COMMON_SETUP_CFLAGS += -DUSE_LED
 
 ifeq ($(ARCH), stm32)
 COMMON_SETUP_SRCS += $(SRC_ARCH)/led_hw.c
+endif
+ifneq ($(filter $(ARCH),stm32 chibios),)
 COMMON_SETUP_SRCS += $(SRC_ARCH)/mcu_periph/gpio_arch.c
 endif
 
