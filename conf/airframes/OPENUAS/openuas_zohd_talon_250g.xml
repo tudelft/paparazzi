@@ -1,18 +1,18 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 <airframe name="Talon_250G">
   <description>
-   + Small airframe to test UWB swarm behavior and ETECS control
+   Small foam airframe to test UWB swarm behavior and ETECS control
 
     + MODEL:            ZoHD Talon 250G
     + FLIGHTCONTROLLER: FlyingRC F4 v1.5 as Mateksys F405-TE-SD
     + IMU:              ICM42688-P
     + ACTUATORS:        JX PDI-1143HB 4.3g
     + GNSS              uBlox M10 GNSS
-    + MAGNETOMETER      QMC5338L
+    + MAGNETOMETER:     QMC5883L on GNSS module, optionally RM3100
     + ESC:              HAKRC 32A 35A
     + RCRX:             OpenR-XSR
     + AIRSPEED:         Sensirion SDP33
-    + TELEMETRY:        Mesh 433mHz LoRa
+    + TELEMETRY:        Mesh 433mHz LoRa or temporary XBEE S1 Pro Digimesh
     + BARO:             Infineon DPS310
     + CURRENT:          FC onboard sensor on the default analog ports
     + RANGEFINDER:      Surertech VB22A on I2C
@@ -568,10 +568,16 @@
     <define name="MAG_Z_NEUTRAL" value="0"/>
 
     <define name="BODY_TO_IMU_PHI" value="0.0" unit="rad"/>
-    <define name="BODY_TO_IMU_THETA" value="0.1" unit="rad"/>
+    <define name="BODY_TO_IMU_THETA" value="0.12" unit="rad"/>
     <define name="BODY_TO_IMU_PSI" value="0.0" unit="rad"/>
 
   </section> 
+
+  <section name="AIR_DATA" prefix="AIR_DATA_">
+    <define name="CALC_AIRSPEED" value="TRUE"/>
+    <define name="CALC_TAS_FACTOR" value="FALSE"/>
+    <define name="CALC_AMSL_BARO" value="TRUE"/>
+  </section>
 
   <section name="AHRS" prefix="AHRS_">
     <!-- AHRS filter tuning values -->
@@ -590,21 +596,17 @@
     <define name="GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>
     <define name="FC_MAG_ID" value="MAG_QMC5883L_SENDER_ID"/>
 
-    <!-- TODO: Local Magnetic field FR2026 Strasbourg -->
-    <!-- <define name="H_X" value="0.413550"/>
-    <define name="H_Y" value="-0.010176"/>
-    <define name="H_Z" value="0.910424"/> -->
+    <!-- Local Magnetic field IMAV2026 FR Strasbourg -->
+    <!--
+    <define name="H_X" value="0.440890"/>
+    <define name="H_Y" value="-0.008888"/>
+    <define name="H_Z" value="0.897517"/>
+    -->
 
     <!-- Local Magnetic field DE2026 -->
     <define name="H_X" value="0.413550"/>
     <define name="H_Y" value="-0.010176"/>
     <define name="H_Z" value="0.910424"/>
-  </section>
-
-  <section name="AIR_DATA" prefix="AIR_DATA_">
-    <define name="CALC_AIRSPEED" value="TRUE"/>
-    <define name="CALC_TAS_FACTOR" value="TRUE"/>
-    <define name="CALC_AMSL_BARO" value="TRUE"/>
   </section>
 
   <section name="INS" prefix="INS_">
@@ -855,10 +857,11 @@
     <define name="UNLOCKED_HOME_MODE" value="TRUE"/>
     <define name="RC_LOST_MODE" value="AP_MODE_AUTO2"/>
 
+    <!-- For later GNSS denied tests -->
     <!-- <define name="NO_GPS_NEEDED_FOR_NAV" value="TRUE"/>-->
     <!-- Avoid GPS loss behavior when having RC or datalink -->
     <!-- <define name="NO_GPS_LOST_WITH_DATALINK_TIME" value="20000"/>-->
-    <!-- <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/> --
+    <!-- <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/> -->
 
     <define name="NO_XBEE_API_INIT" value="TRUE"/>
     <define name="ARRIVED_AT_WAYPOINT" value="10.0" unit="m"/>
@@ -954,6 +957,7 @@
 
   </section>
 
+  <!-- TODO: NOT YET Calibrated, so you MUST change that file! -->
   <include href="conf/airframes/OPENUAS/diff/mag_calib_$AC_ID.xml"/>
 
 </airframe>
