@@ -266,10 +266,14 @@
     </target>
 
     <target name="sim" board="pc">
+      <configure name="PERIODIC_FREQUENCY" value="500"/>
+      <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
       <!--<define name="AHRS_FC_MAG_IDS_BARO_ID" value="BARO_SIM_SENDER_ID"/>-->
       <!--<define name="INS_BARO_ID" value="BARO_SIM_SENDER_ID"/>-->
       <module name="radio_control" type="ppm"/>
       <!--<define name="RADIO_CONTROL_NB_CHANNEL" value="8"/>-->
+      <define name="RADIO_MANUALRELEASE" value="RADIO_AUX4"/>
+      <define name="RADIO_BRAKE" value="RADIO_AUX4"/>
       <module name="telemetry" type="transparent"/>
       <module name="imu" type="sim"/>
       <module name="baro_sim"/>
@@ -443,7 +447,7 @@
   <!-- *** Actuation and related settings -->
 
   <servos driver="Pwm">
-    <servo name="S_THROTTLE"          no="1" min="1084" neutral="1094" max="1900"/>
+    <servo name="S_THROTTLE"          no="1" min="1080" neutral="1090" max="1900"/>
     <servo name="S_AILERON_LEFT"      no="2" min="1900" neutral="1500" max="1100"/>
     <servo name="S_RUDDERVATOR_LEFT"  no="3" min="1900" neutral="1500" max="1100"/>
     <servo name="S_RUDDERVATOR_RIGHT" no="4" min="1100" neutral="1500" max="1900"/>
