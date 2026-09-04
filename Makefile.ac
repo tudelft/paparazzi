@@ -77,6 +77,10 @@ else # not auto, explicitly specified
 	NPROCS := $J
 endif
 
+ifneq ($(strip $(BUILD_CPUSET)),)
+	BUILD_AFFINITY := taskset -c $(BUILD_CPUSET)
+endif
+
 #
 # export paparazzi version
 #
@@ -220,12 +224,12 @@ hitl.ac_h : $(GENERATORS)/gen_aircraft.out
 
 %.compile: %.ac_h | print_version
 	$(MAKE) TARGET=$* -f Makefile.ac all_ac_h
-	cd $(AIRBORNE); $(MAKE) -j$(NPROCS) TARGET=$* all
+	cd $(AIRBORNE); $(BUILD_AFFINITY) $(MAKE) -j$(NPROCS) TARGET=$* all
 
 hitl.compile: hitl.ac_h | print_version
 	$(MAKE) TARGET=ap -f Makefile.ac all_ac_h
-	cd $(AIRBORNE); $(MAKE) -j$(NPROCS) TARGET=ap all
-	cd $(AIRBORNE); $(MAKE) -j$(NPROCS) TARGET=hitl AP_LAUNCH=$(shell grep '<dl_setting ' $(AIRCRAFT_BUILD_DIR)/settings.xml | grep 'autopilot.launch' -n | cut -d ':' -f 1) all
+	cd $(AIRBORNE); $(BUILD_AFFINITY) $(MAKE) -j$(NPROCS) TARGET=ap all
+	cd $(AIRBORNE); $(BUILD_AFFINITY) $(MAKE) -j$(NPROCS) TARGET=hitl AP_LAUNCH=$(shell grep '<dl_setting ' $(AIRCRAFT_BUILD_DIR)/settings.xml | grep 'autopilot.launch' -n | cut -d ':' -f 1) all
 
 %.upload: %.compile
 	cd $(AIRBORNE); $(MAKE) TARGET=$* upload

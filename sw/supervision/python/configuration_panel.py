@@ -112,6 +112,9 @@ class ConfigurationPanel(QWidget, Ui_ConfigurationPanel):
         self.program_state_changed.emit(self.programs_state)
 
     def remove_program(self, pw: ProgramWidget):
+        if pw.property("removal_scheduled"):
+            return
+        pw.setProperty("removal_scheduled", True)
         self.programs_widget.layout().removeWidget(pw)
         self.console_widget.remove_program(pw)
         pw.deleteLater()

@@ -12,3 +12,8 @@ else
 GENERATORS=$(PAPARAZZI_SRC)/sw/tools/generators
 endif
 
+# This i9-14900HX builds fastest on its 16 P-core threads. Override either
+# variable on the make command line to tune or disable this local scheduling.
+J ?= 16
+BUILD_CPUSET ?= 0-15
+

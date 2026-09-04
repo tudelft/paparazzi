@@ -128,7 +128,7 @@ NOTES:
       <!-- 
       <module name="gps" type="ubx_ucenter">
         <define name="GPS_UBX_NAV5_DYNAMICS" value="NAV5_DYN_AIRBORNE_4G"/>
-        <define name="GPS_UBX_UCENTER_RATE" value="125"/>      
+        <define name="GPS_UBX_UCENTER_RATE" value="72"/>      
       </module> 
       -->
      

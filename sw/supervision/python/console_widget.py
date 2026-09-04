@@ -283,7 +283,7 @@ class ConsoleWidget(QWidget, Ui_Console):
     def remove_program(self, pw: ProgramWidget):
         self.active_flash_programs.discard(pw)
         self.last_flash_progress.pop(pw, None)
-        chk = self.p_checkboxes.pop(pw)
+        chk = self.p_checkboxes.pop(pw, None)
         if chk is not None:
             for r in self.records:
                 if r.emitter == pw:

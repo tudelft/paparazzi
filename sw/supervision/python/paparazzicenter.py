@@ -379,6 +379,10 @@ class PprzCenter(QMainWindow, Ui_SupervisionWindow):
 
     def change_ac(self, ac):
         self.currentAc = ac
+        item = self.aircraft_list.items.get(ac.name)
+        if item is not None and self.aircraft_list.list_widget.currentItem() is not item:
+            with QtCore.QSignalBlocker(self.aircraft_list.list_widget):
+                self.aircraft_list.list_widget.setCurrentItem(item)
         self.header.set_ac(ac)
         self.configuration_panel.set_ac(ac)
         self.configuration_panel.console_widget.set_aircraft(ac)

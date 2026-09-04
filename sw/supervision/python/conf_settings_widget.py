@@ -34,7 +34,7 @@ class ConfSettingsWidget(QWidget, Ui_SettingsConf):
         self.settings_changed.emit()
 
     def set_remove_button_state(self, item: QListWidgetItem, _):
-        if item.text().startswith("modules/"):
+        if item is None or item.text().startswith("modules/"):
             self.remove_setting_button.setDisabled(True)
         else:
             self.remove_setting_button.setDisabled(False)
