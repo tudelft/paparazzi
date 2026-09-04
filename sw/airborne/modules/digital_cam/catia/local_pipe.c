@@ -13,7 +13,7 @@
 #include <unistd.h>
 
 #ifndef CATIA_LOCAL_PHOTO_DIR
-#define CATIA_LOCAL_PHOTO_DIR "photox"
+#define CATIA_LOCAL_PHOTO_DIR "photos"
 #endif
 
 #ifndef CATIA_MOCK_IMAGE
@@ -112,7 +112,7 @@ int local_pipe_shoot(char *filename, size_t filename_size, int image_number)
     printf("LOCAL_PIPE:\tselected test image: %s\n", current_source);
   }
 
-  int length = snprintf(filename, filename_size, "%s/%05d.jpg",
+  int length = snprintf(filename, filename_size, "%s/m%06d.jpg",
                         CATIA_LOCAL_PHOTO_DIR, image_number);
   if (length < 0 || (size_t)length >= filename_size) {
     return -1;

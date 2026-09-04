@@ -7,21 +7,26 @@
 #include <poll.h>
 #include <signal.h>
 #include <spawn.h>
+#include <stddef.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/file.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/un.h>
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 
 #include "ai_cam_pipe.h"
+#include "lwir_cam_pipe.h"
 #include "serial.h"
 #include "chdk_pipe.h"
 #include "image_exif.h"
 #include "image_mock_transform.h"
 #include "local_pipe.h"
+#include "std.h"
 #include "protocol.h"
 #include "socket.h"
 
@@ -61,6 +66,10 @@
 #define CATIA_MOCK_IMAGE "mock-camera.jpg"
 #endif
 
+#ifndef CATIA_CHDK_PHOTO_DIR
+#define CATIA_CHDK_PHOTO_DIR "photos"
+#endif
+
 #ifndef CATIA_LOCAL_SODA
 #define CATIA_LOCAL_SODA "soda_local"
 #endif
@@ -69,7 +78,8 @@ enum camera_backend_type {
   CAMERA_BACKEND_UNSELECTED,
   CAMERA_BACKEND_CHDK,
   CAMERA_BACKEND_LOCAL,
-  CAMERA_BACKEND_AI_CAM
+  CAMERA_BACKEND_AI_CAM,
+  CAMERA_BACKEND_LWIR_CAM
 };
 
 struct camera_backend {
@@ -92,6 +102,8 @@ static pid_t start_local_serial_bridge(void);
 static int wait_for_path(const char *path);
 static void stop_local_serial_bridge(void);
 static void handle_signal(int signal_number);
+static void notify_systemd_ready(void);
+static int move_file(const char *source, const char *destination);
 static int camera_backend_select(enum camera_backend_type type, bool test_mode);
 static int chdk_backend_init(const char *source_image);
 static int chdk_backend_shoot(char *filename, size_t filename_size, int image_number);
@@ -99,6 +111,7 @@ static int chdk_backend_shoot(char *filename, size_t filename_size, int image_nu
 static volatile int is_shooting, image_idx, image_count, shooting_count, shooting_thread_count;
 static char image_buffer[MAX_IMAGE_BUFFERS][IMAGE_SIZE];
 static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t camera_available = PTHREAD_COND_INITIALIZER;
 static pthread_cond_t workers_finished = PTHREAD_COND_INITIALIZER;
 static bool local_mode;
 static enum camera_backend_type requested_camera_backend = CAMERA_BACKEND_UNSELECTED;
@@ -133,6 +146,7 @@ int main(int argc, char *argv[])
     {"local", no_argument, NULL, 'l'},
     {"chdk", no_argument, NULL, 'c'},
     {"aicam", no_argument, NULL, 'a'},
+    {"lwircam", no_argument, NULL, 'w'},
     {"test", no_argument, NULL, 't'},
     {"mocktransform", no_argument, NULL, 'f'},
     {"debug", no_argument, NULL, 'd'},
@@ -141,7 +155,7 @@ int main(int argc, char *argv[])
     {NULL, 0, NULL, 0}
   };
 
-  while ((option = getopt_long(argc, argv, "s:lcatfdi:h", long_options, NULL)) != -1) {
+  while ((option = getopt_long(argc, argv, "s:lcawtfdi:h", long_options, NULL)) != -1) {
     switch (option) {
       case 's':
         serial_device = optarg;
@@ -153,17 +167,24 @@ int main(int argc, char *argv[])
         break;
       case 'c':
         if (requested_camera_backend != CAMERA_BACKEND_UNSELECTED) {
-          fprintf(stderr, "CATIA:\tonly one of --chdk and --aicam may be selected\n");
+          fprintf(stderr, "CATIA:\tonly one camera backend may be selected\n");
           return 2;
         }
         requested_camera_backend = CAMERA_BACKEND_CHDK;
         break;
       case 'a':
         if (requested_camera_backend != CAMERA_BACKEND_UNSELECTED) {
-          fprintf(stderr, "CATIA:\tonly one of --chdk and --aicam may be selected\n");
+          fprintf(stderr, "CATIA:\tonly one camera backend may be selected\n");
           return 2;
         }
         requested_camera_backend = CAMERA_BACKEND_AI_CAM;
+        break;
+      case 'w':
+        if (requested_camera_backend != CAMERA_BACKEND_UNSELECTED) {
+          fprintf(stderr, "CATIA:\tonly one camera backend may be selected\n");
+          return 2;
+        }
+        requested_camera_backend = CAMERA_BACKEND_LWIR_CAM;
         break;
       case 't':
         test_mode = true;
@@ -194,7 +215,7 @@ int main(int argc, char *argv[])
 
   if (mock_image_was_selected && !test_mode
       && (!local_mode || requested_camera_backend != CAMERA_BACKEND_UNSELECTED)) {
-    fprintf(stderr, "CATIA:\t--mock-image requires --test or --local without --chdk or --aicam\n");
+    fprintf(stderr, "CATIA:\t--mock-image requires --test or --local without a camera backend\n");
     return 2;
   }
   if (mock_transform_enabled && !test_mode) {
@@ -291,6 +312,7 @@ int main(int argc, char *argv[])
   shooting_thread_count = 0;
 
   printf("Started OK\n");
+  notify_systemd_ready();
   if (debug_enabled) {
     next_debug_heartbeat = time(NULL) + DEBUG_HEARTBEAT_SECONDS;
     printf("CATIA DEBUG:\twaiting for MORA camera messages on %s\n", serial_device);
@@ -377,6 +399,7 @@ int main(int argc, char *argv[])
   // Close
   close(fd);
   pthread_mutex_lock(&mut);
+  pthread_cond_broadcast(&camera_available);
   while (shooting_thread_count > 0) {
     pthread_cond_wait(&workers_finished, &mut);
   }
@@ -388,18 +411,58 @@ int main(int argc, char *argv[])
   return 0;
 }
 
+static void notify_systemd_ready(void)
+{
+  const char *socket_path = getenv("NOTIFY_SOCKET");
+  if (socket_path == NULL || socket_path[0] == '\0') {
+    return;
+  }
+
+  struct sockaddr_un address = {.sun_family = AF_UNIX};
+  size_t path_length = strlen(socket_path);
+  if (path_length >= sizeof(address.sun_path)) {
+    fprintf(stderr, "CATIA:\tsystemd notification socket path is too long\n");
+    return;
+  }
+
+  for (size_t index = 0; index <= path_length; index++) {
+    address.sun_path[index] = socket_path[index];
+  }
+  bool abstract_socket = address.sun_path[0] == '@';
+  if (abstract_socket) {
+    address.sun_path[0] = '\0';
+  }
+
+  int notify_fd = socket(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0);
+  if (notify_fd < 0) {
+    fprintf(stderr, "CATIA:\tfailed to create systemd notification socket: %s\n",
+            strerror(errno));
+    return;
+  }
+
+  static const char ready_message[] = "READY=1\nSTATUS=LWIR camera and MORA serial ready";
+  socklen_t address_length = (socklen_t)(offsetof(struct sockaddr_un, sun_path)
+                                        + path_length + (abstract_socket ? 0 : 1));
+  if (sendto(notify_fd, ready_message, sizeof(ready_message) - 1, MSG_NOSIGNAL,
+             (const struct sockaddr *)&address, address_length) < 0) {
+    fprintf(stderr, "CATIA:\tfailed to notify systemd that startup completed: %s\n",
+            strerror(errno));
+  }
+  close(notify_fd);
+}
+
 static void *handle_msg_shoot(void *ptr)
 {
   char filename[MAX_FILENAME] = "";
   union dc_shot_union *shoot = (union dc_shot_union *) ptr;
   bool image_ready = false;
 
-  // Test if can shoot
   pthread_mutex_lock(&mut);
-  if (is_shooting) {
+  while (is_shooting && keep_running) {
+    pthread_cond_wait(&camera_available, &mut);
+  }
+  if (!keep_running) {
     pthread_mutex_unlock(&mut);
-    printf("CATIA-%d:\tShooting: too fast\n", shoot->data.nr);
-
     release_worker_slot();
     free(shoot);
     return NULL;
@@ -451,6 +514,7 @@ static void *handle_msg_shoot(void *ptr)
 
   pthread_mutex_lock(&mut);
   is_shooting = 0;
+  pthread_cond_broadcast(&camera_available);
   pthread_mutex_unlock(&mut);
 
   if (image_ready) {
@@ -635,13 +699,14 @@ static inline void send_msg_status(void)
 
 static void print_usage(const char *program)
 {
-  printf("Usage: %s [--serial DEVICE | --local] [--chdk | --aicam] [--test] [OPTIONS]\n", program);
+  printf("Usage: %s [--serial DEVICE | --local] [--chdk | --aicam | --lwircam] [--test] [OPTIONS]\n", program);
   printf("  --serial DEVICE   serial endpoint (default: %s)\n", CATIA_SERIAL_DEVICE);
   printf("  --local           create local serial bridge %s <-> %s\n",
          CATIA_LOCAL_SIM_DEVICE, CATIA_LOCAL_APP_DEVICE);
   printf("  --chdk            use the CHDK camera backend (default outside local mode)\n");
   printf("  --aicam           use the AI camera backend\n");
-  printf("  --test            process a mock image for local, CHDK, or AI-camera testing\n");
+  printf("  --lwircam         use the Tiny 1-C LWIR camera backend\n");
+  printf("  --test            process a mock image for any camera backend\n");
   printf("                    randomly selects testphotos/*.jpg beside this executable\n");
   printf("  --mocktransform   transform test image using shot roll, pitch, and yaw\n");
   printf("  --debug           show serial, MORA frame, trigger, and capture diagnostics\n");
@@ -667,6 +732,12 @@ static int camera_backend_select(enum camera_backend_type type, bool test_mode)
         "aicam", ai_cam_pipe_init, ai_cam_pipe_shoot, ai_cam_pipe_deinit, CATIA_LOCAL_SODA
       };
       break;
+    case CAMERA_BACKEND_LWIR_CAM:
+      camera = (struct camera_backend) {
+        "lwircam", lwir_cam_pipe_init, lwir_cam_pipe_shoot,
+        lwir_cam_pipe_deinit, CATIA_LOCAL_SODA
+      };
+      break;
     case CAMERA_BACKEND_UNSELECTED:
       fprintf(stderr, "CATIA:\tinvalid camera backend\n");
       return -1;
@@ -684,16 +755,118 @@ static int camera_backend_select(enum camera_backend_type type, bool test_mode)
 static int chdk_backend_init(const char *source_image)
 {
   (void)source_image;
+  if (mkdir(CATIA_CHDK_PHOTO_DIR, 0755) != 0 && errno != EEXIST) {
+    fprintf(stderr, "CATIA:\tfailed to create CHDK photo directory %s: %s\n",
+            CATIA_CHDK_PHOTO_DIR, strerror(errno));
+    return -1;
+  }
+  struct stat directory_status;
+  if (stat(CATIA_CHDK_PHOTO_DIR, &directory_status) != 0
+      || !S_ISDIR(directory_status.st_mode)
+      || access(CATIA_CHDK_PHOTO_DIR, W_OK) != 0) {
+    fprintf(stderr, "CATIA:\tCHDK photo directory is not writable: %s\n",
+            CATIA_CHDK_PHOTO_DIR);
+    return -1;
+  }
   chdk_pipe_init();
   return 0;
 }
 
 static int chdk_backend_shoot(char *filename, size_t filename_size, int image_number)
 {
-  (void)filename_size;
-  (void)image_number;
-  chdk_pipe_shoot(filename);
-  return filename[0] == '\0' ? -1 : 0;
+  if (filename == NULL || filename_size == 0 || image_number < 0) {
+    return -1;
+  }
+
+  char downloaded_filename[MAX_FILENAME];
+  chdk_pipe_shoot(downloaded_filename);
+  if (downloaded_filename[0] == '\0') {
+    filename[0] = '\0';
+    return -1;
+  }
+
+  int length = snprintf(filename, filename_size, "%s/c%06d.jpg",
+                        CATIA_CHDK_PHOTO_DIR, image_number);
+  if (length < 0 || (size_t)length >= filename_size) {
+    filename[0] = '\0';
+    return -1;
+  }
+  if (unlink(filename) != 0 && errno != ENOENT) {
+    fprintf(stderr, "CATIA:\tfailed to replace CHDK image %s: %s\n",
+            filename, strerror(errno));
+    filename[0] = '\0';
+    return -1;
+  }
+  if (move_file(downloaded_filename, filename) != 0) {
+    fprintf(stderr, "CATIA:\tfailed to move CHDK image %s to %s: %s\n",
+            downloaded_filename, filename, strerror(errno));
+    filename[0] = '\0';
+    return -1;
+  }
+  return 0;
+}
+
+static int move_file(const char *source, const char *destination)
+{
+  if (rename(source, destination) == 0) {
+    return 0;
+  }
+  if (errno != EXDEV) {
+    return -1;
+  }
+
+  int source_fd = open(source, O_RDONLY);
+  if (source_fd < 0) {
+    return -1;
+  }
+  int destination_fd = open(destination, O_WRONLY | O_CREAT | O_EXCL, 0644);
+  if (destination_fd < 0) {
+    close(source_fd);
+    return -1;
+  }
+
+  char buffer[4096];
+  int result = 0;
+  ssize_t bytes_read;
+  while ((bytes_read = read(source_fd, buffer, sizeof(buffer))) > 0) {
+    ssize_t bytes_written = 0;
+    while (bytes_written < bytes_read) {
+      ssize_t count = write(destination_fd, &buffer[bytes_written],
+                            (size_t)(bytes_read - bytes_written));
+      if (count < 0 && errno == EINTR) {
+        continue;
+      }
+      if (count <= 0) {
+        result = -1;
+        break;
+      }
+      bytes_written += count;
+    }
+    if (result != 0) {
+      break;
+    }
+  }
+  if (bytes_read < 0) {
+    result = -1;
+  }
+  int saved_errno = errno;
+  if (close(source_fd) != 0) {
+    result = -1;
+    saved_errno = errno;
+  }
+  if (close(destination_fd) != 0) {
+    result = -1;
+    saved_errno = errno;
+  }
+  if (result == 0 && unlink(source) != 0) {
+    result = -1;
+    saved_errno = errno;
+  }
+  if (result != 0) {
+    unlink(destination);
+    errno = saved_errno;
+  }
+  return result;
 }
 
 static int lock_local_instance(void)

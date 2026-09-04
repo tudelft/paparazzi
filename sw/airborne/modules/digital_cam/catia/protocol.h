@@ -39,7 +39,6 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
-#include "std.h"
 
 /////////////////////////////////////////////////////////////////////
 // MESSAGES
@@ -93,6 +92,8 @@ union mora_status_union {
 
 /////////////////////////////////////////////////////////////////////
 // SENDING
+
+// Each platform supplies CameraLinkTransmit; this shared header stays OS-independent.
 
 extern uint8_t mora_ck_a, mora_ck_b;
 

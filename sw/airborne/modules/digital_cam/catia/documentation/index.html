@@ -152,6 +152,7 @@ footer { padding: 25px 20px; color: #ccd8e6; background: #11243c; text-align: ce
 <ul>
 <li><a href="#catia-camera-pipeline">CATIA Camera Pipeline</a><ul>
 <li><a href="#start-here-local-simulation">Start Here: Local Simulation</a></li>
+<li><a href="#start-here-physical-desk-test-with-mora">Start Here: Physical Desk Test With MORA</a></li>
 <li><a href="#choose-a-camera">Choose a Camera</a></li>
 <li><a href="#test-any-camera-selection">Test Any Camera Selection</a></li>
 <li><a href="#simulate-aircraft-attitude">Simulate Aircraft Attitude</a></li>
@@ -168,13 +169,11 @@ footer { padding: 25px 20px; color: #ccd8e6; background: #11243c; text-align: ce
 
     </nav>
     <main><h1 id="catia-camera-pipeline">CATIA Camera Pipeline</h1>
-<blockquote>
-<p><strong>Camera Application Triggering Image Analysis</strong> receives a MORA shot from
-Paparazzi, obtains a JPEG, adds flight metadata, and passes the finished image
-to SODA.</p>
-</blockquote>
-<p><strong>Maintainers:</strong> edit this <code>README.md</code> and <code>catia-flow.dot</code>, then run
-<code>./update-documentation.sh</code>. The PNG, SVG, and HTML page are generated files.</p>
+<p><strong>CATIA in full the Camera Application Triggering Image Analysis</strong> application runing on &gt; a companion board which has a camera connected. As soon as CATIA receives a 'take photo now' command  from the Flightcontroller , camera obtains a JPEG image of current view, adds flight metadata like attitude and more to the EXIF data in the image  &gt; and passes the finished image to SODA. for more image data extraction
+.</p>
+<p><strong>Doc Maintainers:</strong> edit this <code>README.md</code>, <code>catia-flow.dot</code>, or
+<code>desk-test-setup.svg</code>, then run <code>./update-documentation.sh</code>. The rendered PNGs,
+flow SVG, and HTML page are generated files.</p>
 <p><img alt="CATIA capture and processing flow" src="catia-flow.png"></p>
 <p><a href="index.html">Open the standalone HTML guide</a></p>
 <h2 id="start-here-local-simulation">Start Here: Local Simulation</h2>
@@ -192,26 +191,22 @@ while NPS is running.</p>
 <p>The important startup line is:</p>
 <pre><code class="language-text">Started OK
 </code></pre>
-<p>CATIA and NPS may now start in either order. The simulation UART retries while
+<p>CATIA and a Simulated Flight of Paparazzi aircraft may start in either order. The simulation UART retries while
 <code>/tmp/catia-sim</code> is absent and reconnects automatically after CATIA is stopped
-and started again. This allows CATIA to be rebuilt and restarted without
-interrupting a running simulation.</p>
-<p>After first receiving this feature, rebuild and restart NPS once so the running
-simulator contains the reconnect-capable UART implementation. Subsequent CATIA
-restarts do not require another NPS restart.</p>
+and started again. This allows CATIA sourcecode to be changed, then rebuilt, redeployed and restarted without even the need interrupting a running simulation.</p>
 <h3 id="3-trigger-a-photo-from-paparazzi">3. Trigger a photo from Paparazzi</h3>
 <p>Start the aircraft simulation and trigger <code>DC_SHOOT</code>, for example through the
-camera flight-plan block. NPS sends the shot index, position, altitude,
+camera flight-plan block. Simulation sends the shot index, position, altitude
 attitude, speed, and course to CATIA.</p>
-<p>For every completed capture, CATIA prints:</p>
+<p>For every completed capture, CATIA prints debug info is enabled:</p>
 <pre><code class="language-text">Photo take 6
 </code></pre>
-<p>The corresponding local image is:</p>
-<pre><code class="language-text">sw/airborne/modules/digital_cam/catia/photox/00006.jpg
+<p>The corresponding local images somewhere like:</p>
+<pre><code class="language-text">sw/airborne/modules/digital_cam/catia/photos/m000006.jpg
 </code></pre>
 <h3 id="4-confirm-the-complete-chain">4. Confirm the complete chain</h3>
 <p>A healthy local capture ends with messages similar to:</p>
-<pre><code class="language-text">Shooting: got image .../photox/00006.jpg
+<pre><code class="language-text">Shooting: got image .../photos/m000006.jpg
 Shooting: EXIF metadata added
 Photo take 6
 SODA: I looked at the image. Cool, right?
@@ -219,9 +214,86 @@ Shooting: soda return 0 ...
 </code></pre>
 <p>Stop CATIA with <code>Ctrl+C</code>. CATIA also stops the local <code>socat</code> bridge that it
 created.</p>
+<h2 id="start-here-physical-desk-test-with-mora">Start Here: Physical Desk Test With MORA</h2>
+<p>Use this setup to test the deployed CATIA binary on for example a Raspberry Pi Zero 2 W
+while Simualtion runs on a local PC. The USB-to-UART link carries the exact same MORA camera
+messages used by the aircraft. When MORA (Magic Onboard Recognition Apparatus) is mentioned, it's the Computer Board with a camera.</p>
+<p><img alt="Local PC, USB-to-UART adapter, MORA, and Raspberry Pi camera desk-test setup" src="desk-test-setup.png"></p>
+<h3 id="1-connect-the-desk-hardware">1. Connect the desk hardware</h3>
+<ol>
+<li>Connect the Raspberry Pi camera to MORA with its CSI ribbon cable and validate it works</li>
+<li>Connect a <strong>3.3 V logic</strong> USB-to-UART adapter to the laptop.</li>
+<li>Cross the UART data lines: adapter TX to MORA RX, and adapter RX to MORA TX.</li>
+<li>Connect adapter GND to MORA GND.</li>
+<li>Connect the FTDI cable 5 V power output to MORA's 5 V input. The FTDI supply must
+   provide enough current for the Raspberry Pi Zero 2 W and its camera. Do not
+   connect the adapter's 3.3 V power output; 3.3 V refers only to UART signal
+   levels in this setup.</li>
+</ol>
+<p>On the local PC the adapter device is likely <code>/dev/ttyUSB0</code>. On MORA, CATIA uses the
+<code>/dev/serial0</code> device. Both ends run at 115200 baud. The example <code>Easystar_3</code> simulated airframe
+already configures these local PC-side settings. See the
+<code>&lt;module name="digital_cam_uart"&gt;</code> block of the airframe.</p>
+<h3 id="2-first-run-real-uart-with-a-mock-image">2. First run: real UART with a mock image</h3>
+<p>Start CATIA from the laptop and keep the SSH terminal open:</p>
+<pre><code class="language-sh">ssh -t air@theatre \
+   'exec /home/air/digital_cam/catia --debug --mocktransform --test'
+</code></pre>
+<p>This first run exercises the physical UART, MORA framing, attitude transform,
+EXIF metadata, and SODA while keeping the physical camera out of the test. Wait
+for:</p>
+<pre><code class="language-text">CATIA:  serial device: /dev/serial0
+Started OK
+CATIA DEBUG:  waiting for MORA camera messages on /dev/serial0
+</code></pre>
+<p>Start <code>Easystar_3</code> NPS on the laptop and trigger <code>DC_SHOOT</code>. A successful shot
+progresses through these diagnostics:</p>
+<pre><code class="language-text">received MORA frame start
+accepted MORA message id 1
+photo trigger received
+Shooting: got image ...
+Shooting: EXIF metadata added
+Shooting: soda return 0 ...
+</code></pre>
+<p>Inspect the generated images from another laptop terminal:</p>
+<pre><code class="language-sh">ssh air@theatre 'ls -lh /home/air/digital_cam/photos/m*.jpg'
+</code></pre>
+<h3 id="3-second-run-raspberry-pi-camera">3. Second run: Raspberry Pi camera</h3>
+<p>Stop the mock-image run with <code>Ctrl+C</code>, then start CATIA with the physical camera:</p>
+<pre><code class="language-sh">ssh -t air@theatre \
+   'exec /home/air/digital_cam/catia --aicam --debug'
+</code></pre>
+<p>Trigger another <code>DC_SHOOT</code>. Physical-camera images are written as
+<code>/home/air/digital_cam/photos/aNNNNNN.jpg</code> before EXIF and SODA processing
+completes.</p>
+<h3 id="4-third-run-tiny-1-c-lwir-camera">4. Third run: Tiny 1-C LWIR camera</h3>
+<p>Connect the Tiny 1-C USB camera and start CATIA with the LWIR backend:</p>
+<pre><code class="language-sh">ssh -t air@theatre \
+   'exec /home/air/digital_cam/catia --lwircam --debug'
+</code></pre>
+<p>Trigger <code>DC_SHOOT</code> again. CATIA starts the deployed <code>sample</code> executable in
+one-shot mode, waits for a usable thermal frame, and writes a numbered JPEG as
+<code>/home/air/digital_cam/photos/lNNNNNN.jpg</code>. CATIA then inserts the same flight
+EXIF metadata used by the other camera backends and invokes SODA.</p>
+<p>A successful capture includes these diagnostics:</p>
+<pre><code class="language-text">CATIA-N: requesting image from lwircam backend
+selected camera index=0 vid=0bda pid=5840 name=USB Camera
+LWIR CAPTURE: saved /home/air/digital_cam/photos/l00000N.jpg (256x192)
+CATIA-N: Shooting: EXIF metadata added
+CATIA-N: Shooting: soda return 0 ...
+</code></pre>
+<p>The deployment script installs a udev rule for USB device <code>0bda:5840</code>. The
+vendor SDK needs read/write access to the raw <code>/dev/bus/usb/...</code> node in
+addition to access to the V4L device. The rule assigns the raw USB node to the
+<code>plugdev</code> group with mode <code>0660</code>.</p>
+<p>Only CATIA should read the UART during these tests. Do not run <code>hexdump</code>,
+<code>screen</code>, or another serial monitor at the same time because it will consume
+bytes intended for CATIA. No manual <code>stty</code> command is needed; CATIA configures
+<code>/dev/serial0</code> itself. Stop CATIA with <code>Ctrl+C</code> when the test is complete.</p>
 <h2 id="choose-a-camera">Choose a Camera</h2>
 <p>CATIA separates the serial transport from the camera backend. <code>--local</code> creates
-the simulator serial bridge; <code>--chdk</code> and <code>--aicam</code> select physical cameras.</p>
+the simulator serial bridge; <code>--chdk</code>, <code>--aicam</code>, and <code>--lwircam</code> select
+physical cameras.</p>
 <table>
 <thead>
 <tr>
@@ -247,6 +319,11 @@ the simulator serial bridge; <code>--chdk</code> and <code>--aicam</code> select
 <td><code>rpicam-still</code></td>
 </tr>
 <tr>
+<td>Tiny 1-C thermal camera</td>
+<td><code>catia --lwircam</code></td>
+<td><code>sample --capture --output ...</code></td>
+</tr>
+<tr>
 <td>NPS transport with AI camera</td>
 <td><code>catia --local --aicam</code></td>
 <td><code>rpicam-still</code></td>
@@ -255,6 +332,11 @@ the simulator serial bridge; <code>--chdk</code> and <code>--aicam</code> select
 <td>NPS transport with CHDK</td>
 <td><code>catia --local --chdk</code></td>
 <td>CHDK capture and download</td>
+</tr>
+<tr>
+<td>NPS transport with LWIR camera</td>
+<td><code>catia --local --lwircam</code></td>
+<td>Tiny 1-C one-shot capture</td>
 </tr>
 </tbody>
 </table>
@@ -274,7 +356,7 @@ bridge.</p>
 <h3 id="ai-camera-command">AI camera command</h3>
 <p>The AI-camera backend starts <code>rpicam-still</code> directly, without a shell:</p>
 <pre><code class="language-sh">rpicam-still \
-  -o photos/%06d.jpg \
+   -o photos/a%06d.jpg \
   --width 4056 \
   --height 3040 \
   --hflip \
@@ -282,17 +364,26 @@ bridge.</p>
 </code></pre>
 <p>CATIA waits for the process to finish and rejects a missing, empty, or failed
 capture.</p>
+<h3 id="lwir-camera-command">LWIR camera command</h3>
+<p>The LWIR backend starts one persistent <code>sample</code> process directly, without a
+shell, during CATIA initialization:</p>
+<pre><code class="language-sh">/home/air/digital_cam/sample \
+   --capture-server \
+   --bare
+</code></pre>
 <h2 id="test-any-camera-selection">Test Any Camera Selection</h2>
 <p>Add <code>--test</code> to bypass camera hardware while retaining the selected backend in
 the logs. This is useful before connecting CHDK or Raspberry Pi hardware.</p>
 <pre><code class="language-sh">catia --local --test
 catia --chdk --test
 catia --aicam --test
+catia --lwircam --test
 catia --local --chdk --test
 catia --local --aicam --test
+catia --local --lwircam --test
 </code></pre>
-<p>In all five cases, CATIA uses a test JPEG and still performs the normal EXIF and
-SODA stages. It does <strong>not</strong> start CHDK or <code>rpicam-still</code>.</p>
+<p>In all seven cases, CATIA uses a test JPEG and still performs the normal EXIF and
+SODA stages. It does <strong>not</strong> start CHDK, <code>rpicam-still</code>, or the LWIR sample.</p>
 <h3 id="use-a-test-photo-set">Use a test-photo set</h3>
 <p>Create <code>testphotos</code> beside the built <code>catia</code> executable:</p>
 <pre><code class="language-text">sw/airborne/modules/digital_cam/catia/
@@ -317,31 +408,11 @@ SODA stages. It does <strong>not</strong> start CHDK or <code>rpicam-still</code
 <pre><code class="language-sh">catia --aicam --test --mock-image /absolute/path/example.jpg
 </code></pre>
 <h2 id="simulate-aircraft-attitude">Simulate Aircraft Attitude</h2>
-<p><code>--mocktransform</code> makes a test image look as though it was captured at the
+<p><code>--mocktransform</code> makes an image look as though it was captured at the
 aircraft attitude carried in the MORA shot:</p>
 <pre><code class="language-sh">catia --local --aicam --test --mocktransform
 </code></pre>
-<p>The transform:</p>
-<ul>
-<li>applies roll, pitch, and yaw with a pinhole-camera homography;</li>
-<li>uses bilinear pixel sampling;</li>
-<li>automatically zooms, recenters, and crops the projected view so no black
-   border is exposed;</li>
-<li>preserves the original width and height;</li>
-<li>runs before EXIF metadata and SODA;</li>
-<li>is disabled by default and requires <code>--test</code>.</li>
-</ul>
-<p>The automatic cover crop uses the largest borderless view available from the
-source image. This behaves like digital zoom: edge content can be cropped and
-some source resolution is traded for a complete camera frame. CATIA logs the
-applied zoom and pan for each transformed image. The virtual field of view and
-crop are optimized together to minimize resolution loss while preserving the
-requested roll, pitch, and yaw exactly.</p>
-<p>Near the pinhole projection horizon, a single source photo does not contain all
-terrain that the tilted camera would reveal. By default CATIA synthesizes the
-missing terrain with mirrored continuation of the source texture. This keeps
-the requested attitude, fills the entire frame, and avoids hard tile seams or
-black borders.</p>
+<p>The transform is disabled by default and requires parameter <code>--test</code>.</p>
 <p>Near-horizon detection uses three configurable limits. Reaching any limit
 activates the selected near-horizon behavior:</p>
 <table>
@@ -377,7 +448,7 @@ activates the selected near-horizon behavior:</p>
 <p>The default is:</p>
 <pre><code class="language-c">#define near_horizon_case_black 0
 </code></pre>
-<p>Set it to <code>1</code> to skip terrain transformation and immediately generate a black
+<p>Alter it to <code>1</code> to skip terrain transformation and immediately generate a black
 JPEG with the same dimensions. This is faster and useful when near-horizon
 imagery should be treated as unavailable:</p>
 <pre><code class="language-sh">make -C sw/airborne/modules/digital_cam/catia \
@@ -398,17 +469,22 @@ imagery should be treated as unavailable:</p>
 <p>The answer depends on the selected source. CATIA does not use one universal
 JPEG-saving function.</p>
 <h3 id="local-and-test-images">Local and test images</h3>
-<p><code>local_pipe_shoot()</code> copies the chosen source JPEG to <code>photox/%05d.jpg</code>. It uses
+<p><code>local_pipe_shoot()</code> copies the chosen source JPEG to <code>photos/m%06d.jpg</code>. It uses
 bounded POSIX <code>open()</code>, <code>read()</code>, and <code>write()</code> loops and handles partial writes.
 The bytes are already JPEG encoded; this stage does not decode or re-encode
 them.</p>
 <h3 id="raspberry-pi-ai-camera">Raspberry Pi AI camera</h3>
 <p><code>ai_cam_pipe_shoot()</code> uses <code>posix_spawnp()</code> to execute <code>rpicam-still</code> with a
 fixed argument list. <strong><code>rpicam-still</code> is the component that captures and JPEG
-encodes the image.</strong> The default result is <code>photos/%06d.jpg</code>.</p>
+encodes the image.</strong> The default result is <code>photos/a%06d.jpg</code>.</p>
+<h3 id="tiny-1-c-lwir-camera">Tiny 1-C LWIR camera</h3>
+<p><code>lwir_cam_pipe_shoot()</code> uses <code>posix_spawn()</code> to execute the configured LWIR
+sample with <code>--capture --output &lt;filename&gt;</code>. The sample owns USB acquisition,
+startup-frame rejection, YUYV-to-RGB conversion, and initial JPEG encoding.
+The default result is <code>photos/l%06d.jpg</code>.</p>
 <h3 id="chdk-camera">CHDK camera</h3>
 <p><code>chdk_pipe_shoot()</code> instructs the CHDK camera to capture and download a JPEG.
-CHDK supplies the final filename to CATIA.</p>
+CATIA moves the downloaded file to <code>photos/c%06d.jpg</code>.</p>
 <h3 id="optional-transform-and-exif">Optional transform and EXIF</h3>
 <p>After any backend returns a JPEG, the shared processing pipeline runs:</p>
 <ol>
@@ -426,8 +502,143 @@ yaw, ground speed, course, shot index, and the original raw MORA fields.</p>
 <h2 id="performance-and-target-cpus">Performance and Target CPUs</h2>
 <p>The default build is tuned for both modern AMD64 Linux systems and ARM64 Linux
 on the Raspberry Pi Zero 2 W without embedding CPU-specific instructions:</p>
+<h3 id="cross-compile-for-arm64">Cross-compile for ARM64</h3>
+<p>Cross-compilation builds Raspberry Pi executables on an AMD64 development
+computer. The resulting binaries cannot run on the development computer; copy
+them to an ARM64 Linux target before running them.</p>
+<p>On you local PC with e.g. Ubuntu Linux, install the AArch64 C and C++ cross-compilers once:</p>
+<pre><code class="language-sh">sudo apt update
+sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+</code></pre>
+<p>From the Paparazzi repository root, clean any objects built for another CPU and
+build CATIA with the cross-compilers:</p>
+<pre><code class="language-sh">make -C sw/airborne/modules/digital_cam/catia clean
+make -C sw/airborne/modules/digital_cam/catia -j&quot;$(nproc)&quot; \
+   CC=aarch64-linux-gnu-gcc \
+   CXX=aarch64-linux-gnu-g++ \
+   LWIR_ARCH=aarch64-gnu \
+   LWIR_STATIC=1 \
+   LWIR_VIDEO_DISPLAY=0
+</code></pre>
+<p>This builds CATIA, SODA, and the LWIR <code>sample</code>. The LWIR build selects
+the bundled AArch64 SDK archives, links them statically for headless operation on MORA.</p>
+<p>Confirm that all three executables target ARM64:</p>
+<pre><code class="language-sh">file sw/airborne/modules/digital_cam/catia/{catia,soda_local}
+file sw/airborne/modules/digital_cam/catia/lwircam/sample
+</code></pre>
+<p>All lines should contain <code>ARM aarch64</code> and <code>statically linked</code>. The static
+executables include their required C/C++ runtime code and bundled libraries,
+but CATIA still needs its selected camera program, writable output directories,
+and <code>soda_local</code> on the target.</p>
+<p>CATIA embeds default file and directory paths at build time. If the Paparazzi
+checkout has the same absolute path on both computers, the command above is
+enough. Otherwise, set paths for the target computer while cross-compiling. For
+example, to install the runtime files in <code>/opt/catia</code>:</p>
+<pre><code class="language-sh">make -C sw/airborne/modules/digital_cam/catia clean
+make -C sw/airborne/modules/digital_cam/catia -j&quot;$(nproc)&quot; \
+   CC=aarch64-linux-gnu-gcc \
+   CXX=aarch64-linux-gnu-g++ \
+   LWIR_ARCH=aarch64-gnu \
+   LWIR_STATIC=1 \
+   LWIR_VIDEO_DISPLAY=0 \
+   CATIA_MOCK_IMAGE=/opt/catia/mock_image_01.jpg \
+   CATIA_LOCAL_SODA=/opt/catia/soda_local \
+   CATIA_LOCAL_PHOTO_DIR=/opt/catia/photos \
+   CATIA_AI_CAM_PHOTO_DIR=/opt/catia/photos \
+   CATIA_LWIR_CAM_PHOTO_DIR=/opt/catia/photos \
+   CATIA_CHDK_PHOTO_DIR=/opt/catia/photos \
+   CATIA_LWIR_CAM_COMMAND=/opt/catia/sample
+</code></pre>
+<h4 id="build-and-deploy-with-one-command">Build and deploy with one command</h4>
+<p><code>deploy_mora.sh</code> automates a clean ARM64 release build, creates the runtime directories
+over SSH, and transfers CATIA, SODA, the LWIR sample, and both mock test images
+with <code>rsync</code>. It also installs and reloads the Tiny 1-C udev rule, installs and
+validates <code>catia.service</code>, enables it for every boot, starts it, and verifies
+that it remains active. Its defaults match a MORA available as <code>itsme@itsmypie</code>
+and install into <code>/home/itsme/digital_cam</code>:</p>
+<pre><code class="language-sh">sw/airborne/modules/digital_cam/catia/deploy_mora.sh
+</code></pre>
+<p>Before using the script, verify that public-key login works without a password
+prompt:</p>
+<pre><code class="language-sh">ssh itsme@itsmypie true
+</code></pre>
+<p>The development computer needs <code>make</code>, <code>file</code>, <code>ssh</code>, <code>rsync</code>, and the AArch64
+C/C++ compiler, <code>readelf</code>, and <code>strip</code> tools. The script stops before transfer
+if a required command is missing, any executable is not AArch64, a binary is
+not stripped, any debug section remains, or an unmanaged CATIA or LWIR server
+is still running. This avoids replacing a live executable or competing for the
+Tiny 1-C.</p>
+<p>Supply a different SSH destination as the first argument. The systemd unit uses
+the fixed canonical installation directory <code>/home/air/digital_cam</code>, so the
+optional second argument must have that value:</p>
+<pre><code class="language-sh">sw/airborne/modules/digital_cam/catia/deploy_mora.sh \
+   itsme@itsmypie /home/itsm/digital_cam
+</code></pre>
+<p>Set <code>BUILD_JOBS</code> to limit parallel compilation when needed:</p>
+<pre><code class="language-sh">BUILD_JOBS=4 sw/airborne/modules/digital_cam/catia/deploy_mora.sh
+</code></pre>
+<p>The deployed CATIA binary uses <code>/dev/serial0</code> by default and embeds paths below
+the selected installation directory. The script creates the shared <code>photos</code>
+directory. The system-level <code>catia.service</code> runs as the unprivileged <code>air</code>
+user with <code>dialout</code> and <code>plugdev</code> access. It uses absolute paths, starts at
+<code>multi-user.target</code>, and retries every three seconds without a start limit when
+the serial device, USB camera, or another startup dependency is temporarily
+unavailable. systemd marks it active only after CATIA has initialized both the
+persistent LWIR capture server and <code>/dev/serial0</code>.</p>
+<p>Inspect the service and follow its journal with:</p>
+<pre><code class="language-sh">ssh air@theatre 'systemctl status catia.service'
+ssh air@theatre 'journalctl -fu catia.service'
+</code></pre>
+<p>CATIA and standalone <code>sample</code> runs require exclusive Tiny 1-C ownership. Stop
+the service for maintenance or a manual test, and restart it afterward:</p>
+<pre><code class="language-sh">ssh air@theatre 'sudo systemctl stop catia.service'
+ssh air@theatre \
+   '/home/air/digital_cam/catia --debug --mocktransform --test'
+ssh air@theatre 'sudo systemctl restart catia.service'
+</code></pre>
+<p>Disable automatic boot startup only when intentionally taking CATIA out of
+service:</p>
+<pre><code class="language-sh">ssh air@theatre 'sudo systemctl disable --now catia.service'
+ssh air@theatre 'sudo systemctl enable --now catia.service'
+</code></pre>
+<p>Test the deployed LWIR processing path without a USB camera using the bundled
+mock image:</p>
+<pre><code class="language-sh">ssh air@theatre \
+  'cd /home/air/digital_cam &amp;&amp; ./sample \
+   --mock-image mock_lwir_01.jpg \
+   --output mock_lwir_processed.jpg'
+</code></pre>
+<p>This decodes the JPEG, converts its luminance to synthetic Y14 samples, runs the
+vendor enhancement and RGB conversion functions, and writes a processed JPEG.
+Because a JPEG has no radiometric temperature plane, the mock test reports a
+constant synthetic <code>25.0 C</code> value. That value tests data plumbing only; it is
+not a measured temperature. Running <code>./sample</code> without mock options retains the
+vendor USB-camera workflow for the later hardware test.</p>
+<p>Run a standalone real-camera one-shot test with:</p>
+<pre><code class="language-sh">ssh air@theatre \
+   'cd /home/air/digital_cam &amp;&amp; ./sample \
+    --capture --output lwir_standalone.jpg'
+</code></pre>
+<p>To explicitly request the unfiltered image plane, add <code>--bare</code>:</p>
+<pre><code class="language-sh">ssh air@theatre \
+   'cd /home/air/digital_cam &amp;&amp; ./sample \
+    --capture --bare --output lwir_standalone_bare.jpg'
+</code></pre>
+<p>For the complete CATIA, EXIF, and SODA path, use:</p>
+<pre><code class="language-sh">ssh -t air@theatre \
+   'exec /home/air/digital_cam/catia --lwircam --debug'
+</code></pre>
+<p>After cross-compiling, restore runnable AMD64 binaries on the development
+computer with a clean native build:</p>
+<pre><code class="language-sh">make -C sw/airborne/modules/digital_cam/catia clean
+make -C sw/airborne/modules/digital_cam/catia -j&quot;$(nproc)&quot;
+</code></pre>
+<h3 id="runtime-performance">Runtime performance</h3>
 <ul>
 <li>CATIA, SODA, bundled IJG libjpeg, and bundled libexif compile with <code>-O2</code>;</li>
+<li>CATIA keeps the LWIR stream warm after a one-time startup qualification;</li>
+<li>steady-state LWIR capture takes about <code>0.35-0.40 s</code>, supporting one photo per second;</li>
+<li>accepted camera triggers queue instead of being discarded while a save finishes;</li>
 <li>the attitude warp advances its projective coordinates across each scanline;</li>
 <li>bilinear coordinates and weights are calculated once for all RGB channels;</li>
 <li>CATIA drains serial input in chunks instead of one byte per millisecond;</li>
@@ -467,26 +678,34 @@ its source files ad hoc.</p>
 <tbody>
 <tr>
 <td>Local or <code>--test</code></td>
-<td><code>catia/photox/</code></td>
-<td><code>00006.jpg</code></td>
+<td><code>catia/photos/</code></td>
+<td><code>m000006.jpg</code></td>
 </tr>
 <tr>
 <td>AI camera</td>
 <td><code>catia/photos/</code></td>
-<td><code>000006.jpg</code></td>
+<td><code>a000006.jpg</code></td>
+</tr>
+<tr>
+<td>LWIR camera</td>
+<td><code>catia/photos/</code></td>
+<td><code>l000006.jpg</code></td>
 </tr>
 <tr>
 <td>CHDK</td>
-<td>Returned by CHDK</td>
-<td>Camera-defined</td>
+<td><code>catia/photos/</code></td>
+<td><code>c000006.jpg</code></td>
 </tr>
 </tbody>
 </table>
 <p>Change paths or the camera command at build time:</p>
 <pre><code class="language-sh">make -C sw/airborne/modules/digital_cam/catia \
-  CATIA_LOCAL_PHOTO_DIR=/data/test-photos \
-  CATIA_AI_CAM_PHOTO_DIR=/data/camera-photos \
-  CATIA_AI_CAM_COMMAND=/usr/bin/rpicam-still
+   CATIA_LOCAL_PHOTO_DIR=/data/photos \
+   CATIA_AI_CAM_PHOTO_DIR=/data/photos \
+   CATIA_AI_CAM_COMMAND=/usr/bin/rpicam-still \
+    CATIA_LWIR_CAM_PHOTO_DIR=/data/photos \
+    CATIA_CHDK_PHOTO_DIR=/data/photos \
+   CATIA_LWIR_CAM_COMMAND=/opt/catia/sample
 </code></pre>
 <h2 id="command-reference">Command Reference</h2>
 <table>
@@ -512,6 +731,10 @@ its source files ad hoc.</p>
 <tr>
 <td><code>--aicam</code></td>
 <td>Select the Raspberry Pi camera backend</td>
+</tr>
+<tr>
+<td><code>--lwircam</code></td>
+<td>Select the Tiny 1-C LWIR camera backend</td>
 </tr>
 <tr>
 <td><code>--test</code></td>
@@ -565,6 +788,12 @@ order:</p>
 <p>Enable the same diagnostics for a non-local command by adding <code>--debug</code>:</p>
 <pre><code class="language-sh">catia --aicam --debug
 </code></pre>
+<p>For LWIR capture diagnostics, use <code>catia --lwircam --debug</code>. If device
+selection succeeds but <code>uvc_camera_open</code> reports error <code>-3</code>, inspect the raw USB
+node permissions. It must be writable by <code>plugdev</code>. The bus/device numbers can
+change after reconnecting; use <code>lsusb -d 0bda:5840</code> to find the current node.
+Re-run <code>deploy_mora.sh</code> or reload <code>/etc/udev/rules.d/99-tiny1c.rules</code> if its
+group or mode is wrong.</p>
 <h3 id="restart-catia-without-restarting-nps">Restart CATIA without restarting NPS</h3>
 <p>The simulation UART checks for <code>/tmp/catia-sim</code> every 200 ms. When CATIA stops,
 NPS detects the closed PTY and keeps flying. Use this development loop:</p>
@@ -585,16 +814,19 @@ run this from the <code>documentation</code> directory:</p>
 <pre><code class="language-sh">./update-documentation.sh
 </code></pre>
 <p>The script validates its dependencies, renders <code>catia-flow.png</code> and
-<code>catia-flow.svg</code> with Graphviz, and rebuilds <code>index.html</code> from this Markdown
-file. It then checks that every generated file is nonempty.</p>
+<code>catia-flow.svg</code> with Graphviz, composites <code>thelaptopscreen.png</code> into the
+Inkscape-rendered <code>desk-test-setup.png</code>, and rebuilds <code>index.html</code> from this
+Markdown file. It then checks that every generated file is nonempty.</p>
 <p>Required tools:</p>
 <ul>
 <li>Graphviz <code>dot</code>;</li>
+<li>Inkscape;</li>
+<li>ImageMagick <code>magick</code>;</li>
 <li>Python 3;</li>
 <li>Python package <code>Markdown</code> (<code>python3 -m pip install Markdown</code>).</li>
 </ul>
-<p>Do not edit <code>index.html</code>, <code>catia-flow.png</code>, or <code>catia-flow.svg</code> directly; the
-next documentation update replaces them.</p></main>
+<p>Do not edit <code>index.html</code>, <code>catia-flow.png</code>, <code>catia-flow.svg</code>, or
+<code>desk-test-setup.png</code> directly; the next documentation update replaces them.</p></main>
   </div>
   <footer>CATIA documentation / Paparazzi UAV</footer>
 </body>

@@ -65,24 +65,30 @@ digraph CATIA {
     margin=16;
 
     local [
-      label="LOCAL / TEST\nselect testphotos/*.jpg\nor --mock-image\ncopy to photox/%05d.jpg",
+      label="LOCAL / TEST\nselect testphotos/*.jpg\nor --mock-image\ncopy to photos/m%06d.jpg",
       fillcolor="#14532d",
       color="#4ade80"
     ];
 
     chdk [
-      label="CHDK\ncamera capture + download\nreturn camera filename",
+      label="CHDK\ncamera capture + download\nmove to photos/c%06d.jpg",
       fillcolor="#713f12",
       color="#facc15"
     ];
 
     aicam [
-      label="AI CAMERA\nrpicam-still captures + encodes\nphotos/%06d.jpg",
+      label="AI CAMERA\nrpicam-still captures + encodes\nphotos/a%06d.jpg",
       fillcolor="#7c2d12",
       color="#fb923c"
     ];
 
-    {rank=same; local; chdk; aicam;}
+    lwircam [
+      label="LWIR CAMERA\nTiny 1-C sample --capture\nreject startup frames\nphotos/l%06d.jpg",
+      fillcolor="#134e4a",
+      color="#2dd4bf"
+    ];
+
+    {rank=same; local; chdk; aicam; lwircam;}
   }
 
   transform [
@@ -115,9 +121,11 @@ digraph CATIA {
   dispatcher -> local [color="#4ade80"];
   dispatcher -> chdk [color="#facc15"];
   dispatcher -> aicam [color="#fb923c"];
+  dispatcher -> lwircam [color="#2dd4bf"];
   local -> transform [color="#4ade80"];
   chdk -> transform [color="#facc15"];
   aicam -> transform [color="#fb923c"];
+  lwircam -> transform [color="#2dd4bf"];
   transform -> exif [color="#d8b4fe"];
   exif -> final [color="#f9a8d4"];
   final -> soda [color="#bef264"];

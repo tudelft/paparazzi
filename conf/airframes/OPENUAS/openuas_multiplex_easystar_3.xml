@@ -105,8 +105,8 @@
         <configure name="MAG_QMC5883L_I2C_DEV" value="i2c2"/>
         <define name="QMC5883L_ADDR" value="0x1A"/>
         <define name="MODULE_QMC5883L_UPDATE_AHRS" value="TRUE"/>
-        <define name="QMC5883L_CHAN_X" value="1"/>
-        <define name="QMC5883L_CHAN_Y" value="0"/>
+        <define name="QMC5883L_CHAN_X" value="0"/><!--TODO: REvalidate -->
+        <define name="QMC5883L_CHAN_Y" value="1"/><!--TODO: REvalidate -->
         <define name="QMC5883L_CHAN_Z" value="2"/>
         <define name="QMC5883L_CHAN_X_SIGN" value="+"/>
         <define name="QMC5883L_CHAN_Y_SIGN" value="-"/>
@@ -147,12 +147,23 @@
         <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>
       </module>
 
-      <module name="telemetry" type="transparent">  
-        <!-- <configure name="MODEM_PORT" value="usb_serial"/>    -->
-        <configure name="MODEM_PORT" value="UART2"/>
+      <module name="telemetry" type="transparent">
+        <!--<configure name="MODEM_PORT" value="usb_serial"/>--><!--USB Serial used for easier benchtest only -->
+        <!-- EByte E52-400NW22S LoRa MESH. The modem UART must run far faster
+             than the 62.5 kbps air rate so that a frame is inside the modem
+             before its transmit slot opens: 460800 baud puts the largest
+             38 byte frame on the wire in 0.82 ms. -->
+        <!-- 
+        <configure  name="MODEM_BAUD" value="B460800"/>
+        <configure  name="MODEM_PORT" value="UART3"/>
+         -->
+
         <!-- <configure name="MODEM_BAUD" value="B9600"/> -->
-        <configure name="MODEM_BAUD" value="B57600"/><!-- for direct cable desktest -->
-        <!--<configure name="MODEM_BAUD" value="B460800"/>--><!-- for mesh test -->
+
+        <!-- Or temporary a XBEE S1 Pro Digimesh for first debug flight-->
+        <configure  name="MODEM_BAUD" value="B57600"/>
+        <configure  name="MODEM_PORT" value="UART2"/>
+
       </module>
 
       <module name="geo_mag"/>
@@ -302,13 +313,14 @@
 
     <!-- When a compute board is connected -->
     <module name="digital_cam_uart">
+      <define name="DC_IMAGE_BUFFER" value="65000" /><!--Be prepared for LOTS of photos -->
       <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/>
       <!-- <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="5.0"/> --><!-- Unit: m -->
       <configure name="CAMERA_PORT" value="UART5"/> <!-- For the real Flightcontroller to MORA connection-->
       <!-- <configure name="CAMERA_ID" value="LWIRCAM"/>
       <configure name="CAMERA_ID" value="AICAM"/> -->
-      <configure name="SITL_SERIAL" value="/tmp/catia-sim"/><!-- for local PC -->
-      <!--<configure name="SITL_SERIAL" value="/dev/ttyUSB0"/>--><!-- for actual device via FTDO to NORA on desk -->
+      <!--<configure name="SITL_SERIAL" value="/tmp/catia-sim"/>--><!-- for local PC -->
+      <configure name="SITL_SERIAL" value="/dev/ttyUSB0"/><!-- for actual device via FTDI cable to MORA on desk -->
     </module>
 
     <!-- <module name="traffic_info"> -->
@@ -822,7 +834,7 @@
     <define name="AUTOSHOOT_DISTANCE_INTERVAL" value="50" unit="meter"/>
   </section> 
   -->
-
+  
   <section name="GCS">
     <define name="SPEECH_NAME" value="Easystar 3"/>
     <define name="AC_ICON" value="fixedwing"/>

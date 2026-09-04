@@ -47,7 +47,7 @@ int ai_cam_pipe_shoot(char *filename, size_t filename_size, int image_number)
     return -1;
   }
 
-  int length = snprintf(filename, filename_size, "%s/%06d.jpg",
+  int length = snprintf(filename, filename_size, "%s/a%06d.jpg",
                         CATIA_AI_CAM_PHOTO_DIR, image_number);
   if (length < 0 || (size_t)length >= filename_size) {
     filename[0] = '\0';

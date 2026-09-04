@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="780" viewBox="0 0 1400 780" role="img" aria-labelledby="title description">
+  <title id="title">CATIA desk test setup</title>
+  <desc id="description">A laptop running Paparazzi NPS connects through a USB to UART adapter to a Raspberry Pi Zero 2 W running CATIA. A Raspberry Pi camera connects to the Pi over a CSI ribbon cable.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#167c80"/>
+    </marker>
+    <clipPath id="laptop-screen-clip">
+      <rect x="127" y="236" width="326" height="176" rx="4"/>
+    </clipPath>
+    <style>
+      text { font-family: "DejaVu Sans", sans-serif; fill: #17242d; letter-spacing: 0; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .device { font-size: 24px; font-weight: 700; }
+      .label { font-size: 18px; font-weight: 600; }
+      .detail { font-size: 16px; fill: #52616b; }
+      .code { font-family: "DejaVu Sans Mono", monospace; font-size: 16px; fill: #24414f; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="780" fill="#ffffff"/>
+  <text x="70" y="68" class="heading">CATIA physical desk test</text>
+  <text x="70" y="101" class="detail">Real UART transport from NPS to MORA, with mock or Raspberry Pi camera capture</text>
+
+  <!-- Laptop -->
+  <g>
+    <rect x="85" y="190" width="410" height="270" rx="12" fill="#e8eef1" stroke="#243d4a" stroke-width="5"/>
+    <rect x="108" y="213" width="364" height="222" rx="4" fill="#183845"/>
+        <rect x="127" y="236" width="326" height="176" rx="4" fill="#f4f8f8"/>
+    <path d="M52 462 H528 L580 525 H18 Z" fill="#cad5da" stroke="#243d4a" stroke-width="5"/>
+    <rect x="226" y="478" width="145" height="21" rx="5" fill="#eef3f4" stroke="#82959e" stroke-width="2"/>
+  </g>
+  <text x="290" y="574" text-anchor="middle" class="device">Laptop</text>
+  <text x="290" y="604" text-anchor="middle" class="detail">Paparazzi Center + Easystar_3 NPS</text>
+  <text x="290" y="630" text-anchor="middle" class="code">/dev/ttyUSB0 at 115200</text>
+
+  <!-- USB-UART adapter and cable -->
+  <path d="M527 393 C590 393 604 458 660 458" fill="none" stroke="#167c80" stroke-width="12" stroke-linecap="round"/>
+  <rect x="648" y="423" width="130" height="70" rx="9" fill="#f4b942" stroke="#5a461a" stroke-width="4"/>
+  <rect x="625" y="440" width="30" height="36" rx="3" fill="#b8c7cc" stroke="#4c626d" stroke-width="3"/>
+  <circle cx="752" cy="445" r="7" fill="#167c80"/>
+  <text x="713" y="521" text-anchor="middle" class="label">USB-UART</text>
+  <text x="713" y="546" text-anchor="middle" class="detail">3.3 V logic</text>
+
+  <path d="M778 432 C824 399 846 328 900 326" fill="none" stroke="#e84a5f" stroke-width="7" stroke-linecap="round" marker-end="url(#arrow)"/>
+  <path d="M778 449 C830 430 846 365 900 364" fill="none" stroke="#e4a72b" stroke-width="7" stroke-linecap="round" marker-end="url(#arrow)"/>
+  <path d="M778 466 C830 466 848 402 900 402" fill="none" stroke="#167c80" stroke-width="7" stroke-linecap="round" marker-end="url(#arrow)"/>
+  <path d="M778 483 C830 510 852 440 900 440" fill="none" stroke="#26343b" stroke-width="7" stroke-linecap="round" marker-end="url(#arrow)"/>
+
+  <!-- Raspberry Pi Zero 2 W -->
+  <g>
+    <rect x="900" y="250" width="330" height="245" rx="18" fill="#3d9b72" stroke="#173d31" stroke-width="5"/>
+    <circle cx="928" cy="278" r="9" fill="#f4f7f5" stroke="#1d5540" stroke-width="3"/>
+    <circle cx="1202" cy="278" r="9" fill="#f4f7f5" stroke="#1d5540" stroke-width="3"/>
+    <circle cx="928" cy="467" r="9" fill="#f4f7f5" stroke="#1d5540" stroke-width="3"/>
+    <circle cx="1202" cy="467" r="9" fill="#f4f7f5" stroke="#1d5540" stroke-width="3"/>
+    <rect x="985" y="321" width="118" height="102" rx="5" fill="#26343b"/>
+    <text x="1044" y="366" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">RP3A0</text>
+    <text x="1044" y="391" text-anchor="middle" font-size="14" fill="#d9e4e7">CATIA</text>
+    <g fill="#d9b64c" stroke="#594a1d" stroke-width="1">
+      <circle cx="916" cy="322" r="6"/><circle cx="916" cy="348" r="6"/><circle cx="916" cy="374" r="6"/><circle cx="916" cy="400" r="6"/><circle cx="916" cy="426" r="6"/>
+      <circle cx="938" cy="322" r="6"/><circle cx="938" cy="348" r="6"/><circle cx="938" cy="374" r="6"/><circle cx="938" cy="400" r="6"/><circle cx="938" cy="426" r="6"/>
+    </g>
+    <rect x="1135" y="310" width="63" height="125" rx="4" fill="#e3e9eb" stroke="#536b75" stroke-width="3"/>
+    <rect x="1150" y="319" width="7" height="107" fill="#c89f2d"/>
+    <rect x="1164" y="319" width="7" height="107" fill="#c89f2d"/>
+    <rect x="1178" y="319" width="7" height="107" fill="#c89f2d"/>
+  </g>
+  <text x="1065" y="535" text-anchor="middle" class="device">Raspberry Pi Zero 2 W</text>
+  <text x="1065" y="565" text-anchor="middle" class="detail">MORA: CATIA on /dev/serial0</text>
+  <text x="1065" y="591" text-anchor="middle" class="code">TX / RX / GND, 115200</text>
+
+  <!-- Camera and CSI cable -->
+  <path d="M1198 374 C1246 374 1254 319 1283 319" fill="none" stroke="#e4c65c" stroke-width="28" stroke-linecap="round"/>
+  <path d="M1200 365 C1245 365 1252 310 1283 310" fill="none" stroke="#fff2ae" stroke-width="3"/>
+  <path d="M1200 375 C1245 375 1252 320 1283 320" fill="none" stroke="#fff2ae" stroke-width="3"/>
+  <path d="M1200 385 C1245 385 1252 330 1283 330" fill="none" stroke="#fff2ae" stroke-width="3"/>
+  <g>
+    <rect x="1273" y="231" width="103" height="170" rx="10" fill="#28654e" stroke="#173d31" stroke-width="4"/>
+    <rect x="1291" y="259" width="68" height="68" rx="7" fill="#252e33"/>
+    <circle cx="1325" cy="293" r="23" fill="#12181c" stroke="#8498a1" stroke-width="5"/>
+    <circle cx="1325" cy="293" r="10" fill="#436f88"/>
+    <rect x="1304" y="349" width="42" height="25" fill="#d4b846"/>
+  </g>
+  <text x="1325" y="438" text-anchor="middle" class="label">Pi camera</text>
+  <text x="1325" y="463" text-anchor="middle" class="detail">CSI ribbon</text>
+
+  <!-- Safety note -->
+  <rect x="650" y="650" width="680" height="76" rx="8" fill="#fff4e8" stroke="#e68532" stroke-width="3"/>
+  <circle cx="689" cy="688" r="20" fill="#e68532"/>
+  <text x="689" y="696" text-anchor="middle" font-size="24" font-weight="700" fill="#ffffff">!</text>
+  <text x="725" y="681" class="label">FTDI: 5 V power, crossed TX/RX, and common GND.</text>
+  <text x="725" y="707" class="detail">5 V powers MORA and camera; UART signals remain at 3.3 V.</text>
+</svg>

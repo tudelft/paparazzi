@@ -338,8 +338,7 @@ static void __attribute__((unused)) uart_receive_handler(struct uart_periph *per
     }
     received++;
   }
-  if (read_result == 0
-      || (read_result < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)) {
+  if (read_result < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) {
     fprintf(stderr, "UART: connection to %s closed; reconnecting\n", periph->dev);
     uart_periph_close_locked(periph);
   }
