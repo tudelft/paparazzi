@@ -172,15 +172,24 @@
         <configure name="MODEM_PORT" value="UART3"/>
       </module>
 
-      <!-- Bench-only configuration: UART4 is a raw USB tunnel, so this
-           firmware has no GPS input and must not be used for flight. -->
-      <module name="usb_uart_tunnel">
-        <configure name="TUNNEL_PORT" value="UART4"/>
-        <configure name="TUNNEL_BAUD" value="B460800"/>
+      <module name="gps" type="ublox">
+        <configure name="GPS_BAUD" value="B460800"/>
+        <configure name="GPS_PORT" value="UART4"/>
       </module>
 
+      <!-- <module name="gps" type="ubx_ucenter">
+        <define name="GPS_UBX_NAV5_DYNAMICS" value="NAV5_DYN_AIRBORNE_4G"/>
+        <define name="GPS_UBX_UCENTER_RATE" value="125"/>      
+      </module>  -->
+
+      <!-- Bench-only configuration: UART4 is a raw USB tunnel, so this
+           firmware has no GPS input and must not be used for flight. -->
+      <!-- <module name="usb_uart_tunnel">
+        <configure name="TUNNEL_PORT" value="UART4"/>
+        <configure name="TUNNEL_BAUD" value="B230400"/>
+      </module> -->
       <!-- Satisfy INS/navigation without assigning a hardware UART to GPS. -->
-      <module name="gps" type="datalink"/>
+      <!-- <module name="gps" type="datalink"/> -->
 
       <module name="geo_mag"/>
 

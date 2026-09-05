@@ -1,0 +1,34 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="usb_uart_tunnel" dir="usb_uart_tunnel" task="mcu">
+  <doc>
+    <description>
+      Transparent bidirectional bridge between USB CDC and a hardware UART.
+      It allows a host application, such as u-center, to configure or monitor
+      an installed serial device directly through the flight controller.
+
+      The selected UART and usb_serial must not be used by another module. The
+      tunnel baud rate must match the connected device. When replacing a GPS
+      driver, use gps/datalink to satisfy autopilot dependencies and treat the
+      resulting firmware as bench-only.
+    </description>
+    <configure name="TUNNEL_PORT" value="UARTx" description="Hardware UART exposed through USB CDC; must be exclusively owned by this module"/>
+    <configure name="TUNNEL_BAUD" value="B115200" description="Hardware UART baud rate; must match the connected device"/>
+  </doc>
+  <dep>
+    <depends>uart</depends>
+  </dep>
+  <header>
+    <file name="usb_uart_tunnel.h"/>
+  </header>
+  <event fun="usb_uart_tunnel_event()"/>
+  <makefile target="ap|fbw">
+    <configure name="TUNNEL_PORT" default="UART1" case="upper|lower"/>
+    <configure name="TUNNEL_BAUD" default="B115200"/>
+    <define name="USE_$(TUNNEL_PORT_UPPER)"/>
+    <define name="$(TUNNEL_PORT_UPPER)_BAUD" value="$(TUNNEL_BAUD)"/>
+    <define name="USB_TUNNEL_UART" value="$(TUNNEL_PORT_LOWER)"/>
+    <define name="USE_USB_SERIAL"/>
+    <file name="usb_uart_tunnel.c"/>
+  </makefile>
+</module>

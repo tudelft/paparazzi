@@ -1,0 +1,55 @@
+diff --git a/sw/supervision/python/conf_settings_widget.py b/sw/supervision/python/conf_settings_widget.py
+index 69788d6560..421aaa7672 100644
+--- a/sw/supervision/python/conf_settings_widget.py
++++ b/sw/supervision/python/conf_settings_widget.py
+@@ -34,7 +34,7 @@ class ConfSettingsWidget(QWidget, Ui_SettingsConf):
+         self.settings_changed.emit()
+ 
+     def set_remove_button_state(self, item: QListWidgetItem, _):
+-        if item.text().startswith("modules/"):
++        if item is None or item.text().startswith("modules/"):
+             self.remove_setting_button.setDisabled(True)
+         else:
+             self.remove_setting_button.setDisabled(False)
+diff --git a/sw/supervision/python/configuration_panel.py b/sw/supervision/python/configuration_panel.py
+index 740e5e9679..601c410ac4 100644
+--- a/sw/supervision/python/configuration_panel.py
++++ b/sw/supervision/python/configuration_panel.py
+@@ -112,6 +112,9 @@ class ConfigurationPanel(QWidget, Ui_ConfigurationPanel):
+         self.program_state_changed.emit(self.programs_state)
+ 
+     def remove_program(self, pw: ProgramWidget):
++        if pw.property("removal_scheduled"):
++            return
++        pw.setProperty("removal_scheduled", True)
+         self.programs_widget.layout().removeWidget(pw)
+         self.console_widget.remove_program(pw)
+         pw.deleteLater()
+diff --git a/sw/supervision/python/console_widget.py b/sw/supervision/python/console_widget.py
+index 1b3b4857bb..327df15735 100644
+--- a/sw/supervision/python/console_widget.py
++++ b/sw/supervision/python/console_widget.py
+@@ -283,7 +283,7 @@ class ConsoleWidget(QWidget, Ui_Console):
+     def remove_program(self, pw: ProgramWidget):
+         self.active_flash_programs.discard(pw)
+         self.last_flash_progress.pop(pw, None)
+-        chk = self.p_checkboxes.pop(pw)
++        chk = self.p_checkboxes.pop(pw, None)
+         if chk is not None:
+             for r in self.records:
+                 if r.emitter == pw:
+diff --git a/sw/supervision/python/paparazzicenter.py b/sw/supervision/python/paparazzicenter.py
+index dd25e5cef9..5f36b739aa 100755
+--- a/sw/supervision/python/paparazzicenter.py
++++ b/sw/supervision/python/paparazzicenter.py
+@@ -379,6 +379,10 @@ class PprzCenter(QMainWindow, Ui_SupervisionWindow):
+ 
+     def change_ac(self, ac):
+         self.currentAc = ac
++        item = self.aircraft_list.items.get(ac.name)
++        if item is not None and self.aircraft_list.list_widget.currentItem() is not item:
++            with QtCore.QSignalBlocker(self.aircraft_list.list_widget):
++                self.aircraft_list.list_widget.setCurrentItem(item)
+         self.header.set_ac(ac)
+         self.configuration_panel.set_ac(ac)
+         self.configuration_panel.console_widget.set_aircraft(ac)
