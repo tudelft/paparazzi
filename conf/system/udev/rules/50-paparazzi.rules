@@ -21,7 +21,7 @@ SUBSYSTEM=="tty", ATTRS{interface}=="TTL232R-3V3", SYMLINK+="ftdi-serial"
 SUBSYSTEM=="tty", ATTRS{product}=="FT232R USB UART", SYMLINK+="ftdi-serial", GROUP="plugdev"
 
 # Paparazzi STM32 Autopilot board USB CDC serial device
-SUBSYSTEM=="tty", ATTRS{manufacturer}=="Paparazzi UAV", ATTRS{product}=="CDC Serial STM32", SYMLINK+="paparazzi/stm32-usb-serial"
+SUBSYSTEM=="tty", ATTRS{manufacturer}=="Paparazzi UAV", ATTRS{product}=="CDC Serial STM32", ENV{ID_MM_DEVICE_IGNORE}="1", SYMLINK+="paparazzi/stm32-usb-serial"
 
 # Paparazzi 3dr radio
 SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6015", SYMLINK+="paparazzi/link", GROUP="plugdev"

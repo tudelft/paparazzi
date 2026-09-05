@@ -51,7 +51,7 @@ MCU  = cortex-m4
 #DFU_ADDR = 0x08004000
 PX4_TARGET = "ap"
 PX4_PROTOTYPE ?= "$(PAPARAZZI_HOME)/sw/tools/px4/matek_f405_te_sd.prototype"
-PX4_BL_PORT ?= "/dev/serial/by-id/*MatekF405-TE-BL*,/dev/serial/by-id/*Matek*,/dev/serial/by-id/*ArduPilot*,/dev/ttyACM*"
+PX4_BL_PORT ?= "/dev/serial/by-id/*MatekF405-TE-BL*"
 
 #
 # default LED configuration

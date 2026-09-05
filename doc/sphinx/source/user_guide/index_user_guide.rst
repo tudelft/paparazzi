@@ -17,6 +17,7 @@ Start conquering the wolrd, by making incredible :doc:`flight_plans`!
     flight_plans
     mission_mode
     communication
+    usb_uart_tunnel
     radio
     gcs_graphics
     gvf_viewer

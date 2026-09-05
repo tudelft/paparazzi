@@ -448,14 +448,6 @@
     </target>
   </firmware>
 
-  <!-- Setup ONLY used to SETUP the Hardware settings GNSS Modem -->
-  <!-- <firmware name="setup">
-    <target name="tunnel" board="matek_f405_te_sd" />
-    <target name="usb_tunnel" board="matek_f405_te_sd">
-    <configure name="TUNNEL_PORT" value="UART3"/>
-    </target>
-  </firmware> -->
-
   <!-- *** Actuation and related settings -->
 
   <servos driver="Pwm">
