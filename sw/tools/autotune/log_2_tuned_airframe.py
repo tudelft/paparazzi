@@ -173,8 +173,8 @@ def load_flight_log(log_dir: Path, log_name: str, ac_id: int) -> FlightLog:
     log_path = resolve_existing(log_dir / f"{log_name}.log", "log file")
     data_path = resolve_existing(log_dir / f"{log_name}.data", "data file")
     name, airframe, defines = parse_log_header(log_path, ac_id)
-    wanted = {"ATTITUDE", "GPS", "COMMANDS", "PPRZ_MODE", "AIR_DATA",
-              "ESTIMATOR", "DESIRED", "NAVIGATION", "ENERGY"}
+    wanted = {"ATTITUDE", "GPS", "COMMANDS", "PPRZ_MODE", "AIR_DATA", "AIRSPEED",
+              "ESTIMATOR", "DESIRED", "NAVIGATION", "NAVIGATION_REF", "ENERGY"}
     msgs = parse_data_file(data_path, ac_id, wanted)
     fl = FlightLog(log_path, data_path, ac_id, name, airframe, defines, msgs)
     log.info("loaded %s: aircraft '%s' (AC_ID %d), airframe %s, %d message types, "
@@ -238,6 +238,17 @@ class Analysis:
     course_err_mean_deg: float = NAN
     course_osc_frac: float = NAN          # error sign changes per second
 
+    # -- safety checks (iteration 3)
+    state_airspeed_dead: bool = False     # AIRSPEED msg zero while AIR_DATA has airspeed
+    state_airspeed_max: float = NAN
+    sensor_airspeed_max: float = NAN
+    ground_alt: float = NAN
+    auto2_min_agl: float = NAN            # lowest height above ground in AUTO2
+    auto2_max_sink: float = NAN           # most negative Vz in AUTO2
+    auto2_pitch_pinned_frac: float = NAN  # AUTO2 time with pitch sp at the min limit
+    auto2_alt_err_at_entry: float = NAN   # desired - actual altitude at first AUTO2 entry
+    level_theta_at_10: float = NAN        # level pitch predicted at 10 m/s (IMU sanity)
+
 
 def _lstsq(X: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, float]:
     beta, *_ = np.linalg.lstsq(X, y, rcond=None)
@@ -246,7 +257,7 @@ def _lstsq(X: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, float]:
     return beta, 1.0 - ss_res / ss_tot
 
 
-def analyze(fl: FlightLog) -> Analysis:
+def analyze(fl: FlightLog, pitch_min_deg: float = -25.0) -> Analysis:
     a = Analysis()
     t_att, att = fl.series("ATTITUDE")           # phi psi theta [rad]
     t_gps, gps = fl.series("GPS")                # f3 course decideg, f5 speed cm/s
@@ -285,12 +296,27 @@ def analyze(fl: FlightLog) -> Analysis:
 
     have_des = "DESIRED" in fl.msgs
     des_course = None
+    des_alt = None
     if have_des:
         t_des, des = fl.series("DESIRED")
         des_roll = interp(t_des, np.degrees(des[:, 0]))
         des_pitch = interp(t_des, np.degrees(des[:, 1]))
         if des.shape[1] > 2:
             des_course = interp(t_des, des[:, 2])
+        if des.shape[1] > 5:
+            des_alt = interp(t_des, des[:, 5])
+
+    # State airspeed health: the AIRSPEED message carries stateGetAirspeed(),
+    # which every autonomous loop uses; AIR_DATA is only the sensor module.
+    if "AIRSPEED" in fl.msgs:
+        a.state_airspeed_max = float(fl.msgs["AIRSPEED"][1][:, 0].max())
+    if "AIR_DATA" in fl.msgs and fl.msgs["AIR_DATA"][1].shape[1] >= 6:
+        a.sensor_airspeed_max = float(fl.msgs["AIR_DATA"][1][:, 5].max())
+    if isnum(a.sensor_airspeed_max) and a.sensor_airspeed_max > 3.0 \
+            and (not isnum(a.state_airspeed_max) or a.state_airspeed_max < 1.0):
+        a.state_airspeed_dead = True
+    if "NAVIGATION_REF" in fl.msgs and fl.msgs["NAVIGATION_REF"][1].shape[1] > 3:
+        a.ground_alt = float(np.median(fl.msgs["NAVIGATION_REF"][1][:, 3]))
 
     psidot = np.degrees(np.gradient(psi, tq))
 
@@ -321,6 +347,14 @@ def analyze(fl: FlightLog) -> Analysis:
             a.roll_bias_deg = a.level_phi_deg - a.level_desired_roll_deg
     else:
         log.warning("only %d straight-and-level samples; trims not tuned", a.n_level)
+
+    # Level pitch normalised to 10 m/s (theta ~ a + b/V^2) for IMU alignment sanity.
+    ql = sel & (m >= 1) & (np.abs(phi) < 8) & (np.abs(zdot) < 0.6) & (spd > 7.5)
+    if ql.sum() >= 60:
+        v = spd[ql]
+        gamma = np.degrees(np.arcsin(np.clip(zdot[ql] / v, -0.3, 0.3)))
+        beta_l, _ = _lstsq(np.c_[np.ones(ql.sum()), 1.0 / v ** 2], theta[ql] - gamma)
+        a.level_theta_at_10 = float(beta_l[0] + beta_l[1] / 100.0)
 
     # ---- turns ---------------------------------------------------------
     sgn = np.sign(phi)
@@ -383,6 +417,17 @@ def analyze(fl: FlightLog) -> Analysis:
 
     # ---- course tracking (AUTO2 only) ----------------------------------
     s2 = sel & (m == 2) & (gs > 6.0)
+    if s2.sum() > 5:
+        z = interp(*fl.series("ESTIMATOR")[:1], fl.series("ESTIMATOR")[1][:, 0]) \
+            if "ESTIMATOR" in fl.msgs else interp(t_gps, gps[:, 4] / 1000.0)
+        if isnum(a.ground_alt):
+            a.auto2_min_agl = float((z[s2] - a.ground_alt).min())
+        a.auto2_max_sink = float(zdot[s2].min())
+        if have_des:
+            a.auto2_pitch_pinned_frac = float((des_pitch[s2] < pitch_min_deg + 4.0).mean())
+            if des_alt is not None:
+                first = int(np.argmax(s2))
+                a.auto2_alt_err_at_entry = float(des_alt[first] - z[first])
     if des_course is not None and s2.sum() * dt >= MIN_AUTO2_SECONDS:
         course = interp(t_gps, np.radians(gps[:, 3] / 10.0))        # decideg -> rad
         err = np.degrees(np.angle(np.exp(1j * (des_course[s2] - course[s2]))))
@@ -467,11 +512,83 @@ def fmt(x: float, nd: int = 3) -> str:
 
 
 def tune_airframe(xml_text: str, a: Analysis, fl: FlightLog,
-                  target_radius: float) -> tuple[str, list[Change], list[Advice]]:
+                  target_radius: float,
+                  overrides: dict[str, str] | None = None) -> tuple[str, list[Change], list[Advice]]:
     ed = AirframeEditor(xml_text)
     advice: list[Advice] = []
     v_ref = a.level_airspeed if isnum(a.level_airspeed) else \
         (a.airspeed_mean if isnum(a.airspeed_mean) else 12.0)
+
+    # Manual overrides (--set NAME=VALUE) are applied first and win.
+    for name, value in (overrides or {}).items():
+        if not ed.set_define("override", name, value, "set explicitly on the command line"):
+            advice.append(Advice("override", f"--set {name}: define not found in the airframe"))
+
+    # =====================================================================
+    # 0. Flight-critical configuration faults found in the log
+    # =====================================================================
+    if a.state_airspeed_dead:
+        # USE_AIRSPEED must reach the ap target; USE_AIRSPEED_SDP3X alone does
+        # not imply it. Insert into the ap target's airspeed module block.
+        ap_block = re.search(r'(<target name="ap"[^>]*>)(.*?)(</target>)', ed.text, re.S)
+        fixed = False
+        if ap_block:
+            body = ap_block.group(2)
+            live = re.sub(r"<!--.*?-->", "", body, flags=re.S)
+            if not re.search(r'<define\s+name="USE_AIRSPEED"\s', live):
+                new_line = ('<define name="USE_AIRSPEED" value="TRUE"/>'
+                            '<!-- autotune: state airspeed was 0 in flight, ETECS flew blind -->')
+                # Prefer replacing the misleading commented-out define in place.
+                m_c = re.search(r'<!--\s*<define name="USE_AIRSPEED" value="TRUE"/>\s*-->'
+                                r'(<!--[^\n]*-->)?', body)
+                mod = re.search(r'(<module name="airspeed"[^>]*>\n)', body)
+                if m_c:
+                    s, e = ap_block.start(2) + m_c.start(), ap_block.start(2) + m_c.end()
+                    ed.text = ed.text[:s] + new_line + ed.text[e:]
+                    fixed = True
+                elif mod:
+                    ins = ap_block.start(2) + mod.end(1)
+                    ed.text = ed.text[:ins] + "        " + new_line + "\n" + ed.text[ins:]
+                    fixed = True
+        ed.changes.append(Change(
+            "firmware/ap: USE_AIRSPEED", "(not defined for ap target)",
+            "TRUE" if fixed else "(NOT FIXED: insert manually in <target name=\"ap\">)",
+            f"AIRSPEED telemetry (= stateGetAirspeed, what the autopilot uses) stayed 0 while "
+            f"AIR_DATA.airspeed reached {a.sensor_airspeed_max:.1f} m/s: the sensor works but never "
+            f"reaches the state. The generated Makefile only had -DUSE_AIRSPEED in the nps target. "
+            f"With airspeed=0 the ETECS speed error is a constant +{v_ref:.0f} m/s, so on AUTO2 "
+            f"entry it pitches to PITCH_MIN and floors the throttle regardless of altitude."))
+        advice.append(Advice(
+            "AUTO2 dive explained",
+            f"in AUTO2 the pitch setpoint sat at the minimum limit {a.auto2_pitch_pinned_frac:.0%} "
+            f"of the time, sink reached {a.auto2_max_sink:.1f} m/s and the aircraft got down to "
+            f"{a.auto2_min_agl:.0f} m above ground (altitude error at entry was only "
+            f"{a.auto2_alt_err_at_entry:+.0f} m). This is the signature of a speed loop that "
+            f"believes it is far too slow, i.e. the missing state airspeed above, not a waypoint "
+            f"or navigation problem. After the fix, verify on the bench that Messages->AIRSPEED "
+            f"shows a non-zero airspeed when you blow into the pitot BEFORE any AUTO2 attempt."))
+    elif isnum(a.auto2_min_agl) and (a.auto2_min_agl < 15 or
+                                     (isnum(a.auto2_pitch_pinned_frac) and a.auto2_pitch_pinned_frac > 0.5)):
+        advice.append(Advice(
+            "AUTO2 anomaly",
+            f"AUTO2 reached {a.auto2_min_agl:.0f} m AGL with pitch pinned at the minimum "
+            f"{a.auto2_pitch_pinned_frac:.0%} of the time and sink {a.auto2_max_sink:.1f} m/s; "
+            f"state airspeed looks alive (max {a.state_airspeed_max:.1f} m/s), so check the "
+            f"airspeed setpoint vs achievable speed and the ETECS speed gains before retrying."))
+
+    # IMU alignment sanity: level pitch normalised to 10 m/s should be a few
+    # degrees for a small foam wing. Compare against the flown mount angle.
+    b2i_flown = fl.flown("BODY_TO_IMU_THETA", ed.get_float("BODY_TO_IMU_THETA", 0.0))
+    if isnum(a.level_theta_at_10) and a.level_theta_at_10 > 4.5:
+        suggested = b2i_flown + math.radians(a.level_theta_at_10 - 2.5)
+        advice.append(Advice(
+            "IMU pitch alignment",
+            f"level-flight body pitch normalised to 10 m/s is {a.level_theta_at_10:+.1f} deg with "
+            f"IMU_BODY_TO_IMU_THETA={b2i_flown:.3f} rad. A cruise alpha of 2-3 deg is expected; "
+            f"if the FC was moved, raise BODY_TO_IMU_THETA to about {suggested:.3f} rad. Confirm on "
+            f"the bench: hold the wing chord level and read ATTITUDE.theta in the GCS; add that "
+            f"reading (in rad) to BODY_TO_IMU_THETA. Flight data alone cannot separate IMU tilt "
+            f"from a genuinely higher angle of attack (heavier aircraft or slower flight)."))
 
     # =====================================================================
     # 1. Pitch and roll trim (COMMAND_*_TRIM: added to commands in
@@ -543,12 +660,19 @@ def tune_airframe(xml_text: str, a: Analysis, fl: FlightLog,
                                  "roll-to-rudder coordination gain derived from manual turn telemetry")
     elif ed.get_define("RUDDERVONS_OF_ROLL") is not None and isnum(a.yaw_per_bank_pprz_deg) \
             and abs(a.yaw_per_bank_pprz_deg) > 40:
-        # Mixer already present (a previous optim file): only trim it if the
-        # pilot still adds rudder on top of it.
+        # Mixer already present. The pilot's rudder-per-bank in AUTO1 is stick
+        # habit and says nothing about coordination, so do not stack gain on it;
+        # use the measured coordination ratio instead.
         cur = ed.get_float("RUDDERVONS_OF_ROLL", k)
-        ed.set_define("MIXER", "RUDDERVONS_OF_ROLL", str(max(0.3, min(1.0, round(cur + k, 2)))),
-                      f"pilot still adds {a.yaw_per_bank_pprz_deg:.0f} pprz rudder per deg bank "
-                      f"on top of the existing mixer gain {cur}")
+        if isnum(a.turn_coord_ratio) and a.turn_coord_ratio < 0.85:
+            advice.append(Advice(
+                "turn coordination",
+                f"achieved/ideal yaw rate in turns is {a.turn_coord_ratio:.2f} with "
+                f"RUDDERVONS_OF_ROLL={cur}; below 1 means the nose lags the bank (skidding turn) "
+                f"or the ruddervator yaw sign is inverted. Verify on the bench that a right roll "
+                f"stick moves the ruddervators to yaw right BEFORE increasing the gain. Note the "
+                f"AUTO1 pilot still holds {a.yaw_per_bank_pprz_deg:.0f} pprz/deg of rudder, which the "
+                f"mixer now adds to, over-yawing the aircraft: fly AUTO1 turns with rudder centred."))
 
     pat_auto = re.compile(r'<set command="YAW" value="@YAW\*0\.9"/>')
     if pat_auto.search(ed.text):
@@ -614,6 +738,48 @@ def tune_airframe(xml_text: str, a: Analysis, fl: FlightLog,
         ed.set_define("V_CTL", "GLIDE_RATIO", fmt(a.glide_ratio, 1),
                       f"idle-throttle descent over {a.n_glide} samples gave V/Vz = {a.glide_ratio:.1f}; "
                       f"used for the pitch-down when throttle is killed")
+
+    # =====================================================================
+    # 3b. Safety envelope for an aircraft with little power margin
+    # =====================================================================
+    v_stall = ed.get_float("STALL_AIRSPEED", 6.7)
+    v_cruise = a.cruise_airspeed if isnum(a.cruise_airspeed) else v_ref
+    # Bank limit: keep the accelerated stall speed (Vs*sqrt(n)) 15 % under cruise.
+    n_max = (v_cruise / (1.15 * v_stall)) ** 2
+    if n_max > 1.0:
+        bank_max = math.degrees(math.acos(1.0 / n_max))
+        bank_max = max(20.0, min(45.0, math.floor(bank_max / 5.0) * 5.0))
+        for name in ("ROLL_MAX_SETPOINT", "MAX_ROLL"):
+            cur = ed.get_float(name, 45.0)
+            if bank_max < cur:
+                ed.set_define("H_CTL/AUTO1", name, fmt(bank_max, 0),
+                              f"at {v_cruise:.1f} m/s cruise with {v_stall:.1f} m/s stall, a "
+                              f"{cur:.0f} deg bank raises stall speed to "
+                              f"{v_stall * math.sqrt(1 / math.cos(math.radians(cur))):.1f} m/s; "
+                              f"{bank_max:.0f} deg keeps a 15 % margin (turns in the log were flown "
+                              f"at {a.turn_bank_deg:.0f} deg and {a.airspeed_mean:.1f} m/s, "
+                              f"i.e. at the stall boundary)")
+    # Pitch-down limit: no steeper than the idle glide path plus a small margin.
+    if isnum(a.glide_ratio):
+        pitch_min = -math.ceil(math.degrees(math.atan(1.0 / a.glide_ratio)) + 3.0)
+        pitch_min = max(-25.0, min(-8.0, pitch_min))
+        cur = ed.get_float("PITCH_MIN_SETPOINT", -25.0)
+        if pitch_min > cur:
+            ed.set_define("H_CTL", "PITCH_MIN_SETPOINT", fmt(pitch_min, 0),
+                          f"idle glide path is {math.degrees(math.atan(1.0 / a.glide_ratio)):.0f} deg "
+                          f"down (L/D {a.glide_ratio:.1f}); allowing {cur:.0f} deg let the "
+                          f"controller dive at {a.auto2_max_sink if isnum(a.auto2_max_sink) else -6:.0f} m/s")
+    # Speed-loop aggressiveness: a 2 m/s speed error must not command more
+    # pitch-down than a few degrees on an aircraft that cannot out-climb it.
+    if isnum(a.cruise_throttle) and a.cruise_throttle > 0.7:
+        ed.set_define("V_CTL", "MAX_ACCELERATION", "0.15",
+                      "with no throttle margin, speed errors must be corrected gently: "
+                      "0.15 g caps the energy-distribution pitch-down at ~5 deg")
+        ed.set_define("V_CTL", "AUTO_PITCH_OF_AIRSPEED_IGAIN", "0.001",
+                      "slow the adaptive cruise-pitch integrator: at 0.004 a sustained speed "
+                      "error winds the pitch reference to its limit within ~10 s")
+        ed.set_define("V_CTL", "ENERGY_DIFF_IGAIN", "0.02",
+                      "energy-distribution integrator reduced for the same reason")
 
     # =====================================================================
     # 4. Course loop: measured from AUTO2 when available, else model check
@@ -718,6 +884,13 @@ def write_report(report_path: Path, fl: FlightLog, a: Analysis, changes: list[Ch
         f"  airborne {a.airborne_seconds:.0f} s | AUTO1 {a.auto1_seconds:.0f} s | AUTO2 {a.auto2_seconds:.0f} s",
         f"  airspeed source        : {a.airspeed_source}",
         f"  mean airspeed          : {_f(a.airspeed_mean, '.2f', ' m/s')}",
+        f"  STATE airspeed max     : {_f(a.state_airspeed_max, '.1f', ' m/s')}  (sensor AIR_DATA max "
+        f"{_f(a.sensor_airspeed_max, '.1f', ' m/s')})" + ("   <<< STATE AIRSPEED DEAD" if a.state_airspeed_dead else ""),
+        f"  ground alt (nav ref)   : {_f(a.ground_alt, '.0f', ' m')}",
+        f"  AUTO2 min AGL / sink   : {_f(a.auto2_min_agl, '.0f', ' m')} / {_f(a.auto2_max_sink, '.1f', ' m/s')}"
+        f"  pitch at min limit {_f(a.auto2_pitch_pinned_frac, '.0%')} of AUTO2, alt err at entry "
+        f"{_f(a.auto2_alt_err_at_entry, '+.0f', ' m')}",
+        f"  level pitch @10 m/s    : {_f(a.level_theta_at_10, '+.1f', ' deg')} (IMU alignment sanity)",
         "",
         f"-- PITCH / ROLL TRIM  (straight+level, n={a.n_level}) " + "-" * 25,
         f"  body pitch / demanded  : {_f(a.level_theta_deg, '+.2f')} / {_f(a.level_desired_pitch_deg, '+.2f')} deg"
@@ -785,6 +958,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--ac-id", type=int, default=129)
     ap.add_argument("--turn-radius", type=float, default=30.0,
                     help="target minimum autonomous turn radius [m]")
+    ap.add_argument("--set", action="append", default=[], metavar="NAME=VALUE",
+                    help="force an airframe define (repeatable), e.g. --set BODY_TO_IMU_THETA=0.16")
     ap.add_argument("--target", default="ap", help="build target for verification")
     ap.add_argument("--no-build", action="store_true", help="skip compile verification")
     ap.add_argument("-v", "--verbose", action="store_true")
@@ -801,9 +976,19 @@ def main(argv: list[str] | None = None) -> int:
                                     "base airframe XML")
         base_name = re.sub(r"_optim_\d{3}$", "", base_xml.stem)
 
-        analysis = analyze(fl)
-        tuned_text, changes, advice = tune_airframe(base_xml.read_text(), analysis, fl,
-                                                    args.turn_radius)
+        overrides = {}
+        for item in args.set:
+            if "=" not in item:
+                raise AutotuneError(f"--set expects NAME=VALUE, got '{item}'")
+            k, v = item.split("=", 1)
+            overrides[k.strip()] = v.strip()
+
+        base_text = base_xml.read_text()
+        m_pmin = re.search(r'name="PITCH_MIN_SETPOINT"\s+value="([^"]+)"', base_text)
+        pitch_min = float(m_pmin.group(1)) if m_pmin else -25.0
+        analysis = analyze(fl, pitch_min)
+        tuned_text, changes, advice = tune_airframe(base_text, analysis, fl,
+                                                    args.turn_radius, overrides)
 
         out_xml = next_version_path(out_dir, base_name)
         out_xml.write_text(tuned_text)

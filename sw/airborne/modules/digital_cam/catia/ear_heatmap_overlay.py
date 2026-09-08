@@ -21,6 +21,7 @@ magenta crosshair. Requires Pillow and numpy.
 """
 
 import argparse
+import csv
 import math
 import sys
 import time
@@ -160,6 +161,8 @@ def main():
     parser.add_argument("--track", type=Path, help="aircraft track CSV (t_s,lat_deg,lon_deg,...) drawn on top")
     parser.add_argument("--truth", help="known source position LAT,LON (simulation), drawn as a red marker")
     parser.add_argument("--search", help="search area given by the organisers LAT,LON[,RADIUS_M] (default radius 25)")
+    parser.add_argument("--obstacles", type=Path,
+                        help="LiDAR grid CSV (ign_lidar_grid.py): cells with objects above 3 m are shaded red")
     parser.add_argument("-o", "--output", type=Path, help="output JPEG (default: <heatmap>_sat.jpg)")
     parser.add_argument("--source", choices=sorted(SOURCES), default="google")
     parser.add_argument("--zoom", type=int, help="tile zoom (default: matches the heatmap resolution)")
@@ -255,6 +258,28 @@ def main():
 
     def label(x, y, text, rgb):
         draw.text((x, y), text, fill=rgb + (255,), font_size=15 * ss, stroke_width=2 * ss, stroke_fill=(0, 0, 0, 255))
+
+    if args.obstacles:
+        # Trees/buildings from the LiDAR surface model: light red 3..6 m, red above 6 m.
+        cells = []
+        with args.obstacles.open() as handle:
+            for row in csv.DictReader(handle):
+                if row["mnh_m"] not in ("", "None"):
+                    cells.append((float(row["x_east_m"]), float(row["lat"]), float(row["lon"]), float(row["mnh_m"])))
+        xs_sorted = sorted({c[0] for c in cells})
+        step = min(b - a for a, b in zip(xs_sorted, xs_sorted[1:]) if b > a)
+        half_lat = 0.5 * step / m_per_deg_lat
+        half_lon = 0.5 * step / m_per_deg_lon
+        for _, c_lat, c_lon, height in cells:
+            if height < 3.0:
+                continue
+            x0, y0 = to_px(c_lat + half_lat, c_lon - half_lon)
+            x1, y1 = to_px(c_lat - half_lat, c_lon + half_lon)
+            if x1 < 0 or y1 < 0 or x0 > out_w * ss or y0 > out_h * ss:
+                continue
+            fill = (255, 40, 40, 120) if height > 6.0 else (255, 150, 40, 90)
+            draw.rectangle((x0, y0, x1, y1), fill=fill)
+        label(0.04 * out_w * ss, 0.04 * out_h * ss, "red: trees above 6 m (IGN LiDAR HD)", (255, 120, 120))
 
     if args.search:
         # The area to search (rulebook: mannequins within 25 m of the given point).

@@ -391,6 +391,49 @@ bool earcam_place_run_in_lane(uint8_t wp_start, uint8_t wp_target, float before_
   return earcam_run_in_clear;
 }
 
+float earcam_place_climbout(uint8_t wp_start, uint8_t wp_target, uint8_t wp_climbout, uint8_t wp_exit,
+                            float max_m, float min_m, float turn_radius_m, float margin_m, float side,
+                            float alt, earcam_obstacle_fn keep_out)
+{
+#if FIXEDWING_FIRMWARE
+  const float tx = WaypointX(wp_target), ty = WaypointY(wp_target);
+  float ax = tx - WaypointX(wp_start), ay = ty - WaypointY(wp_start);
+#else
+  const float tx = waypoint_get_x(wp_target), ty = waypoint_get_y(wp_target);
+  float ax = tx - waypoint_get_x(wp_start), ay = ty - waypoint_get_y(wp_start);
+#endif
+  const float run = sqrtf(ax * ax + ay * ay);
+  if (run < 1.f) {
+    return 0.f;
+  }
+  ax /= run;
+  ay /= run;
+  const float rx = ay, ry = -ax;   // right of track
+  const float ring = turn_radius_m + margin_m;
+  float length = 0.f;
+  for (float s = 5.f; s <= max_m + 0.01f; s += 5.f) {
+    // Exit circle centre for a climb-out ending here; nothing within ring of it may be keep-out.
+    const float cx = tx + ax * s + rx * side * turn_radius_m;
+    const float cy = ty + ay * s + ry * side * turn_radius_m;
+    bool free = !keep_out(tx + ax * s, ty + ay * s);
+    for (int k = 0; k < 12 && free; k++) {
+      const float a = k * (2.f * M_PI / 12.f);
+      free = !keep_out(cx + ring * sinf(a), cy + ring * cosf(a));
+    }
+    if (!free) {
+      break;
+    }
+    length = s;
+  }
+  if (length < min_m) {
+    length = min_m;
+  }
+  const float cx = tx + ax * length, cy = ty + ay * length;
+  nav_move_waypoint_enu(wp_climbout, cx, cy, alt);
+  nav_move_waypoint_enu(wp_exit, cx + rx * side * turn_radius_m, cy + ry * side * turn_radius_m, alt);
+  return length;
+}
+
 /* ------------------------------------------------------------------ */
 /* Adaptive star refinement                                            */
 /* ------------------------------------------------------------------ */
@@ -744,19 +787,6 @@ uint8_t earcam_drop_shoot(uint8_t wp_target)
   return 0;
 }
 
-uint8_t earcam_drop_shoot_high(uint8_t wp_target)
-{
-  bool rangefinder;
-  earcam_drop_agl_m = drop_agl(wp_target, &rangefinder);
-#if EARCAM_HAVE_NAV_DROP
-  nav_drop_shoot();
-#endif
-  earcam_drop_attempts++;
-  earcam_drop_missed = false;
-  earcam_drop_released = true;
-  return 0;
-}
-
 uint8_t earcam_drop_mark_impact(uint8_t wp_target, uint8_t wp_release, uint8_t wp_mark)
 {
   struct EnuCoor_f *pos = stateGetPositionEnu_f();
@@ -783,7 +813,6 @@ uint8_t earcam_drop_level_point(uint8_t wp_start, uint8_t wp_release, uint8_t wp
 float earcam_drop_altitude(uint8_t wp_target) { (void)wp_target; return 0.f; }
 bool earcam_drop_too_low(uint8_t wp_target) { (void)wp_target; return false; }
 uint8_t earcam_drop_shoot(uint8_t wp_target) { (void)wp_target; return 1; }
-uint8_t earcam_drop_shoot_high(uint8_t wp_target) { (void)wp_target; return 1; }
 uint8_t earcam_drop_mark_impact(uint8_t wp_target, uint8_t wp_release, uint8_t wp_mark)
 {
   (void)wp_target; (void)wp_release; (void)wp_mark;

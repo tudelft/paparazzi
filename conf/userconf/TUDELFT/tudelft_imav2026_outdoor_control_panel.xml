@@ -1,0 +1,173 @@
+<control_panel name="OpenUAS control panel">
+  <section name="variables">
+    <variable name="downlink_serial_port" value="/dev/ttyUSB0"/>
+    <variable name="fbw_serial_port" value="/dev/ttyS1"/>
+    <variable name="ap_serial_port" value="/dev/ttyS0"/>
+    <variable name="ivy_bus" value="127:2010"/>
+    <variable name="map" value="muret_UTM.xml"/>
+    <variable name="flight_plan" value="flight_plans/muret1.xml"/>
+  </section>
+  <section name="programs">
+    <program name="GST" command="/usr/bin/gst-launch-1.0"/>
+    <program name="Server" command="sw/ground_segment/tmtc/server"/>
+    <program name="Data Link" command="sw/ground_segment/tmtc/link">
+      <arg flag="-d" constant="downlink_serial_port"/>
+    </program>
+    <program name="UnifiedMoCap" command="sw/ext/unifiedmocaprouter/build/mocap-router"/>
+    <program name="Link Combiner" command="sw/ground_segment/python/redundant_link/link_combiner.py"/>
+    <program name="GCS" command="sw/ground_segment/cockpit/pprzgcs">
+      <arg flag="-speech"/>
+    </program>
+    <program name="Flight Plan Editor" command="sw/ground_segment/cockpit/pprzgcs">
+      <arg flag="-edit"/>
+    </program>
+    <program name="Messages" command="sw/ground_segment/tmtc/messages"/>
+    <program name="Settings" command="sw/ground_segment/tmtc/settings">
+      <arg flag="-ac" constant="@AIRCRAFT"/>
+    </program>
+    <program name="GPSd position display" command="sw/ground_segment/tmtc/gpsd2ivy"/>
+    <program name="Log Plotter" command="sw/logalizer/logplotter"/>
+    <program name="Real-time Plotter" command="sw/logalizer/plotter"/>
+    <program name="Log File Player" command="sw/logalizer/play"/>
+    <program name="Simulator" command="sw/simulator/pprzsim-launch"/>
+    <program name="Video Synchronizer" command="sw/ground_segment/misc/video_synchronizer"/>
+    <program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
+      <arg flag="-ac" constant="@AIRCRAFT"/>
+      <arg flag="xbox_gamepad.xml"/>
+    </program>
+    <program name="Hardware in the Loop" command="sw/simulator/simhitl"/>
+    <program name="Environment Simulator" command="sw/simulator/gaia"/>
+    <program name="Attitude Visualizer" command="sw/tools/attitude_viz.py"/>
+    <program name="App Server" command="sw/ground_segment/tmtc/app_server"/>
+    <program name="Ivy2Nmea" command="sw/ground_segment/tmtc/ivy2nmea">
+      <arg flag="--port" constant="/dev/ttyUSB1"/>
+      <arg flag="--id" constant="1"/>
+    </program>
+    <program name="IvySerialBridge" command="sw/ground_segment/tmtc/ivy_serial_bridge"/>
+    <program name="Photolist" command="sw/tools/photolist/build/photolist | tee photolist.log -a"/>
+    <program name="Ivy2NMEAout" command="sw/ground_segment/misc/ivy2nmeaout">
+      <arg flag="-b" variable="ivy_bus"/>
+      <arg flag="-d" constant="/dev/ttyUSB1"/>
+      <arg flag="-s" constant="9600"/>
+    </program>
+    <program name="Http Server" command="sw/ground_segment/tmtc/boa"/>
+    <program name="HITL classic" command="sw/simulator/simhitl">
+      <arg flag="-fbw" variable="fbw_serial_port"/>
+      <arg flag="-ap" variable="ap_serial_port"/>
+    </program>
+    <program name="GCS Classic" command="sw/ground_segment/cockpit/pprzgcs">
+      <arg flag="--speech"/>
+      <arg flag="--layout" constant="classic_layout.xml"/>
+    </program>
+    <program name="GST" command="/usr/bin/gst-launch-1.0"/>
+    <program name="MORA Local CATIA" command="sw/airborne/modules/digital_cam/catia/run_local_demo.sh"/>
+    <program name="EasyStar MORA Camera Demo NPS" command="sw/simulator/run_easystar_mora_camera_demo.sh"/>
+    <program name="EasyStar MORA Camera Demo Starter" command="sw/simulator/start_easystar_mora_camera_demo.py"/>
+  </section>
+  <section name="sessions">
+    <session name="IMAV2026 Replay flight">
+      <program name="Log Plotter"/>
+      <program name="Log File Player"/>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="GCS">
+        <arg flag="-speech"/>
+        <arg flag="-layout" constant="OPENUAS/openuas_bottom_settings.xml"/>
+        <arg flag="-maximize"/>
+        <arg flag="-maps_fill"/>
+        <arg flag="-center_ac"/>
+        <arg flag="-mercator"/>
+        <arg flag="-maps_no_http"/>
+        <arg flag="-track_size" constant="200"/>
+        <arg flag="-zoom" constant="0.5"/>
+        <arg flag="-no_confirm_kill"/>
+        <arg flag="-srtm"/>
+      </program>
+    </session>
+    <session name="Local CATIA demo">
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="Easystar_3"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS Classic">
+        <arg flag="--maximize"/>
+        <arg flag="--speech"/>
+      </program>
+      <program name="Environment Simulator (Legacy)"/>
+      <program name="MORA Local CATIA"/>
+    </session>
+    <session name="MORA Camera Demo">
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="Easystar_3"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="EasyStar MORA Camera Demo NPS"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS Classic">
+        <arg flag="--maximize"/>
+        <arg flag="--speech"/>
+      </program>
+      <program name="Environment Simulator (Legacy)"/>
+      <program name="MORA Local CATIA"/>
+      <program name="EasyStar MORA Camera Demo Starter"/>
+    </session>
+    <session name="SIM IMAV2026 NPS new QTGUI">
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="Adam"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS Classic">
+        <arg flag="--maximize"/>
+      </program>
+      <program name="Environment Simulator (Legacy)"/>
+    </session>
+    <session name="Remote to CATIA">
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="Easystar_3"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS Classic">
+        <arg flag="--maximize"/>
+        <arg flag="--speech"/>
+      </program>
+      <program name="Environment Simulator (Legacy)"/>
+    </session>
+  </section>
+</control_panel>

@@ -1,0 +1,189 @@
+==========================================================================
+PAPARAZZI AIRFRAME AUTO-TUNE REPORT (Iteration 2)
+generated: 2026-09-08T16:43:02
+==========================================================================
+flight log : /home/n3yh3hnii/develop/allthings_paparazzi/paparazzi_main/var/logs/26_09_08__14_32_28.data
+aircraft   : Adam (AC_ID 129)
+base XML   : /home/n3yh3hnii/develop/allthings_paparazzi/paparazzi_main/conf/airframes/OPENUAS/openuas_zohd_talon_250g_optim_002.xml
+output XML : /home/n3yh3hnii/develop/allthings_paparazzi/paparazzi_main/conf/airframes/OPENUAS/openuas_zohd_talon_250g_optim_003.xml
+build check: PASS
+
+-- FLIGHT ----------------------------------------------------------------
+  airborne 479 s | AUTO1 432 s | AUTO2 31 s
+  airspeed source        : AIR_DATA.airspeed
+  mean airspeed          : 9.32 m/s
+  STATE airspeed max     : 0.0 m/s  (sensor AIR_DATA max 18.5 m/s)   <<< STATE AIRSPEED DEAD
+  ground alt (nav ref)   : 292 m
+  AUTO2 min AGL / sink   : -6 m / -8.5 m/s  pitch at min limit 93% of AUTO2, alt err at entry -7 m
+  level pitch @10 m/s    : +5.7 deg (IMU alignment sanity)
+
+-- PITCH / ROLL TRIM  (straight+level, n=51) -------------------------
+  body pitch / demanded  : +6.81 / +0.20 deg  -> error +6.62 deg
+  steady elevator cmd    : +619 pprz
+  bank / demanded        : -0.57 / +1.98 deg  -> error -2.55 deg
+  steady aileron cmd     : +55 pprz
+
+-- TURNS / YAW  (|bank|>15 deg, n=1081) --------------------------------
+  mean |bank|            : 31.6 deg
+  mean |yaw cmd|         : 5007 pprz (of 9600)
+  time above half rudder : 55%
+  turn coordination ratio: 0.76 (achieved/ideal)
+  median achieved radius : 19.8 m (with pilot rudder)
+  rudder per deg of bank : 210 pprz/deg
+  target turn radius     : 30.0 m (= 16 deg bank at 9.1 m/s)
+
+-- ETECS PLANT  (quasi-steady, n=841) ---------------------------------
+  cruise throttle        : 83% at 9.0 m/s
+  throttle per m/s climb : 0.051 (regression)
+  throttle per m/s speed : 0.033
+  pitch per m/s climb    : 0.057 rad/(m/s)
+  sustained climb @ WOT  : 1.66 m/s  (51% of flight at full throttle)
+  glide ratio (idle)     : 3.4 (n=91)
+
+-- ROLL / COURSE LOOPS ---------------------------------------------------
+  roll setpoint tracking : lag 0.20 s, RMS 7.8 deg (AUTO1)
+  AUTO2 course samples   : 0
+  course error RMS/mean  : n/a / n/a deg
+  course sign changes    : n/a
+
+-- XML CHANGES -----------------------------------------------------------
+1. override: BODY_TO_IMU_THETA
+   before : 0.12
+   after  : 0.16
+   why    : set explicitly on the command line
+
+2. firmware/ap: USE_AIRSPEED
+   before : (not defined for ap target)
+   after  : TRUE
+   why    : AIRSPEED telemetry (= stateGetAirspeed, what the autopilot uses) stayed 0 while AIR_DATA.airspeed reached 18.5 m/s: the sensor works but never reaches the state. The generated Makefile only had -DUSE_AIRSPEED in the nps target. With airspeed=0 the ETECS speed error is a constant +9 m/s, so on AUTO2 entry it pitches to PITCH_MIN and floors the throttle regardless of altitude.
+
+3. TRIM: PITCH_TRIM
+   before : 900
+   after  : 960
+   why    : the pitch loop held a steady +619 pprz elevator in level flight (body pitch +6.8 deg vs demanded +0.2 deg); moving that into the command trim centres the servo and frees the integrator (flown trim +900)
+
+4. V_CTL: AUTO_THROTTLE_NOMINAL_CRUISE_PITCH
+   before : 0.042
+   after  : 0.119
+   why    : measured level-flight pitch at 9.1 m/s is 6.8 deg = 0.119 rad
+
+5. V_CTL: AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE
+   before : 0.84
+   after  : 0.83
+   why    : median throttle to hold altitude at 9.0 m/s was 83%; the ETECS adaptive cruise term starts here instead of hunting up from the model value
+
+6. MISC: NOMINAL_AIRSPEED
+   before : 10.3
+   after  : 9
+   why    : measured cruise airspeed; also scales the course-loop speed compensation
+
+7. V_CTL: AUTO_AIRSPEED_SETPOINT
+   before : 10.3
+   after  : 9
+   why    : autonomous airspeed target set to the demonstrated cruise speed
+
+8. MISC: TRACKING_AIRSPEED
+   before : 11.3
+   after  : 10
+   why    : one m/s above cruise, consistent with the new nominal airspeed
+
+9. V_CTL: AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT
+   before : 0.12
+   after  : 0.1
+   why    : full throttle gave a sustained 1.7 m/s climb from a 83% cruise: (1 - 0.83) / 1.7 = 0.10 throttle per m/s of climb demand
+
+10. V_CTL: AUTO_THROTTLE_OF_AIRSPEED_PGAIN
+   before : 0.035
+   after  : 0.033
+   why    : measured cruise-throttle slope 0.033 per m/s of airspeed; the proportional speed term matches the drag curve
+
+11. V_CTL: GLIDE_RATIO
+   before : 4.9
+   after  : 3.4
+   why    : idle-throttle descent over 91 samples gave V/Vz = 3.4; used for the pitch-down when throttle is killed
+
+12. H_CTL/AUTO1: ROLL_MAX_SETPOINT
+   before : 45
+   after  : 40
+   why    : at 9.0 m/s cruise with 6.7 m/s stall, a 45 deg bank raises stall speed to 8.0 m/s; 40 deg keeps a 15 % margin (turns in the log were flown at 32 deg and 9.3 m/s, i.e. at the stall boundary)
+
+13. H_CTL/AUTO1: MAX_ROLL
+   before : 45
+   after  : 40
+   why    : at 9.0 m/s cruise with 6.7 m/s stall, a 45 deg bank raises stall speed to 8.0 m/s; 40 deg keeps a 15 % margin (turns in the log were flown at 32 deg and 9.3 m/s, i.e. at the stall boundary)
+
+14. H_CTL: PITCH_MIN_SETPOINT
+   before : -25
+   after  : -20
+   why    : idle glide path is 17 deg down (L/D 3.4); allowing -25 deg let the controller dive at -8 m/s
+
+15. V_CTL: MAX_ACCELERATION
+   before : 0.35
+   after  : 0.15
+   why    : with no throttle margin, speed errors must be corrected gently: 0.15 g caps the energy-distribution pitch-down at ~5 deg
+
+16. V_CTL: AUTO_PITCH_OF_AIRSPEED_IGAIN
+   before : 0.004
+   after  : 0.001
+   why    : slow the adaptive cruise-pitch integrator: at 0.004 a sustained speed error winds the pitch reference to its limit within ~10 s
+
+17. V_CTL: ENERGY_DIFF_IGAIN
+   before : 0.10
+   after  : 0.02
+   why    : energy-distribution integrator reduced for the same reason
+
+-- ADVICE / NEXT FLIGHT --------------------------------------------------
+* [AUTO2 dive explained] in AUTO2 the pitch setpoint sat at the minimum limit 93% of the time, sink reached -8.5 m/s and the aircraft got down to -6 m above ground (altitude error at entry was only -7 m). This is the signature of a speed loop that believes it is far too slow, i.e. the missing state airspeed above, not a waypoint or navigation problem. After the fix, verify on the bench that Messages->AIRSPEED shows a non-zero airspeed when you blow into the pitot BEFORE any AUTO2 attempt.
+
+* [IMU pitch alignment] level-flight body pitch normalised to 10 m/s is +5.7 deg with IMU_BODY_TO_IMU_THETA=0.120 rad. A cruise alpha of 2-3 deg is expected; if the FC was moved, raise BODY_TO_IMU_THETA to about 0.176 rad. Confirm on the bench: hold the wing chord level and read ATTITUDE.theta in the GCS; add that reading (in rad) to BODY_TO_IMU_THETA. Flight data alone cannot separate IMU tilt from a genuinely higher angle of attack (heavier aircraft or slower flight).
+
+* [pitch trim] required pitch trim +1519 pprz exceeds the firmware clip of +-960; adjust the ruddervator linkage or servo neutral mechanically
+
+* [turn coordination] achieved/ideal yaw rate in turns is 0.76 with RUDDERVONS_OF_ROLL=0.98; below 1 means the nose lags the bank (skidding turn) or the ruddervator yaw sign is inverted. Verify on the bench that a right roll stick moves the ruddervators to yaw right BEFORE increasing the gain. Note the AUTO1 pilot still holds 210 pprz/deg of rudder, which the mixer now adds to, over-yawing the aircraft: fly AUTO1 turns with rudder centred.
+
+* [propulsion margin] holding altitude needs 83% throttle and the aircraft spent 51% of the flight at full throttle. That leaves little climb authority for ETECS; check propeller, motor kV, battery sag (ENERGY message) and airframe drag before an AUTO2 flight.
+
+* [course loop] no airborne AUTO2 time >= 60 s in this log (31 s found). Model check: roll tracks its setpoint with 0.20 s lag and 7.8 deg RMS, course bandwidth at 9.1 m/s is 1.0 rad/s -> separation 5.1x (OK). A 1-2 minute AUTO2 circle or line at safe altitude is enough to tune COURSE_PGAIN from data on the next run.
+
+-- BUILD OUTPUT (tail) ---------------------------------------------------
+Compiling nav_cube.c
+Compiling nav_flower.c
+Compiling nav_line.c
+Compiling nav_line_border.c
+Compiling nav_line_osam.c
+Compiling nav_smooth.c
+Compiling nav_spiral_3D.c
+Compiling nav_survey_poly_osam.c
+Compiling nav_survey_polygon.c
+Compiling nav_survey_rectangle.c
+Compiling nav_vertical_raster.c
+Compiling radio_control.c
+Compiling sbus.c
+Compiling sbus_common.c
+Compiling airspeed_sdp3x.c
+Compiling baro_board_common.c
+Compiling baro_dps310.c
+Compiling mag_qmc5883l.c
+Compiling rangefinder_i2c.c
+Compiling agl_dist.c
+Compiling dps310_i2c.c
+Compiling invensense3.c
+Compiling qmc5883l.c
+Compiling pprz_syscalls.c
+Compiling pprz_transport.c
+Compiling state.c
+Compiling c++.cpp
+Linking /home/n3yh3hnii/paparazzi/var/aircrafts/Adam/ap/obj/ap.elf
+Creating /home/n3yh3hnii/paparazzi/var/aircrafts/Adam/ap/obj/ap.hex
+Creating /home/n3yh3hnii/paparazzi/var/aircrafts/Adam/ap/obj/ap.bin
+Creating /home/n3yh3hnii/paparazzi/var/aircrafts/Adam/ap/obj/ap.dmp
+Creating /home/n3yh3hnii/paparazzi/var/aircrafts/Adam/ap/obj/ap.list
+
+   text	   data	    bss	    dec	    hex	filename
+ 186336	  15464	 115608	 317408	  4d7e0	/home/n3yh3hnii/paparazzi/var/aircrafts/Adam/ap/obj/ap.elf
+
+Done
+make[1]: Leaving directory '/home/n3yh3hnii/develop/allthings_paparazzi/paparazzi_main/sw/airborne'
+make: Leaving directory '/home/n3yh3hnii/develop/allthings_paparazzi/paparazzi_main'
+
+==========================================================================

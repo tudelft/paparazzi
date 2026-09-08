@@ -13,6 +13,7 @@ Example:
 """
 
 import argparse
+import csv
 import math
 import os
 from pathlib import Path
@@ -37,6 +38,153 @@ from pprzlink.message import PprzMessage  # noqa: E402
 
 CATIA_DIR = PAPARAZZI_HOME / "sw/airborne/modules/digital_cam/catia"
 LOCAL_SIM_DEVICE = Path("/tmp/catia-sim")
+DEFAULT_SURFACE_GRID = PAPARAZZI_HOME / "data/terrain/imav2026_m4_ign_lidar_hd_10m.csv"
+
+
+def flight_plan_ground_alt(flight_plan_path):
+    import xml.etree.ElementTree as ET
+    root = ET.parse(flight_plan_path).getroot()
+    plan = root if root.tag == "flight_plan" else root.find("flight_plan")
+    return float(plan.get("ground_alt"))
+
+
+def geofence_polygon(flight_plan_path):
+    """Corners (lat, lon) of the flight plan's geofence_sector from the generated flight_plan.xml."""
+    import xml.etree.ElementTree as ET
+    root = ET.parse(flight_plan_path).getroot()
+    plan = root if root.tag == "flight_plan" else root.find("flight_plan")
+    name = plan.get("geofence_sector")
+    if not name:
+        return None
+    waypoints = {wp.get("name"): wp for wp in plan.iter("waypoint")}
+    for sector in plan.iter("sector"):
+        if sector.get("name") == name:
+            corners = []
+            for corner in sector.findall("corner"):
+                wp = waypoints[corner.get("name")]
+                corners.append((float(wp.get("lat")), float(wp.get("lon"))))
+            return corners
+    return None
+
+
+def fence_report(polygon, track, block_names):
+    """Print the closest approach of the track to the geofence and every fix outside it."""
+    lat0 = sum(p[0] for p in polygon) / len(polygon)
+    m_lat = 111320.0
+    m_lon = 111320.0 * math.cos(math.radians(lat0))
+    pts = [((lon - polygon[0][1]) * m_lon, (lat - polygon[0][0]) * m_lat) for lat, lon in polygon]
+
+    def inside(x, y):
+        c = False
+        j = len(pts) - 1
+        for i in range(len(pts)):
+            xi, yi = pts[i]
+            xj, yj = pts[j]
+            if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
+                c = not c
+            j = i
+        return c
+
+    def edge_distance(x, y):
+        best = None
+        for i in range(len(pts)):
+            ax, ay = pts[i]
+            bx, by = pts[(i + 1) % len(pts)]
+            dx, dy = bx - ax, by - ay
+            t = max(0.0, min(1.0, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)))
+            d = math.hypot(x - ax - t * dx, y - ay - t * dy)
+            best = d if best is None or d < best else best
+        return best
+
+    closest = None
+    outside = []
+    for stamp, lat, lon, alt, block in track:
+        x, y = (lon - polygon[0][1]) * m_lon, (lat - polygon[0][0]) * m_lat
+        d = edge_distance(x, y)
+        name = block_names.get(block, str(block))
+        if not inside(x, y):
+            outside.append((stamp, name, d))
+        elif closest is None or d < closest[0]:
+            closest = (d, stamp, name)
+    if closest is not None:
+        print(f"geofence_min_distance_m={closest[0]:.0f} (t={closest[1]:.0f} s, {closest[2]})")
+    if outside:
+        print(f"GEOFENCE BREACH: {len(outside)} fixes outside, first t={outside[0][0]:.0f} s in {outside[0][1]}, "
+              f"up to {max(o[2] for o in outside):.0f} m beyond the edge")
+    return len(outside)
+
+
+class SurfaceGrid:
+    """Terrain (MNT) and surface = terrain + trees/buildings (MNS) on a regular local grid,
+    as written by ign_lidar_grid.py. NPS flies over a flat world at the take-off ground, so
+    the clearance of a fix is (height above that ground) - (surface height above the field)."""
+
+    def __init__(self, path):
+        rows = []
+        with path.open() as handle:
+            for row in csv.DictReader(handle):
+                if row["mnt_m"] in ("", "None") or row["mns_m"] in ("", "None"):
+                    continue
+                rows.append((float(row["x_east_m"]), float(row["y_north_m"]), float(row["lat"]),
+                             float(row["lon"]), float(row["mnt_m"]), float(row["mns_m"])))
+        if not rows:
+            raise RuntimeError(f"empty surface grid {path}")
+        centre = min(rows, key=lambda r: abs(r[0]) + abs(r[1]))
+        self.lat0, self.lon0, self.field_m = centre[2], centre[3], centre[4]
+        xs = sorted({r[0] for r in rows})
+        self.step = min(b - a for a, b in zip(xs, xs[1:]) if b > a)
+        north = max(rows, key=lambda r: r[1])
+        east = max(rows, key=lambda r: r[0])
+        self.m_per_deg_lat = north[1] / (north[2] - self.lat0)
+        self.m_per_deg_lon = east[0] / (east[3] - self.lon0)
+        self.cells = {(round(r[0] / self.step), round(r[1] / self.step)): (r[4], r[5]) for r in rows}
+
+    def local_xy(self, lat, lon):
+        return (lon - self.lon0) * self.m_per_deg_lon, (lat - self.lat0) * self.m_per_deg_lat
+
+    def surface_above_field(self, lat, lon):
+        """Highest surface (m above the field at the centre) of the 4 cells around the point; None off-grid."""
+        x, y = self.local_xy(lat, lon)
+        tops = []
+        for i in (math.floor(x / self.step), math.ceil(x / self.step)):
+            for j in (math.floor(y / self.step), math.ceil(y / self.step)):
+                cell = self.cells.get((int(i), int(j)))
+                if cell is not None:
+                    tops.append(cell[1] - self.field_m)
+        return max(tops) if tops else None
+
+
+def clearance_report(grid, track, ground, block_names):
+    """Print the minimum clearance above the LiDAR surface per block and every fix below 5 m."""
+    per_block = {}
+    worst = None
+    off_grid = 0
+    hits = []
+    for stamp, lat, lon, alt, block in track:
+        top = grid.surface_above_field(lat, lon)
+        if top is None:
+            off_grid += 1
+            continue
+        clearance = (alt - ground) - top
+        x, y = grid.local_xy(lat, lon)
+        name = block_names.get(block, str(block))
+        entry = per_block.get(name)
+        if entry is None or clearance < entry[0]:
+            per_block[name] = (clearance, top, x, y, stamp)
+        if worst is None or clearance < worst[0]:
+            worst = (clearance, top, x, y, stamp, name)
+        if clearance < 5.0 and top > 2.0:
+            hits.append((stamp, name, x, y, alt - ground, top, clearance))
+    print(f"surface_grid={grid.step:.0f} m cells, field {grid.field_m:.1f} m MSL, {off_grid} fixes off-grid")
+    for name, (clearance, top, x, y, stamp) in per_block.items():
+        print(f"  clearance {name:<18s} min {clearance:6.1f} m  (surface +{top:4.1f} m at x={x:+5.0f} y={y:+5.0f}, t={stamp:.0f} s)")
+    if worst is not None:
+        print(f"min_surface_clearance_m={worst[0]:.1f} block={worst[5]} at x={worst[2]:+.0f} y={worst[3]:+.0f}")
+    if hits:
+        print(f"OBSTACLE WARNING: {len(hits)} fixes less than 5 m above a surface higher than 2 m:")
+        for stamp, name, x, y, height, top, clearance in hits[:12]:
+            print(f"  t={stamp:6.1f} {name:<16s} x={x:+5.0f} y={y:+5.0f} height {height:5.1f} m, surface +{top:4.1f} m, clearance {clearance:5.1f} m")
+    return len(hits)
 
 
 def jump_to_block(interface, aircraft_id, block_id):
@@ -236,6 +384,8 @@ def main():
     parser.add_argument("--seed", type=int, help="random seed for --speaker-radius (default: time based)")
     parser.add_argument("--wind", default="0,0",
                         help="SPEED_MPS,FROM_DEG steady wind in the simulation (meteorological direction)")
+    parser.add_argument("--surface-grid", type=Path, default=DEFAULT_SURFACE_GRID,
+                        help="LiDAR terrain/surface grid CSV (ign_lidar_grid.py) for the obstacle clearance check")
     parser.add_argument("--time-factor", type=float, default=4.0)
     parser.add_argument("--mission-timeout", type=float, default=1800.0, help="simulated seconds")
     parser.add_argument("--bus", default="127.255.255.255:2010")
@@ -429,7 +579,7 @@ def main():
                 if height > 2.0:
                     print("RULE: release above 2 m, no points")
                     result = 1
-            if state["impact_wp"] is not None:
+            if state["impact_wp"] is not None and state["release_gps"] is not None:
                 # nav_drop's expected impact (aircraft position at the release command plus
                 # hatch delay travel and the target-release offset) against the speaker.
                 i_east, i_north, i_zone = state["impact_wp"]
@@ -463,20 +613,38 @@ def main():
         # Full aircraft track (GPS rate) of the mission, then the heatmap over satellite
         # imagery with samples and track: <prefix>.track.csv and photos/eNNNNNN_sat.jpg.
         track_path = prefix.with_suffix(".track.csv")
+        track_rows = []
         with track_path.open("w") as track_file:
             track_file.write("t_s,lat_deg,lon_deg,alt_m,block\n")
             for stamp, east, north, alt, zone, block in state["track"]:
                 if stamp < mission_start - 1.0:
                     continue
                 lat, lon = utm_to_latlon(east, north, zone, northern=speaker[0] >= 0.0)
+                track_rows.append((stamp - mission_start, lat, lon, alt, block))
                 track_file.write(f"{stamp - mission_start:.2f},{lat:.7f},{lon:.7f},{alt:.1f},{block_names.get(block, block)}\n")
         print(f"track={track_path}")
+        surface_grid = None
+        if args.surface_grid and args.surface_grid.exists():
+            # Trees and buildings from the LiDAR surface model against the flat NPS world
+            # (GPS altitudes in the track are above MSL, the NPS ground is the plan's ground_alt).
+            surface_grid = SurfaceGrid(args.surface_grid)
+            if clearance_report(surface_grid, track_rows, flight_plan_ground_alt(flight_plan_path), block_names) > 0:
+                result = 1
+        fence = geofence_polygon(flight_plan_path)
+        if fence:
+            if fence_report(fence, track_rows, block_names) > 0:
+                result = 1
+        if "HOME" in blocks and any(block == blocks["HOME"] for _, block in state["history"]):
+            print("GEOFENCE/HOME: the autopilot entered HOME mode during the mission")
+            result = 1
         if heatmap is not None and heatmap.exists() and heatmap.with_suffix(".geo").exists():
             ear_logs = sorted((CATIA_DIR / "earlogs").glob("ear_*.csv"))
             overlay = [sys.executable, str(CATIA_DIR / "ear_heatmap_overlay.py"), str(heatmap),
                        "--track", str(track_path), "--truth", f"{speaker[0]:.7f},{speaker[1]:.7f}",
                        "--search", f"{circle_centre[0]:.7f},{circle_centre[1]:.7f},{max(args.speaker_radius, 25.0):.0f}",
                        "--quiet"]
+            if surface_grid is not None:
+                overlay += ["--obstacles", str(args.surface_grid)]
             if ear_logs:
                 overlay += ["--log", str(ear_logs[-1])]
             completed = subprocess.run(overlay, capture_output=True, text=True)

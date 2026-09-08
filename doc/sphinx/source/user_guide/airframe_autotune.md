@@ -62,6 +62,7 @@ To only look at the proposed changes without compiling:
 | `--base XML` | airframe referenced in the log | Airframe file to tune; pass a previous `_optim_NNN.xml` to iterate on it |
 | `--ac-id N` | `129` | Aircraft ID whose messages are analysed |
 | `--turn-radius R` | `30.0` | Requested minimum autonomous turn radius in metres |
+| `--set NAME=VALUE` | none | Force an airframe define (repeatable), e.g. `--set BODY_TO_IMU_THETA=0.16` after a bench IMU check |
 | `--target T` | `ap` | Firmware target used for the compile check |
 | `--no-build` | off | Skip the compile check (report says `SKIPPED`) |
 | `-v` | off | Verbose logging |
@@ -101,7 +102,16 @@ All signals are resampled onto the `ATTITUDE` timeline. The airborne window is t
 
 If a segment is too short the corresponding correction is skipped and the report explains why.
 
-### Step 3: Pitch and roll trim
+### Step 3: Configuration faults that make autonomous flight unsafe
+
+Before any tuning, the tool checks things that no gain can compensate for:
+
+- **State airspeed alive?** `AIRSPEED.airspeed` is `stateGetAirspeed()`, the value every autonomous loop uses; `AIR_DATA.airspeed` is only the sensor module's output. If the sensor reports speed but the state stays at zero, `USE_AIRSPEED` never reached the `ap` target (setting `USE_AIRSPEED_SDP3X` alone does *not* imply it). The tool inserts `<define name="USE_AIRSPEED" value="TRUE"/>` into the `ap` target's airspeed module and explains the consequence: with airspeed = 0 the ETECS speed error is a constant +10 m/s, so on AUTO2 entry the controller pitches to `PITCH_MIN_SETPOINT` and floors the throttle regardless of altitude. This exact fault produced a dive to ground level on the Talon 250G's first AUTO2 attempt.
+- **AUTO2 anomaly detector**: minimum height above ground, maximum sink, fraction of AUTO2 time with the pitch setpoint at its lower limit, and the altitude error at AUTO2 entry, so a "why did it dive" question is answered by the report.
+- **IMU alignment sanity**: level-flight body pitch normalised to 10 m/s ($\theta \sim a + b/V^2$). A small foam wing cruises at 2–3° alpha; a value above 4.5° with the flown `IMU_BODY_TO_IMU_THETA` produces a bench-check instruction and a suggested value. Flight data alone cannot separate IMU tilt from a heavier or slower aircraft, so this is advice, not an automatic edit; apply the bench result with `--set`.
+- **Safety envelope** for aircraft with little power margin (cruise throttle > 70 %): `ROLL_MAX_SETPOINT`/`AUTO1_MAX_ROLL` are limited so that the accelerated stall speed $V_s\sqrt{1/\cos\varphi}$ stays 15 % below cruise speed; `PITCH_MIN_SETPOINT` is limited to the idle glide angle plus 3°; `MAX_ACCELERATION`, `AUTO_PITCH_OF_AIRSPEED_IGAIN` and `ENERGY_DIFF_IGAIN` are reduced so a speed error cannot wind the pitch reference to its limit.
+
+### Step 4: Pitch and roll trim
 
 In straight and level flight the attitude loops should have nothing left to do. If they hold a constant elevator or aileron command, that steady deflection is a trim the airframe needs (a heavy wing, a slightly bent ruddervator, a misaligned servo arm). Paparazzi adds `COMMAND_PITCH_TRIM` and `COMMAND_ROLL_TRIM` to the commands *after* the control loops (in `actuators.c`), so the correct new trim is simply
 
@@ -115,7 +125,7 @@ Because the measured level pitch is the real cruise attitude, `V_CTL_AUTO_THROTT
 `INS_PITCH_NEUTRAL_DEFAULT` / `INS_ROLL_NEUTRAL_DEFAULT` are **not** touched. Those defines are only read by a few legacy INS drivers (Xsens, VN100, ArduIMU, `ahrs_sim`); with `ahrs float_cmpl_quat` + `ins alt_float` they have no effect. The IMU-to-body mounting angle lives in `IMU_BODY_TO_IMU_THETA` and should be set from a bench measurement, not from flight data.
 :::
 
-### Step 4: Ruddervator mixing and turn radius
+### Step 5: Ruddervator mixing and turn radius
 
 A coordinated turn at bank angle $\varphi$ and airspeed $V$ has a yaw rate of $g\tan\varphi / V$. In the turning segment the tool compares the achieved yaw rate with that ideal value and, more importantly, measures how much rudder the pilot had to hold per degree of bank. On a V-tail (ruddervator) aircraft with only pitch and yaw in the tail mixer, that rudder must come from the pilot's thumb in every turn. The tool converts the measured slope (pprz per degree of bank) into a roll-to-rudder gain
 
@@ -129,7 +139,7 @@ Finally, `MIN_CIRCLE_RADIUS` and `LANDING_CIRCLE_RADIUS` are set to the requeste
 All edits are made as surgical text substitutions on the original XML, not through an XML library rewrite. Your comments, indentation, and commented-out experiments are preserved exactly; only the touched attribute values and the two inserted lines change. Every inserted line carries an `autotune` XML comment.
 :::
 
-### Step 5: ETECS energy-controller plant
+### Step 6: ETECS energy-controller plant
 
 The `energyadaptive` (ETECS) vertical controller computes throttle and pitch as
 
@@ -150,14 +160,14 @@ The four feedforward coefficients are properties of the airframe and propulsion,
 
 Each regression is only used if its $R^2$ is reasonable and the coefficient lies in a physically plausible band; otherwise the existing value stays and the report shows `n/a`. When the cruise throttle is above 70 % the report adds a **propulsion margin** advice: the aircraft has little climb authority left, which is worth knowing before the first AUTO2 flight.
 
-### Step 6: Course loop
+### Step 7: Course loop
 
 The navigation course loop turns a course error into a roll setpoint: $\phi_{\text{sp}} = K_c\,(V/V_{\text{nom}})\,e_{\text{course}}$. Its bandwidth is roughly $K_c\,g/V$, and it must stay well below the bandwidth of the inner roll loop or the aircraft will weave.
 
 - **Without AUTO2 data** (the normal case for a first flight) the tool measures how quickly `ATTITUDE.phi` follows `DESIRED.roll` in AUTO1 (cross-correlation lag and RMS). If the roll bandwidth is less than three times the course bandwidth, `H_CTL_COURSE_PGAIN` is reduced to restore the margin. Either way the report states the separation ratio and recommends a 1–2 minute AUTO2 circle at safe altitude as the next data source.
 - **With at least 60 s of airborne AUTO2** the course error `DESIRED.course - GPS.course` is evaluated directly. More than 0.3 sign changes per second means the loop is oscillating and the gain is cut by 20 %; an RMS error above 15° without oscillation means it is sluggish and the gain is raised by 20 %; otherwise it is reported as healthy and left alone.
 
-### Step 7: Versioning, validation, and compile check
+### Step 8: Versioning, validation, and compile check
 
 ```{image} ../../../images/tools/autotune/build_verification.svg
 :alt: Build verification flow with guaranteed restore of the base airframe

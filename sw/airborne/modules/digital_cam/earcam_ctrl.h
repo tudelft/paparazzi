@@ -81,6 +81,15 @@ extern bool earcam_run_in_clear;
 extern bool earcam_place_run_in_lane(uint8_t wp_start, uint8_t wp_target, float before_m, float after_m,
                                      float margin_m, float lane_deg, float max_tilt_deg, float step_deg,
                                      float preferred_course, earcam_obstacle_fn obstacle);
+/**
+ * Place the climb-out on the run-in course (wp_start to wp_target) past the target: wp_climbout as far as
+ * max_m, but only while the exit circle that would follow (centre turn_radius_m to the side, +1 right / -1
+ * left, of the climb-out end) stays turn_radius_m + margin_m clear of keep_out all around; never closer
+ * than min_m. wp_exit = that circle centre. Both get altitude alt. Returns the climb-out length in m.
+ */
+extern float earcam_place_climbout(uint8_t wp_start, uint8_t wp_target, uint8_t wp_climbout, uint8_t wp_exit,
+                                   float max_m, float min_m, float turn_radius_m, float margin_m, float side,
+                                   float alt, earcam_obstacle_fn keep_out);
 
 /*
  * Adaptive star refinement, fixed-wing flyable: straight measurement legs
@@ -182,8 +191,6 @@ extern bool earcam_drop_too_low(uint8_t wp_target);
  *  earcam_drop_missed and returns 1. Use it in the exception that detects crossing the
  *  release point so the hatch opens in the same navigation cycle. */
 extern uint8_t earcam_drop_shoot(uint8_t wp_target);
-/** Release without the height gate (fallback drop from a safe height over obstacles). Returns 0. */
-extern uint8_t earcam_drop_shoot_high(uint8_t wp_target);
 /** Diagnostic: move wp_mark to where nav_drop expects the kit to land when released now
  *  (position after nav_drop_trigger_delay plus the target-release offset). Downlink it with
  *  DownlinkSendWpNr(wp_mark) to compare against the truth in simulation or a GPS fix. */

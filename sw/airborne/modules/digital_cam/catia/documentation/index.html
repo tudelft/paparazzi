@@ -533,18 +533,28 @@ a GPS point given on the day. <code>easystar3_imav2026_mission4_earcam.xml</code
 <li>No survey: <code>earcam_result_from_waypoint(WP_M4C)</code> seeds the star on the given
   centre (move waypoint <code>M4C</code> before the flight). Results further than 35 m
   from it are rejected (<code>earcam_result_within</code>).</li>
-<li>Low, quiet star: 4 legs of 2 x 72 m through the estimate at 12 m above
-  ground with 30 m fillet turns (about 19 deg bank at 10 m/s). The block
+<li>Onboard wind first (block <code>m4_wind</code>): one circle over <code>M4C</code> at 45 m while
+  the <code>wind_circle</code> module (<code>modules/meteo/wind_circle.c</code>) bins the GPS
+  ground speed vectors by course and fits them to a circle, the same
+  constant-airspeed idea as the ground station's wind estimator
+  (<code>tmtc/wind.ml</code>), but on the autopilot: no uplink, fully autonomous. The
+  result goes to the state interface (<code>nav_drop</code> release point) and is
+  reported in <code>WIND_INFO_RET</code>. Among the obstacle-free run-in courses the one
+  nearest to the wind is taken (see the site notes below).</li>
+<li>Quiet star: 4 legs of 2 x 60 m through the estimate at 45 m above
+  ground with 25 m fillet turns (about 22 deg bank at 10 m/s). The block
   <code>pre_call</code> <code>earcam_refine_leg_throttle(40, 30)</code> kills the throttle 40 m
   before the centre and restores it 30 m past it; with <code>earcam_quiet_only</code>
   samples are only taken once the propeller has stopped (1.5 s), so the
-  alarm is heard while gliding from 12 m to about 6 m over the estimate.
-  Stars repeat until two estimates agree within 1.5 m (at most 3).</li>
+  alarm is heard while gliding about 13 m down over the estimate.
+  Stars repeat until two estimates agree within 1.5 m (at most 3). 45 m is
+  the floor at the Strasbourg site (trees, below); in NPS the loudest spot
+  is still found within 0.6-1.6 m from that height.</li>
 <li>Release with the existing <code>nav_drop</code> module exactly as flown at the OBC 2014
   (<code>include_obc2014_mission.xml</code>): <code>nav_drop_compute_approach</code> lays out the
-  base turn, START (250 m before the spot on the present course) and the
+  base turn, START (300 m before the spot) and the
   RELEASE point from wind, speed and fall height; the plan glides
-  (<code>vmode="glide"</code>) from 8 m to a level-off point 50 m before RELEASE at
+  (<code>vmode="glide"</code>) from 15 m to a level-off point 50 m before RELEASE at
   1.5 m, holds that height on the VB22A rangefinder
   (<code>earcam_drop_altitude</code>, <code>EARCAM_USE_AGL_DIST</code>, <code>NAV_DROP_USE_AGL_DIST</code>)
   and opens the hatch in the cycle the RELEASE perpendicular is crossed
@@ -564,20 +574,127 @@ a GPS point given on the day. <code>easystar3_imav2026_mission4_earcam.xml</code
 python3 sw/simulator/nps/nps_earcam_mission.py --aircraft EasystarM4 --ac-id 237 \
     --speaker 48.81050,7.85160 --time-factor 4 --start-block m4_search
 </code></pre>
+<p>Add <code>--wind 4,240</code> (m/s, direction the wind blows from) to test in wind; the
+script starts the GAIA environment simulator (<code>sw/simulator/gaia</code>) with that
+wind and prints the FDM truth (<code>wind_fdm_mps</code>) and the onboard estimate
+(<code>wind_onboard_mps</code>, <code>wind_onboard_from_deg</code>, <code>wind_vector_error_mps</code>) next to
+the release figures. Reference run at 4 m/s from 240 deg: onboard estimate
+3.5 m/s from 242 deg after 80 s of circling, vector error 0.5 m/s.</p>
 <p>The alarm is 9 m from <code>M4C</code> in this run. The script reports, besides the
 localisation error, the release height and speed, and decomposes the impact
 <code>nav_drop</code> expects (waypoint <code>_IMPACT</code>, downlinked at the release) against
-the speaker. Reference: two stars (260 s), 507 quiet samples, loudest spot
-0.8 m from the speaker, release at 1.50 m and 10.1 m/s, impact 2.3 m from the
-speaker (1.0 m along track from the 4 Hz simulated GPS latency, 1.2 m across
-track from route following). The offline fusion test <code>test_loudestspot</code>
+the speaker. It also checks the flown track against the LiDAR surface model
+and the geofence (next section). The offline fusion test <code>test_loudestspot</code>
 covers the same geometry (<code>mission4:</code> lines, alarm 5-24 m off centre,
 sub-metre after two stars).</p>
-<p>Real-flight notes: fly the star heights (<code>earcam_refine_height_from_m</code>,
-<code>_to_m</code>, settings) and the release height as low as the field allows; the
-quiet-zone glide ends about 6 m above ground 30 m past the centre. MORA runs
-on board, so the autonomy factor is 1.0; a 1.3 kg EasyStar 3 gets a weight
-factor of about 1.87.</p>
+<h4 id="the-strasbourg-site-trees-lane-and-geofence">The Strasbourg site: trees, lane and geofence</h4>
+<p>What looks like a ridge west of the Mission 4 point in Google Earth is
+forest. The IGN LiDAR HD altimetry service (50 cm terrain, surface and object
+height; <code>sw/simulator/nps/ign_lidar_grid.py</code> fetches a grid, the 10 m grid
+used here is <code>data/terrain/imav2026_m4_ign_lidar_hd_10m.csv</code>) shows:</p>
+<ul>
+<li>the ground is flat, 142.5 m MSL within 1 m over 600 m (SRTM at 30 m cannot
+  show any of the following);</li>
+<li>a forest with 12-18 m trees whose edge runs north-south 25 m WEST of the
+  point, a tree row of 8-14 m 25 m EAST of it (the lane narrows to
+  x = -35..+15 m 50-90 m north of the point), a hedge to the north-east and a
+  tree block closing the lane 170 m north; the meadow is open to the south;</li>
+<li>the hard geofence (GF1..GF4 in <code>easystar_3_mora_camera_demo.xml</code>) runs
+  only 142 m north of the point.</li>
+</ul>
+<p>The flight plan encodes this as sectors (<code>M4_OW</code>, <code>M4_OE</code>, <code>M4_ON</code>, drawn by
+the GCS) plus the fence (<code>M4_FENCE</code>, the Paparazzi <code>geofence_sector</code>,
+<code>geofence_max_alt</code> 220 m = 80 m AGL) and decides every low manoeuvre against
+them:</p>
+<ul>
+<li>everything but the release is flown at 45 m (27 m above the tallest tree);</li>
+<li>the release run-in goes SOUTH to NORTH along the lane: <code>earcam_place_run_in_lane</code>
+  tries course 0 and tilts up to 20 deg (wind side first) and takes the first
+  whose corridor, 8 m either side from START to 120 m past the target, touches
+  neither trees nor the outside of the fence; if none exists (target within
+  about 8 m of a tree line) nothing is dropped: <code>drop_no_corridor</code>, climb,
+  Standby. A release above 2 m is never attempted;</li>
+<li>START is 300 m south at 15 m: at 10 m/s with the motor at idle the energy
+  controller descends at about 0.7 m/s, so 13.5 m take 19 s, 290 m of ground
+  track with a 5 m/s tailwind. The base turn is flown at 12 m/s (the 6 m/s
+  ground speed floor otherwise adds power into the wind) and held until the
+  START height is captured; the glide runs to 1 s before the level-off point;</li>
+<li>the climb-out (<code>earcam_place_climbout</code>) goes straight north at
+  <code>M4_CLIMBOUT_RATE_MPS</code> (3 m/s, airframe limit raised for that block; update
+  from real EasyStar 3 flights) only as far as a right-hand exit circle of
+  30 m radius stays 40 m inside the fence, then circles climbing over the
+  meadow before heading to Standby;</li>
+<li>safety net: below 25 m inside an obstacle sector at any moment = motor on,
+  climb straight ahead.</li>
+</ul>
+<p><code>nps_earcam_mission.py</code> scores each run against the same data: per-block
+minimum clearance above the LiDAR surface (<code>OBSTACLE WARNING</code> below 5 m),
+distance to the geofence (<code>GEOFENCE BREACH</code>, and HOME mode detection), and
+the overlay shades cells with objects above 3 m red. NPS results with the
+final plan (speaker 8.6 m south of the point unless noted):</p>
+<table>
+<thead>
+<tr>
+<th>case</th>
+<th>localisation</th>
+<th>release</th>
+<th>impact</th>
+<th>min tree clearance</th>
+<th>fence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>calm</td>
+<td>1.6 m</td>
+<td>1.52 m, 10.2 m/s</td>
+<td>2.1 m</td>
+<td>27 m (star)</td>
+<td>42 m</td>
+</tr>
+<tr>
+<td>4 m/s from 240</td>
+<td>0.6 m</td>
+<td>1.55 m, 11.5 m/s</td>
+<td>0.8 m</td>
+<td>20 m</td>
+<td>30 m</td>
+</tr>
+<tr>
+<td>5 m/s from 200 (tailwind)</td>
+<td>0.6 m</td>
+<td>1.81 m, 14.5 m/s</td>
+<td>1.1 m</td>
+<td>20 m</td>
+<td>20 m</td>
+</tr>
+<tr>
+<td>target 18 m west of the point</td>
+<td>1.7 m</td>
+<td>no drop (no corridor)</td>
+<td>-</td>
+<td>17 m</td>
+<td>-</td>
+</tr>
+<tr>
+<td>target 13 m east, 21 m north</td>
+<td>0.9 m</td>
+<td>no drop (no corridor)</td>
+<td>-</td>
+<td>27 m</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<p>The same check on the previous plan (12 m star, upwind run-in) gave 388 fixes
+below 5 m clearance and 16 m INSIDE the canopy, which is why it was changed.
+<code>documentation/imav2026_m4_nps_overview.jpg</code> is the calm-air overlay:
+samples, track, search circle, red tree cells, alarm and drop point.</p>
+<p>Real-flight notes: MORA runs on board, so the autonomy factor is 1.0; a 1.3 kg
+EasyStar 3 gets a weight factor of about 1.87. Measure the real climb rate and
+turn radius and put them in <code>M4_CLIMBOUT_RATE_MPS</code> / <code>M4_EXIT_TURN_RADIUS_M</code>;
+if <code>M4C</code> moves by more than a few metres, refetch the LiDAR grid and re-check
+the sectors.</p>
 <p>Desk-test the whole loop without an autopilot:</p>
 <pre><code class="language-sh">make -C sw/airborne/modules/digital_cam/catia CATIA_EAR_CAM_DEVICE=default catia
 sw/airborne/modules/digital_cam/catia/catia --local --earcam --test --debug &amp;
@@ -595,12 +712,15 @@ gcc -std=c11 -Wpedantic -O2 -Wall -Wextra -Werror -I. -I../../../../ext/opencv_b
 black ring, loudest-spot marker, 50 m bar), <code>eNNNNNN_field.jpg</code> (field only) and
 <code>eNNNNNN.geo</code> (georeference). On the ground, <code>ear_heatmap_overlay.py</code> puts the
 field translucently over Google satellite tiles (same source and <code>var/maps/Google</code>
-cache as the GCS) and redraws the samples, the marker, an optional known source
-(<code>--truth</code>) and the aircraft track (<code>--track</code>, CSV <code>t_s,lat_deg,lon_deg,...</code>) on top:</p>
+cache as the GCS) and redraws the samples, the loudest-spot crosshair (magenta),
+the search area given by the organisers (<code>--search LAT,LON[,R]</code>, white circle),
+an optional known source (<code>--truth</code>, red diamond) and the aircraft track
+(<code>--track</code>, CSV <code>t_s,lat_deg,lon_deg,...</code>) on top:</p>
 <pre><code class="language-sh">make ear_heatmap_replay                       # re-render any earlogs/*.csv session
 ./ear_heatmap_replay earlogs/ear_20260908_112128.csv photos/e000506.jpg
 python3 ear_heatmap_overlay.py photos/e000506.jpg --log earlogs/ear_20260908_112128.csv \
-    --track ../../../../../var/nps_earcam/EasystarM4_earcam_mission.track.csv --truth 48.8103725,7.8516981
+    --track ../../../../../var/nps_earcam/EasystarM4_earcam_mission.track.csv \
+    --search 48.81045,7.85170,25 --truth 48.8103725,7.8516981
 </code></pre>
 <p><code>nps_earcam_mission.py</code> writes the track CSV and runs the overlay itself at the
 end of a simulation; <code>--speaker-radius 25 --seed N</code> places the virtual speaker at
