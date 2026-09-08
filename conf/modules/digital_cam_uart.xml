@@ -15,6 +15,11 @@
       contain computer vision results to able to interact with the flightplan.
       4) Finally, the module will also relay over telemetry all data it receives from the attached computer
       or camera using the PAYLOAD message. This can for instance be used to downlink thumbnails.
+      5) Targeted commands: digital_cam_uart_shoot(id, report) / digital_cam_uart_stop(id, keep) address one camera
+      (0=all, 1=CHDK, 2=AI cam, 3=LWIR, 4=EARcam). The camera setting selects which camera the
+      regular DC_SHOOT path (autoshoot, manual shoot) addresses; 0 keeps the legacy MORA_SHOOT frame.
+      Other modules (e.g. digital_cam_earcam) can register a receive handler for MORA messages
+      this module does not consume.
 
       The linux program used to parse the UART command is given in the subdirectory.
     </description>
@@ -28,6 +33,7 @@
           <strip_button name="DL Thumbs STOP" icon="off.png" value="0" group="ticket"/>
         </dl_setting>
         <dl_setting max="2" min="0" step="1" var="digital_cam_uart_status" shortname="status" />
+        <dl_setting max="4" min="0" step="1" var="digital_cam_uart_camera_id" shortname="camera" values="ALL|CHDK|AICAM|LWIR|EAR"/>
       </dl_settings>
     </dl_settings>
   </settings>

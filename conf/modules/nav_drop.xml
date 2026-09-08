@@ -6,7 +6,16 @@
       Compute the dropping point for a fixedwing aircraft.
       Takes into account the flight speed vector and the wind to estimate the best dropping point.
       Needs some waypoints to be defined in the flight plan: REALEASE, CLIMB, BASELEG
+
+      With NAV_DROP_USE_AGL_DIST (agl_dist module) nav_drop_update_release() takes the fall
+      height from the rangefinder while it is in range, for releases a few metres above ground.
     </description>
+    <define name="TRIGGER_DELAY" value="1.0" description="time from the release command to the payload leaving, s"/>
+    <define name="ALPHA" value="6.26e-5" description="payload drag factor 0.5*rho*Cd*A, kg/m"/>
+    <define name="MASS" value="3.31e-3" description="payload mass, kg"/>
+    <define name="SAFE_CLIMB" value="20" description="climb-out height above the release altitude, m"/>
+    <define name="NAV_DROP_USE_AGL_DIST" value="FALSE" description="use agl_dist for the fall height when valid"/>
+    <define name="NAV_DROP_RELEASE_WITH_DELAY" value="FALSE" description="RELEASE includes the TRIGGER_DELAY travel; fly to it with approaching_time 0"/>
   </doc>
   <dep>
     <depends>@navigation</depends>

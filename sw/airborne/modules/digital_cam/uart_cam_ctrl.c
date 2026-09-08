@@ -54,6 +54,8 @@
 union dc_shot_union dc_shot_msg;
 union mora_status_union mora_status_msg;
 int digital_cam_uart_status = 0;
+uint8_t digital_cam_uart_camera_id = MORA_CAMERA_ALL;
+static digital_cam_uart_rx_handler_t rx_handler = NULL;
 
 int digital_cam_uart_thumbnails = 0;
 #define THUMB_MSG_SIZE  MORA_PAYLOAD_MSG_SIZE
@@ -61,6 +63,13 @@ int digital_cam_uart_thumbnails = 0;
 static uint8_t thumbs[THUMB_COUNT][THUMB_MSG_SIZE];
 static uint8_t thumb_pointer = 0;
 
+static void fill_shot_message(union dc_shot_union *msg);
+
+
+void digital_cam_uart_set_rx_handler(digital_cam_uart_rx_handler_t handler)
+{
+  rx_handler = handler;
+}
 
 void digital_cam_uart_event(void)
 {
@@ -80,6 +89,9 @@ void digital_cam_uart_event(void)
           }
           break;
         default:
+          if (rx_handler != NULL) {
+            rx_handler(&mora_protocol);
+          }
           break;
       }
       mora_protocol.msg_received = 0;
@@ -132,33 +144,80 @@ void digital_cam_uart_periodic(void)
   dc_periodic();
 }
 
+static void fill_shot_message(union dc_shot_union *msg)
+{
+  msg->data.nr = dc_photo_nr + 1;
+  msg->data.lat = stateGetPositionLla_i()->lat;
+  msg->data.lon = stateGetPositionLla_i()->lon;
+  msg->data.alt = stateGetPositionLla_i()->alt;
+  msg->data.phi = stateGetNedToBodyEulers_i()->phi;
+  msg->data.theta = stateGetNedToBodyEulers_i()->theta;
+  msg->data.psi = stateGetNedToBodyEulers_i()->psi;
+  msg->data.vground = stateGetHorizontalSpeedNorm_i();
+  msg->data.course = stateGetHorizontalSpeedDir_i();
+#if FIXEDWING_FIRMWARE
+  msg->data.groundalt = POS_BFP_OF_REAL(stateGetPositionUtm_f()->alt - ground_alt);
+#else
+  msg->data.groundalt = POS_BFP_OF_REAL(state.alt_agl_f);
+#endif
+}
+
+/** Send the pose-tagged shoot frame: legacy MORA_SHOOT for MORA_CAMERA_ALL, else targeted. */
+static void send_shot_frame(uint8_t camera_id)
+{
+  if (camera_id == MORA_CAMERA_ALL) {
+    fill_shot_message(&dc_shot_msg);
+    MoraHeader(MORA_SHOOT, MORA_SHOOT_MSG_SIZE);
+    for (int i = 0; i < MORA_SHOOT_MSG_SIZE; i++) {
+      MoraPutUint8(dc_shot_msg.bin[i]);
+    }
+    MoraTrailer();
+    return;
+  }
+  union dc_shot_targeted_union msg;
+  fill_shot_message(&msg.data.shot);
+  msg.data.camera_id = camera_id;
+  MoraHeader(MORA_SHOOT_TARGETED, MORA_SHOOT_TARGETED_MSG_SIZE);
+  for (int i = 0; i < MORA_SHOOT_TARGETED_MSG_SIZE; i++) {
+    MoraPutUint8(msg.bin[i]);
+  }
+  MoraTrailer();
+}
+
+uint8_t digital_cam_uart_shoot(uint8_t camera_id, bool report)
+{
+  send_shot_frame(camera_id);
+  if (report) {
+    dc_send_shot_position();
+  } else if (dc_photo_nr < DC_IMAGE_BUFFER) {
+    dc_photo_nr++;   // same numbering as dc_send_shot_position(), without telemetry
+  }
+  return 0;
+}
+
+uint8_t digital_cam_uart_stop(uint8_t camera_id, bool keep_session)
+{
+  int32_t id = camera_id | (keep_session ? MORA_STOP_FLAG_KEEP : 0);
+  uint8_t bin[MORA_STOP_TARGETED_MSG_SIZE];
+  for (int i = 0; i < MORA_STOP_TARGETED_MSG_SIZE; i++) {
+    bin[i] = (uint8_t)((id >> (8 * i)) & 0xFF);
+  }
+  MoraHeader(MORA_STOP_TARGETED, MORA_STOP_TARGETED_MSG_SIZE);
+  for (int i = 0; i < MORA_STOP_TARGETED_MSG_SIZE; i++) {
+    MoraPutUint8(bin[i]);
+  }
+  MoraTrailer();
+  return 0;
+}
+
 
 /* Command The Camera */
 void dc_send_command(uint8_t cmd)
 {
   switch (cmd) {
     case DC_SHOOT:
-      // Send Photo Position To Camera
-      dc_shot_msg.data.nr = dc_photo_nr + 1;
-      dc_shot_msg.data.lat = stateGetPositionLla_i()->lat;
-      dc_shot_msg.data.lon = stateGetPositionLla_i()->lon;
-      dc_shot_msg.data.alt = stateGetPositionLla_i()->alt;
-      dc_shot_msg.data.phi = stateGetNedToBodyEulers_i()->phi;
-      dc_shot_msg.data.theta = stateGetNedToBodyEulers_i()->theta;
-      dc_shot_msg.data.psi = stateGetNedToBodyEulers_i()->psi;
-      dc_shot_msg.data.vground = stateGetHorizontalSpeedNorm_i();
-      dc_shot_msg.data.course = stateGetHorizontalSpeedDir_i();
-    #if FIXEDWING_FIRMWARE
-      dc_shot_msg.data.groundalt = POS_BFP_OF_REAL(stateGetPositionUtm_f()->alt - ground_alt);
-    #else
-      dc_shot_msg.data.groundalt = POS_BFP_OF_REAL(state.alt_agl_f);
-    #endif
-
-      MoraHeader(MORA_SHOOT, MORA_SHOOT_MSG_SIZE);
-      for (int i = 0; i < (MORA_SHOOT_MSG_SIZE); i++) {
-        MoraPutUint8(dc_shot_msg.bin[i]);
-      }
-      MoraTrailer();
+      // Send Photo Position To Camera selected by the digital_cam_uart_camera_id setting
+      send_shot_frame(digital_cam_uart_camera_id);
       dc_send_shot_position();
       break;
     case DC_TALLER:

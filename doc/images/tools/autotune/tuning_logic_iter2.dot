@@ -1,0 +1,53 @@
+// Iteration 2: roll trim, ETECS plant identification, course loop
+// Render: dot -Tsvg tuning_logic_iter2.dot -o tuning_logic_iter2.svg
+digraph tuning_logic_iter2 {
+    rankdir=LR;
+    fontname="Helvetica";
+    node  [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11];
+    edge  [fontname="Helvetica", fontsize=9, color="#555555"];
+
+    subgraph cluster_seg {
+        label="Flight segments"; style="dashed"; color="#888888"; fontsize=11;
+        level  [label="Straight & level\n(AUTO1/2)", fillcolor="#e8f0fe"];
+        qs     [label="Quasi-steady\n|roll| < 10°, any climb rate,\nthrottle > 2 % (AUTO1/2)", fillcolor="#e8f0fe"];
+        wot    [label="Full throttle\nthrottle > 95 %", fillcolor="#e8f0fe"];
+        idle   [label="Idle glide\nthrottle < 3 %, sinking", fillcolor="#e8f0fe"];
+        a1     [label="All AUTO1", fillcolor="#e8f0fe"];
+        a2     [label="AUTO2 >= 60 s airborne\n(optional)", fillcolor="#fde8e8", style="rounded,filled,dashed"];
+    }
+
+    subgraph cluster_metric {
+        label="Measured"; style="dashed"; color="#888888"; fontsize=11;
+        m_ail   [label="steady aileron cmd", fillcolor="#fff4d6"];
+        m_elev  [label="steady elevator cmd", fillcolor="#fff4d6"];
+        m_cru   [label="median throttle & V\nat |Vz| < 0.3 m/s", fillcolor="#fff4d6"];
+        m_reg   [label="regressions\nthrottle ~ Vz, V\nθ ~ Vz", fillcolor="#fff4d6"];
+        m_climb [label="sustained climb\n(75th pct of Vz)", fillcolor="#fff4d6"];
+        m_glide [label="V / -Vz", fillcolor="#fff4d6"];
+        m_lag   [label="DESIRED.roll → φ\nlag & RMS", fillcolor="#fff4d6"];
+        m_crs   [label="course error RMS,\nsign changes / s", fillcolor="#fff4d6"];
+    }
+
+    subgraph cluster_xml {
+        label="Airframe XML"; style="dashed"; color="#888888"; fontsize=11;
+        x_rtrim [label="COMMAND_ROLL_TRIM\n= flown + aileron", fillcolor="#e6f7e6"];
+        x_ptrim [label="COMMAND_PITCH_TRIM\n= flown + elevator", fillcolor="#e6f7e6"];
+        x_cru   [label="NOMINAL_CRUISE_THROTTLE\nNOMINAL/AUTO/TRACKING_AIRSPEED", fillcolor="#e6f7e6"];
+        x_ff    [label="PITCH_OF_VZ_PGAIN\nTHROTTLE_OF_AIRSPEED_PGAIN", fillcolor="#e6f7e6"];
+        x_climb [label="CLIMB_THROTTLE_INCREMENT\n= (1 − cruise) / climb\nALTITUDE_MAX_CLIMB = 0.8·climb", fillcolor="#e6f7e6"];
+        x_glide [label="GLIDE_RATIO", fillcolor="#e6f7e6"];
+        x_crs   [label="H_CTL_COURSE_PGAIN", fillcolor="#e6f7e6"];
+        adv     [label="ADVICE in report\n(propulsion margin,\nnext-flight plan)", shape=note, fillcolor="#f3e8ff"];
+    }
+
+    level -> m_ail -> x_rtrim;
+    level -> m_elev -> x_ptrim;
+    qs -> m_cru -> x_cru;
+    qs -> m_reg -> x_ff;
+    wot -> m_climb -> x_climb;  m_cru -> x_climb;
+    idle -> m_glide -> x_glide;
+    a1 -> m_lag -> x_crs [label="model check:\nroll bw / course bw ≥ 3"];
+    a2 -> m_crs -> x_crs [label="±20 % on\noscillation / sluggish"];
+    m_cru -> adv [style=dotted, label="cruise > 70 %"];
+    m_lag -> adv [style=dotted];
+}

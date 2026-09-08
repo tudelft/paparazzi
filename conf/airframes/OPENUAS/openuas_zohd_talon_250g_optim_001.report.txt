@@ -1,0 +1,105 @@
+==========================================================================
+PAPARAZZI AIRFRAME AUTO-TUNE REPORT (Iteration 1)
+generated: 2026-09-07T16:20:08
+==========================================================================
+flight log : /home/n3yh3hnii/develop/allthings_paparazzi/paparazzi_main/var/logs/26_09_05__18_42_28.data
+aircraft   : Adam (AC_ID 129)
+airframe   : airframes/OPENUAS/openuas_zohd_talon_250g.xml
+output XML : /home/n3yh3hnii/develop/allthings_paparazzi/paparazzi_main/conf/airframes/OPENUAS/openuas_zohd_talon_250g_optim_001.xml
+build check: PASS
+
+-- TELEMETRY METRICS -----------------------------------------------------
+airspeed source          : AIR_DATA.airspeed
+mean airspeed (airborne) :  10.06 m/s
+straight+level samples   : 77
+  mean body pitch        :  +2.43 deg
+  mean desired pitch     :  -3.35 deg
+  pitch trim error       :  +5.78 deg
+  steady elevator cmd    :   +903 pprz
+turning samples          : 1271
+  mean |bank|            :   30.3 deg
+  mean |yaw cmd|         :   5025 pprz (of 9600)
+  time above half rudder :    53%
+  turn coordination ratio:   0.88 (achieved/ideal)
+  median achieved radius :   18.4 m (with pilot rudder)
+  rudder per deg of bank :    209 pprz/deg
+target turn radius       :   30.0 m (=19 deg bank at 10.1 m/s)
+
+-- XML CHANGES -----------------------------------------------------------
+1. INS: PITCH_NEUTRAL_DEFAULT
+   before : 3.
+   after  : 8
+   why    : level flight showed body pitch +2.4 deg while the controller demanded -3.3 deg (+5.8 deg trim error, elevator held +903 pprz); shifting the INS pitch neutral absorbs the offset so the elevator flies near center
+
+2. V_CTL: AUTO_THROTTLE_NOMINAL_CRUISE_PITCH
+   before : 0.06
+   after  : 0.042
+   why    : measured level-flight pitch at 10.1 m/s is 2.4 deg = 0.042 rad
+
+3. command_laws: S_RUDDERVATOR_L/R
+   before : L="1.8*@PITCH+@YAW" R="1.8*@PITCH-@YAW"
+   after  : L="1.8*@PITCH+$ruddervons" R="1.8*@PITCH-$ruddervons" with $ruddervons = @YAW + RUDDERVONS_OF_ROLL*@ROLL
+   why    : pilot needed |yaw| ~5025 pprz (53% of turn time above half stick) to hold turns; feeding roll into the ruddervators supplies that rudder automatically
+
+4. MIXER: RUDDERVONS_OF_ROLL
+   before : (absent)
+   after  : 0.98
+   why    : roll-to-rudder coordination gain derived from manual turn telemetry
+
+5. auto_rc_commands: YAW
+   before : @YAW*0.9
+   after  : @YAW
+   why    : manual rudder input was saturating in turns; do not attenuate it further in AUTO modes
+
+6. MISC: MIN_CIRCLE_RADIUS
+   before : 25.0
+   after  : 30
+   why    : requested minimum autonomous turn radius is 30 m (needs 19 deg bank at 10.1 m/s, within the 45 deg roll limit)
+
+7. MISC: LANDING_CIRCLE_RADIUS
+   before : 25.0
+   after  : 30
+   why    : landing circle must not be tighter than the guaranteed minimum radius
+
+-- BUILD OUTPUT (tail) ---------------------------------------------------
+Compiling nav_cube.c
+Compiling nav_flower.c
+Compiling nav_line.c
+Compiling nav_line_border.c
+Compiling nav_line_osam.c
+Compiling nav_smooth.c
+Compiling nav_spiral_3D.c
+Compiling nav_survey_poly_osam.c
+Compiling nav_survey_polygon.c
+Compiling nav_survey_rectangle.c
+Compiling nav_vertical_raster.c
+Compiling radio_control.c
+Compiling sbus.c
+Compiling sbus_common.c
+Compiling airspeed_sdp3x.c
+Compiling baro_board_common.c
+Compiling baro_dps310.c
+Compiling mag_qmc5883l.c
+Compiling rangefinder_i2c.c
+Compiling agl_dist.c
+Compiling dps310_i2c.c
+Compiling invensense3.c
+Compiling qmc5883l.c
+Compiling pprz_syscalls.c
+Compiling pprz_transport.c
+Compiling state.c
+Compiling c++.cpp
+Linking /home/n3yh3hnii/paparazzi/var/aircrafts/Adam/ap/obj/ap.elf
+Creating /home/n3yh3hnii/paparazzi/var/aircrafts/Adam/ap/obj/ap.hex
+Creating /home/n3yh3hnii/paparazzi/var/aircrafts/Adam/ap/obj/ap.bin
+Creating /home/n3yh3hnii/paparazzi/var/aircrafts/Adam/ap/obj/ap.dmp
+Creating /home/n3yh3hnii/paparazzi/var/aircrafts/Adam/ap/obj/ap.list
+
+   text	   data	    bss	    dec	    hex	filename
+ 185760	  15444	 115624	 316828	  4d59c	/home/n3yh3hnii/paparazzi/var/aircrafts/Adam/ap/obj/ap.elf
+
+Done
+make[1]: Leaving directory '/home/n3yh3hnii/develop/allthings_paparazzi/paparazzi_main/sw/airborne'
+make: Leaving directory '/home/n3yh3hnii/develop/allthings_paparazzi/paparazzi_main'
+
+==========================================================================

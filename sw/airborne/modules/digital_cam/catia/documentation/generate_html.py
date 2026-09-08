@@ -18,8 +18,27 @@ except ImportError as error:
 
 
 DOCUMENTATION_DIR = Path(__file__).resolve().parent
-SOURCE = DOCUMENTATION_DIR / "README.md"
-OUTPUT = DOCUMENTATION_DIR / "index.html"
+
+# (source markdown, output html, title, description, lede)
+DOCUMENTS = (
+    (
+        "README.md",
+        "index.html",
+        "CATIA Camera Pipeline",
+        "CATIA camera pipeline setup, testing, capture, EXIF, and SODA guide",
+        "From a flight-triggered shot to a georeferenced JPEG and image-analysis "
+        "result. Start locally, then move to CHDK or Raspberry Pi camera hardware.",
+    ),
+    (
+        "earcam-loudest-spot-explained.md",
+        "earcam-loudest-spot-explained.html",
+        "EARcam Explained",
+        "Why one USB microphone, how far it hears a motionSCOUT alarm, and how "
+        "the loudest spot is computed",
+        "A plain-language guide to everything involved in finding the loudest "
+        "spot on the ground from a small aircraft with a single microphone.",
+    ),
+)
 
 STYLE = """
 :root {
@@ -154,21 +173,21 @@ footer { padding: 25px 20px; color: #ccd8e6; background: #11243c; text-align: ce
 """
 
 
-def main() -> int:
-    source_text = SOURCE.read_text(encoding="ascii")
+def render(source_name: str, output_name: str, title: str,
+           description: str, lede: str) -> None:
+    source_text = (DOCUMENTATION_DIR / source_name).read_text(encoding="ascii")
     renderer = markdown.Markdown(
         extensions=["fenced_code", "tables", "toc", "sane_lists"],
         extension_configs={"toc": {"permalink": False, "toc_depth": "2"}},
         output_format="html5",
     )
     body = renderer.convert(source_text)
-    title = "CATIA Camera Pipeline"
     page = f"""<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="CATIA camera pipeline setup, testing, capture, EXIF, and SODA guide">
+  <meta name="description" content="{html.escape(description)}">
   <title>{html.escape(title)} Guide</title>
   <style>{STYLE}</style>
 </head>
@@ -177,7 +196,7 @@ def main() -> int:
     <div class="masthead-inner">
       <p class="eyebrow">Paparazzi UAV / MORA / SODA</p>
       <h1>{html.escape(title)}</h1>
-      <p class="lede">From a flight-triggered shot to a georeferenced JPEG and image-analysis result. Start locally, then move to CHDK or Raspberry Pi camera hardware.</p>
+      <p class="lede">{html.escape(lede)}</p>
     </div>
   </header>
   <div class="layout">
@@ -191,7 +210,12 @@ def main() -> int:
 </body>
 </html>
 """
-    OUTPUT.write_text(page, encoding="utf-8")
+    (DOCUMENTATION_DIR / output_name).write_text(page, encoding="utf-8")
+
+
+def main() -> int:
+    for document in DOCUMENTS:
+        render(*document)
     return 0
 
 

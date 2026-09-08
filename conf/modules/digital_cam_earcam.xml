@@ -1,0 +1,108 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="digital_cam_earcam" dir="digital_cam">
+  <doc>
+    <description>
+      EARcam acoustic loud-spot search over the MORA camera UART link.
+
+      During a survey block the module sends EARcam-targeted shoot commands through
+      digital_cam_uart at earcam_period_s; the MORA companion computer (CATIA with
+      --earcam) geotags its microphone level with the transmitted position. On
+      earcam_stop() MORA computes the loudest spot and returns it; the flight plan
+      then applies it to a waypoint with earcam_result_to_waypoint(WP).
+
+      Typical flight plan sequence (see talon_earcam_loudspot_demo.xml):
+        earcam_start(), survey, earcam_solve(), wait for earcam_result_fresh,
+        then refine: earcam_refine_setup(WP_FROM, WP_TO, WP_TURN), fly route FROM to TO,
+        circle WP_TURN with earcam_refine_turn_radius() while earcam_refine_turning(),
+        earcam_refine_next_leg(...) until it returns 1, earcam_solve(), wait for
+        earcam_result_fresh, earcam_refine_update(), repeat until earcam_refine_converged;
+        finally earcam_stop() and earcam_result_to_waypoint(WP_DROP).
+
+      Block exceptions run before the block body, so never request a solve and test
+      earcam_result_fresh in the same block: request in one block, wait in the next.
+      earcam_result_valid stays true once any result was received; earcam_result_fresh
+      is set by each reply and consumed by earcam_refine_setup()/earcam_refine_update().
+
+      The refinement star is fixed-wing flyable: straight legs through the estimate joined by
+      circle turns placed as fillets tangent to both legs. Legs end at the tangent points
+      (max(EARCAM_REFINE_HALF_LENGTH_M, R/tan(90/N)) from the centre, R = |nav_radius|), so the
+      turn exits exactly onto the next leg and each pass over the estimate is a straight,
+      wings-level run-in. EAR shots advance the photo number; DC_SHOT telemetry is limited to
+      one report per EARCAM_REPORT_PERIOD_S.
+
+      Known search area (IMAV Mission 4, alarm within 25 m of a given point): skip the survey,
+      earcam_start(), earcam_result_from_waypoint(WP_CENTER), then the star as above; reject a
+      result with !earcam_result_within(WP_CENTER, 35). With EARCAM_REFINE_HEIGHT_FROM_M set
+      the star legs are placed at heights above ground_alt (start/turn height_from, end
+      height_to, lowered by height_step per star, never below height_min) so a leg can be
+      flown as a glide. With earcam_quiet_only samples are only taken while the throttle is
+      killed for earcam_quiet_delay_s (pusher propeller masks the alarm): kill the throttle
+      on the legs, restore it for the turns.
+
+      Low release: the nav_drop module flies the approach and computes the release point
+      (see include_obc2014_mission.xml). earcam_drop_level_point(WP_START, WP_RELEASE,
+      WP_TARGET, WP_LEVEL, 50) puts a level-off point 50 m before the release point at
+      earcam_drop_release_agl_m; glide START to LEVEL (vmode glide), then route LEVEL to
+      RELEASE with alt=earcam_drop_altitude(WP_TARGET) (release height, on the rangefinder
+      when EARCAM_USE_AGL_DIST and in range). earcam_drop_too_low(WP_TARGET) asks for a
+      go-around, earcam_drop_shoot(WP_TARGET) opens the hatch through nav_drop_shoot() only
+      at or below earcam_drop_max_agl_m (EARCAM_USE_NAV_DROP) and sets
+      earcam_drop_released/missed.
+    </description>
+    <define name="EARCAM_PERIOD_S" value="0.1" description="default sampling period in seconds"/>
+    <define name="EARCAM_REPORT_PERIOD_S" value="1.0" description="minimum interval between DC_SHOT telemetry reports of EAR samples (0 = every sample)"/>
+    <define name="EARCAM_REFINE_HALF_LENGTH_M" value="50" description="refinement leg half-length in m"/>
+    <define name="EARCAM_REFINE_CONVERGE_M" value="4" description="stop refining when the estimate moves less than this"/>
+    <define name="EARCAM_REFINE_MAX_ITERATIONS" value="3" description="maximum refinement stars"/>
+    <define name="EARCAM_REFINE_LEGS" value="4" description="legs per star (2..8)"/>
+    <define name="EARCAM_REFINE_TURN_RADIUS_M" value="0" description="star turn circle radius in m, 0 = |nav_radius|"/>
+    <define name="EARCAM_REFINE_HEIGHT_FROM_M" value="0" description="leg start and turn height above ground_alt, 0 = keep waypoint altitudes"/>
+    <define name="EARCAM_REFINE_HEIGHT_TO_M" value="0" description="leg end height above ground_alt (gliding leg)"/>
+    <define name="EARCAM_REFINE_HEIGHT_STEP_M" value="0" description="lower the leg heights by this per completed star"/>
+    <define name="EARCAM_REFINE_HEIGHT_MIN_M" value="4" description="never place a leg lower than this"/>
+    <define name="EARCAM_QUIET_ONLY" value="FALSE" description="sample only while the throttle is killed (fixed-wing)"/>
+    <define name="EARCAM_QUIET_DELAY_S" value="1.5" description="propeller spin-down before sampling resumes"/>
+    <define name="EARCAM_USE_AGL_DIST" value="FALSE" description="use the agl_dist rangefinder for the release height"/>
+    <define name="EARCAM_USE_NAV_DROP" value="FALSE" description="earcam_drop_shoot() calls nav_drop_shoot()"/>
+    <define name="EARCAM_DROP_RELEASE_AGL_M" value="1.5" description="release height above ground"/>
+    <define name="EARCAM_DROP_MAX_AGL_M" value="2.0" description="no release above this height"/>
+    <define name="EARCAM_DROP_AGL_MAX_M" value="4" description="trust the rangefinder up to this height"/>
+    <define name="EARCAM_DROP_ABORT_AGL_M" value="0.6" description="go around below this rangefinder height"/>
+  </doc>
+  <settings>
+    <dl_settings name="control">
+      <dl_settings name="earcam">
+        <dl_setting max="2" min="0.05" step="0.05" var="earcam_period_s" shortname="ear_period" unit="s"/>
+        <dl_setting max="1" min="0" step="1" var="earcam_result_valid" shortname="ear_valid"/>
+        <dl_setting max="1" min="0" step="0.001" var="earcam_confidence" shortname="ear_conf"/>
+        <dl_setting max="65535" min="0" step="1" var="earcam_samples" shortname="ear_n"/>
+        <dl_setting max="200" min="20" step="5" var="earcam_refine_half_length_m" shortname="ref_len" unit="m"/>
+        <dl_setting max="20" min="1" step="0.5" var="earcam_refine_converge_m" shortname="ref_conv" unit="m"/>
+        <dl_setting max="6" min="1" step="1" var="earcam_refine_max_iterations" shortname="ref_iter"/>
+        <dl_setting max="8" min="2" step="1" var="earcam_refine_legs" shortname="ref_legs"/>
+        <dl_setting max="200" min="0" step="0.1" var="earcam_refine_shift_m" shortname="ref_shift" unit="m"/>
+        <dl_setting max="100" min="0" step="1" var="earcam_refine_turn_radius_m" shortname="ref_radius" unit="m"/>
+        <dl_setting max="80" min="0" step="1" var="earcam_refine_height_from_m" shortname="ref_h_from" unit="m"/>
+        <dl_setting max="80" min="0" step="1" var="earcam_refine_height_to_m" shortname="ref_h_to" unit="m"/>
+        <dl_setting max="20" min="0" step="0.5" var="earcam_refine_height_step_m" shortname="ref_h_step" unit="m"/>
+        <dl_setting max="30" min="2" step="0.5" var="earcam_refine_height_min_m" shortname="ref_h_min" unit="m"/>
+        <dl_setting max="1" min="0" step="1" var="earcam_quiet_only" shortname="quiet_only"/>
+        <dl_setting max="5" min="0" step="0.1" var="earcam_quiet_delay_s" shortname="quiet_delay" unit="s"/>
+        <dl_setting max="5" min="0.5" step="0.1" var="earcam_drop_release_agl_m" shortname="drop_agl" unit="m"/>
+        <dl_setting max="5" min="0.5" step="0.1" var="earcam_drop_max_agl_m" shortname="drop_max_agl" unit="m"/>
+        <dl_setting max="100" min="0" step="0.1" var="earcam_drop_agl_m" shortname="drop_h" unit="m"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <dep>
+    <depends>digital_cam_uart</depends>
+  </dep>
+  <header>
+    <file name="earcam_ctrl.h"/>
+  </header>
+  <init fun="earcam_init()"/>
+  <periodic fun="earcam_periodic()" freq="20" autorun="TRUE"/>
+  <makefile target="ap|sim|nps">
+    <file name="earcam_ctrl.c"/>
+  </makefile>
+</module>

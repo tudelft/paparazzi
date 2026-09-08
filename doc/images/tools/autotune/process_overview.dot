@@ -1,0 +1,35 @@
+// Paparazzi airframe auto-tuning: end-to-end pipeline
+// Render: dot -Tsvg process_overview.dot -o process_overview.svg
+digraph autotune_process {
+    rankdir=LR;
+    fontname="Helvetica";
+    node  [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11];
+    edge  [fontname="Helvetica", fontsize=9, color="#555555"];
+
+    subgraph cluster_in {
+        label="Inputs  (~/paparazzi/var/logs)"; style="dashed"; color="#888888"; fontsize=11;
+        logfile  [label="flight.log\n(conf, airframe,\nflight plan copy)", fillcolor="#e8f0fe"];
+        datafile [label="flight.data\n(timestamped\ntelemetry messages)", fillcolor="#e8f0fe"];
+    }
+
+    parse    [label="1. Parse\nfilter AC_ID,\nvectorise with numpy", fillcolor="#fff4d6"];
+    segment  [label="2. Segment flight\nairborne · straight+level ·\nbanked turns", fillcolor="#fff4d6"];
+    analyse  [label="3. Measure\npitch trim error ·\nrudder vs bank · radius", fillcolor="#fff4d6"];
+    rules    [label="4. Tuning rules\nneutral pitch ·\nruddervon mixing · radii", fillcolor="#fff4d6"];
+    write    [label="5. Write XML\n<name>_optim_NNN.xml\n(auto-increment)", fillcolor="#e6f7e6"];
+    build    [label="6. Build check\nmake -f Makefile.ac\nAIRCRAFT=<ac> ap.compile", fillcolor="#e6f7e6"];
+    report   [label="7. Audit report\nterminal + .report.txt", fillcolor="#e6f7e6"];
+
+    base     [label="base airframe XML\nconf/airframes/...", shape=note, fillcolor="#f3e8ff"];
+    pass     [label="PASS", shape=ellipse, fillcolor="#c8f0c8"];
+    fail     [label="FAIL\n(exception + diagnostics)", shape=ellipse, fillcolor="#f8c8c8"];
+
+    logfile  -> parse [label="aircraft name,\nairframe path"];
+    datafile -> parse [label="ATTITUDE, GPS, COMMANDS,\nAIR_DATA, PPRZ_MODE, ..."];
+    parse -> segment -> analyse -> rules -> write -> build;
+    base  -> rules [label="text edits keep\ncomments intact"];
+    build -> pass  [label="exit 0"];
+    build -> fail  [label="exit != 0"];
+    pass  -> report;
+    fail  -> report;
+}

@@ -16,6 +16,10 @@ CATIA_AI_CAM_COMMAND ?= rpicam-still
 CATIA_LWIR_CAM_PHOTO_DIR ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/photos
 CATIA_LWIR_CAM_COMMAND ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/lwircam/sample
 CATIA_CHDK_PHOTO_DIR ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/photos
+CATIA_EAR_CAM_COMMAND ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/earcam/earcam
+CATIA_EAR_CAM_DEVICE ?= auto
+CATIA_EAR_CAM_LOG_DIR ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/earlogs
+CATIA_EAR_CAM_PHOTO_DIR ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/photos
 NEAR_HORIZON_CASE_BLACK ?= 0
 NEAR_HORIZON_ROLL_DEG ?= 75.0
 NEAR_HORIZON_PITCH_DEG ?= 75.0
@@ -38,6 +42,10 @@ CFLAGS = $(OPTFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined \
 	-DCATIA_LWIR_CAM_PHOTO_DIR='"$(CATIA_LWIR_CAM_PHOTO_DIR)"' \
 	-DCATIA_LWIR_CAM_COMMAND='"$(CATIA_LWIR_CAM_COMMAND)"' \
 	-DCATIA_CHDK_PHOTO_DIR='"$(CATIA_CHDK_PHOTO_DIR)"' \
+	-DCATIA_EAR_CAM_COMMAND='"$(CATIA_EAR_CAM_COMMAND)"' \
+	-DCATIA_EAR_CAM_DEVICE='"$(CATIA_EAR_CAM_DEVICE)"' \
+	-DCATIA_EAR_CAM_LOG_DIR='"$(CATIA_EAR_CAM_LOG_DIR)"' \
+	-DCATIA_EAR_CAM_PHOTO_DIR='"$(CATIA_EAR_CAM_PHOTO_DIR)"' \
 	-Dnear_horizon_case_black=$(NEAR_HORIZON_CASE_BLACK) \
 	-Dnear_horizon_roll_deg=$(NEAR_HORIZON_ROLL_DEG) \
 	-Dnear_horizon_pitch_deg=$(NEAR_HORIZON_PITCH_DEG) \
@@ -48,6 +56,8 @@ DEPFLAGS = -MMD -MP
 LDFLAGS += -static
 LDLIBS = -lpthread -lm
 CFILES = ai_cam_pipe.c \
+	 ear_cam_pipe.c \
+	 ear_heatmap.c \
 	 lwir_cam_pipe.c \
 	 serial.c \
 	 chdk_pipe.c \
@@ -114,6 +124,10 @@ $(CONFIG_STAMP): FORCE
 	  'CATIA_LWIR_CAM_PHOTO_DIR=$(CATIA_LWIR_CAM_PHOTO_DIR)' \
 	  'CATIA_LWIR_CAM_COMMAND=$(CATIA_LWIR_CAM_COMMAND)' \
 	  'CATIA_CHDK_PHOTO_DIR=$(CATIA_CHDK_PHOTO_DIR)' \
+	  'CATIA_EAR_CAM_COMMAND=$(CATIA_EAR_CAM_COMMAND)' \
+	  'CATIA_EAR_CAM_DEVICE=$(CATIA_EAR_CAM_DEVICE)' \
+	  'CATIA_EAR_CAM_LOG_DIR=$(CATIA_EAR_CAM_LOG_DIR)' \
+	  'CATIA_EAR_CAM_PHOTO_DIR=$(CATIA_EAR_CAM_PHOTO_DIR)' \
 	  'NEAR_HORIZON_CASE_BLACK=$(NEAR_HORIZON_CASE_BLACK)' \
 	  'NEAR_HORIZON_ROLL_DEG=$(NEAR_HORIZON_ROLL_DEG)' \
 	  'NEAR_HORIZON_PITCH_DEG=$(NEAR_HORIZON_PITCH_DEG)' \
@@ -123,6 +137,11 @@ $(CONFIG_STAMP): FORCE
 
 soda_local:	soda_local.cpp $(CONFIG_STAMP)
 	$(CXX) $(LDFLAGS) $(CXXFLAGS) soda_local.cpp -o soda_local
+
+# Ground-side: re-render an earlogs/*.csv session into the heatmap JPEG + .geo sidecar.
+ear_heatmap_replay: $(BUILD_DIR)/project/ear_heatmap_replay.o $(BUILD_DIR)/project/ear_cam_pipe.o \
+		$(BUILD_DIR)/project/ear_heatmap.o $(LIBJPEG_OBJECTS)
+	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
 lwir_sample: $(LIBJPEG_OBJECTS)
 	$(MAKE) -C lwircam sample \
@@ -139,7 +158,7 @@ documentation:
 	./documentation/update-documentation.sh
 
 clean:
-	rm -rf ./catia ./soda_local $(BUILD_DIR) ./.near-horizon-*
+	rm -rf ./catia ./soda_local ./ear_heatmap_replay $(BUILD_DIR) ./.near-horizon-*
 	$(MAKE) -C lwircam clean
 
 .PHONY: all clean documentation lwir_sample FORCE

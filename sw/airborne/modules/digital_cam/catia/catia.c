@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <math.h>
 #include <poll.h>
 #include <signal.h>
 #include <spawn.h>
@@ -20,6 +21,7 @@
 #include <unistd.h>
 
 #include "ai_cam_pipe.h"
+#include "ear_cam_pipe.h"
 #include "lwir_cam_pipe.h"
 #include "serial.h"
 #include "chdk_pipe.h"
@@ -92,6 +94,9 @@ struct camera_backend {
 
 static void *handle_msg_shoot(void *ptr);
 static void handle_received_message(void);
+static void start_shoot_worker(union dc_shot_union *shoot);
+static void handle_targeted_stop(int32_t camera_id);
+static void send_msg_ear_result(const struct ear_loudest_spot *spot);
 static int run_soda(const char *filename, const union dc_shot_union *shoot);
 static void release_worker_slot(void);
 static inline void send_msg_image_buffer(void);
@@ -125,6 +130,10 @@ static const char *mock_image = CATIA_MOCK_IMAGE;
 static bool mock_transform_enabled;
 static bool debug_enabled;
 static bool test_capture_enabled;
+static bool earcam_requested;
+static bool earcam_active;
+static int optical_camera_id = MORA_CAMERA_ALL;
+static pthread_mutex_t tx_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 extern char **environ;
 
@@ -147,6 +156,9 @@ int main(int argc, char *argv[])
     {"chdk", no_argument, NULL, 'c'},
     {"aicam", no_argument, NULL, 'a'},
     {"lwircam", no_argument, NULL, 'w'},
+    {"earcam", no_argument, NULL, 'e'},
+    {"earcam-sim", required_argument, NULL, 'E'},
+    {"earcam-band", required_argument, NULL, 'B'},
     {"test", no_argument, NULL, 't'},
     {"mocktransform", no_argument, NULL, 'f'},
     {"debug", no_argument, NULL, 'd'},
@@ -155,7 +167,7 @@ int main(int argc, char *argv[])
     {NULL, 0, NULL, 0}
   };
 
-  while ((option = getopt_long(argc, argv, "s:lcawtfdi:h", long_options, NULL)) != -1) {
+  while ((option = getopt_long(argc, argv, "s:lcaweE:B:tfdi:h", long_options, NULL)) != -1) {
     switch (option) {
       case 's':
         serial_device = optarg;
@@ -186,6 +198,33 @@ int main(int argc, char *argv[])
         }
         requested_camera_backend = CAMERA_BACKEND_LWIR_CAM;
         break;
+      case 'e':
+        earcam_requested = true;
+        break;
+      case 'E': {
+        double sim_lat = 0.0;
+        double sim_lon = 0.0;
+        double sim_level = 95.0;
+        int fields = sscanf(optarg, "%lf,%lf,%lf", &sim_lat, &sim_lon, &sim_level);
+        if (fields < 2 || sim_lat < -90.0 || sim_lat > 90.0 || sim_lon < -180.0 || sim_lon > 180.0) {
+          fprintf(stderr, "CATIA:\t--earcam-sim expects LAT,LON[,LEVEL_DB_AT_1M]\n");
+          return 2;
+        }
+        ear_cam_pipe_set_simulated_source(sim_lat, sim_lon, sim_level);
+        earcam_requested = true;
+        break;
+      }
+      case 'B': {
+        double low_hz = 0.0;
+        double high_hz = 0.0;
+        if (sscanf(optarg, "%lf,%lf", &low_hz, &high_hz) != 2 || low_hz < 100.0 || high_hz <= low_hz
+            || high_hz > 20000.0) {
+          fprintf(stderr, "CATIA:\t--earcam-band expects LOW_HZ,HIGH_HZ\n");
+          return 2;
+        }
+        ear_cam_pipe_set_band(low_hz, high_hz);
+        break;
+      }
       case 't':
         test_mode = true;
         break;
@@ -293,8 +332,26 @@ int main(int argc, char *argv[])
     stop_local_serial_bridge();
     return 1;
   }
+  switch (selected_camera_backend) {
+    case CAMERA_BACKEND_CHDK: optical_camera_id = MORA_CAMERA_CHDK; break;
+    case CAMERA_BACKEND_AI_CAM: optical_camera_id = MORA_CAMERA_AICAM; break;
+    case CAMERA_BACKEND_LWIR_CAM: optical_camera_id = MORA_CAMERA_LWIRCAM; break;
+    default: optical_camera_id = MORA_CAMERA_ALL; break;
+  }
+  if (earcam_requested) {
+    if (ear_cam_pipe_init(NULL) != 0) {
+      camera.deinit();
+      stop_local_serial_bridge();
+      return 1;
+    }
+    earcam_active = true;
+    printf("CATIA:\tacoustic backend: earcam\n");
+  }
   int ret = serial_init(serial_device);
   if (ret < 0) {
+    if (earcam_active) {
+      ear_cam_pipe_deinit();
+    }
     camera.deinit();
     stop_local_serial_bridge();
     return -1;
@@ -404,6 +461,9 @@ int main(int argc, char *argv[])
     pthread_cond_wait(&workers_finished, &mut);
   }
   pthread_mutex_unlock(&mut);
+  if (earcam_active) {
+    ear_cam_pipe_deinit();
+  }
   camera.deinit();
   stop_local_serial_bridge();
 
@@ -533,11 +593,13 @@ static void handle_received_message(void)
 {
   mora_protocol.msg_received = false;
 
-  if (mora_protocol.msg_id == MORA_SHOOT) {
+  if (mora_protocol.msg_id == MORA_SHOOT || mora_protocol.msg_id == MORA_SHOOT_TARGETED) {
+    bool targeted = mora_protocol.msg_id == MORA_SHOOT_TARGETED;
+    uint8_t expected = targeted ? MORA_SHOOT_TARGETED_MSG_SIZE : MORA_SHOOT_MSG_SIZE;
     if (debug_enabled) {
       printf("CATIA DEBUG:\tphoto trigger received; decoding shot payload\n");
     }
-    if (mora_protocol.payload_len != MORA_SHOOT_MSG_SIZE) {
+    if (mora_protocol.payload_len != expected) {
       fprintf(stderr, "CATIA:\tinvalid MORA shot payload length %u\n", mora_protocol.payload_len);
       return;
     }
@@ -550,9 +612,17 @@ static void handle_received_message(void)
     for (size_t index = 0; index < MORA_SHOOT_MSG_SIZE; index++) {
       shoot->bin[index] = mora_protocol.payload[index];
     }
-    printf("CATIA:\tSHOT %d | lat %.7f lon %.7f | MSL %.1f m AGL %.1f m | "
+    int32_t camera_id = MORA_CAMERA_ALL;
+    if (targeted) {
+      union dc_shot_targeted_union targeted_msg;
+      for (size_t index = 0; index < MORA_SHOOT_TARGETED_MSG_SIZE; index++) {
+        targeted_msg.bin[index] = mora_protocol.payload[index];
+      }
+      camera_id = targeted_msg.data.camera_id;
+    }
+    printf("CATIA:\tSHOT %d cam %d | lat %.7f lon %.7f | MSL %.1f m AGL %.1f m | "
            "roll %.1f pitch %.1f yaw %.1f deg | speed %.1f m/s course %.1f deg\n",
-           shoot->data.nr,
+           shoot->data.nr, camera_id,
            shoot->data.lat / 1e7,
            shoot->data.lon / 1e7,
            shoot->data.alt / 1000.0,
@@ -563,32 +633,148 @@ static void handle_received_message(void)
            shoot->data.vground / SPEED_BFP_SCALE,
            shoot->data.course / ANGLE_BFP_SCALE * RAD_TO_DEG);
 
-    pthread_mutex_lock(&mut);
-    if (shooting_thread_count >= MAX_PROCESSING_THREADS) {
-      pthread_mutex_unlock(&mut);
-      fprintf(stderr, "CATIA-%d:\tprocessing queue is full\n", shoot->data.nr);
-      free(shoot);
+    bool wants_ear = camera_id == MORA_CAMERA_ALL || camera_id == MORA_CAMERA_EARCAM;
+    bool wants_optical = camera_id == MORA_CAMERA_ALL || camera_id == optical_camera_id;
+    if (wants_ear && earcam_active) {
+      // Geotagging is a memory copy; do it inline so no worker slot is consumed.
+      if (ear_cam_pipe_record(shoot) == 0 && debug_enabled) {
+        printf("CATIA-%d DEBUG:\tearcam sample recorded\n", shoot->data.nr);
+      }
+    } else if (camera_id == MORA_CAMERA_EARCAM) {
+      fprintf(stderr, "CATIA-%d:\tearcam requested but not active\n", shoot->data.nr);
+    }
+    if (wants_optical) {
+      start_shoot_worker(shoot);
       return;
     }
-    shooting_thread_count++;
-    pthread_mutex_unlock(&mut);
-
-    pthread_t shooting_thread;
-    int thread_result = pthread_create(&shooting_thread, NULL, handle_msg_shoot, shoot);
-    if (thread_result != 0) {
-      pthread_mutex_lock(&mut);
-      shooting_thread_count--;
-      pthread_mutex_unlock(&mut);
-      fprintf(stderr, "CATIA-%d:\tfailed to start shooting thread: %s\n",
-              shoot->data.nr, strerror(thread_result));
-      free(shoot);
+    if (camera_id != MORA_CAMERA_EARCAM) {
+      fprintf(stderr, "CATIA-%d:\tno backend for camera id %d\n", shoot->data.nr, camera_id);
+    }
+    free(shoot);
+  } else if (mora_protocol.msg_id == MORA_STOP_TARGETED) {
+    if (mora_protocol.payload_len != MORA_STOP_TARGETED_MSG_SIZE) {
+      fprintf(stderr, "CATIA:\tinvalid MORA stop payload length %u\n", mora_protocol.payload_len);
       return;
     }
-    pthread_detach(shooting_thread);
-    send_msg_status();
+    int32_t camera_id = 0;
+    for (size_t index = 0; index < MORA_STOP_TARGETED_MSG_SIZE; index++) {
+      camera_id |= (int32_t)mora_protocol.payload[index] << (8 * index);
+    }
+    handle_targeted_stop(camera_id);
   } else if (mora_protocol.msg_id == MORA_BUFFER_EMPTY) {
     send_msg_image_buffer();
   }
+}
+
+static void start_shoot_worker(union dc_shot_union *shoot)
+{
+  pthread_mutex_lock(&mut);
+  if (shooting_thread_count >= MAX_PROCESSING_THREADS) {
+    pthread_mutex_unlock(&mut);
+    fprintf(stderr, "CATIA-%d:\tprocessing queue is full\n", shoot->data.nr);
+    free(shoot);
+    return;
+  }
+  shooting_thread_count++;
+  pthread_mutex_unlock(&mut);
+
+  pthread_t shooting_thread;
+  int thread_result = pthread_create(&shooting_thread, NULL, handle_msg_shoot, shoot);
+  if (thread_result != 0) {
+    pthread_mutex_lock(&mut);
+    shooting_thread_count--;
+    pthread_mutex_unlock(&mut);
+    fprintf(stderr, "CATIA-%d:\tfailed to start shooting thread: %s\n",
+            shoot->data.nr, strerror(thread_result));
+    free(shoot);
+    return;
+  }
+  pthread_detach(shooting_thread);
+  send_msg_status();
+}
+
+static void handle_targeted_stop(int32_t camera_id)
+{
+  bool keep = (camera_id & MORA_STOP_FLAG_KEEP) != 0;
+  camera_id &= 0xFF;
+  printf("CATIA:\tSTOP cam %d%s\n", camera_id, keep ? " (interim)" : "");
+  if (camera_id != MORA_CAMERA_ALL && camera_id != MORA_CAMERA_EARCAM) {
+    return;
+  }
+  if (!earcam_active) {
+    if (camera_id == MORA_CAMERA_EARCAM) {
+      struct ear_loudest_spot none = {0};
+      send_msg_ear_result(&none);
+    }
+    return;
+  }
+  struct ear_loudest_spot spot;
+  struct timespec start, end;
+  clock_gettime(CLOCK_MONOTONIC, &start);
+  if (keep) {
+    ear_cam_pipe_solve(&spot);
+  } else {
+    // Final stop: render the acoustic "photo" from the whole session before it is cleared.
+    ear_cam_pipe_solve(&spot);
+    char sound_picture[MAX_FILENAME];
+    if (ear_cam_pipe_render(&spot, sound_picture, sizeof(sound_picture)) == 0) {
+      union dc_shot_union picture_shot;
+      memset(&picture_shot, 0, sizeof(picture_shot));
+      picture_shot.data.nr = ear_cam_pipe_last_shot_nr();
+      if (spot.valid) {
+        picture_shot.data.lat = (int32_t)llround(spot.lat_deg * 1e7);
+        picture_shot.data.lon = (int32_t)llround(spot.lon_deg * 1e7);
+        picture_shot.data.alt = (int32_t)llround(spot.alt_m * 1000.0);
+        picture_shot.data.groundalt = (int32_t)llround(spot.agl_m * POSITION_BFP_SCALE);
+      }
+      if (image_exif_write(sound_picture, &picture_shot) == 0) {
+        printf("CATIA:\tEAR sound picture %s\n", sound_picture);
+        printf("Photo take %d\n", picture_shot.data.nr);
+        int soda_result = run_soda(sound_picture, &picture_shot);
+        printf("CATIA-%d:\tShooting: soda return %d of image %s\n",
+               picture_shot.data.nr, soda_result, sound_picture);
+      } else {
+        fprintf(stderr, "CATIA:\tfailed to add EXIF metadata to %s\n", sound_picture);
+      }
+    }
+    ear_cam_pipe_finish(&spot);
+  }
+  clock_gettime(CLOCK_MONOTONIC, &end);
+  double elapsed_ms = (end.tv_sec - start.tv_sec) * 1e3 + (end.tv_nsec - start.tv_nsec) / 1e6;
+  if (spot.valid) {
+    printf("CATIA:\tEAR loudest spot lat %.7f lon %.7f agl %.1f m alt %.1f m | %.1f dB "
+           "conf %.2f | %u/%u samples in %.2f ms\n",
+           spot.lat_deg, spot.lon_deg, spot.agl_m, spot.alt_m, spot.level_db,
+           spot.confidence, spot.used_count, spot.sample_count, elapsed_ms);
+  } else {
+    printf("CATIA:\tEAR loudest spot not determined (%u samples, %.2f ms)\n",
+           spot.sample_count, elapsed_ms);
+  }
+  send_msg_ear_result(&spot);
+}
+
+static void send_msg_ear_result(const struct ear_loudest_spot *spot)
+{
+  union mora_ear_result_union result;
+  memset(&result, 0, sizeof(result));
+  result.data.status = spot->valid ? MORA_EAR_RESULT_VALID : MORA_EAR_RESULT_INVALID;
+  if (spot->valid) {
+    result.data.lat = (int32_t)llround(spot->lat_deg * 1e7);
+    result.data.lon = (int32_t)llround(spot->lon_deg * 1e7);
+    result.data.agl_mm = (int32_t)llround(spot->agl_m * 1000.0);
+    result.data.alt_mm = (int32_t)llround(spot->alt_m * 1000.0);
+    result.data.level_cdb = (int32_t)llround(spot->level_db * 100.0);
+    result.data.confidence = (int32_t)llround(spot->confidence * 1000.0);
+  }
+  result.data.sample_count = (int32_t)spot->sample_count;
+
+  pthread_mutex_lock(&tx_mutex);
+  MoraHeader(MORA_EAR_RESULT, MORA_EAR_RESULT_MSG_SIZE);
+  for (size_t index = 0; index < MORA_EAR_RESULT_MSG_SIZE; index++) {
+    MoraPutUint8(result.bin[index]);
+  }
+  MoraTrailer();
+  pthread_mutex_unlock(&tx_mutex);
 }
 
 static int run_soda(const char *filename, const union dc_shot_union *shoot)
@@ -699,13 +885,16 @@ static inline void send_msg_status(void)
 
 static void print_usage(const char *program)
 {
-  printf("Usage: %s [--serial DEVICE | --local] [--chdk | --aicam | --lwircam] [--test] [OPTIONS]\n", program);
+  printf("Usage: %s [--serial DEVICE | --local] [--chdk | --aicam | --lwircam] [--earcam] [--test] [OPTIONS]\n", program);
   printf("  --serial DEVICE   serial endpoint (default: %s)\n", CATIA_SERIAL_DEVICE);
   printf("  --local           create local serial bridge %s <-> %s\n",
          CATIA_LOCAL_SIM_DEVICE, CATIA_LOCAL_APP_DEVICE);
   printf("  --chdk            use the CHDK camera backend (default outside local mode)\n");
   printf("  --aicam           use the AI camera backend\n");
   printf("  --lwircam         use the Tiny 1-C LWIR camera backend\n");
+  printf("  --earcam          also run the acoustic earcam backend (camera id 4)\n");
+  printf("  --earcam-sim LAT,LON[,DB]  earcam backend with a virtual loudspeaker instead of a microphone\n");
+  printf("  --earcam-band LOW,HIGH  tone search band in Hz (default earcam 1800,3200; motionSCOUT K-T-R: 2400,3200)\n");
   printf("  --test            process a mock image for any camera backend\n");
   printf("                    randomly selects testphotos/*.jpg beside this executable\n");
   printf("  --mocktransform   transform test image using shot roll, pitch, and yaw\n");

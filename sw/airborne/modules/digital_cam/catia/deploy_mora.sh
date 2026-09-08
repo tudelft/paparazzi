@@ -50,9 +50,15 @@ make -C "$SCRIPT_DIR" -j"$BUILD_JOBS" \
   CATIA_LWIR_CAM_PHOTO_DIR="$MORA_INSTALL_DIR/photos" \
   CATIA_LWIR_CAM_COMMAND="$MORA_INSTALL_DIR/sample" \
   CATIA_CHDK_PHOTO_DIR="$MORA_INSTALL_DIR/photos" \
+  CATIA_EAR_CAM_COMMAND="$MORA_INSTALL_DIR/earcam" \
+  CATIA_EAR_CAM_LOG_DIR="$MORA_INSTALL_DIR/earlogs" \
+  CATIA_EAR_CAM_PHOTO_DIR="$MORA_INSTALL_DIR/photos" \
   LWIR_ARCH=aarch64-gnu \
   LWIR_STATIC=1 \
   LWIR_VIDEO_DISPLAY=0
+
+echo "MORA CATIA: cross-compiling earcam for ARM64"
+make -C "$SCRIPT_DIR/earcam" -j"$BUILD_JOBS" test arm64
 
 echo "MORA CATIA: stripping release binaries"
 aarch64-linux-gnu-strip --strip-all \
@@ -60,7 +66,7 @@ aarch64-linux-gnu-strip --strip-all \
   "$SCRIPT_DIR/soda_local" \
   "$SCRIPT_DIR/lwircam/sample"
 
-for executable in catia soda_local lwircam/sample; do
+for executable in catia soda_local lwircam/sample earcam/earcam-arm64; do
   executable_path="$SCRIPT_DIR/$executable"
   binary_description=$(file -b "$executable_path")
   if [[ "$binary_description" != *"ARM aarch64"* ]]; then
@@ -80,7 +86,7 @@ done
 
 echo "MORA CATIA: preparing $MORA_SSH_TARGET:$MORA_INSTALL_DIR"
 ssh "$MORA_SSH_TARGET" \
-  "mkdir -p '$MORA_INSTALL_DIR' '$MORA_INSTALL_DIR/photos'"
+  "mkdir -p '$MORA_INSTALL_DIR' '$MORA_INSTALL_DIR/photos' '$MORA_INSTALL_DIR/earlogs'"
 
 if ssh "$MORA_SSH_TARGET" "sudo -n systemctl is-enabled --quiet catia.service"; then
   RESTORE_SERVICE_ON_FAILURE=true
@@ -89,7 +95,7 @@ echo "MORA CATIA: stopping the managed service for deployment"
 ssh "$MORA_SSH_TARGET" \
   "sudo -n systemctl stop catia.service 2>/dev/null || true"
 if ssh "$MORA_SSH_TARGET" \
-  "pgrep -af '^$MORA_INSTALL_DIR/(catia|sample)( |$)'"; then
+  "pgrep -af '^$MORA_INSTALL_DIR/(catia|sample|earcam)( |$)'"; then
   RESTORE_SERVICE_ON_FAILURE=false
   echo "deploy_mora.sh: stop the unmanaged CATIA process shown above and retry" >&2
   exit 1
@@ -108,6 +114,16 @@ echo "MORA CATIA: transferring executables"
 rsync --archive --human-readable --info=progress2 --chmod=F755 \
   "$SCRIPT_DIR/catia" "$SCRIPT_DIR/soda_local" "$SCRIPT_DIR/lwircam/sample" \
   "$MORA_SSH_TARGET:$MORA_INSTALL_DIR/"
+rsync --archive --human-readable --info=progress2 --chmod=F755 \
+  "$SCRIPT_DIR/earcam/earcam-arm64" "$MORA_SSH_TARGET:$MORA_INSTALL_DIR/earcam"
+ssh "$MORA_SSH_TARGET" \
+  "'$MORA_INSTALL_DIR/earcam' --self-test && \
+   card=\$(awk -F'[][]' '/USB-Audio/ {print \$2; exit}' /proc/asound/cards | tr -d ' '); \
+   if [ -n \"\$card\" ]; then \
+     amixer -q -c \"\$card\" set 'Auto Gain Control' off 2>/dev/null; \
+     amixer -q -c \"\$card\" set Mic 14 cap 2>/dev/null || amixer -q -c \"\$card\" set Mic 88% cap 2>/dev/null; \
+     echo \"MORA CATIA: USB microphone card \$card configured\"; \
+   else echo 'MORA CATIA: warning: no USB audio capture card enumerated' >&2; fi"
 
 echo "MORA CATIA: transferring mock test image"
 rsync --archive --human-readable --info=progress2 --chmod=F644 \

@@ -1,0 +1,599 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<!-- =====================================================================================
+     IMAV 2026 outdoor Mission 4 (rulebook 5.4.7) - "Dead man" first-aid kit drop
+     Aircraft: Multiplex EasyStar 3 with MORA companion computer (CATIA, EARcam microphone)
+     =====================================================================================
+
+     THE TASK
+       Three mannequins lie within 25 m of a GPS point the organisers give on the day.
+       One wears an MSA motionSCOUT K-T-R alarm (2.6-3.0 kHz, 95 dB at 3 m). Drop the
+       first-aid kit on THAT mannequin.
+
+     THE RULES THAT SHAPE THIS PLAN
+       - Points only when the kit is released BELOW 2 m above ground (judged from the ground).
+       - Full points within 50 cm of the navel, none beyond 300 cm; doubled on the alarm one.
+       - Everything must be autonomous for autonomy factor 1.0 (no GCS clicks after start).
+       - Max flight altitude 80 m AGL; kill switch on the RC; safety pilot present.
+
+     THE SITE (IGN LiDAR HD, 50 cm, https://data.geopf.fr/altimetrie; SRTM is far too coarse)
+       The GROUND around M4C is flat: 142.5 m MSL, within 1 m over 600 m. What looks like a
+       ridge west of the field in Google Earth is FOREST: 12 to 18 m trees whose edge runs
+       north-south only 20 to 25 m WEST of M4C. A tree row of 8 to 14 m stands 25 to 50 m
+       EAST of M4C (y -50 .. +45), joined to a hedge further north-east, and a tree block
+       closes the meadow 210 m NORTH of M4C. The meadow is open to the SOUTH and SOUTH-EAST.
+       So the mannequins lie in a 45 m wide north-south lane between trees. The obstacles
+       are in this plan as sectors M4_OW (west forest), M4_OE (east trees) and M4_ON (north
+       block); the GCS draws them. Everything low is decided against them:
+       - all circling and all search legs are flown at 35 m (17 m above the tallest tree),
+       - the release run-in is flown SOUTH to NORTH along the lane (course 0, tilted by at
+         most 10 deg if that keeps the corridor clear), START 250 m south at 15 m,
+       - if no corridor 10 m clear of the trees exists (target within about 10 m of a tree
+         line) the kit is released from 35 m instead: no low-release points, no crash,
+       - the climb-out continues straight north in the lane up to 35 m before turning, and
+       - a safety net: below 25 m inside an obstacle sector at any moment = motor on, climb.
+
+     THE PLAN IN THREE STEPS
+       0. WIND (block m4_wind): one full circle over M4C at 35 m with the motor on. The
+          wind_circle module fits the GPS ground speed vectors of that turn to a circle
+          (same method as the ground station wind estimator, but ONBOARD - no datalink
+          needed). Wind speed and direction are then known to nav_drop (release point) and
+          used to choose, among the obstacle-free run-in courses, the one most into the wind.
+       1. SEARCH (blocks m4_search .. refine_decide): fly a "star" of straight legs through
+          the given point at 35 m. On each leg the motor is switched OFF around the centre so
+          the microphone hears the alarm and not the pusher propeller. MORA fuses all quiet
+          samples into the loudest spot; the next star is centred on that spot. Stop when
+          two successive estimates agree within 1.5 m (at most 3 stars).
+       2. RELEASE (blocks goto_loudspot .. drop_decide): the standard Paparazzi nav_drop module
+          lays out a base turn, a 250 m straight run-in and the RELEASE point (wind, speed
+          and fall height compensated). The run-in glides from 15 m to 1.5 m, holds 1.5 m on
+          the rangefinder and opens the hatch the instant the RELEASE point is crossed, but
+          ONLY if the aircraft is at or below 2 m. Otherwise: climb out, try again (max 3).
+       3. LAND (blocks land .. flare): standard glide landing AF -> TD.
+
+     BEFORE THE FLIGHT - THINGS YOU MUST ADJUST
+       - Move waypoint M4C onto the point given by the organisers (GCS: drag it, or edit here).
+         If it moves by more than a few metres, re-check the obstacle sectors and the lane
+         course (M4_LANE_COURSE_DEG below) against the trees.
+       - Check HOME / STDBY / CLIMB / AF / TD for the actual field, and ground_alt.
+       - The wind is measured onboard in block m4_wind (one circle over M4C). Nothing to
+         do, but in the GCS you can compare WIND_INFO_RET (from the aircraft) with the
+         ground station's own wind estimate as a sanity check.
+       - TRIGGER_DELAY (airframe, nav_drop section): measured time from hatch command to kit
+         free, PLUS the GPS position latency. Every 0.1 s error is 1 m along track at 10 m/s.
+       - Heights: the star legs (35 m) clear the trees; the release (1.5 m) is only flown in
+         the lane. Do not lower the star height at this site.
+
+     WHAT MUST BE ENABLED
+       Modules digital_cam_uart, digital_cam_earcam (EARCAM_USE_AGL_DIST, EARCAM_USE_NAV_DROP),
+       nav_drop (NAV_DROP_USE_AGL_DIST, NAV_DROP_RELEASE_WITH_DELAY, kit ALPHA/MASS), agl_dist
+       with the VB22A rangefinder, wind_circle (loaded by this plan); CATIA on MORA started
+       with "earcam" and "earcam-band 2400,3200" (see catia.service).
+
+     HOW TO READ THE BLOCKS
+       Paparazzi evaluates a block's <exception> lines BEFORE its body, every navigation cycle
+       (20 Hz). "deroute" jumps to another block. A "pre_call" runs every cycle while the block
+       is active. Waypoints starting with "_" are scratch: the code moves them, do not edit.
+     ===================================================================================== -->
+<flight_plan alt="200" ground_alt="140" lat0="48.808252" lon0="7.856789" max_dist_from_home="800" name="IMAV2026_M4_EARCAM" security_height="30" home_mode_height="70">
+  <header>
+#include "autopilot.h"
+#include "modules/datalink/datalink.h"
+#include "modules/digital_cam/dc.h"
+#include "modules/digital_cam/earcam_ctrl.h"
+#include "modules/nav/nav_drop.h"
+#include "modules/meteo/wind_circle.h"
+#include "firmwares/fixedwing/guidance/energy_ctrl.h"
+
+/* Obstacles at the site (see the header comment). The sectors below generate the
+   Inside* tests further down in this file; they are declared here so the blocks can
+   use one combined test. Coordinates are flight plan x/y (m east/north of HOME). */
+#ifndef FBW
+static inline bool InsideM4_OW(float _x, float _y);
+static inline bool InsideM4_OE(float _x, float _y);
+static inline bool InsideM4_ON(float _x, float _y);
+static bool m4_obstacle(float x, float y)
+{
+  return InsideM4_OW(x, y) || InsideM4_OE(x, y) || InsideM4_ON(x, y);
+}
+#endif
+/* Run-in lane: course flown over the target (deg, from north), max tilt tried, corridor
+   half width kept clear of the sectors, and the side (+1 right) of the base turn circle. */
+#define M4_LANE_COURSE_DEG 0.f
+#define M4_LANE_MAX_TILT_DEG 10.f
+#define M4_LANE_MARGIN_M 10.f
+#define M4_DROPTURN_SIDE 1.f
+/* Above this height (m above ground_alt) nothing at the site can be hit. */
+#define M4_SAFE_HEIGHT_M 35.f
+/* Aircraft below this height inside an obstacle sector = emergency climb. */
+#define M4_ESCAPE_HEIGHT_M 25.f
+  </header>
+
+  <waypoints>
+    <!-- Field layout: adjust to the actual site. "height" values are above ground_alt. -->
+    <waypoint name="HOME" x="0" y="0" height="2."/>
+    <waypoint name="STDBY" x="20." y="80." height="70."/>
+    <waypoint name="CLIMB" x="53." y="146." height="70."/>
+    <waypoint name="AF" x="-21." y="66." alt="215."/>
+    <waypoint name="TD" x="-127." y="0." alt="185."/>
+    <waypoint name="_BASELEG" x="56." y="367."/>
+
+    <!-- >>> ADJUST ON THE DAY <<< Mission 4 search centre given by the organisers.
+         The alarm lies within 25 m of it; the first star is flown around this point.
+         Height 35 m = M4_SAFE_HEIGHT_M: the wind circle and the star are flown here. -->
+    <waypoint name="M4C" lat="48.81045" lon="7.85170" height="35."/>
+
+    <!-- Star scratch waypoints: the module moves them for every leg (start, end, turn
+         circle centre) and sets their height from earcam_refine_height_from/to_m. -->
+    <waypoint name="_R_FROM" lat="48.81045" lon="7.85170" height="35."/>
+    <waypoint name="_R_TO" lat="48.81045" lon="7.85170" height="35."/>
+    <waypoint name="_R_TURN" lat="48.81045" lon="7.85170" height="35."/>
+
+    <!-- Release geometry, all computed in block drop_setup:
+           DROP      = the loudest spot at GROUND level (height 0 is the ground reference for
+                       the fall height), so keep height 0 here.
+           START     = 250 m before DROP on the run-in course. Its height (15 m) is where the
+                       final glide starts from: high enough to clear the 5 to 8 m bushes in
+                       the southern meadow, low enough for a 1:15 glide to 1.5 m.
+           _LEVEL    = level-off point 50 m before RELEASE at the release height.
+           RELEASE   = where the hatch opens, computed by nav_drop from wind, ground speed,
+                       fall height and TRIGGER_DELAY. Its height here is irrelevant.
+           _DROPTURN = base turn circle centre beside START (east side, open meadow).
+           _CLIMBOUT = 170 m past DROP in the lane at 35 m.
+         The waypoint names START and RELEASE are REQUIRED by the nav_drop module. -->
+    <waypoint name="DROP" lat="48.81045" lon="7.85170" height="0."/>
+    <waypoint name="START" lat="48.80990" lon="7.85170" height="15."/>
+    <waypoint name="_LEVEL" lat="48.81020" lon="7.85170" height="1.5"/>
+    <waypoint name="RELEASE" lat="48.81040" lon="7.85170" height="15."/>
+    <waypoint name="_DROPTURN" lat="48.80990" lon="7.85220" height="15."/>
+    <waypoint name="_CLIMBOUT" lat="48.81200" lon="7.85170" height="35."/>
+    <!-- Diagnostic only: where nav_drop expects the kit to land, moved at the release
+         command and downlinked so the GCS/log shows it. Compare with the mannequin. -->
+    <waypoint name="_IMPACT" lat="48.81045" lon="7.85170" height="0."/>
+
+    <!-- Obstacle sector corners (IGN LiDAR HD, September 2026), metres east/north of M4C.
+         M4_OW: west forest, its edge from (-12,-320) up to (-80,+320); the polygon is
+                closed 400 m to the west.  M4_OE: east tree row and the north-east hedge.
+         M4_ON: tree block closing the lane in the north. -->
+    <waypoint name="_OW1" lat="48.807572" lon="7.846244"/><!-- -400 E -320 N -->
+    <waypoint name="_OW2" lat="48.807572" lon="7.851536"/><!-- -12 E -320 N -->
+    <waypoint name="_OW3" lat="48.809910" lon="7.851536"/><!-- -12 E -60 N -->
+    <waypoint name="_OW4" lat="48.810162" lon="7.851495"/><!-- -15 E -32 N -->
+    <waypoint name="_OW5" lat="48.810702" lon="7.851427"/><!-- -20 E +28 N -->
+    <waypoint name="_OW6" lat="48.810810" lon="7.851318"/><!-- -28 E +40 N -->
+    <waypoint name="_OW7" lat="48.811035" lon="7.851223"/><!-- -35 E +65 N -->
+    <waypoint name="_OW8" lat="48.811439" lon="7.851086"/><!-- -45 E +110 N -->
+    <waypoint name="_OW9" lat="48.811709" lon="7.850950"/><!-- -55 E +140 N -->
+    <waypoint name="_OW10" lat="48.812518" lon="7.850813"/><!-- -65 E +230 N -->
+    <waypoint name="_OW11" lat="48.813328" lon="7.850609"/><!-- -80 E +320 N -->
+    <waypoint name="_OW12" lat="48.813328" lon="7.846244"/><!-- -400 E +320 N -->
+    <waypoint name="_OE1" lat="48.809928" lon="7.852109"/><!-- +30 E -58 N -->
+    <waypoint name="_OE2" lat="48.810135" lon="7.852000"/><!-- +22 E -35 N -->
+    <waypoint name="_OE3" lat="48.811035" lon="7.851973"/><!-- +20 E +65 N -->
+    <waypoint name="_OE4" lat="48.811394" lon="7.852177"/><!-- +35 E +105 N -->
+    <waypoint name="_OE5" lat="48.811484" lon="7.852791"/><!-- +80 E +115 N -->
+    <waypoint name="_OE6" lat="48.811799" lon="7.853337"/><!-- +120 E +150 N -->
+    <waypoint name="_OE7" lat="48.811799" lon="7.854155"/><!-- +180 E +150 N -->
+    <waypoint name="_OE8" lat="48.811529" lon="7.854155"/><!-- +180 E +120 N -->
+    <waypoint name="_OE9" lat="48.811259" lon="7.853337"/><!-- +120 E +90 N -->
+    <waypoint name="_OE10" lat="48.810630" lon="7.853132"/><!-- +105 E +20 N -->
+    <waypoint name="_OE11" lat="48.810180" lon="7.852518"/><!-- +60 E -30 N -->
+    <waypoint name="_OE12" lat="48.809928" lon="7.852382"/><!-- +50 E -58 N -->
+    <waypoint name="_ON1" lat="48.812356" lon="7.851291"/><!-- -30 E +212 N -->
+    <waypoint name="_ON2" lat="48.812356" lon="7.852109"/><!-- +30 E +212 N -->
+    <waypoint name="_ON3" lat="48.812069" lon="7.852109"/><!-- +30 E +180 N -->
+    <waypoint name="_ON4" lat="48.812069" lon="7.852791"/><!-- +80 E +180 N -->
+    <waypoint name="_ON5" lat="48.813418" lon="7.852791"/><!-- +80 E +330 N -->
+    <waypoint name="_ON6" lat="48.813418" lon="7.851291"/><!-- -30 E +330 N -->
+  </waypoints>
+
+  <sectors>
+    <sector name="M4_OW" color="red">
+      <corner name="_OW1"/>
+      <corner name="_OW2"/>
+      <corner name="_OW3"/>
+      <corner name="_OW4"/>
+      <corner name="_OW5"/>
+      <corner name="_OW6"/>
+      <corner name="_OW7"/>
+      <corner name="_OW8"/>
+      <corner name="_OW9"/>
+      <corner name="_OW10"/>
+      <corner name="_OW11"/>
+      <corner name="_OW12"/>
+    </sector>
+    <sector name="M4_OE" color="red">
+      <corner name="_OE1"/>
+      <corner name="_OE2"/>
+      <corner name="_OE3"/>
+      <corner name="_OE4"/>
+      <corner name="_OE5"/>
+      <corner name="_OE6"/>
+      <corner name="_OE7"/>
+      <corner name="_OE8"/>
+      <corner name="_OE9"/>
+      <corner name="_OE10"/>
+      <corner name="_OE11"/>
+      <corner name="_OE12"/>
+    </sector>
+    <sector name="M4_ON" color="red">
+      <corner name="_ON1"/>
+      <corner name="_ON2"/>
+      <corner name="_ON3"/>
+      <corner name="_ON4"/>
+      <corner name="_ON5"/>
+      <corner name="_ON6"/>
+    </sector>
+  </sectors>
+
+  <variables>
+    <!-- Retry counters; both are reset when m4_search is (re)started from the GCS. -->
+    <variable var="earcam_retry" type="uint8_t" init="0"/>
+    <variable var="drop_approaches" type="uint8_t" init="0"/>
+  </variables>
+
+  <modules>
+    <module name="digital_cam_earcam"/>
+    <module name="nav_drop"/>
+    <module name="wind_circle"/>
+  </modules>
+
+  <blocks>
+    <!-- ================================================================================
+         0. Start-up, take-off and hold. Standard EasyStar 3 sequence.
+         ================================================================================ -->
+
+    <!-- WHY: never arm before the GPS is good; the whole mission is GPS-referenced. -->
+    <block name="Wait GPS">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+    <!-- WHY: takes the ground reference (ground_alt, HOME) from the GPS at the launch spot
+         after 10 s of settling. Every "height" in this plan is relative to this reference. -->
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetGroundReferenceHere()"/>
+    </block>
+    <!-- Motor off, wings level, waiting for the Takeoff button. -->
+    <block name="Holding point">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <attitude roll="0" throttle="0" vmode="throttle"/>
+    </block>
+    <!-- Hand launch: motor on, climb towards CLIMB; 25 m above the reference -> Standby. -->
+    <block name="Takeoff" strip_icon="takeoff.png" strip_button="Takeoff (wp CLIMB)">
+      <set var="autopilot.kill_throttle" value="0"/>
+      <set var="autopilot.flight_time" value="0"/>
+      <set var="autopilot.launch" value="1"/>
+      <exception cond="GetPosAlt() @GT GetAltRef()+25" deroute="Standby"/>
+      <go wp="CLIMB"/>
+    </block>
+    <!-- Safe hold at 70 m and the exit of every mission path (success or abort). The motor
+         is explicitly re-enabled here because several mission blocks fly with it OFF. -->
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <call_once fun="autopilot_set_kill_throttle(false)"/>
+      <circle radius="nav_radius" wp="STDBY"/>
+    </block>
+
+    <!-- ================================================================================
+         1. Acoustic search around M4C
+         WHY a star and not a survey: the rules already put the alarm within 25 m of M4C.
+         Straight legs through the centre from 4 headings, each with the motor off over the
+         centre, give a sharp "loudest spot" in a few minutes. Every following star is
+         centred on the previous estimate, so the estimate homes in on the alarm.
+         ================================================================================ -->
+
+    <!-- GCS entry point (strip button). Resets the retry counters, measures the wind. -->
+    <block name="m4_search" strip_button="M4 search + drop" strip_icon="survey.png">
+      <set var="earcam_retry" value="0"/>
+      <set var="drop_approaches" value="0"/>
+      <deroute block="m4_wind"/>
+    </block>
+
+    <!-- Onboard wind measurement: one circle over M4C at the safe height and the star
+         airspeed, motor on. wind_circle collects the GPS ground speed in 36 course bins;
+         after 2/3 of a turn it fits the circle and publishes the wind (wind_circle.ready).
+         Normally done in about one turn (20 s); 2.5 turns without a fit (gusty, GPS poor)
+         -> continue anyway, nav_drop then works with the last known wind (zero at
+         start-up) and the run-in lane course is taken as it is.
+         WHY here and not in Standby: it is inside the autonomous sequence, so nothing
+         depends on the GCS, and 35 m is the height of the star that follows. -->
+    <block name="m4_wind">
+      <set var="v_ctl_auto_airspeed_setpoint" value="10.0"/>
+      <call_once fun="autopilot_set_kill_throttle(false)"/>
+      <call_once fun="wind_circle_start()"/>
+      <exception cond="wind_circle.ready @AND (NavCircleCount() @GT 1.0)" deroute="m4_star"/>
+      <exception cond="NavCircleCount() @GT 2.5" deroute="m4_star"/>
+      <circle radius="earcam_refine_turn_radius_m" wp="M4C"/>
+    </block>
+
+    <!-- Star configuration. These <set> lines are THE tuning knobs of the search:
+           airspeed 10 m/s        slow = more samples per metre and a smaller turn circle.
+           earcam_quiet_only 1    samples count only after the motor has been off for
+                                  EARCAM_QUIET_DELAY_S (1.5 s, prop spin-down); the pusher
+                                  prop sits right next to the microphone. 0 = always sample.
+           turn radius 30 m       about 19 deg bank at 10 m/s; legs become 2 x 72 m because
+                                  the module lengthens them so the turn circles fit.
+           height_from/to 35 m    leg start/end height above ground_alt (M4_SAFE_HEIGHT_M).
+                                  Equal values = level leg (the motor-off part still glides
+                                  down about 6 m, see refine_leg). THIS SITE: the star spans
+                                  130 m around the estimate, i.e. over the west forest and
+                                  the east trees (up to 18 m), so 35 m is the floor here.
+                                  Elsewhere lower = sharper peak; the module never goes
+                                  below EARCAM_REFINE_HEIGHT_MIN_M (8 m, airframe).
+           converge 1.5 m         done when two successive estimates agree within this.
+         earcam_start() clears MORA's sample buffer and starts the periodic EAR shots;
+         earcam_result_from_waypoint(M4C) makes M4C the "current estimate", so the first
+         star is centred on the given point without a survey. -->
+    <block name="m4_star">
+      <call_once fun="wind_circle_stop()"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="10.0"/>
+      <set var="earcam_quiet_only" value="1"/>
+      <set var="earcam_refine_turn_radius_m" value="30"/>
+      <set var="earcam_refine_height_from_m" value="M4_SAFE_HEIGHT_M"/>
+      <set var="earcam_refine_height_to_m" value="M4_SAFE_HEIGHT_M"/>
+      <set var="earcam_refine_converge_m" value="1.5"/>
+      <call_once fun="earcam_start()"/>
+      <call_once fun="earcam_result_from_waypoint(WP_M4C)"/>
+      <deroute block="refine_setup"/>
+    </block>
+
+    <!-- Star geometry: writes leg 0 into _R_FROM/_R_TO and the turn circle that follows it
+         into _R_TURN, all centred on the current estimate. Legs pass through the centre at
+         0, 45, 90 and 135 deg; consecutive legs are joined by one circle tangent to both. -->
+    <block name="refine_setup">
+      <call_once fun="earcam_refine_setup(WP__R_FROM, WP__R_TO, WP__R_TURN)"/>
+      <deroute block="refine_leg"/>
+    </block>
+
+    <!-- One straight leg _R_FROM -> _R_TO through the estimate.
+         HOW the quiet zone works: the pre_call runs every cycle and kills the throttle from
+         40 m BEFORE the centre until 30 m AFTER it; the motor is on elsewhere on the leg.
+         At 10 m/s that is 7 s without motor: 1.5 s spin-down, then about 5.5 s of clean
+         listening while the aircraft glides from 12 m to roughly 6 m (glide ratio 11).
+         Adjust (40, 30) if the prop stops slower/faster or the glide ends up too low.
+         The leg ends when the aircraft is within CARROT distance of _R_TO -> refine_turn. -->
+    <block name="refine_leg" pre_call="earcam_refine_leg_throttle(40, 30)">
+      <exception cond="NavApproachingFrom(WP__R_TO, WP__R_FROM, CARROT)" deroute="refine_turn"/>
+      <go from="_R_FROM" hmode="route" wp="_R_TO"/>
+    </block>
+
+    <!-- Turn circle onto the next leg, motor ON (the pre_call restores it every cycle; the
+         turn needs power and with quiet_only the samples taken here do not count).
+         Exit when the heading matches the next leg (earcam_refine_turning() false) or after
+         40 s as a safety net against circling forever in strong wind. -->
+    <block name="refine_turn" pre_call="autopilot_set_kill_throttle(false)">
+      <exception cond="!earcam_refine_turning()" deroute="refine_next"/>
+      <exception cond="NavBlockTime() @GT 40" deroute="refine_next"/>
+      <circle radius="earcam_refine_turn_radius()" wp="_R_TURN"/>
+    </block>
+
+    <!-- Advance to the next leg (returns 0 -> fly it). After the last leg of the star, ask
+         MORA for an interim solution over all samples so far (earcam_solve); sampling keeps
+         running. NOTE: request here, wait in the next block, because exceptions are checked
+         before the body: one block cannot both send the request and test the reply. -->
+    <block name="refine_next">
+      <exception cond="earcam_refine_next_leg(WP__R_FROM, WP__R_TO, WP__R_TURN) == 0" deroute="refine_leg"/>
+      <call_once fun="earcam_solve()"/>
+      <deroute block="refine_solve"/>
+    </block>
+
+    <!-- Wait for MORA's answer while circling the last turn point; it normally arrives
+         well under 1 s. No answer within 5 s = link or MORA problem -> m4_failed. -->
+    <block name="refine_solve">
+      <exception cond="earcam_result_fresh" deroute="refine_check"/>
+      <exception cond="NavBlockTime() @GT 5" deroute="m4_failed"/>
+      <circle radius="earcam_refine_turn_radius()" wp="_R_TURN"/>
+    </block>
+
+    <!-- Compare the new estimate with the previous one: sets earcam_refine_shift_m and
+         earcam_refine_converged (shift <= converge_m, or EARCAM_REFINE_MAX_ITERATIONS). -->
+    <block name="refine_check">
+      <call_once fun="earcam_refine_update()"/>
+      <deroute block="refine_decide"/>
+    </block>
+
+    <!-- Decide. Plausibility first: the rules put the alarm within 25 m of M4C, so an
+         estimate further than 35 m (25 m plus margin for the given point's own accuracy)
+         is noise from elsewhere (another drone, a generator...) -> m4_failed.
+         Converged -> release phase. Otherwise fly another star around the new estimate. -->
+    <block name="refine_decide">
+      <exception cond="!earcam_result_within(WP_M4C, 35)" deroute="m4_failed"/>
+      <exception cond="earcam_refine_converged" deroute="goto_loudspot"/>
+      <deroute block="refine_setup"/>
+    </block>
+
+    <!-- Search failure: motor on, stop sampling, count the retry. First failure: circle M4C
+         for 3 s and restart the whole search from M4C with a fresh sample buffer. Second
+         failure: hold in Standby and let the team decide (e.g. press "M4 search + drop"
+         again once the alarm is confirmed to be sounding). -->
+    <block name="m4_failed">
+      <call_once fun="autopilot_set_kill_throttle(false)"/>
+      <call_once fun="earcam_stop()"/>
+      <set var="earcam_retry" value="earcam_retry + 1"/>
+      <exception cond="earcam_retry @GT 1" deroute="Standby"/>
+      <exception cond="NavBlockTime() @GT 3" deroute="m4_star"/>
+      <circle radius="nav_radius" wp="M4C"/>
+    </block>
+
+    <!-- ================================================================================
+         2. Final result and low release
+         WHY nav_drop: it is the proven Paparazzi drop module (OBC 2014). It computes where
+         to open the hatch so that the kit, after TRIGGER_DELAY and its fall through the
+         air (with wind), lands ON the target. This plan only adds the low altitude profile
+         and the 2 m rule gate around it.
+         ================================================================================ -->
+
+    <!-- Stop sampling: MORA replies with the FINAL loudest spot over all samples and saves
+         the sound picture (photos/eNNNNNN.jpg on MORA). Motor on for the approach. -->
+    <block name="goto_loudspot">
+      <call_once fun="autopilot_set_kill_throttle(false)"/>
+      <call_once fun="earcam_stop()"/>
+      <deroute block="goto_loudspot_wait"/>
+    </block>
+    <!-- Wait for that final reply so DROP is exactly the pictured spot; if it does not come
+         within 5 s continue with the last interim result, which is nearly the same. -->
+    <block name="goto_loudspot_wait">
+      <exception cond="earcam_result_fresh" deroute="drop_setup"/>
+      <exception cond="NavBlockTime() @GT 5" deroute="drop_setup"/>
+      <circle radius="earcam_refine_turn_radius()" wp="_R_TURN"/>
+    </block>
+
+    <!-- Approach layout, as flown at the OBC 2014 (include_obc2014_mission.xml). Also the
+         GCS "Drop" button, to re-fly the approach by hand on the current DROP position.
+           1. DROP <- loudest spot (lat/lon only; height stays 0 = ground).
+           2. START <- 250 m before DROP on the run-in course. THE COURSE IS THE LANE
+              (M4_LANE_COURSE_DEG, south to north between the tree lines), tilted by up to
+              10 deg when that keeps a corridor 10 m either side of the track clear of the
+              obstacle sectors from START to 120 m past the target; among equally clear
+              tilts the one nearer to the wind (wind_circle_upwind_course) is taken.
+              WHY not simply upwind: with 4 m/s from the south-west the upwind course points
+              straight into the forest. Headwind only shortens the fall travel; a 45 m lane
+              between 15 m trees decides the direction.
+              WHY 250 m: a long straight run-in lets the lateral loop settle well under a
+              metre and leaves room to descend from 15 m to 1.5 m at a 1:15 glide.
+              No clear corridor at all (target within about 10 m of a tree line) ->
+              block drop_high: same lane, but the release is made from 35 m.
+           3. nav_drop_compute_approach: first RELEASE estimate and _DROPTURN (base turn circle
+              beside START, on the M4_DROPTURN_SIDE = east = open meadow side).
+           4. _CLIMBOUT <- 170 m past DROP in the lane at 35 m (replaces the nav_drop default
+              of 8 s past the release, which would have us turn towards the east trees while
+              still low). 170 m keeps it short of the north tree block for any target in
+              the 25 m circle.
+           5. _LEVEL <- 50 m before RELEASE at the release height: the glide ends here and the
+              last 50 m are flown level on the rangefinder so the height at release is stable.
+           6. Slow to 10 m/s (slower = shorter fall travel = smaller timing error).
+           7. Circle _DROPTURN until the heading is 15 deg short of the run-in heading, then
+              roll out onto the line START -> RELEASE. -->
+    <block name="drop_setup" strip_button="Drop" strip_icon="parachute.png">
+      <set var="drop_approaches" value="drop_approaches + 1"/>
+      <call_once fun="earcam_result_to_waypoint(WP_DROP)"/>
+      <call_once fun="earcam_place_run_in_lane(WP_START, WP_DROP, 250, 120, M4_LANE_MARGIN_M, M4_LANE_COURSE_DEG, M4_LANE_MAX_TILT_DEG, 5, wind_circle_upwind_course(), m4_obstacle)"/>
+      <deroute block="drop_approach"/>
+    </block>
+    <!-- Separate block: exceptions are tested before the body, so the corridor verdict of
+         drop_setup can only be acted on here. -->
+    <block name="drop_approach">
+      <exception cond="!earcam_run_in_clear" deroute="drop_high"/>
+      <call_once fun="nav_move_waypoint_enu(WP_START, WaypointX(WP_START), WaypointY(WP_START), WaypointAlt(WP_DROP) + 15)"/>
+      <call_once fun="nav_drop_compute_approach(WP_DROP, WP_START, WP__DROPTURN, WP__CLIMBOUT, M4_DROPTURN_SIDE * fabsf(nav_radius))"/>
+      <call_once fun="nav_move_waypoint_enu(WP__CLIMBOUT, WaypointX(WP_DROP) + (WaypointX(WP_DROP) - WaypointX(WP_START)) * 0.68, WaypointY(WP_DROP) + (WaypointY(WP_DROP) - WaypointY(WP_START)) * 0.68, WaypointAlt(WP_DROP) + M4_SAFE_HEIGHT_M)"/>
+      <call_once fun="earcam_drop_level_point(WP_START, WP_RELEASE, WP_DROP, WP__LEVEL, 50)"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="10.0"/>
+      <circle radius="M4_DROPTURN_SIDE * fabsf(nav_radius)" until="NavQdrCloseTo(DegOfRad(nav_drop_start_qdr)-15)" wp="_DROPTURN"/>
+      <deroute block="drop_glide"/>
+    </block>
+
+    <!-- Descent: straight glide START (15 m) -> _LEVEL (1.5 m). vmode="glide" gives the
+         altitude loop the correct sink-rate feed-forward, so the aircraft arrives at _LEVEL
+         at the right height instead of lagging above it. Every cycle nav_drop_update_release
+         re-computes RELEASE from the actual ground speed, wind and fall height (rangefinder
+         when in range); it returns true only on an internal error -> Standby.
+         Safety: rangefinder below 0.6 m (earcam_drop_too_low) -> go around at once.
+         Safety net: inside an obstacle sector below 25 m (blown or navigated off the lane)
+         -> drop_go_around: motor on, climb straight ahead. -->
+    <block name="drop_glide">
+      <exception cond="m4_obstacle(GetPosX(), GetPosY()) @AND (GetPosHeight() @LT M4_ESCAPE_HEIGHT_M)" deroute="drop_go_around"/>
+      <exception cond="earcam_drop_too_low(WP_DROP)" deroute="drop_go_around"/>
+      <exception cond="nav_drop_update_release(WP_DROP)" deroute="Standby"/>
+      <go from="START" hmode="route" vmode="glide" wp="_LEVEL"/>
+      <deroute block="drop_final"/>
+    </block>
+
+    <!-- Final 50 m: level at earcam_drop_release_agl_m (1.5 m) OVER THE GROUND MEASURED BY
+         THE RANGEFINDER (earcam_drop_altitude), so baro drift or a gentle slope do not
+         matter. RELEASE is still updated every cycle.
+         THE RELEASE is the third exception: in the cycle the aircraft crosses the line
+         through RELEASE perpendicular to the run-in (approaching_time 0), earcam_drop_shoot
+         checks the height; at or below earcam_drop_max_agl_m (2 m) it opens the hatch and
+         returns 0 -> drop_climbout. WHY an exception and not the next block: a block change
+         costs 2-3 navigation cycles, i.e. 1-1.5 m along track at 10 m/s.
+         Too high at that moment: the hatch stays closed (no points above 2 m, and the kit
+         would land further away anyway), the <go> finishes and we go to drop_missed. -->
+    <block name="drop_final">
+      <exception cond="m4_obstacle(GetPosX(), GetPosY()) @AND (GetPosHeight() @LT M4_ESCAPE_HEIGHT_M)" deroute="drop_go_around"/>
+      <exception cond="earcam_drop_too_low(WP_DROP)" deroute="drop_go_around"/>
+      <exception cond="nav_drop_update_release(WP_DROP)" deroute="Standby"/>
+      <exception cond="NavApproachingFrom(WP_RELEASE, WP__LEVEL, 0) @AND (earcam_drop_shoot(WP_DROP) == 0)" deroute="drop_climbout"/>
+      <go approaching_time="0" from="_LEVEL" hmode="route" wp="RELEASE" vmode="alt" alt="earcam_drop_altitude(WP_DROP)"/>
+      <deroute block="drop_missed"/>
+    </block>
+
+    <!-- Kit is away. Mark the expected impact point (_IMPACT) and downlink the geometry for
+         the log/GCS, then power up (12 m/s) and climb straight ahead in the lane to
+         _CLIMBOUT (170 m past DROP, 35 m); approaching_time 0 = fly all the way there, so
+         the turn towards Standby only starts above the trees. -->
+    <block name="drop_climbout">
+      <call_once fun="earcam_drop_mark_impact(WP_DROP, WP_RELEASE, WP__IMPACT)"/>
+      <call_once fun="DownlinkSendWpNr(WP__IMPACT)"/>
+      <call_once fun="DownlinkSendWpNr(WP_START)"/>
+      <call_once fun="DownlinkSendWpNr(WP_RELEASE)"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="12.0"/>
+      <go approaching_time="0" from="RELEASE" hmode="route" wp="_CLIMBOUT"/>
+      <deroute block="drop_decide"/>
+    </block>
+    <!-- Passed RELEASE above 2 m: nothing was dropped. Climb out the same way, then decide. -->
+    <block name="drop_missed">
+      <set var="v_ctl_auto_airspeed_setpoint" value="12.0"/>
+      <go approaching_time="0" from="RELEASE" hmode="route" wp="_CLIMBOUT"/>
+      <deroute block="drop_decide"/>
+    </block>
+
+    <!-- Rangefinder said "too low" (below 0.6 m), or the aircraft is low inside an obstacle
+         sector: motor on, full airspeed, climb away along the lane to _CLIMBOUT now. -->
+    <block name="drop_go_around">
+      <call_once fun="autopilot_set_kill_throttle(false)"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="12.0"/>
+      <go approaching_time="0" wp="_CLIMBOUT"/>
+      <deroute block="drop_decide"/>
+    </block>
+
+    <!-- No corridor clear of the trees for a low run-in (the target lies within about 10 m
+         of a tree line): release from the safe height instead. Same lane, START and
+         RELEASE at 35 m, nav_drop compensates the longer fall (wind from m4_wind matters
+         here). No low-release points, but the kit lands close and nothing is hit. -->
+    <block name="drop_high">
+      <call_once fun="nav_move_waypoint_enu(WP_START, WaypointX(WP_START), WaypointY(WP_START), WaypointAlt(WP_DROP) + M4_SAFE_HEIGHT_M)"/>
+      <call_once fun="nav_drop_compute_approach(WP_DROP, WP_START, WP__DROPTURN, WP__CLIMBOUT, M4_DROPTURN_SIDE * fabsf(nav_radius))"/>
+      <call_once fun="nav_move_waypoint_enu(WP__CLIMBOUT, WaypointX(WP_DROP) + (WaypointX(WP_DROP) - WaypointX(WP_START)) * 0.68, WaypointY(WP_DROP) + (WaypointY(WP_DROP) - WaypointY(WP_START)) * 0.68, WaypointAlt(WP_DROP) + M4_SAFE_HEIGHT_M)"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="10.0"/>
+      <circle radius="M4_DROPTURN_SIDE * fabsf(nav_radius)" until="NavQdrCloseTo(DegOfRad(nav_drop_start_qdr)-15)" wp="_DROPTURN"/>
+      <deroute block="drop_high_run"/>
+    </block>
+    <!-- Level run-in at 35 m; RELEASE is re-computed every cycle for the real ground speed and
+         fall height; the hatch opens when the RELEASE line is crossed (no 2 m gate). -->
+    <block name="drop_high_run">
+      <exception cond="nav_drop_update_release(WP_DROP)" deroute="Standby"/>
+      <exception cond="NavApproachingFrom(WP_RELEASE, WP_START, 0) @AND (earcam_drop_shoot_high(WP_DROP) == 0)" deroute="drop_climbout"/>
+      <go approaching_time="0" from="START" hmode="route" wp="RELEASE"/>
+      <deroute block="drop_missed"/>
+    </block>
+
+    <!-- Released -> mission done, back to Standby (then press Land). Not released -> fly the
+         approach again; drop_setup lays it out anew from the present course. At most 3
+         approaches in total, then Standby so the team can decide. -->
+    <block name="drop_decide">
+      <exception cond="earcam_drop_released" deroute="Standby"/>
+      <exception cond="drop_approaches @GT 2" deroute="Standby"/>
+      <deroute block="drop_setup"/>
+    </block>
+
+    <!-- ================================================================================
+         3. Landing: base leg circle, glide AF -> TD, flare with the motor off.
+         Put TD in the designated landing area for the landing bonus.
+         ================================================================================ -->
+    <block name="land" strip_button="Land" strip_icon="land-right.png">
+      <call_once fun="nav_compute_baseleg(WP_AF, WP_TD, WP__BASELEG, nav_radius)"/>
+      <circle radius="nav_radius" until="NavCircleCount() @GT 0.5" wp="_BASELEG"/>
+      <circle radius="nav_radius" until="And(NavQdrCloseTo(DegOfRad(baseleg_out_qdr)-(nav_radius/fabs(nav_radius))*10), 10 @GT fabs(GetPosAlt() - WaypointAlt(WP__BASELEG)))" wp="_BASELEG"/>
+      <deroute block="final"/>
+    </block>
+    <block name="final">
+      <exception cond="GetAltRef() + 10 @GT GetPosAlt()" deroute="flare"/>
+      <go from="AF" hmode="route" vmode="glide" wp="TD"/>
+    </block>
+    <block name="flare">
+      <go approaching_time="0" from="AF" hmode="route" throttle="0.0" vmode="throttle" wp="TD"/>
+      <attitude roll="0.0" throttle="0.0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</flight_plan>

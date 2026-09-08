@@ -13,6 +13,7 @@ Start conquering the wolrd, by making incredible :doc:`flight_plans`!
     
     more_on_paparazzi_center
     airframe
+    airframe_autotune
     current_sensor_calibration
     flight_plans
     mission_mode

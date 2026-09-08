@@ -91,6 +91,52 @@ union mora_status_union {
 };
 
 /////////////////////////////////////////////////////////////////////
+// CAMERA SELECTION (additive; legacy MORA_SHOOT means MORA_CAMERA_ALL)
+
+#define MORA_CAMERA_ALL         0
+#define MORA_CAMERA_CHDK        1
+#define MORA_CAMERA_AICAM       2
+#define MORA_CAMERA_LWIRCAM     3
+#define MORA_CAMERA_EARCAM      4
+
+#define MORA_SHOOT_TARGETED          5
+#define MORA_SHOOT_TARGETED_MSG_SIZE (MORA_SHOOT_MSG_SIZE + 4)
+
+union dc_shot_targeted_union {
+  struct {
+    union dc_shot_union shot;
+    int32_t camera_id;
+  } data;
+  uint8_t bin[MORA_SHOOT_TARGETED_MSG_SIZE];
+};
+
+#define MORA_STOP_TARGETED           6
+#define MORA_STOP_TARGETED_MSG_SIZE  4
+// camera_id low byte selects the camera; MORA_STOP_FLAG_KEEP requests an
+// intermediate result while the sample session continues (refinement stages).
+#define MORA_STOP_FLAG_KEEP          0x100
+
+#define MORA_EAR_RESULT              7
+#define MORA_EAR_RESULT_MSG_SIZE     (4*8)
+
+#define MORA_EAR_RESULT_INVALID      0
+#define MORA_EAR_RESULT_VALID        1
+
+union mora_ear_result_union {
+  struct {
+    int32_t status;        // MORA_EAR_RESULT_VALID or MORA_EAR_RESULT_INVALID
+    int32_t lat;           // 1e7 deg
+    int32_t lon;           // 1e7 deg
+    int32_t agl_mm;        // listening height above the spot (median AGL of the loudest windows)
+    int32_t alt_mm;        // ellipsoid altitude of the spot (ground), same reference as dc_shot alt
+    int32_t level_cdb;     // loudest level in centi-dB
+    int32_t confidence;    // 0..1000
+    int32_t sample_count;
+  } data;
+  uint8_t bin[MORA_EAR_RESULT_MSG_SIZE];
+};
+
+/////////////////////////////////////////////////////////////////////
 // SENDING
 
 // Each platform supplies CameraLinkTransmit; this shared header stays OS-independent.

@@ -1,0 +1,42 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="wind_circle" dir="meteo" task="estimation">
+  <doc>
+    <description>
+      Onboard wind estimate from GPS ground speed while circling (fixed-wing).
+      Port of the ground server's wind estimator (tmtc/wind.ml) to the autopilot: at
+      constant airspeed the ground speed vectors over a turn lie on a circle whose centre
+      is the wind vector. Needs only GPS; no pitot, magnetometer or datalink.
+      Flight plan: call wind_circle_start(), circle until wind_circle.ready (about one
+      turn), call wind_circle_stop(). The result is published to the state interface, so
+      nav_drop, nav_compute_final_from_glide and other consumers of the state wind use it.
+      wind_circle_upwind_course() gives the course flying into the wind.
+    </description>
+    <define name="WIND_CIRCLE_BINS" value="36" description="course bins over 360 deg"/>
+    <define name="WIND_CIRCLE_MIN_BINS" value="24" description="bins needed before a fit is attempted"/>
+    <define name="WIND_CIRCLE_MAX_STDDEV" value="1.5" unit="m/s" description="reject fits with a larger sample spread around the circle"/>
+    <define name="WIND_CIRCLE_MIN_WIND" value="0.5" unit="m/s" description="below this the direction is not updated"/>
+  </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings name="wind_circle">
+        <dl_setting var="wind_circle.sampling" min="0" step="1" max="1" module="meteo/wind_circle" shortname="sampling" values="OFF|ON"/>
+        <dl_setting var="wind_circle.speed_mps" min="0" step="0.1" max="30" module="meteo/wind_circle" shortname="speed" unit="m/s"/>
+        <dl_setting var="wind_circle.dir_deg" min="0" step="1" max="360" module="meteo/wind_circle" shortname="from_deg" unit="deg"/>
+        <dl_setting var="wind_circle.airspeed_mps" min="0" step="0.1" max="50" module="meteo/wind_circle" shortname="fit_airspeed" unit="m/s"/>
+        <dl_setting var="wind_circle.stddev_mps" min="0" step="0.1" max="10" module="meteo/wind_circle" shortname="fit_stddev" unit="m/s"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <dep>
+    <depends>gps,@navigation</depends>
+  </dep>
+  <header>
+    <file name="wind_circle.h"/>
+  </header>
+  <init fun="wind_circle_init()"/>
+  <periodic fun="wind_circle_periodic()" freq="10." autorun="TRUE"/>
+  <makefile target="ap|nps|sim">
+    <file name="wind_circle.c"/>
+  </makefile>
+</module>

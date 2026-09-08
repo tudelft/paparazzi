@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paparazzi UAV - Airframe Auto-Tuning from Flight Logs</title>
+<style>
+ body{font-family:Helvetica,Arial,sans-serif;max-width:960px;margin:2em auto;padding:0 1em;line-height:1.55;color:#222}
+ h1{border-bottom:3px solid #2980b9;padding-bottom:.3em} h2{color:#2980b9;margin-top:2em} h3{color:#444}
+ code{background:#f4f4f4;padding:.1em .3em;border-radius:3px;font-size:.92em}
+ pre{background:#f4f4f4;padding:1em;overflow-x:auto;border-left:4px solid #2980b9} pre code{background:none;padding:0}
+ table{border-collapse:collapse;width:100%;margin:1em 0} th,td{border:1px solid #ccc;padding:.5em;text-align:left;vertical-align:top} th{background:#e8f0fe}
+ .fig{margin:1.5em auto} .fig svg{width:100%;height:auto}
+ .adm{border-left:5px solid;padding:.6em 1em;margin:1.2em 0;border-radius:4px}
+ .tip{border-color:#1abc9c;background:#e8f8f5} .note{border-color:#2980b9;background:#e8f0fe} .warning{border-color:#e67e22;background:#fdf0e6} .important{border-color:#c0392b;background:#fbeaea}
+ footer{margin-top:3em;color:#777;font-size:.9em;border-top:1px solid #ddd;padding-top:1em}
+</style>
+<script>MathJax={tex:{inlineMath:[['$','$']],displayMath:[['$$','$$']]}};</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head><body>
+<h1>Airframe Auto-Tuning from Flight Logs</h1>
+<p>Manual test flights produce a lot of numbers. Most of them end up in a log file that nobody opens again. The <code>log_2_tuned_airframe.py</code> tool opens them for you: it reads a Paparazzi telemetry log, measures how the aircraft actually flew, derives a small set of airframe parameter corrections from physics, writes a <strong>new, version-numbered airframe file</strong>, compiles it to be sure it is valid, and prints a report explaining every change in plain language.</p>
+<p>The tool never edits your original airframe file. It only ever creates <code>&lt;airframe&gt;_optim_001.xml</code>, <code>_optim_002.xml</code>, and so on next to it, so every tuning round stays reviewable and reversible.</p>
+<div class="fig" style="max-width:100%"><svg width="1779pt" height="198pt"
+ viewBox="0.00 0.00 1779.00 198.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 193.75)">
+<title>autotune_process</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-193.75 1775.27,-193.75 1775.27,4 -4,4"/>
+<g id="clust1" class="cluster">
+<title>cluster_in</title>
+<polygon fill="none" stroke="#888888" stroke-dasharray="5,2" points="0,-28.75 0,-181.75 155.5,-181.75 155.5,-28.75 0,-28.75"/>
+<text xml:space="preserve" text-anchor="middle" x="77.75" y="-167.3" font-family="Helvetica,sans-Serif" font-size="11.00">Inputs &#160;(~/paparazzi/var/logs)</text>
+</g>
+<!-- logfile -->
+<g id="node1" class="node">
+<title>logfile</title>
+<path fill="#e8f0fe" stroke="black" d="M110.75,-152C110.75,-152 43.75,-152 43.75,-152 37.75,-152 31.75,-146 31.75,-140 31.75,-140 31.75,-115.5 31.75,-115.5 31.75,-109.5 37.75,-103.5 43.75,-103.5 43.75,-103.5 110.75,-103.5 110.75,-103.5 116.75,-103.5 122.75,-109.5 122.75,-115.5 122.75,-115.5 122.75,-140 122.75,-140 122.75,-146 116.75,-152 110.75,-152"/>
+<text xml:space="preserve" text-anchor="middle" x="77.25" y="-137.55" font-family="Helvetica,sans-Serif" font-size="11.00">flight.log</text>
+<text xml:space="preserve" text-anchor="middle" x="77.25" y="-124.05" font-family="Helvetica,sans-Serif" font-size="11.00">(conf, airframe,</text>
+<text xml:space="preserve" text-anchor="middle" x="77.25" y="-110.55" font-family="Helvetica,sans-Serif" font-size="11.00">flight plan copy)</text>
+</g>
+<!-- parse -->
+<g id="node3" class="node">
+<title>parse</title>
+<path fill="#fff4d6" stroke="black" d="M415.5,-121C415.5,-121 323,-121 323,-121 317,-121 311,-115 311,-109 311,-109 311,-84.5 311,-84.5 311,-78.5 317,-72.5 323,-72.5 323,-72.5 415.5,-72.5 415.5,-72.5 421.5,-72.5 427.5,-78.5 427.5,-84.5 427.5,-84.5 427.5,-109 427.5,-109 427.5,-115 421.5,-121 415.5,-121"/>
+<text xml:space="preserve" text-anchor="middle" x="369.25" y="-106.55" font-family="Helvetica,sans-Serif" font-size="11.00">1. Parse</text>
+<text xml:space="preserve" text-anchor="middle" x="369.25" y="-93.05" font-family="Helvetica,sans-Serif" font-size="11.00">filter AC_ID,</text>
+<text xml:space="preserve" text-anchor="middle" x="369.25" y="-79.55" font-family="Helvetica,sans-Serif" font-size="11.00">vectorise with numpy</text>
+</g>
+<!-- logfile&#45;&gt;parse -->
+<g id="edge1" class="edge">
+<title>logfile&#45;&gt;parse</title>
+<path fill="none" stroke="#555555" d="M123.24,-122.94C170.33,-117.91 244.84,-109.94 299.34,-104.11"/>
+<polygon fill="#555555" stroke="#555555" points="299.57,-107.61 309.14,-103.07 298.83,-100.65 299.57,-107.61"/>
+<text xml:space="preserve" text-anchor="middle" x="229.25" y="-130.17" font-family="Helvetica,sans-Serif" font-size="9.00">aircraft name,</text>
+<text xml:space="preserve" text-anchor="middle" x="229.25" y="-119.67" font-family="Helvetica,sans-Serif" font-size="9.00">airframe path</text>
+</g>
+<!-- datafile -->
+<g id="node2" class="node">
+<title>datafile</title>
+<path fill="#e8f0fe" stroke="black" d="M123.12,-85C123.12,-85 31.38,-85 31.38,-85 25.38,-85 19.38,-79 19.38,-73 19.38,-73 19.38,-48.5 19.38,-48.5 19.38,-42.5 25.38,-36.5 31.38,-36.5 31.38,-36.5 123.12,-36.5 123.12,-36.5 129.12,-36.5 135.12,-42.5 135.12,-48.5 135.12,-48.5 135.12,-73 135.12,-73 135.12,-79 129.12,-85 123.12,-85"/>
+<text xml:space="preserve" text-anchor="middle" x="77.25" y="-70.55" font-family="Helvetica,sans-Serif" font-size="11.00">flight.data</text>
+<text xml:space="preserve" text-anchor="middle" x="77.25" y="-57.05" font-family="Helvetica,sans-Serif" font-size="11.00">(timestamped</text>
+<text xml:space="preserve" text-anchor="middle" x="77.25" y="-43.55" font-family="Helvetica,sans-Serif" font-size="11.00">telemetry messages)</text>
+</g>
+<!-- datafile&#45;&gt;parse -->
+<g id="edge2" class="edge">
+<title>datafile&#45;&gt;parse</title>
+<path fill="none" stroke="#555555" d="M135.47,-63.72C178.88,-66.48 239.94,-71.45 293,-79.75 295.18,-80.09 297.4,-80.46 299.63,-80.85"/>
+<polygon fill="#555555" stroke="#555555" points="298.92,-84.28 309.4,-82.68 300.21,-77.4 298.92,-84.28"/>
+<text xml:space="preserve" text-anchor="middle" x="229.25" y="-92.2" font-family="Helvetica,sans-Serif" font-size="9.00">ATTITUDE, GPS, COMMANDS,</text>
+<text xml:space="preserve" text-anchor="middle" x="229.25" y="-81.7" font-family="Helvetica,sans-Serif" font-size="9.00">AIR_DATA, PPRZ_MODE, ...</text>
+</g>
+<!-- segment -->
+<g id="node4" class="node">
+<title>segment</title>
+<path fill="#fff4d6" stroke="black" d="M587,-121C587,-121 476.5,-121 476.5,-121 470.5,-121 464.5,-115 464.5,-109 464.5,-109 464.5,-84.5 464.5,-84.5 464.5,-78.5 470.5,-72.5 476.5,-72.5 476.5,-72.5 587,-72.5 587,-72.5 593,-72.5 599,-78.5 599,-84.5 599,-84.5 599,-109 599,-109 599,-115 593,-121 587,-121"/>
+<text xml:space="preserve" text-anchor="middle" x="531.75" y="-106.55" font-family="Helvetica,sans-Serif" font-size="11.00">2. Segment flight</text>
+<text xml:space="preserve" text-anchor="middle" x="531.75" y="-93.05" font-family="Helvetica,sans-Serif" font-size="11.00">airborne · straight+level ·</text>
+<text xml:space="preserve" text-anchor="middle" x="531.75" y="-79.55" font-family="Helvetica,sans-Serif" font-size="11.00">banked turns</text>
+</g>
+<!-- parse&#45;&gt;segment -->
+<g id="edge3" class="edge">
+<title>parse&#45;&gt;segment</title>
+<path fill="none" stroke="#555555" d="M427.74,-96.75C435.84,-96.75 444.28,-96.75 452.69,-96.75"/>
+<polygon fill="#555555" stroke="#555555" points="452.58,-100.25 462.58,-96.75 452.58,-93.25 452.58,-100.25"/>
+</g>
+<!-- analyse -->
+<g id="node5" class="node">
+<title>analyse</title>
+<path fill="#fff4d6" stroke="black" d="M749.5,-121C749.5,-121 648,-121 648,-121 642,-121 636,-115 636,-109 636,-109 636,-84.5 636,-84.5 636,-78.5 642,-72.5 648,-72.5 648,-72.5 749.5,-72.5 749.5,-72.5 755.5,-72.5 761.5,-78.5 761.5,-84.5 761.5,-84.5 761.5,-109 761.5,-109 761.5,-115 755.5,-121 749.5,-121"/>
+<text xml:space="preserve" text-anchor="middle" x="698.75" y="-106.55" font-family="Helvetica,sans-Serif" font-size="11.00">3. Measure</text>
+<text xml:space="preserve" text-anchor="middle" x="698.75" y="-93.05" font-family="Helvetica,sans-Serif" font-size="11.00">pitch trim error ·</text>
+<text xml:space="preserve" text-anchor="middle" x="698.75" y="-79.55" font-family="Helvetica,sans-Serif" font-size="11.00">rudder vs bank · radius</text>
+</g>
+<!-- segment&#45;&gt;analyse -->
+<g id="edge4" class="edge">
+<title>segment&#45;&gt;analyse</title>
+<path fill="none" stroke="#555555" d="M599.39,-96.75C607.63,-96.75 616.09,-96.75 624.42,-96.75"/>
+<polygon fill="#555555" stroke="#555555" points="624.16,-100.25 634.16,-96.75 624.16,-93.25 624.16,-100.25"/>
+</g>
+<!-- rules -->
+<g id="node6" class="node">
+<title>rules</title>
+<path fill="#fff4d6" stroke="black" d="M979.25,-79C979.25,-79 875.5,-79 875.5,-79 869.5,-79 863.5,-73 863.5,-67 863.5,-67 863.5,-42.5 863.5,-42.5 863.5,-36.5 869.5,-30.5 875.5,-30.5 875.5,-30.5 979.25,-30.5 979.25,-30.5 985.25,-30.5 991.25,-36.5 991.25,-42.5 991.25,-42.5 991.25,-67 991.25,-67 991.25,-73 985.25,-79 979.25,-79"/>
+<text xml:space="preserve" text-anchor="middle" x="927.38" y="-64.55" font-family="Helvetica,sans-Serif" font-size="11.00">4. Tuning rules</text>
+<text xml:space="preserve" text-anchor="middle" x="927.38" y="-51.05" font-family="Helvetica,sans-Serif" font-size="11.00">neutral pitch ·</text>
+<text xml:space="preserve" text-anchor="middle" x="927.38" y="-37.55" font-family="Helvetica,sans-Serif" font-size="11.00">ruddervon mixing · radii</text>
+</g>
+<!-- analyse&#45;&gt;rules -->
+<g id="edge5" class="edge">
+<title>analyse&#45;&gt;rules</title>
+<path fill="none" stroke="#555555" d="M761.85,-85.94C787.74,-81.36 818.09,-75.9 845.5,-70.75 847.66,-70.34 849.86,-69.93 852.07,-69.5"/>
+<polygon fill="#555555" stroke="#555555" points="852.62,-72.96 861.78,-67.64 851.3,-66.09 852.62,-72.96"/>
+</g>
+<!-- write -->
+<g id="node7" class="node">
+<title>write</title>
+<path fill="#e6f7e6" stroke="black" d="M1155.25,-79C1155.25,-79 1040.25,-79 1040.25,-79 1034.25,-79 1028.25,-73 1028.25,-67 1028.25,-67 1028.25,-42.5 1028.25,-42.5 1028.25,-36.5 1034.25,-30.5 1040.25,-30.5 1040.25,-30.5 1155.25,-30.5 1155.25,-30.5 1161.25,-30.5 1167.25,-36.5 1167.25,-42.5 1167.25,-42.5 1167.25,-67 1167.25,-67 1167.25,-73 1161.25,-79 1155.25,-79"/>
+<text xml:space="preserve" text-anchor="middle" x="1097.75" y="-64.55" font-family="Helvetica,sans-Serif" font-size="11.00">5. Write XML</text>
+<text xml:space="preserve" text-anchor="middle" x="1097.75" y="-51.05" font-family="Helvetica,sans-Serif" font-size="11.00">&lt;name&gt;_optim_NNN.xml</text>
+<text xml:space="preserve" text-anchor="middle" x="1097.75" y="-37.55" font-family="Helvetica,sans-Serif" font-size="11.00">(auto&#45;increment)</text>
+</g>
+<!-- rules&#45;&gt;write -->
+<g id="edge6" class="edge">
+<title>rules&#45;&gt;write</title>
+<path fill="none" stroke="#555555" d="M991.55,-54.75C999.7,-54.75 1008.13,-54.75 1016.5,-54.75"/>
+<polygon fill="#555555" stroke="#555555" points="1016.35,-58.25 1026.35,-54.75 1016.35,-51.25 1016.35,-58.25"/>
+</g>
+<!-- build -->
+<g id="node8" class="node">
+<title>build</title>
+<path fill="#e6f7e6" stroke="black" d="M1350.75,-79C1350.75,-79 1216.25,-79 1216.25,-79 1210.25,-79 1204.25,-73 1204.25,-67 1204.25,-67 1204.25,-42.5 1204.25,-42.5 1204.25,-36.5 1210.25,-30.5 1216.25,-30.5 1216.25,-30.5 1350.75,-30.5 1350.75,-30.5 1356.75,-30.5 1362.75,-36.5 1362.75,-42.5 1362.75,-42.5 1362.75,-67 1362.75,-67 1362.75,-73 1356.75,-79 1350.75,-79"/>
+<text xml:space="preserve" text-anchor="middle" x="1283.5" y="-64.55" font-family="Helvetica,sans-Serif" font-size="11.00">6. Build check</text>
+<text xml:space="preserve" text-anchor="middle" x="1283.5" y="-51.05" font-family="Helvetica,sans-Serif" font-size="11.00">make &#45;f Makefile.ac</text>
+<text xml:space="preserve" text-anchor="middle" x="1283.5" y="-37.55" font-family="Helvetica,sans-Serif" font-size="11.00">AIRCRAFT=&lt;ac&gt; ap.compile</text>
+</g>
+<!-- write&#45;&gt;build -->
+<g id="edge7" class="edge">
+<title>write&#45;&gt;build</title>
+<path fill="none" stroke="#555555" d="M1167.69,-54.75C1175.82,-54.75 1184.19,-54.75 1192.55,-54.75"/>
+<polygon fill="#555555" stroke="#555555" points="1192.39,-58.25 1202.39,-54.75 1192.39,-51.25 1192.39,-58.25"/>
+</g>
+<!-- pass -->
+<g id="node11" class="node">
+<title>pass</title>
+<ellipse fill="#c8f0c8" stroke="black" cx="1525.89" cy="-85.75" rx="27.74" ry="18"/>
+<text xml:space="preserve" text-anchor="middle" x="1525.89" y="-82.05" font-family="Helvetica,sans-Serif" font-size="11.00">PASS</text>
+</g>
+<!-- build&#45;&gt;pass -->
+<g id="edge9" class="edge">
+<title>build&#45;&gt;pass</title>
+<path fill="none" stroke="#555555" d="M1363.21,-64.9C1404.86,-70.27 1454.07,-76.62 1487.17,-80.89"/>
+<polygon fill="#555555" stroke="#555555" points="1486.3,-84.3 1496.67,-82.11 1487.2,-77.36 1486.3,-84.3"/>
+<text xml:space="preserve" text-anchor="middle" x="1396.5" y="-73.13" font-family="Helvetica,sans-Serif" font-size="9.00">exit 0</text>
+</g>
+<!-- fail -->
+<g id="node12" class="node">
+<title>fail</title>
+<ellipse fill="#f8c8c8" stroke="black" cx="1525.89" cy="-24.75" rx="95.64" ry="24.75"/>
+<text xml:space="preserve" text-anchor="middle" x="1525.89" y="-27.8" font-family="Helvetica,sans-Serif" font-size="11.00">FAIL</text>
+<text xml:space="preserve" text-anchor="middle" x="1525.89" y="-14.3" font-family="Helvetica,sans-Serif" font-size="11.00">(exception + diagnostics)</text>
+</g>
+<!-- build&#45;&gt;fail -->
+<g id="edge10" class="edge">
+<title>build&#45;&gt;fail</title>
+<path fill="none" stroke="#555555" d="M1363.21,-44.93C1383.76,-42.36 1406.14,-39.57 1427.53,-36.9"/>
+<polygon fill="#555555" stroke="#555555" points="1427.95,-40.37 1437.44,-35.66 1427.09,-33.43 1427.95,-40.37"/>
+<text xml:space="preserve" text-anchor="middle" x="1396.5" y="-44.39" font-family="Helvetica,sans-Serif" font-size="9.00">exit != 0</text>
+</g>
+<!-- report -->
+<g id="node9" class="node">
+<title>report</title>
+<path fill="#e6f7e6" stroke="black" d="M1759.27,-72.75C1759.27,-72.75 1670.52,-72.75 1670.52,-72.75 1664.52,-72.75 1658.52,-66.75 1658.52,-60.75 1658.52,-60.75 1658.52,-48.75 1658.52,-48.75 1658.52,-42.75 1664.52,-36.75 1670.52,-36.75 1670.52,-36.75 1759.27,-36.75 1759.27,-36.75 1765.27,-36.75 1771.27,-42.75 1771.27,-48.75 1771.27,-48.75 1771.27,-60.75 1771.27,-60.75 1771.27,-66.75 1765.27,-72.75 1759.27,-72.75"/>
+<text xml:space="preserve" text-anchor="middle" x="1714.9" y="-57.8" font-family="Helvetica,sans-Serif" font-size="11.00">7. Audit report</text>
+<text xml:space="preserve" text-anchor="middle" x="1714.9" y="-44.3" font-family="Helvetica,sans-Serif" font-size="11.00">terminal + .report.txt</text>
+</g>
+<!-- base -->
+<g id="node10" class="node">
+<title>base</title>
+<polygon fill="#f3e8ff" stroke="black" points="746.5,-54.75 645,-54.75 645,-18.75 752.5,-18.75 752.5,-48.75 746.5,-54.75"/>
+<polyline fill="none" stroke="black" points="746.5,-54.75 746.5,-48.75"/>
+<polyline fill="none" stroke="black" points="752.5,-48.75 746.5,-48.75"/>
+<text xml:space="preserve" text-anchor="middle" x="698.75" y="-39.8" font-family="Helvetica,sans-Serif" font-size="11.00">base airframe XML</text>
+<text xml:space="preserve" text-anchor="middle" x="698.75" y="-26.3" font-family="Helvetica,sans-Serif" font-size="11.00">conf/airframes/...</text>
+</g>
+<!-- base&#45;&gt;rules -->
+<g id="edge8" class="edge">
+<title>base&#45;&gt;rules</title>
+<path fill="none" stroke="#555555" d="M752.88,-40.97C782.37,-43.31 819.53,-46.26 851.88,-48.83"/>
+<polygon fill="#555555" stroke="#555555" points="851.35,-52.3 861.59,-49.6 851.9,-45.32 851.35,-52.3"/>
+<text xml:space="preserve" text-anchor="middle" x="812.5" y="-60.34" font-family="Helvetica,sans-Serif" font-size="9.00">text edits keep</text>
+<text xml:space="preserve" text-anchor="middle" x="812.5" y="-49.84" font-family="Helvetica,sans-Serif" font-size="9.00">comments intact</text>
+</g>
+<!-- pass&#45;&gt;report -->
+<g id="edge11" class="edge">
+<title>pass&#45;&gt;report</title>
+<path fill="none" stroke="#555555" d="M1553.28,-81.37C1577.6,-77.34 1614.72,-71.19 1647.14,-65.81"/>
+<polygon fill="#555555" stroke="#555555" points="1647.6,-69.29 1656.9,-64.2 1646.46,-62.38 1647.6,-69.29"/>
+</g>
+<!-- fail&#45;&gt;report -->
+<g id="edge12" class="edge">
+<title>fail&#45;&gt;report</title>
+<path fill="none" stroke="#555555" d="M1608.1,-37.78C1621,-39.85 1634.22,-41.97 1646.76,-43.98"/>
+<polygon fill="#555555" stroke="#555555" points="1646.13,-47.42 1656.55,-45.55 1647.23,-40.51 1646.13,-47.42"/>
+</g>
+</g>
+</svg>
+</div>
+
+<h2>What It Solves</h2>
+<p>The tool targets the complaints that show up most often after the first stabilized (AUTO1) flights of a new fixed-wing airframe, and prepares the energy and navigation loops for the first autonomous (AUTO2) flight:</p>
+<table>
+<thead>
+<tr>
+<th>Symptom in flight</th>
+<th>What the log shows</th>
+<th>What is corrected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Elevator sits permanently off-centre in level flight; the pitch integrator is doing the trimming</td>
+<td>The pitch loop holds a constant <code>COMMANDS</code> elevator while body pitch $\theta$ from <code>ATTITUDE</code> differs from the <code>DESIRED</code> pitch</td>
+<td><code>COMMAND_PITCH_TRIM</code> absorbs the steady elevator; the nominal cruise pitch is set to the measured value</td>
+</tr>
+<tr>
+<td>One wing heavy; aileron never centred</td>
+<td>The roll loop holds a constant <code>COMMANDS</code> aileron to fly wings level</td>
+<td><code>COMMAND_ROLL_TRIM</code> absorbs the steady aileron</td>
+</tr>
+<tr>
+<td>Turns are wide, the pilot has to hold a lot of rudder to keep them coordinated</td>
+<td><code>COMMANDS</code> yaw is large and saturating whenever <code>ATTITUDE</code> roll is large</td>
+<td>Roll is mixed into the ruddervators (<code>RUDDERVONS_OF_ROLL</code>), rudder attenuation in AUTO is removed, navigation radii are set to the requested minimum</td>
+</tr>
+<tr>
+<td>The ETECS energy controller was tuned from a simulator model and the real aircraft flies at a different throttle, speed or climb capability</td>
+<td>Throttle, climb rate and airspeed in quasi-steady flight describe the real plant</td>
+<td>Cruise throttle, cruise airspeed, throttle-per-climb, pitch-per-climb, throttle-per-airspeed, maximum climb and glide ratio are set from measurements</td>
+</tr>
+<tr>
+<td>Unknown whether the course loop will oscillate in AUTO2</td>
+<td>Roll-setpoint tracking lag in AUTO1; course error statistics if AUTO2 exists</td>
+<td><code>H_CTL_COURSE_PGAIN</code> is reduced when the bandwidth separation to the roll loop is unsafe, or trimmed &plusmn;20 % from measured AUTO2 tracking</td>
+</tr>
+</tbody>
+</table>
+<div class="adm important"><strong>Important</strong>
+
+Everything except the *measured* course-loop retune is derived from **AUTO1** flight. You do not need to risk an autonomous flight to get trims and a realistic energy-controller starting point: the aircraft only has to fly stabilized straight legs, turns, a full-throttle climb and an idle glide. When the log contains at least 60 s of airborne AUTO2, the course loop is tuned from data as well; otherwise the report explains what a short AUTO2 flight would add.
+
+</div>
+
+<h2>Requirements</h2>
+<ul>
+<li>Python 3.8 or newer with <code>numpy</code> (already required by the Paparazzi Python tools).</li>
+<li>A <code>.log</code>/<code>.data</code> pair produced by the Paparazzi server in <code>var/logs</code>. The <code>.log</code> file must contain the <code>&lt;aircraft&gt;</code> entry for the aircraft you tune; it always does when the log was recorded with the normal ground segment.</li>
+<li>The aircraft must be defined in <code>conf/conf.xml</code> under the same name and <code>ac_id</code> as in the log, because the build verification calls <code>make -f Makefile.ac AIRCRAFT=&lt;name&gt; ap.compile</code>.</li>
+<li>A working <code>ap</code> build of the aircraft. The tool does not fix build problems unrelated to the airframe.</li>
+</ul>
+<div class="adm tip"><strong>Tip</strong>
+
+A good tuning flight has a few minutes of stabilized **AUTO1** with: some straight and level legs, sustained turns in both directions, at least one 10 s full-throttle climb at constant attitude, and one idle-throttle glide of 10 s or more. Pure MANUAL flight is ignored, because the controller setpoints needed for the comparison are not available in that mode.
+
+</div>
+
+<h2>Quick Start</h2>
+<pre><code class="language-bash">cd ~/paparazzi
+./sw/tools/autotune/log_2_tuned_airframe.py --log-name 26_09_05__18_42_28 --ac-id 129
+</code></pre>
+<p>This reads <code>var/logs/26_09_05__18_42_28.{log,data}</code>, finds the airframe path for AC_ID 129 inside the log, writes <code>conf/airframes/OPENUAS/&lt;airframe&gt;_optim_NNN.xml</code>, compiles the <code>ap</code> target with that file, and prints the report.</p>
+<p>To only look at the proposed changes without compiling:</p>
+<pre><code class="language-bash">./sw/tools/autotune/log_2_tuned_airframe.py --log-name 26_09_05__18_42_28 --ac-id 129 --no-build
+</code></pre>
+<h3>Command Line Options</h3>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--log-name NAME</code></td>
+<td><code>26_09_05__18_42_28</code></td>
+<td>Log basename without extension; both <code>NAME.log</code> and <code>NAME.data</code> must exist</td>
+</tr>
+<tr>
+<td><code>--log-dir DIR</code></td>
+<td><code>$PAPARAZZI_HOME/var/logs</code></td>
+<td>Where to find the log pair (symlinks are resolved)</td>
+</tr>
+<tr>
+<td><code>--airframe-out DIR</code></td>
+<td><code>$PAPARAZZI_HOME/conf/airframes/OPENUAS</code></td>
+<td>Where the <code>_optim_NNN.xml</code> and report are written</td>
+</tr>
+<tr>
+<td><code>--base XML</code></td>
+<td>airframe referenced in the log</td>
+<td>Airframe file to tune; pass a previous <code>_optim_NNN.xml</code> to iterate on it</td>
+</tr>
+<tr>
+<td><code>--ac-id N</code></td>
+<td><code>129</code></td>
+<td>Aircraft ID whose messages are analysed</td>
+</tr>
+<tr>
+<td><code>--turn-radius R</code></td>
+<td><code>30.0</code></td>
+<td>Requested minimum autonomous turn radius in metres</td>
+</tr>
+<tr>
+<td><code>--target T</code></td>
+<td><code>ap</code></td>
+<td>Firmware target used for the compile check</td>
+</tr>
+<tr>
+<td><code>--no-build</code></td>
+<td>off</td>
+<td>Skip the compile check (report says <code>SKIPPED</code>)</td>
+</tr>
+<tr>
+<td><code>-v</code></td>
+<td>off</td>
+<td>Verbose logging</td>
+</tr>
+</tbody>
+</table>
+<p>All paths are resolved with <code>pathlib.Path.resolve()</code>, so a <code>var/logs</code> or <code>conf/airframes</code> symbolic link pointing somewhere else on the disk works, and a broken link produces a clear error rather than a traceback.</p>
+<h2>How the Tuning Works</h2>
+<div class="fig" style="max-width:100%"><svg width="880pt" height="393pt"
+ viewBox="0.00 0.00 880.00 393.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 389)">
+<title>tuning_logic</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-389 876,-389 876,4 -4,4"/>
+<g id="clust1" class="cluster">
+<title>cluster_seg</title>
+<polygon fill="none" stroke="#888888" stroke-dasharray="5,2" points="8,-117 8,-270 169.75,-270 169.75,-117 8,-117"/>
+<text xml:space="preserve" text-anchor="middle" x="88.88" y="-255.55" font-family="Helvetica,sans-Serif" font-size="11.00">Flight segments</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_metric</title>
+<polygon fill="none" stroke="#888888" stroke-dasharray="5,2" points="190.75,-63 190.75,-377 327,-377 327,-63 190.75,-63"/>
+<text xml:space="preserve" text-anchor="middle" x="258.88" y="-362.55" font-family="Helvetica,sans-Serif" font-size="11.00">Measured</text>
+</g>
+<g id="clust3" class="cluster">
+<title>cluster_xml</title>
+<polygon fill="none" stroke="#888888" stroke-dasharray="5,2" points="437.75,-8 437.75,-310 864,-310 864,-8 437.75,-8"/>
+<text xml:space="preserve" text-anchor="middle" x="650.88" y="-295.55" font-family="Helvetica,sans-Serif" font-size="11.00">Airframe XML</text>
+</g>
+<!-- level -->
+<g id="node1" class="node">
+<title>level</title>
+<path fill="#e8f0fe" stroke="black" d="M149.75,-240.25C149.75,-240.25 28,-240.25 28,-240.25 22,-240.25 16,-234.25 16,-228.25 16,-228.25 16,-203.75 16,-203.75 16,-197.75 22,-191.75 28,-191.75 28,-191.75 149.75,-191.75 149.75,-191.75 155.75,-191.75 161.75,-197.75 161.75,-203.75 161.75,-203.75 161.75,-228.25 161.75,-228.25 161.75,-234.25 155.75,-240.25 149.75,-240.25"/>
+<text xml:space="preserve" text-anchor="middle" x="88.88" y="-225.8" font-family="Helvetica,sans-Serif" font-size="11.00">Straight &amp; level</text>
+<text xml:space="preserve" text-anchor="middle" x="88.88" y="-212.3" font-family="Helvetica,sans-Serif" font-size="11.00">|roll| &lt; 5°, |vz| &lt; 0.5 m/s,</text>
+<text xml:space="preserve" text-anchor="middle" x="88.88" y="-198.8" font-family="Helvetica,sans-Serif" font-size="11.00">|yaw rate| &lt; 5°/s, AUTO1/2</text>
+</g>
+<!-- m_theta -->
+<g id="node3" class="node">
+<title>m_theta</title>
+<path fill="#fff4d6" stroke="black" d="M292.38,-293.25C292.38,-293.25 225.38,-293.25 225.38,-293.25 219.38,-293.25 213.38,-287.25 213.38,-281.25 213.38,-281.25 213.38,-256.75 213.38,-256.75 213.38,-250.75 219.38,-244.75 225.38,-244.75 225.38,-244.75 292.38,-244.75 292.38,-244.75 298.38,-244.75 304.38,-250.75 304.38,-256.75 304.38,-256.75 304.38,-281.25 304.38,-281.25 304.38,-287.25 298.38,-293.25 292.38,-293.25"/>
+<text xml:space="preserve" text-anchor="middle" x="258.88" y="-278.8" font-family="Helvetica,sans-Serif" font-size="11.00">body pitch θ &#160;vs</text>
+<text xml:space="preserve" text-anchor="middle" x="258.88" y="-265.3" font-family="Helvetica,sans-Serif" font-size="11.00">desired pitch</text>
+<text xml:space="preserve" text-anchor="middle" x="258.88" y="-251.8" font-family="Helvetica,sans-Serif" font-size="11.00">→ trim error Δθ</text>
+</g>
+<!-- level&#45;&gt;m_theta -->
+<g id="edge1" class="edge">
+<title>level&#45;&gt;m_theta</title>
+<path fill="none" stroke="#555555" d="M162.1,-238.78C175.44,-242.99 189.19,-247.33 201.96,-251.36"/>
+<polygon fill="#555555" stroke="#555555" points="200.86,-254.68 211.45,-254.35 202.97,-248.01 200.86,-254.68"/>
+</g>
+<!-- m_elev -->
+<g id="node4" class="node">
+<title>m_elev</title>
+<path fill="#fff4d6" stroke="black" d="M294.25,-347C294.25,-347 223.5,-347 223.5,-347 217.5,-347 211.5,-341 211.5,-335 211.5,-335 211.5,-323 211.5,-323 211.5,-317 217.5,-311 223.5,-311 223.5,-311 294.25,-311 294.25,-311 300.25,-311 306.25,-317 306.25,-323 306.25,-323 306.25,-335 306.25,-335 306.25,-341 300.25,-347 294.25,-347"/>
+<text xml:space="preserve" text-anchor="middle" x="258.88" y="-332.05" font-family="Helvetica,sans-Serif" font-size="11.00">steady elevator</text>
+<text xml:space="preserve" text-anchor="middle" x="258.88" y="-318.55" font-family="Helvetica,sans-Serif" font-size="11.00">command (pprz)</text>
+</g>
+<!-- level&#45;&gt;m_elev -->
+<g id="edge2" class="edge">
+<title>level&#45;&gt;m_elev</title>
+<path fill="none" stroke="#555555" d="M114.22,-240.74C133.63,-259.43 162.2,-284.72 190.75,-302 194.02,-303.98 197.46,-305.87 200.98,-307.66"/>
+<polygon fill="#555555" stroke="#555555" points="199.17,-310.67 209.7,-311.81 202.17,-304.35 199.17,-310.67"/>
+</g>
+<!-- m_v -->
+<g id="node7" class="node">
+<title>m_v</title>
+<path fill="#fff4d6" stroke="black" d="M307,-227C307,-227 210.75,-227 210.75,-227 204.75,-227 198.75,-221 198.75,-215 198.75,-215 198.75,-203 198.75,-203 198.75,-197 204.75,-191 210.75,-191 210.75,-191 307,-191 307,-191 313,-191 319,-197 319,-203 319,-203 319,-215 319,-215 319,-221 313,-227 307,-227"/>
+<text xml:space="preserve" text-anchor="middle" x="258.88" y="-212.05" font-family="Helvetica,sans-Serif" font-size="11.00">mean airspeed V</text>
+<text xml:space="preserve" text-anchor="middle" x="258.88" y="-198.55" font-family="Helvetica,sans-Serif" font-size="11.00">(AIR_DATA.airspeed)</text>
+</g>
+<!-- level&#45;&gt;m_v -->
+<g id="edge3" class="edge">
+<title>level&#45;&gt;m_v</title>
+<path fill="none" stroke="#555555" d="M162.1,-212.99C170.32,-212.65 178.69,-212.3 186.9,-211.96"/>
+<polygon fill="#555555" stroke="#555555" points="186.99,-215.46 196.84,-211.54 186.7,-208.46 186.99,-215.46"/>
+</g>
+<!-- turn -->
+<g id="node2" class="node">
+<title>turn</title>
+<path fill="#e8f0fe" stroke="black" d="M136.62,-173.25C136.62,-173.25 41.12,-173.25 41.12,-173.25 35.12,-173.25 29.12,-167.25 29.12,-161.25 29.12,-161.25 29.12,-136.75 29.12,-136.75 29.12,-130.75 35.12,-124.75 41.12,-124.75 41.12,-124.75 136.62,-124.75 136.62,-124.75 142.62,-124.75 148.62,-130.75 148.62,-136.75 148.62,-136.75 148.62,-161.25 148.62,-161.25 148.62,-167.25 142.62,-173.25 136.62,-173.25"/>
+<text xml:space="preserve" text-anchor="middle" x="88.88" y="-158.8" font-family="Helvetica,sans-Serif" font-size="11.00">Banked turns</text>
+<text xml:space="preserve" text-anchor="middle" x="88.88" y="-145.3" font-family="Helvetica,sans-Serif" font-size="11.00">|roll| &gt; 15°, AUTO1/2,</text>
+<text xml:space="preserve" text-anchor="middle" x="88.88" y="-131.8" font-family="Helvetica,sans-Serif" font-size="11.00">airspeed &gt; 7 m/s</text>
+</g>
+<!-- m_yaw -->
+<g id="node5" class="node">
+<title>m_yaw</title>
+<path fill="#fff4d6" stroke="black" d="M291.25,-107C291.25,-107 226.5,-107 226.5,-107 220.5,-107 214.5,-101 214.5,-95 214.5,-95 214.5,-83 214.5,-83 214.5,-77 220.5,-71 226.5,-71 226.5,-71 291.25,-71 291.25,-71 297.25,-71 303.25,-77 303.25,-83 303.25,-83 303.25,-95 303.25,-95 303.25,-101 297.25,-107 291.25,-107"/>
+<text xml:space="preserve" text-anchor="middle" x="258.88" y="-92.05" font-family="Helvetica,sans-Serif" font-size="11.00">pilot rudder per</text>
+<text xml:space="preserve" text-anchor="middle" x="258.88" y="-78.55" font-family="Helvetica,sans-Serif" font-size="11.00">degree of bank</text>
+</g>
+<!-- turn&#45;&gt;m_yaw -->
+<g id="edge4" class="edge">
+<title>turn&#45;&gt;m_yaw</title>
+<path fill="none" stroke="#555555" d="M149.11,-127.85C166.86,-121.5 186.25,-114.58 203.66,-108.36"/>
+<polygon fill="#555555" stroke="#555555" points="204.56,-111.76 212.8,-105.1 202.2,-105.17 204.56,-111.76"/>
+</g>
+<!-- m_rate -->
+<g id="node6" class="node">
+<title>m_rate</title>
+<path fill="#fff4d6" stroke="black" d="M305.12,-173.25C305.12,-173.25 212.62,-173.25 212.62,-173.25 206.62,-173.25 200.62,-167.25 200.62,-161.25 200.62,-161.25 200.62,-136.75 200.62,-136.75 200.62,-130.75 206.62,-124.75 212.62,-124.75 212.62,-124.75 305.12,-124.75 305.12,-124.75 311.12,-124.75 317.12,-130.75 317.12,-136.75 317.12,-136.75 317.12,-161.25 317.12,-161.25 317.12,-167.25 311.12,-173.25 305.12,-173.25"/>
+<text xml:space="preserve" text-anchor="middle" x="258.88" y="-158.8" font-family="Helvetica,sans-Serif" font-size="11.00">achieved yaw rate vs</text>
+<text xml:space="preserve" text-anchor="middle" x="258.88" y="-145.3" font-family="Helvetica,sans-Serif" font-size="11.00">g·tan(φ)/V</text>
+<text xml:space="preserve" text-anchor="middle" x="258.88" y="-131.8" font-family="Helvetica,sans-Serif" font-size="11.00">→ coordination ratio</text>
+</g>
+<!-- turn&#45;&gt;m_rate -->
+<g id="edge5" class="edge">
+<title>turn&#45;&gt;m_rate</title>
+<path fill="none" stroke="#555555" d="M149.11,-149C161.97,-149 175.68,-149 188.87,-149"/>
+<polygon fill="#555555" stroke="#555555" points="188.8,-152.5 198.8,-149 188.8,-145.5 188.8,-152.5"/>
+</g>
+<!-- x_neutral -->
+<g id="node8" class="node">
+<title>x_neutral</title>
+<path fill="#e6f7e6" stroke="black" d="M622.25,-280C622.25,-280 457.75,-280 457.75,-280 451.75,-280 445.75,-274 445.75,-268 445.75,-268 445.75,-256 445.75,-256 445.75,-250 451.75,-244 457.75,-244 457.75,-244 622.25,-244 622.25,-244 628.25,-244 634.25,-250 634.25,-256 634.25,-256 634.25,-268 634.25,-268 634.25,-274 628.25,-280 622.25,-280"/>
+<text xml:space="preserve" text-anchor="middle" x="540" y="-265.05" font-family="Helvetica,sans-Serif" font-size="11.00">INS_PITCH_NEUTRAL_DEFAULT</text>
+<text xml:space="preserve" text-anchor="middle" x="540" y="-251.55" font-family="Helvetica,sans-Serif" font-size="11.00">+= Δθ &#160;(clamped ±5°)</text>
+</g>
+<!-- m_theta&#45;&gt;x_neutral -->
+<g id="edge6" class="edge">
+<title>m_theta&#45;&gt;x_neutral</title>
+<path fill="none" stroke="#555555" d="M304.72,-267.88C339.6,-267 389.42,-265.75 434.16,-264.63"/>
+<polygon fill="#555555" stroke="#555555" points="433.99,-268.13 443.89,-264.39 433.81,-261.14 433.99,-268.13"/>
+</g>
+<!-- x_cruise -->
+<g id="node9" class="node">
+<title>x_cruise</title>
+<path fill="#e6f7e6" stroke="black" d="M614.75,-226C614.75,-226 465.25,-226 465.25,-226 459.25,-226 453.25,-220 453.25,-214 453.25,-214 453.25,-202 453.25,-202 453.25,-196 459.25,-190 465.25,-190 465.25,-190 614.75,-190 614.75,-190 620.75,-190 626.75,-196 626.75,-202 626.75,-202 626.75,-214 626.75,-214 626.75,-220 620.75,-226 614.75,-226"/>
+<text xml:space="preserve" text-anchor="middle" x="540" y="-211.05" font-family="Helvetica,sans-Serif" font-size="11.00">V_CTL_AUTO_THROTTLE_</text>
+<text xml:space="preserve" text-anchor="middle" x="540" y="-197.55" font-family="Helvetica,sans-Serif" font-size="11.00">NOMINAL_CRUISE_PITCH = θ</text>
+</g>
+<!-- m_theta&#45;&gt;x_cruise -->
+<g id="edge8" class="edge">
+<title>m_theta&#45;&gt;x_cruise</title>
+<path fill="none" stroke="#555555" d="M304.72,-259.2C342.03,-251.05 396.43,-239.16 443.43,-228.89"/>
+<polygon fill="#555555" stroke="#555555" points="444.07,-232.33 453.1,-226.77 442.58,-225.49 444.07,-232.33"/>
+</g>
+<!-- m_elev&#45;&gt;x_neutral -->
+<g id="edge7" class="edge">
+<title>m_elev&#45;&gt;x_neutral</title>
+<path fill="none" stroke="#555555" stroke-dasharray="1,5" d="M306.59,-317.79C345.9,-308.35 403.19,-294.6 451.05,-283.11"/>
+<polygon fill="#555555" stroke="#555555" points="451.67,-286.56 460.58,-280.82 450.04,-279.75 451.67,-286.56"/>
+<text xml:space="preserve" text-anchor="middle" x="382.38" y="-311.15" font-family="Helvetica,sans-Serif" font-size="9.00">reported</text>
+</g>
+<!-- x_mix -->
+<g id="node10" class="node">
+<title>x_mix</title>
+<path fill="#e6f7e6" stroke="black" d="M612.5,-118C612.5,-118 467.5,-118 467.5,-118 461.5,-118 455.5,-112 455.5,-106 455.5,-106 455.5,-94 455.5,-94 455.5,-88 461.5,-82 467.5,-82 467.5,-82 612.5,-82 612.5,-82 618.5,-82 624.5,-88 624.5,-94 624.5,-94 624.5,-106 624.5,-106 624.5,-112 618.5,-118 612.5,-118"/>
+<text xml:space="preserve" text-anchor="middle" x="540" y="-103.05" font-family="Helvetica,sans-Serif" font-size="11.00">MIXER</text>
+<text xml:space="preserve" text-anchor="middle" x="540" y="-89.55" font-family="Helvetica,sans-Serif" font-size="11.00">RUDDERVONS_OF_ROLL = k</text>
+</g>
+<!-- m_yaw&#45;&gt;x_mix -->
+<g id="edge9" class="edge">
+<title>m_yaw&#45;&gt;x_mix</title>
+<path fill="none" stroke="#555555" d="M303.72,-89.8C337.6,-90.5 385.66,-91.71 427.75,-93.5 433.03,-93.72 438.45,-93.98 443.92,-94.24"/>
+<polygon fill="#555555" stroke="#555555" points="443.51,-97.73 453.67,-94.74 443.86,-90.74 443.51,-97.73"/>
+<text xml:space="preserve" text-anchor="middle" x="382.38" y="-95.45" font-family="Helvetica,sans-Serif" font-size="9.00">k = pprz/deg · 45/9600</text>
+</g>
+<!-- x_auto -->
+<g id="node12" class="node">
+<title>x_auto</title>
+<path fill="#e6f7e6" stroke="black" d="M604.25,-172C604.25,-172 475.75,-172 475.75,-172 469.75,-172 463.75,-166 463.75,-160 463.75,-160 463.75,-148 463.75,-148 463.75,-142 469.75,-136 475.75,-136 475.75,-136 604.25,-136 604.25,-136 610.25,-136 616.25,-142 616.25,-148 616.25,-148 616.25,-160 616.25,-160 616.25,-166 610.25,-172 604.25,-172"/>
+<text xml:space="preserve" text-anchor="middle" x="540" y="-157.05" font-family="Helvetica,sans-Serif" font-size="11.00">auto_rc_commands</text>
+<text xml:space="preserve" text-anchor="middle" x="540" y="-143.55" font-family="Helvetica,sans-Serif" font-size="11.00">YAW: @YAW*0.9 → @YAW</text>
+</g>
+<!-- m_yaw&#45;&gt;x_auto -->
+<g id="edge12" class="edge">
+<title>m_yaw&#45;&gt;x_auto</title>
+<path fill="none" stroke="#555555" d="M303.49,-99.16C343.19,-108.4 402.96,-122.32 452.36,-133.82"/>
+<polygon fill="#555555" stroke="#555555" points="451.37,-137.19 461.9,-136.05 452.95,-130.37 451.37,-137.19"/>
+</g>
+<!-- m_rate&#45;&gt;x_auto -->
+<g id="edge11" class="edge">
+<title>m_rate&#45;&gt;x_auto</title>
+<path fill="none" stroke="#555555" stroke-dasharray="1,5" d="M317.37,-150.03C356.2,-150.73 408.18,-151.66 452.04,-152.44"/>
+<polygon fill="#555555" stroke="#555555" points="451.72,-155.94 461.78,-152.62 451.85,-148.94 451.72,-155.94"/>
+<text xml:space="preserve" text-anchor="middle" x="382.38" y="-153.9" font-family="Helvetica,sans-Serif" font-size="9.00">rudder saturating</text>
+</g>
+<!-- x_radius -->
+<g id="node13" class="node">
+<title>x_radius</title>
+<path fill="#e6f7e6" stroke="black" d="M619.25,-64.25C619.25,-64.25 460.75,-64.25 460.75,-64.25 454.75,-64.25 448.75,-58.25 448.75,-52.25 448.75,-52.25 448.75,-27.75 448.75,-27.75 448.75,-21.75 454.75,-15.75 460.75,-15.75 460.75,-15.75 619.25,-15.75 619.25,-15.75 625.25,-15.75 631.25,-21.75 631.25,-27.75 631.25,-27.75 631.25,-52.25 631.25,-52.25 631.25,-58.25 625.25,-64.25 619.25,-64.25"/>
+<text xml:space="preserve" text-anchor="middle" x="540" y="-49.8" font-family="Helvetica,sans-Serif" font-size="11.00">MISC</text>
+<text xml:space="preserve" text-anchor="middle" x="540" y="-36.3" font-family="Helvetica,sans-Serif" font-size="11.00">MIN_CIRCLE_RADIUS,</text>
+<text xml:space="preserve" text-anchor="middle" x="540" y="-22.8" font-family="Helvetica,sans-Serif" font-size="11.00">LANDING_CIRCLE_RADIUS = R</text>
+</g>
+<!-- m_v&#45;&gt;x_radius -->
+<g id="edge13" class="edge">
+<title>m_v&#45;&gt;x_radius</title>
+<path fill="none" stroke="#555555" d="M319.12,-209.84C355.93,-206.99 401.17,-196.71 427.75,-166 454.96,-134.57 411.56,-105.29 437.75,-73 438.54,-72.03 439.35,-71.09 440.19,-70.18"/>
+<polygon fill="#555555" stroke="#555555" points="442.28,-73.01 447.32,-63.69 437.57,-67.83 442.28,-73.01"/>
+</g>
+<!-- x_laws -->
+<g id="node11" class="node">
+<title>x_laws</title>
+<path fill="#e6f7e6" stroke="black" d="M844,-124.25C844,-124.25 683.25,-124.25 683.25,-124.25 677.25,-124.25 671.25,-118.25 671.25,-112.25 671.25,-112.25 671.25,-87.75 671.25,-87.75 671.25,-81.75 677.25,-75.75 683.25,-75.75 683.25,-75.75 844,-75.75 844,-75.75 850,-75.75 856,-81.75 856,-87.75 856,-87.75 856,-112.25 856,-112.25 856,-118.25 850,-124.25 844,-124.25"/>
+<text xml:space="preserve" text-anchor="middle" x="763.62" y="-109.8" font-family="Helvetica,sans-Serif" font-size="11.00">command_laws</text>
+<text xml:space="preserve" text-anchor="middle" x="763.62" y="-96.3" font-family="Helvetica,sans-Serif" font-size="11.00">$ruddervons = @YAW + k·@ROLL</text>
+<text xml:space="preserve" text-anchor="middle" x="763.62" y="-82.8" font-family="Helvetica,sans-Serif" font-size="11.00">S_RUDDERVATOR_L/R use it</text>
+</g>
+<!-- x_mix&#45;&gt;x_laws -->
+<g id="edge10" class="edge">
+<title>x_mix&#45;&gt;x_laws</title>
+<path fill="none" stroke="#555555" d="M624.79,-100C636.21,-100 648.05,-100 659.76,-100"/>
+<polygon fill="#555555" stroke="#555555" points="659.43,-103.5 669.43,-100 659.43,-96.5 659.43,-103.5"/>
+</g>
+<!-- target -->
+<g id="node14" class="node">
+<title>target</title>
+<polygon fill="#f3e8ff" stroke="black" points="312.62,-53.25 199.12,-53.25 199.12,-4.75 318.62,-4.75 318.62,-47.25 312.62,-53.25"/>
+<polyline fill="none" stroke="black" points="312.62,-53.25 312.62,-47.25"/>
+<polyline fill="none" stroke="black" points="318.62,-47.25 312.62,-47.25"/>
+<text xml:space="preserve" text-anchor="middle" x="258.88" y="-38.8" font-family="Helvetica,sans-Serif" font-size="11.00">&#45;&#45;turn&#45;radius R</text>
+<text xml:space="preserve" text-anchor="middle" x="258.88" y="-25.3" font-family="Helvetica,sans-Serif" font-size="11.00">(CLI, default 30 m)</text>
+<text xml:space="preserve" text-anchor="middle" x="258.88" y="-11.8" font-family="Helvetica,sans-Serif" font-size="11.00">bank = atan(V²/(g·R))</text>
+</g>
+<!-- target&#45;&gt;x_radius -->
+<g id="edge14" class="edge">
+<title>target&#45;&gt;x_radius</title>
+<path fill="none" stroke="#555555" d="M319.07,-31.33C353.3,-32.68 397.31,-34.42 436.96,-35.98"/>
+<polygon fill="#555555" stroke="#555555" points="436.64,-39.47 446.77,-36.37 436.92,-32.47 436.64,-39.47"/>
+</g>
+</g>
+</svg>
+</div>
+
+<div class="fig" style="max-width:100%"><svg width="771pt" height="500pt"
+ viewBox="0.00 0.00 771.00 500.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 496)">
+<title>tuning_logic_iter2</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-496 766.5,-496 766.5,4 -4,4"/>
+<g id="clust1" class="cluster">
+<title>cluster_seg</title>
+<polygon fill="none" stroke="#888888" stroke-dasharray="5,2" points="8,-21 8,-377 165.25,-377 165.25,-21 8,-21"/>
+<text xml:space="preserve" text-anchor="middle" x="86.62" y="-362.55" font-family="Helvetica,sans-Serif" font-size="11.00">Flight segments</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_metric</title>
+<polygon fill="none" stroke="#888888" stroke-dasharray="5,2" points="276,-14 276,-478 404,-478 404,-14 276,-14"/>
+<text xml:space="preserve" text-anchor="middle" x="340" y="-463.55" font-family="Helvetica,sans-Serif" font-size="11.00">Measured</text>
+</g>
+<g id="clust3" class="cluster">
+<title>cluster_xml</title>
+<polygon fill="none" stroke="#888888" stroke-dasharray="5,2" points="514.75,-8 514.75,-484 754.5,-484 754.5,-8 514.75,-8"/>
+<text xml:space="preserve" text-anchor="middle" x="634.62" y="-469.55" font-family="Helvetica,sans-Serif" font-size="11.00">Airframe XML</text>
+</g>
+<!-- level -->
+<g id="node1" class="node">
+<title>level</title>
+<path fill="#e8f0fe" stroke="black" d="M119,-347C119,-347 54.25,-347 54.25,-347 48.25,-347 42.25,-341 42.25,-335 42.25,-335 42.25,-323 42.25,-323 42.25,-317 48.25,-311 54.25,-311 54.25,-311 119,-311 119,-311 125,-311 131,-317 131,-323 131,-323 131,-335 131,-335 131,-341 125,-347 119,-347"/>
+<text xml:space="preserve" text-anchor="middle" x="86.62" y="-332.05" font-family="Helvetica,sans-Serif" font-size="11.00">Straight &amp; level</text>
+<text xml:space="preserve" text-anchor="middle" x="86.62" y="-318.55" font-family="Helvetica,sans-Serif" font-size="11.00">(AUTO1/2)</text>
+</g>
+<!-- m_ail -->
+<g id="node7" class="node">
+<title>m_ail</title>
+<path fill="#fff4d6" stroke="black" d="M381,-448C381,-448 299,-448 299,-448 293,-448 287,-442 287,-436 287,-436 287,-424 287,-424 287,-418 293,-412 299,-412 299,-412 381,-412 381,-412 387,-412 393,-418 393,-424 393,-424 393,-436 393,-436 393,-442 387,-448 381,-448"/>
+<text xml:space="preserve" text-anchor="middle" x="340" y="-426.3" font-family="Helvetica,sans-Serif" font-size="11.00">steady aileron cmd</text>
+</g>
+<!-- level&#45;&gt;m_ail -->
+<g id="edge1" class="edge">
+<title>level&#45;&gt;m_ail</title>
+<path fill="none" stroke="#555555" d="M127.55,-347.34C142.44,-354.03 159.54,-361.54 175.25,-368 208.82,-381.81 246.7,-396.23 277.57,-407.68"/>
+<polygon fill="#555555" stroke="#555555" points="276.17,-410.89 286.76,-411.08 278.59,-404.33 276.17,-410.89"/>
+</g>
+<!-- m_elev -->
+<g id="node8" class="node">
+<title>m_elev</title>
+<path fill="#fff4d6" stroke="black" d="M384,-394C384,-394 296,-394 296,-394 290,-394 284,-388 284,-382 284,-382 284,-370 284,-370 284,-364 290,-358 296,-358 296,-358 384,-358 384,-358 390,-358 396,-364 396,-370 396,-370 396,-382 396,-382 396,-388 390,-394 384,-394"/>
+<text xml:space="preserve" text-anchor="middle" x="340" y="-372.3" font-family="Helvetica,sans-Serif" font-size="11.00">steady elevator cmd</text>
+</g>
+<!-- level&#45;&gt;m_elev -->
+<g id="edge3" class="edge">
+<title>level&#45;&gt;m_elev</title>
+<path fill="none" stroke="#555555" d="M131.41,-337.19C170.44,-344.48 228.14,-355.27 272.81,-363.62"/>
+<polygon fill="#555555" stroke="#555555" points="271.9,-367.02 282.38,-365.41 273.19,-360.13 271.9,-367.02"/>
+</g>
+<!-- qs -->
+<g id="node2" class="node">
+<title>qs</title>
+<path fill="#e8f0fe" stroke="black" d="M145.25,-239.25C145.25,-239.25 28,-239.25 28,-239.25 22,-239.25 16,-233.25 16,-227.25 16,-227.25 16,-202.75 16,-202.75 16,-196.75 22,-190.75 28,-190.75 28,-190.75 145.25,-190.75 145.25,-190.75 151.25,-190.75 157.25,-196.75 157.25,-202.75 157.25,-202.75 157.25,-227.25 157.25,-227.25 157.25,-233.25 151.25,-239.25 145.25,-239.25"/>
+<text xml:space="preserve" text-anchor="middle" x="86.62" y="-224.8" font-family="Helvetica,sans-Serif" font-size="11.00">Quasi&#45;steady</text>
+<text xml:space="preserve" text-anchor="middle" x="86.62" y="-211.3" font-family="Helvetica,sans-Serif" font-size="11.00">|roll| &lt; 10°, any climb rate,</text>
+<text xml:space="preserve" text-anchor="middle" x="86.62" y="-197.8" font-family="Helvetica,sans-Serif" font-size="11.00">throttle &gt; 2 % (AUTO1/2)</text>
+</g>
+<!-- m_cru -->
+<g id="node9" class="node">
+<title>m_cru</title>
+<path fill="#fff4d6" stroke="black" d="M382.12,-286C382.12,-286 297.88,-286 297.88,-286 291.88,-286 285.88,-280 285.88,-274 285.88,-274 285.88,-262 285.88,-262 285.88,-256 291.88,-250 297.88,-250 297.88,-250 382.12,-250 382.12,-250 388.12,-250 394.12,-256 394.12,-262 394.12,-262 394.12,-274 394.12,-274 394.12,-280 388.12,-286 382.12,-286"/>
+<text xml:space="preserve" text-anchor="middle" x="340" y="-271.05" font-family="Helvetica,sans-Serif" font-size="11.00">median throttle &amp; V</text>
+<text xml:space="preserve" text-anchor="middle" x="340" y="-257.55" font-family="Helvetica,sans-Serif" font-size="11.00">at |Vz| &lt; 0.3 m/s</text>
+</g>
+<!-- qs&#45;&gt;m_cru -->
+<g id="edge5" class="edge">
+<title>qs&#45;&gt;m_cru</title>
+<path fill="none" stroke="#555555" d="M157.65,-229.76C194.38,-237.51 239.06,-246.93 274.88,-254.48"/>
+<polygon fill="#555555" stroke="#555555" points="273.7,-257.81 284.21,-256.45 275.15,-250.96 273.7,-257.81"/>
+</g>
+<!-- m_reg -->
+<g id="node10" class="node">
+<title>m_reg</title>
+<path fill="#fff4d6" stroke="black" d="M372,-232.25C372,-232.25 308,-232.25 308,-232.25 302,-232.25 296,-226.25 296,-220.25 296,-220.25 296,-195.75 296,-195.75 296,-189.75 302,-183.75 308,-183.75 308,-183.75 372,-183.75 372,-183.75 378,-183.75 384,-189.75 384,-195.75 384,-195.75 384,-220.25 384,-220.25 384,-226.25 378,-232.25 372,-232.25"/>
+<text xml:space="preserve" text-anchor="middle" x="340" y="-217.8" font-family="Helvetica,sans-Serif" font-size="11.00">regressions</text>
+<text xml:space="preserve" text-anchor="middle" x="340" y="-204.3" font-family="Helvetica,sans-Serif" font-size="11.00">throttle ~ Vz, V</text>
+<text xml:space="preserve" text-anchor="middle" x="340" y="-190.8" font-family="Helvetica,sans-Serif" font-size="11.00">θ ~ Vz</text>
+</g>
+<!-- qs&#45;&gt;m_reg -->
+<g id="edge7" class="edge">
+<title>qs&#45;&gt;m_reg</title>
+<path fill="none" stroke="#555555" d="M157.65,-213.05C197.8,-211.93 247.45,-210.55 284.65,-209.51"/>
+<polygon fill="#555555" stroke="#555555" points="284.36,-213.02 294.25,-209.25 284.16,-206.03 284.36,-213.02"/>
+</g>
+<!-- wot -->
+<g id="node3" class="node">
+<title>wot</title>
+<path fill="#e8f0fe" stroke="black" d="M117.88,-293C117.88,-293 55.38,-293 55.38,-293 49.38,-293 43.38,-287 43.38,-281 43.38,-281 43.38,-269 43.38,-269 43.38,-263 49.38,-257 55.38,-257 55.38,-257 117.88,-257 117.88,-257 123.88,-257 129.88,-263 129.88,-269 129.88,-269 129.88,-281 129.88,-281 129.88,-287 123.88,-293 117.88,-293"/>
+<text xml:space="preserve" text-anchor="middle" x="86.62" y="-278.05" font-family="Helvetica,sans-Serif" font-size="11.00">Full throttle</text>
+<text xml:space="preserve" text-anchor="middle" x="86.62" y="-264.55" font-family="Helvetica,sans-Serif" font-size="11.00">throttle &gt; 95 %</text>
+</g>
+<!-- m_climb -->
+<g id="node11" class="node">
+<title>m_climb</title>
+<path fill="#fff4d6" stroke="black" d="M372.75,-340C372.75,-340 307.25,-340 307.25,-340 301.25,-340 295.25,-334 295.25,-328 295.25,-328 295.25,-316 295.25,-316 295.25,-310 301.25,-304 307.25,-304 307.25,-304 372.75,-304 372.75,-304 378.75,-304 384.75,-310 384.75,-316 384.75,-316 384.75,-328 384.75,-328 384.75,-334 378.75,-340 372.75,-340"/>
+<text xml:space="preserve" text-anchor="middle" x="340" y="-325.05" font-family="Helvetica,sans-Serif" font-size="11.00">sustained climb</text>
+<text xml:space="preserve" text-anchor="middle" x="340" y="-311.55" font-family="Helvetica,sans-Serif" font-size="11.00">(75th pct of Vz)</text>
+</g>
+<!-- wot&#45;&gt;m_climb -->
+<g id="edge9" class="edge">
+<title>wot&#45;&gt;m_climb</title>
+<path fill="none" stroke="#555555" d="M130.27,-282.97C172.58,-290.88 237.63,-303.05 283.85,-311.69"/>
+<polygon fill="#555555" stroke="#555555" points="282.92,-315.07 293.39,-313.47 284.2,-308.19 282.92,-315.07"/>
+</g>
+<!-- idle -->
+<g id="node4" class="node">
+<title>idle</title>
+<path fill="#e8f0fe" stroke="black" d="M134.38,-173C134.38,-173 38.88,-173 38.88,-173 32.88,-173 26.87,-167 26.87,-161 26.87,-161 26.87,-149 26.87,-149 26.87,-143 32.87,-137 38.87,-137 38.87,-137 134.38,-137 134.38,-137 140.38,-137 146.38,-143 146.38,-149 146.38,-149 146.38,-161 146.38,-161 146.38,-167 140.38,-173 134.38,-173"/>
+<text xml:space="preserve" text-anchor="middle" x="86.62" y="-158.05" font-family="Helvetica,sans-Serif" font-size="11.00">Idle glide</text>
+<text xml:space="preserve" text-anchor="middle" x="86.62" y="-144.55" font-family="Helvetica,sans-Serif" font-size="11.00">throttle &lt; 3 %, sinking</text>
+</g>
+<!-- m_glide -->
+<g id="node12" class="node">
+<title>m_glide</title>
+<path fill="#fff4d6" stroke="black" d="M355,-166C355,-166 325,-166 325,-166 319,-166 313,-160 313,-154 313,-154 313,-142 313,-142 313,-136 319,-130 325,-130 325,-130 355,-130 355,-130 361,-130 367,-136 367,-142 367,-142 367,-154 367,-154 367,-160 361,-166 355,-166"/>
+<text xml:space="preserve" text-anchor="middle" x="340" y="-144.3" font-family="Helvetica,sans-Serif" font-size="11.00">V / &#45;Vz</text>
+</g>
+<!-- idle&#45;&gt;m_glide -->
+<g id="edge12" class="edge">
+<title>idle&#45;&gt;m_glide</title>
+<path fill="none" stroke="#555555" d="M146.56,-153.36C194.37,-152.03 260.34,-150.19 301.3,-149.05"/>
+<polygon fill="#555555" stroke="#555555" points="301.24,-152.55 311.14,-148.78 301.05,-145.56 301.24,-152.55"/>
+</g>
+<!-- a1 -->
+<g id="node5" class="node">
+<title>a1</title>
+<path fill="#e8f0fe" stroke="black" d="M108.12,-119C108.12,-119 65.12,-119 65.12,-119 59.12,-119 53.12,-113 53.12,-107 53.12,-107 53.12,-95 53.12,-95 53.12,-89 59.12,-83 65.12,-83 65.12,-83 108.12,-83 108.12,-83 114.12,-83 120.12,-89 120.12,-95 120.12,-95 120.12,-107 120.12,-107 120.12,-113 114.12,-119 108.12,-119"/>
+<text xml:space="preserve" text-anchor="middle" x="86.62" y="-97.3" font-family="Helvetica,sans-Serif" font-size="11.00">All AUTO1</text>
+</g>
+<!-- m_lag -->
+<g id="node13" class="node">
+<title>m_lag</title>
+<path fill="#fff4d6" stroke="black" d="M382.12,-112C382.12,-112 297.88,-112 297.88,-112 291.88,-112 285.88,-106 285.88,-100 285.88,-100 285.88,-88 285.88,-88 285.88,-82 291.88,-76 297.88,-76 297.88,-76 382.12,-76 382.12,-76 388.12,-76 394.12,-82 394.12,-88 394.12,-88 394.12,-100 394.12,-100 394.12,-106 388.12,-112 382.12,-112"/>
+<text xml:space="preserve" text-anchor="middle" x="340" y="-97.05" font-family="Helvetica,sans-Serif" font-size="11.00">DESIRED.roll → φ</text>
+<text xml:space="preserve" text-anchor="middle" x="340" y="-83.55" font-family="Helvetica,sans-Serif" font-size="11.00">lag &amp; RMS</text>
+</g>
+<!-- a1&#45;&gt;m_lag -->
+<g id="edge14" class="edge">
+<title>a1&#45;&gt;m_lag</title>
+<path fill="none" stroke="#555555" d="M120.49,-100.08C159.3,-99 224.79,-97.18 273.97,-95.81"/>
+<polygon fill="#555555" stroke="#555555" points="274.05,-99.31 283.95,-95.53 273.86,-92.31 274.05,-99.31"/>
+<text xml:space="preserve" text-anchor="middle" x="220.62" y="-110.99" font-family="Helvetica,sans-Serif" font-size="9.00">model check:</text>
+<text xml:space="preserve" text-anchor="middle" x="220.62" y="-100.49" font-family="Helvetica,sans-Serif" font-size="9.00">roll bw / course bw ≥ 3</text>
+</g>
+<!-- a2 -->
+<g id="node6" class="node">
+<title>a2</title>
+<path fill="#fde8e8" stroke="black" stroke-dasharray="5,2" d="M142.25,-65C142.25,-65 31,-65 31,-65 25,-65 19,-59 19,-53 19,-53 19,-41 19,-41 19,-35 25,-29 31,-29 31,-29 142.25,-29 142.25,-29 148.25,-29 154.25,-35 154.25,-41 154.25,-41 154.25,-53 154.25,-53 154.25,-59 148.25,-65 142.25,-65"/>
+<text xml:space="preserve" text-anchor="middle" x="86.62" y="-50.05" font-family="Helvetica,sans-Serif" font-size="11.00">AUTO2 &gt;= 60 s airborne</text>
+<text xml:space="preserve" text-anchor="middle" x="86.62" y="-36.55" font-family="Helvetica,sans-Serif" font-size="11.00">(optional)</text>
+</g>
+<!-- m_crs -->
+<g id="node14" class="node">
+<title>m_crs</title>
+<path fill="#fff4d6" stroke="black" d="M380.62,-58C380.62,-58 299.38,-58 299.38,-58 293.38,-58 287.38,-52 287.38,-46 287.38,-46 287.38,-34 287.38,-34 287.38,-28 293.38,-22 299.38,-22 299.38,-22 380.62,-22 380.62,-22 386.62,-22 392.62,-28 392.62,-34 392.62,-34 392.62,-46 392.62,-46 392.62,-52 386.62,-58 380.62,-58"/>
+<text xml:space="preserve" text-anchor="middle" x="340" y="-43.05" font-family="Helvetica,sans-Serif" font-size="11.00">course error RMS,</text>
+<text xml:space="preserve" text-anchor="middle" x="340" y="-29.55" font-family="Helvetica,sans-Serif" font-size="11.00">sign changes / s</text>
+</g>
+<!-- a2&#45;&gt;m_crs -->
+<g id="edge16" class="edge">
+<title>a2&#45;&gt;m_crs</title>
+<path fill="none" stroke="#555555" d="M154.66,-45.13C192.36,-44.08 239.13,-42.78 276.12,-41.75"/>
+<polygon fill="#555555" stroke="#555555" points="275.86,-45.26 285.76,-41.48 275.66,-38.26 275.86,-45.26"/>
+<text xml:space="preserve" text-anchor="middle" x="220.62" y="-56.99" font-family="Helvetica,sans-Serif" font-size="9.00">±20 % on</text>
+<text xml:space="preserve" text-anchor="middle" x="220.62" y="-46.49" font-family="Helvetica,sans-Serif" font-size="9.00">oscillation / sluggish</text>
+</g>
+<!-- x_rtrim -->
+<g id="node15" class="node">
+<title>x_rtrim</title>
+<path fill="#e6f7e6" stroke="black" d="M693.62,-454C693.62,-454 575.62,-454 575.62,-454 569.62,-454 563.62,-448 563.62,-442 563.62,-442 563.62,-430 563.62,-430 563.62,-424 569.62,-418 575.62,-418 575.62,-418 693.62,-418 693.62,-418 699.62,-418 705.62,-424 705.62,-430 705.62,-430 705.62,-442 705.62,-442 705.62,-448 699.62,-454 693.62,-454"/>
+<text xml:space="preserve" text-anchor="middle" x="634.62" y="-439.05" font-family="Helvetica,sans-Serif" font-size="11.00">COMMAND_ROLL_TRIM</text>
+<text xml:space="preserve" text-anchor="middle" x="634.62" y="-425.55" font-family="Helvetica,sans-Serif" font-size="11.00">= flown + aileron</text>
+</g>
+<!-- m_ail&#45;&gt;x_rtrim -->
+<g id="edge2" class="edge">
+<title>m_ail&#45;&gt;x_rtrim</title>
+<path fill="none" stroke="#555555" d="M393.32,-431.07C437.41,-431.98 501.25,-433.29 552.05,-434.33"/>
+<polygon fill="#555555" stroke="#555555" points="551.76,-437.82 561.83,-434.53 551.9,-430.82 551.76,-437.82"/>
+</g>
+<!-- x_ptrim -->
+<g id="node16" class="node">
+<title>x_ptrim</title>
+<path fill="#e6f7e6" stroke="black" d="M696.25,-400C696.25,-400 573,-400 573,-400 567,-400 561,-394 561,-388 561,-388 561,-376 561,-376 561,-370 567,-364 573,-364 573,-364 696.25,-364 696.25,-364 702.25,-364 708.25,-370 708.25,-376 708.25,-376 708.25,-388 708.25,-388 708.25,-394 702.25,-400 696.25,-400"/>
+<text xml:space="preserve" text-anchor="middle" x="634.62" y="-385.05" font-family="Helvetica,sans-Serif" font-size="11.00">COMMAND_PITCH_TRIM</text>
+<text xml:space="preserve" text-anchor="middle" x="634.62" y="-371.55" font-family="Helvetica,sans-Serif" font-size="11.00">= flown + elevator</text>
+</g>
+<!-- m_elev&#45;&gt;x_ptrim -->
+<g id="edge4" class="edge">
+<title>m_elev&#45;&gt;x_ptrim</title>
+<path fill="none" stroke="#555555" d="M396.38,-377.14C439.58,-378.02 500.29,-379.27 549.49,-380.27"/>
+<polygon fill="#555555" stroke="#555555" points="549.18,-383.77 559.24,-380.47 549.32,-376.77 549.18,-383.77"/>
+</g>
+<!-- x_cru -->
+<g id="node17" class="node">
+<title>x_cru</title>
+<path fill="#e6f7e6" stroke="black" d="M734.5,-280C734.5,-280 534.75,-280 534.75,-280 528.75,-280 522.75,-274 522.75,-268 522.75,-268 522.75,-256 522.75,-256 522.75,-250 528.75,-244 534.75,-244 534.75,-244 734.5,-244 734.5,-244 740.5,-244 746.5,-250 746.5,-256 746.5,-256 746.5,-268 746.5,-268 746.5,-274 740.5,-280 734.5,-280"/>
+<text xml:space="preserve" text-anchor="middle" x="634.62" y="-265.05" font-family="Helvetica,sans-Serif" font-size="11.00">NOMINAL_CRUISE_THROTTLE</text>
+<text xml:space="preserve" text-anchor="middle" x="634.62" y="-251.55" font-family="Helvetica,sans-Serif" font-size="11.00">NOMINAL/AUTO/TRACKING_AIRSPEED</text>
+</g>
+<!-- m_cru&#45;&gt;x_cru -->
+<g id="edge6" class="edge">
+<title>m_cru&#45;&gt;x_cru</title>
+<path fill="none" stroke="#555555" d="M394.33,-266.91C427.03,-266.24 470.31,-265.35 511.06,-264.51"/>
+<polygon fill="#555555" stroke="#555555" points="511.04,-268.01 520.96,-264.31 510.89,-261.02 511.04,-268.01"/>
+</g>
+<!-- x_climb -->
+<g id="node19" class="node">
+<title>x_climb</title>
+<path fill="#e6f7e6" stroke="black" d="M719.88,-346.25C719.88,-346.25 549.38,-346.25 549.38,-346.25 543.38,-346.25 537.38,-340.25 537.38,-334.25 537.38,-334.25 537.38,-309.75 537.38,-309.75 537.38,-303.75 543.38,-297.75 549.38,-297.75 549.38,-297.75 719.88,-297.75 719.88,-297.75 725.88,-297.75 731.88,-303.75 731.88,-309.75 731.88,-309.75 731.88,-334.25 731.88,-334.25 731.88,-340.25 725.88,-346.25 719.88,-346.25"/>
+<text xml:space="preserve" text-anchor="middle" x="634.62" y="-331.8" font-family="Helvetica,sans-Serif" font-size="11.00">CLIMB_THROTTLE_INCREMENT</text>
+<text xml:space="preserve" text-anchor="middle" x="634.62" y="-318.3" font-family="Helvetica,sans-Serif" font-size="11.00">= (1 − cruise) / climb</text>
+<text xml:space="preserve" text-anchor="middle" x="634.62" y="-304.8" font-family="Helvetica,sans-Serif" font-size="11.00">ALTITUDE_MAX_CLIMB = 0.8·climb</text>
+</g>
+<!-- m_cru&#45;&gt;x_climb -->
+<g id="edge11" class="edge">
+<title>m_cru&#45;&gt;x_climb</title>
+<path fill="none" stroke="#555555" d="M394.33,-277.84C431.03,-284.61 481.06,-293.85 525.89,-302.12"/>
+<polygon fill="#555555" stroke="#555555" points="525.2,-305.55 535.67,-303.92 526.47,-298.67 525.2,-305.55"/>
+</g>
+<!-- adv -->
+<g id="node22" class="node">
+<title>adv</title>
+<polygon fill="#f3e8ff" stroke="black" points="682.75,-172.25 580.5,-172.25 580.5,-123.75 688.75,-123.75 688.75,-166.25 682.75,-172.25"/>
+<polyline fill="none" stroke="black" points="682.75,-172.25 682.75,-166.25"/>
+<polyline fill="none" stroke="black" points="688.75,-166.25 682.75,-166.25"/>
+<text xml:space="preserve" text-anchor="middle" x="634.62" y="-157.8" font-family="Helvetica,sans-Serif" font-size="11.00">ADVICE in report</text>
+<text xml:space="preserve" text-anchor="middle" x="634.62" y="-144.3" font-family="Helvetica,sans-Serif" font-size="11.00">(propulsion margin,</text>
+<text xml:space="preserve" text-anchor="middle" x="634.62" y="-130.8" font-family="Helvetica,sans-Serif" font-size="11.00">next&#45;flight plan)</text>
+</g>
+<!-- m_cru&#45;&gt;adv -->
+<g id="edge18" class="edge">
+<title>m_cru&#45;&gt;adv</title>
+<path fill="none" stroke="#555555" stroke-dasharray="1,5" d="M385.29,-249.63C391.61,-246.83 398,-243.9 404,-241 454.39,-216.61 462.84,-201.95 514.75,-181 532.02,-174.03 551.27,-167.99 569.17,-163.05"/>
+<polygon fill="#555555" stroke="#555555" points="569.89,-166.48 578.64,-160.51 568.08,-159.71 569.89,-166.48"/>
+<text xml:space="preserve" text-anchor="middle" x="459.38" y="-237.28" font-family="Helvetica,sans-Serif" font-size="9.00">cruise &gt; 70 %</text>
+</g>
+<!-- x_ff -->
+<g id="node18" class="node">
+<title>x_ff</title>
+<path fill="#e6f7e6" stroke="black" d="M722.12,-226C722.12,-226 547.12,-226 547.12,-226 541.12,-226 535.12,-220 535.12,-214 535.12,-214 535.12,-202 535.12,-202 535.12,-196 541.12,-190 547.12,-190 547.12,-190 722.12,-190 722.12,-190 728.12,-190 734.12,-196 734.12,-202 734.12,-202 734.12,-214 734.12,-214 734.12,-220 728.12,-226 722.12,-226"/>
+<text xml:space="preserve" text-anchor="middle" x="634.62" y="-211.05" font-family="Helvetica,sans-Serif" font-size="11.00">PITCH_OF_VZ_PGAIN</text>
+<text xml:space="preserve" text-anchor="middle" x="634.62" y="-197.55" font-family="Helvetica,sans-Serif" font-size="11.00">THROTTLE_OF_AIRSPEED_PGAIN</text>
+</g>
+<!-- m_reg&#45;&gt;x_ff -->
+<g id="edge8" class="edge">
+<title>m_reg&#45;&gt;x_ff</title>
+<path fill="none" stroke="#555555" d="M384.49,-208C421.05,-208 474.91,-208 523.22,-208"/>
+<polygon fill="#555555" stroke="#555555" points="523.2,-211.5 533.2,-208 523.2,-204.5 523.2,-211.5"/>
+</g>
+<!-- m_climb&#45;&gt;x_climb -->
+<g id="edge10" class="edge">
+<title>m_climb&#45;&gt;x_climb</title>
+<path fill="none" stroke="#555555" d="M385.13,-322C422.31,-322 477.07,-322 525.73,-322"/>
+<polygon fill="#555555" stroke="#555555" points="525.46,-325.5 535.46,-322 525.46,-318.5 525.46,-325.5"/>
+</g>
+<!-- x_glide -->
+<g id="node20" class="node">
+<title>x_glide</title>
+<path fill="#e6f7e6" stroke="black" d="M666.25,-106C666.25,-106 603,-106 603,-106 597,-106 591,-100 591,-94 591,-94 591,-82 591,-82 591,-76 597,-70 603,-70 603,-70 666.25,-70 666.25,-70 672.25,-70 678.25,-76 678.25,-82 678.25,-82 678.25,-94 678.25,-94 678.25,-100 672.25,-106 666.25,-106"/>
+<text xml:space="preserve" text-anchor="middle" x="634.62" y="-84.3" font-family="Helvetica,sans-Serif" font-size="11.00">GLIDE_RATIO</text>
+</g>
+<!-- m_glide&#45;&gt;x_glide -->
+<g id="edge13" class="edge">
+<title>m_glide&#45;&gt;x_glide</title>
+<path fill="none" stroke="#555555" d="M367.48,-142.57C415.26,-132.77 516.75,-111.96 579.68,-99.06"/>
+<polygon fill="#555555" stroke="#555555" points="580,-102.57 589.09,-97.13 578.59,-95.71 580,-102.57"/>
+</g>
+<!-- x_crs -->
+<g id="node21" class="node">
+<title>x_crs</title>
+<path fill="#e6f7e6" stroke="black" d="M695.5,-52C695.5,-52 573.75,-52 573.75,-52 567.75,-52 561.75,-46 561.75,-40 561.75,-40 561.75,-28 561.75,-28 561.75,-22 567.75,-16 573.75,-16 573.75,-16 695.5,-16 695.5,-16 701.5,-16 707.5,-22 707.5,-28 707.5,-28 707.5,-40 707.5,-40 707.5,-46 701.5,-52 695.5,-52"/>
+<text xml:space="preserve" text-anchor="middle" x="634.62" y="-30.3" font-family="Helvetica,sans-Serif" font-size="11.00">H_CTL_COURSE_PGAIN</text>
+</g>
+<!-- m_lag&#45;&gt;x_crs -->
+<g id="edge15" class="edge">
+<title>m_lag&#45;&gt;x_crs</title>
+<path fill="none" stroke="#555555" d="M394.56,-84.34C426.59,-78.44 468.06,-70.6 504.75,-63 519.57,-59.93 535.31,-56.52 550.51,-53.14"/>
+<polygon fill="#555555" stroke="#555555" points="550.99,-56.62 559.99,-51.02 549.47,-49.79 550.99,-56.62"/>
+<text xml:space="preserve" text-anchor="middle" x="459.38" y="-92.85" font-family="Helvetica,sans-Serif" font-size="9.00">model check:</text>
+<text xml:space="preserve" text-anchor="middle" x="459.38" y="-82.35" font-family="Helvetica,sans-Serif" font-size="9.00">roll bw / course bw ≥ 3</text>
+</g>
+<!-- m_lag&#45;&gt;adv -->
+<g id="edge19" class="edge">
+<title>m_lag&#45;&gt;adv</title>
+<path fill="none" stroke="#555555" stroke-dasharray="1,5" d="M394.41,-104.3C401.01,-105.56 407.66,-106.81 414,-108 466.22,-117.76 525.48,-128.54 569.27,-136.44"/>
+<polygon fill="#555555" stroke="#555555" points="568.39,-139.84 578.85,-138.17 569.63,-132.95 568.39,-139.84"/>
+</g>
+<!-- m_crs&#45;&gt;x_crs -->
+<g id="edge17" class="edge">
+<title>m_crs&#45;&gt;x_crs</title>
+<path fill="none" stroke="#555555" d="M392.98,-38.93C436.49,-38.04 499.42,-36.75 550.01,-35.71"/>
+<polygon fill="#555555" stroke="#555555" points="549.82,-39.22 559.75,-35.51 549.68,-32.22 549.82,-39.22"/>
+<text xml:space="preserve" text-anchor="middle" x="459.38" y="-50.84" font-family="Helvetica,sans-Serif" font-size="9.00">±20 % on</text>
+<text xml:space="preserve" text-anchor="middle" x="459.38" y="-40.34" font-family="Helvetica,sans-Serif" font-size="9.00">oscillation / sluggish</text>
+</g>
+</g>
+</svg>
+</div>
+
+<h3>Step 1: Reading the log</h3>
+<p>The <code>.data</code> file is a plain text stream with one message per line: <code>&lt;time&gt; &lt;ac_id&gt; &lt;MESSAGE&gt; &lt;fields...&gt;</code>. The tool makes a single pass over the file, keeps only the messages of the requested <code>ac_id</code> that it needs (<code>ATTITUDE</code>, <code>GPS</code>, <code>COMMANDS</code>, <code>PPRZ_MODE</code>, <code>AIR_DATA</code>, <code>ESTIMATOR</code>, <code>DESIRED</code>, <code>NAVIGATION</code>, <code>ENERGY</code>), and converts them to <code>numpy</code> arrays. Array-type fields such as <code>COMMANDS.values</code> are comma-separated in the log; both separators are accepted. Corrupt lines are counted and skipped, not fatal.</p>
+<p>The <code>.log</code> file carries a copy of the airframe <strong>as it was flown</strong>. The tool reads its <code>&lt;define&gt;</code> values so that a trim correction is always added to the trim that was actually in effect during the flight, even when you tune a different base file with <code>--base</code>.</p>
+<p>Airspeed comes from <code>AIR_DATA.airspeed</code> (equivalent airspeed from the pitot sensor). If that field is missing or never above 3 m/s, GPS ground speed is used instead and the report says so.</p>
+<h3>Step 2: Segmenting the flight</h3>
+<p>All signals are resampled onto the <code>ATTITUDE</code> timeline. The airborne window is the span where GPS ground speed exceeds 6 m/s. Inside it these segments are selected:</p>
+<ul>
+<li><strong>Straight and level</strong>: |roll| &lt; 5°, |vertical speed| &lt; 0.5 m/s, |yaw rate| &lt; 5°/s, airspeed at least 75 % of the flight mean, mode AUTO1 or AUTO2. At least 30 samples.</li>
+<li><strong>Banked turns</strong>: |roll| &gt; 15°, airspeed above 7 m/s, mode AUTO1 or AUTO2. At least 100 samples.</li>
+<li><strong>Quasi-steady</strong>: |roll| &lt; 10°, airspeed above 70 % of the mean, throttle above 2 %, any climb rate, AUTO1 or AUTO2. At least 200 samples. Sub-sets: <em>cruise</em> (|Vz| &lt; 0.3 m/s), <em>full throttle</em> (&gt; 95 %), <em>idle glide</em> (&lt; 3 % and sinking).</li>
+<li><strong>AUTO2 navigation</strong>: mode AUTO2 and airborne, at least 60 s in total.</li>
+</ul>
+<p>If a segment is too short the corresponding correction is skipped and the report explains why.</p>
+<h3>Step 3: Pitch and roll trim</h3>
+<p>In straight and level flight the attitude loops should have nothing left to do. If they hold a constant elevator or aileron command, that steady deflection is a trim the airframe needs (a heavy wing, a slightly bent ruddervator, a misaligned servo arm). Paparazzi adds <code>COMMAND_PITCH_TRIM</code> and <code>COMMAND_ROLL_TRIM</code> to the commands <em>after</em> the control loops (in <code>actuators.c</code>), so the correct new trim is simply</p>
+<p>$$\text{trim}<em>{\text{new}} = \text{trim}</em>{\text{flown}} + \overline{\text{command}_{\text{level}}}$$</p>
+<p>rounded to 10 pprz and clipped to the firmware limit of &plusmn;960 pprz (10 % of full scale). If the required trim exceeds that limit the report tells you to move the mechanical linkage instead. Steady commands below 100 pprz are treated as noise. The report also prints the body attitude versus the <code>DESIRED</code> attitude so you can see the loop error that the trim was hiding.</p>
+<p>Because the measured level pitch is the real cruise attitude, <code>V_CTL_AUTO_THROTTLE_NOMINAL_CRUISE_PITCH</code> is set to $\theta$ in radians when that lies in a sensible range (0 to 0.2 rad).</p>
+<div class="adm note"><strong>Note</strong>
+
+`INS_PITCH_NEUTRAL_DEFAULT` / `INS_ROLL_NEUTRAL_DEFAULT` are **not** touched. Those defines are only read by a few legacy INS drivers (Xsens, VN100, ArduIMU, `ahrs_sim`); with `ahrs float_cmpl_quat` + `ins alt_float` they have no effect. The IMU-to-body mounting angle lives in `IMU_BODY_TO_IMU_THETA` and should be set from a bench measurement, not from flight data.
+
+</div>
+
+<h3>Step 4: Ruddervator mixing and turn radius</h3>
+<p>A coordinated turn at bank angle $\varphi$ and airspeed $V$ has a yaw rate of $g\tan\varphi / V$. In the turning segment the tool compares the achieved yaw rate with that ideal value and, more importantly, measures how much rudder the pilot had to hold per degree of bank. On a V-tail (ruddervator) aircraft with only pitch and yaw in the tail mixer, that rudder must come from the pilot's thumb in every turn. The tool converts the measured slope (pprz per degree of bank) into a roll-to-rudder gain</p>
+<p>$$k = \frac{\text{pprz/deg} \cdot 45^\circ}{9600}$$</p>
+<p>clamped to [0.3, 1.0], and rewrites the command laws so the ruddervators receive <code>@YAW + k·@ROLL</code> instead of <code>@YAW</code> alone. The gain is exposed as <code>RUDDERVONS_OF_ROLL</code> in the <code>MIXER</code> section so it can be trimmed by hand later. The <code>auto_rc_commands</code> attenuation <code>@YAW*0.9</code> is removed, since attenuating a channel that was already saturating is counter-productive once the mixer provides coordination.</p>
+<p>Finally, <code>MIN_CIRCLE_RADIUS</code> and <code>LANDING_CIRCLE_RADIUS</code> are set to the requested <code>--turn-radius</code>. The report states the bank angle required for that radius at the measured airspeed, $\varphi = \arctan\left(V^2 / (gR)\right)$, so you can confirm it is well inside <code>H_CTL_ROLL_MAX_SETPOINT</code>.</p>
+<div class="adm note"><strong>Note</strong>
+
+All edits are made as surgical text substitutions on the original XML, not through an XML library rewrite. Your comments, indentation, and commented-out experiments are preserved exactly; only the touched attribute values and the two inserted lines change. Every inserted line carries an `autotune` XML comment.
+
+</div>
+
+<h3>Step 5: ETECS energy-controller plant</h3>
+<p>The <code>energyadaptive</code> (ETECS) vertical controller computes throttle and pitch as</p>
+<p>$$\delta_T = T_{\text{cruise}} + k_{T,\dot z}\,\dot z_{\text{sp}} + k_{T,V}\,(V_{\text{sp}} - V) + \ldots \qquad
+\theta = \theta_{\text{cruise}} + k_{\theta,\dot z}\,\dot z_{\text{sp}} + \ldots$$</p>
+<p>The four feedforward coefficients are properties of the airframe and propulsion, not of the controller, so they can be identified from <strong>open-loop AUTO1 data</strong> without ever engaging the vertical loop. On the quasi-steady segment the tool computes:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>How it is measured</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE</code></td>
+<td>median throttle while $\lvert \dot z \rvert &lt; 0.3$ m/s</td>
+</tr>
+<tr>
+<td><code>NOMINAL_AIRSPEED</code>, <code>AUTO_AIRSPEED_SETPOINT</code>, <code>TRACKING_AIRSPEED</code></td>
+<td>mean airspeed in that same cruise set (tracking = cruise + 1 m/s)</td>
+</tr>
+<tr>
+<td><code>AUTO_THROTTLE_OF_AIRSPEED_PGAIN</code></td>
+<td>slope of throttle on airspeed from a least-squares fit <code>throttle ~ 1 + Vz + V</code></td>
+</tr>
+<tr>
+<td><code>AUTO_THROTTLE_PITCH_OF_VZ_PGAIN</code></td>
+<td>slope of body pitch on climb rate from <code>theta ~ 1 + Vz</code></td>
+</tr>
+<tr>
+<td><code>AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT</code></td>
+<td>$(1 - T_{\text{cruise}}) / \dot z_{\text{WOT}}$, where $\dot z_{\text{WOT}}$ is the 75th percentile climb rate at more than 95 % throttle</td>
+</tr>
+<tr>
+<td><code>ALTITUDE_MAX_CLIMB</code></td>
+<td>$0.8\,\dot z_{\text{WOT}}$, only lowered, never raised</td>
+</tr>
+<tr>
+<td><code>GLIDE_RATIO</code></td>
+<td>median $V / (-\dot z)$ at idle throttle</td>
+</tr>
+</tbody>
+</table>
+<p>Each regression is only used if its $R^2$ is reasonable and the coefficient lies in a physically plausible band; otherwise the existing value stays and the report shows <code>n/a</code>. When the cruise throttle is above 70 % the report adds a <strong>propulsion margin</strong> advice: the aircraft has little climb authority left, which is worth knowing before the first AUTO2 flight.</p>
+<h3>Step 6: Course loop</h3>
+<p>The navigation course loop turns a course error into a roll setpoint: $\phi_{\text{sp}} = K_c\,(V/V_{\text{nom}})\,e_{\text{course}}$. Its bandwidth is roughly $K_c\,g/V$, and it must stay well below the bandwidth of the inner roll loop or the aircraft will weave.</p>
+<ul>
+<li><strong>Without AUTO2 data</strong> (the normal case for a first flight) the tool measures how quickly <code>ATTITUDE.phi</code> follows <code>DESIRED.roll</code> in AUTO1 (cross-correlation lag and RMS). If the roll bandwidth is less than three times the course bandwidth, <code>H_CTL_COURSE_PGAIN</code> is reduced to restore the margin. Either way the report states the separation ratio and recommends a 1–2 minute AUTO2 circle at safe altitude as the next data source.</li>
+<li><strong>With at least 60 s of airborne AUTO2</strong> the course error <code>DESIRED.course - GPS.course</code> is evaluated directly. More than 0.3 sign changes per second means the loop is oscillating and the gain is cut by 20 %; an RMS error above 15° without oscillation means it is sluggish and the gain is raised by 20 %; otherwise it is reported as healthy and left alone.</li>
+</ul>
+<h3>Step 7: Versioning, validation, and compile check</h3>
+<div class="fig" style="max-width:60%"><svg width="399pt" height="581pt"
+ viewBox="0.00 0.00 399.00 581.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 577.09)">
+<title>build_verification</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-577.09 394.52,-577.09 394.52,4 -4,4"/>
+<!-- start -->
+<g id="node1" class="node">
+<title>start</title>
+<path fill="#e6f7e6" stroke="black" d="M289.18,-573.09C289.18,-573.09 174.18,-573.09 174.18,-573.09 168.18,-573.09 162.18,-567.09 162.18,-561.09 162.18,-561.09 162.18,-549.09 162.18,-549.09 162.18,-543.09 168.18,-537.09 174.18,-537.09 174.18,-537.09 289.18,-537.09 289.18,-537.09 295.18,-537.09 301.18,-543.09 301.18,-549.09 301.18,-549.09 301.18,-561.09 301.18,-561.09 301.18,-567.09 295.18,-573.09 289.18,-573.09"/>
+<text xml:space="preserve" text-anchor="middle" x="231.68" y="-558.14" font-family="Helvetica,sans-Serif" font-size="11.00">tuned XML written</text>
+<text xml:space="preserve" text-anchor="middle" x="231.68" y="-544.64" font-family="Helvetica,sans-Serif" font-size="11.00">&lt;name&gt;_optim_NNN.xml</text>
+</g>
+<!-- wellf -->
+<g id="node2" class="node">
+<title>wellf</title>
+<path fill="#e8f0fe" stroke="black" d="M220.19,-496.61C220.19,-496.61 127.41,-468.56 127.41,-468.56 121.67,-466.82 121.67,-463.35 127.41,-461.61 127.41,-461.61 220.19,-433.56 220.19,-433.56 225.93,-431.82 237.42,-431.82 243.16,-433.56 243.16,-433.56 335.94,-461.61 335.94,-461.61 341.68,-463.35 341.68,-466.82 335.94,-468.56 335.94,-468.56 243.16,-496.61 243.16,-496.61 237.42,-498.35 225.93,-498.35 220.19,-496.61"/>
+<text xml:space="preserve" text-anchor="middle" x="231.68" y="-468.14" font-family="Helvetica,sans-Serif" font-size="11.00">XML well&#45;formed?</text>
+<text xml:space="preserve" text-anchor="middle" x="231.68" y="-454.64" font-family="Helvetica,sans-Serif" font-size="11.00">(ElementTree parse)</text>
+</g>
+<!-- start&#45;&gt;wellf -->
+<g id="edge1" class="edge">
+<title>start&#45;&gt;wellf</title>
+<path fill="none" stroke="#555555" d="M231.68,-536.7C231.68,-529.53 231.68,-520.84 231.68,-512.05"/>
+<polygon fill="#555555" stroke="#555555" points="235.18,-512.06 231.68,-502.06 228.18,-512.06 235.18,-512.06"/>
+</g>
+<!-- backup -->
+<g id="node3" class="node">
+<title>backup</title>
+<path fill="#fff4d6" stroke="black" d="M197.05,-376.84C197.05,-376.84 114.3,-376.84 114.3,-376.84 108.3,-376.84 102.3,-370.84 102.3,-364.84 102.3,-364.84 102.3,-352.84 102.3,-352.84 102.3,-346.84 108.3,-340.84 114.3,-340.84 114.3,-340.84 197.05,-340.84 197.05,-340.84 203.05,-340.84 209.05,-346.84 209.05,-352.84 209.05,-352.84 209.05,-364.84 209.05,-364.84 209.05,-370.84 203.05,-376.84 197.05,-376.84"/>
+<text xml:space="preserve" text-anchor="middle" x="155.68" y="-361.89" font-family="Helvetica,sans-Serif" font-size="11.00">read base airframe</text>
+<text xml:space="preserve" text-anchor="middle" x="155.68" y="-348.39" font-family="Helvetica,sans-Serif" font-size="11.00">into memory</text>
+</g>
+<!-- wellf&#45;&gt;backup -->
+<g id="edge3" class="edge">
+<title>wellf&#45;&gt;backup</title>
+<path fill="none" stroke="#555555" d="M211.11,-435.88C199.82,-420.4 185.92,-401.32 174.86,-386.15"/>
+<polygon fill="#555555" stroke="#555555" points="178,-384.52 169.28,-378.5 172.34,-388.64 178,-384.52"/>
+<text xml:space="preserve" text-anchor="middle" x="200.8" y="-403.54" font-family="Helvetica,sans-Serif" font-size="9.00">yes</text>
+</g>
+<!-- malformed -->
+<g id="node9" class="node">
+<title>malformed</title>
+<ellipse fill="#f8c8c8" stroke="black" cx="308.68" cy="-358.84" rx="81.85" ry="24.75"/>
+<text xml:space="preserve" text-anchor="middle" x="308.68" y="-361.89" font-family="Helvetica,sans-Serif" font-size="11.00">AutotuneError:</text>
+<text xml:space="preserve" text-anchor="middle" x="308.68" y="-348.39" font-family="Helvetica,sans-Serif" font-size="11.00">XML not well&#45;formed</text>
+</g>
+<!-- wellf&#45;&gt;malformed -->
+<g id="edge2" class="edge">
+<title>wellf&#45;&gt;malformed</title>
+<path fill="none" stroke="#555555" d="M252.51,-435.88C262.36,-422.55 274.17,-406.56 284.41,-392.69"/>
+<polygon fill="#555555" stroke="#555555" points="287.18,-394.83 290.31,-384.7 281.55,-390.67 287.18,-394.83"/>
+<text xml:space="preserve" text-anchor="middle" x="282.32" y="-403.54" font-family="Helvetica,sans-Serif" font-size="9.00">no</text>
+</g>
+<!-- swap -->
+<g id="node4" class="node">
+<title>swap</title>
+<path fill="#fff4d6" stroke="black" d="M202.68,-297.09C202.68,-297.09 108.68,-297.09 108.68,-297.09 102.68,-297.09 96.68,-291.09 96.68,-285.09 96.68,-285.09 96.68,-273.09 96.68,-273.09 96.68,-267.09 102.68,-261.09 108.68,-261.09 108.68,-261.09 202.68,-261.09 202.68,-261.09 208.68,-261.09 214.68,-267.09 214.68,-273.09 214.68,-273.09 214.68,-285.09 214.68,-285.09 214.68,-291.09 208.68,-297.09 202.68,-297.09"/>
+<text xml:space="preserve" text-anchor="middle" x="155.68" y="-282.14" font-family="Helvetica,sans-Serif" font-size="11.00">copy tuned XML over</text>
+<text xml:space="preserve" text-anchor="middle" x="155.68" y="-268.64" font-family="Helvetica,sans-Serif" font-size="11.00">base airframe path</text>
+</g>
+<!-- backup&#45;&gt;swap -->
+<g id="edge4" class="edge">
+<title>backup&#45;&gt;swap</title>
+<path fill="none" stroke="#555555" d="M155.68,-340.58C155.68,-331.29 155.68,-319.57 155.68,-308.93"/>
+<polygon fill="#555555" stroke="#555555" points="159.18,-309.08 155.68,-299.08 152.18,-309.08 159.18,-309.08"/>
+</g>
+<!-- make -->
+<g id="node5" class="node">
+<title>make</title>
+<path fill="#fff4d6" stroke="black" d="M259.3,-224.09C259.3,-224.09 52.05,-224.09 52.05,-224.09 46.05,-224.09 40.05,-218.09 40.05,-212.09 40.05,-212.09 40.05,-200.09 40.05,-200.09 40.05,-194.09 46.05,-188.09 52.05,-188.09 52.05,-188.09 259.3,-188.09 259.3,-188.09 265.3,-188.09 271.3,-194.09 271.3,-200.09 271.3,-200.09 271.3,-212.09 271.3,-212.09 271.3,-218.09 265.3,-224.09 259.3,-224.09"/>
+<text xml:space="preserve" text-anchor="middle" x="155.68" y="-209.14" font-family="Helvetica,sans-Serif" font-size="11.00">make &#45;C $PAPARAZZI_HOME &#45;f Makefile.ac</text>
+<text xml:space="preserve" text-anchor="middle" x="155.68" y="-195.64" font-family="Helvetica,sans-Serif" font-size="11.00">AIRCRAFT=&lt;name&gt; ap.compile</text>
+</g>
+<!-- swap&#45;&gt;make -->
+<g id="edge5" class="edge">
+<title>swap&#45;&gt;make</title>
+<path fill="none" stroke="#555555" d="M155.68,-260.9C155.68,-253.31 155.68,-244.19 155.68,-235.63"/>
+<polygon fill="#555555" stroke="#555555" points="159.18,-235.63 155.68,-225.63 152.18,-235.63 159.18,-235.63"/>
+</g>
+<!-- restore -->
+<g id="node6" class="node">
+<title>restore</title>
+<path fill="#f3e8ff" stroke="black" d="M203.05,-151.09C203.05,-151.09 108.3,-151.09 108.3,-151.09 102.3,-151.09 96.3,-145.09 96.3,-139.09 96.3,-139.09 96.3,-127.09 96.3,-127.09 96.3,-121.09 102.3,-115.09 108.3,-115.09 108.3,-115.09 203.05,-115.09 203.05,-115.09 209.05,-115.09 215.05,-121.09 215.05,-127.09 215.05,-127.09 215.05,-139.09 215.05,-139.09 215.05,-145.09 209.05,-151.09 203.05,-151.09"/>
+<text xml:space="preserve" text-anchor="middle" x="155.68" y="-136.14" font-family="Helvetica,sans-Serif" font-size="11.00">restore base airframe</text>
+<text xml:space="preserve" text-anchor="middle" x="155.68" y="-122.64" font-family="Helvetica,sans-Serif" font-size="11.00">(finally: always runs)</text>
+</g>
+<!-- make&#45;&gt;restore -->
+<g id="edge6" class="edge">
+<title>make&#45;&gt;restore</title>
+<path fill="none" stroke="#555555" d="M155.68,-187.9C155.68,-180.31 155.68,-171.19 155.68,-162.63"/>
+<polygon fill="#555555" stroke="#555555" points="159.18,-162.63 155.68,-152.63 152.18,-162.63 159.18,-162.63"/>
+</g>
+<!-- ok -->
+<g id="node7" class="node">
+<title>ok</title>
+<ellipse fill="#c8f0c8" stroke="black" cx="64.68" cy="-34.29" rx="64.68" ry="18"/>
+<text xml:space="preserve" text-anchor="middle" x="64.68" y="-30.59" font-family="Helvetica,sans-Serif" font-size="11.00">build check: PASS</text>
+</g>
+<!-- restore&#45;&gt;ok -->
+<g id="edge7" class="edge">
+<title>restore&#45;&gt;ok</title>
+<path fill="none" stroke="#555555" d="M139.41,-114.78C125.08,-99.55 104.06,-77.19 87.96,-60.06"/>
+<polygon fill="#555555" stroke="#555555" points="90.94,-58.12 81.54,-53.23 85.84,-62.91 90.94,-58.12"/>
+<text xml:space="preserve" text-anchor="middle" x="131.88" y="-88.54" font-family="Helvetica,sans-Serif" font-size="9.00">exit 0</text>
+</g>
+<!-- bad -->
+<g id="node8" class="node">
+<title>bad</title>
+<ellipse fill="#f8c8c8" stroke="black" cx="246.68" cy="-34.29" rx="99.35" ry="34.29"/>
+<text xml:space="preserve" text-anchor="middle" x="246.68" y="-44.09" font-family="Helvetica,sans-Serif" font-size="11.00">build check: FAIL</text>
+<text xml:space="preserve" text-anchor="middle" x="246.68" y="-30.59" font-family="Helvetica,sans-Serif" font-size="11.00">AutotuneError raised,</text>
+<text xml:space="preserve" text-anchor="middle" x="246.68" y="-17.09" font-family="Helvetica,sans-Serif" font-size="11.00">last 40 build lines in report</text>
+</g>
+<!-- restore&#45;&gt;bad -->
+<g id="edge8" class="edge">
+<title>restore&#45;&gt;bad</title>
+<path fill="none" stroke="#555555" d="M171.94,-114.78C182.19,-103.89 195.86,-89.34 208.71,-75.67"/>
+<polygon fill="#555555" stroke="#555555" points="211.23,-78.1 215.53,-68.42 206.13,-73.31 211.23,-78.1"/>
+<text xml:space="preserve" text-anchor="middle" x="214.2" y="-88.54" font-family="Helvetica,sans-Serif" font-size="9.00">exit != 0</text>
+</g>
+</g>
+</svg>
+</div>
+
+<p>The output name is <code>&lt;base&gt;_optim_NNN.xml</code> where <code>NNN</code> is one higher than the highest existing number in the output directory. The file is first checked for well-formedness. Then, unless <code>--no-build</code> is given, the tuned file is temporarily copied over the base airframe path, <code>make -C $PAPARAZZI_HOME -f Makefile.ac AIRCRAFT=&lt;name&gt; ap.compile</code> is run, and the base airframe is restored in a <code>finally</code> block so it is untouched even if the build crashes or is interrupted. A failed build raises an exception after writing the report, and the last 40 lines of build output are included in it.</p>
+<h2>Reading the Report</h2>
+<p>The report is printed to the terminal and saved as <code>&lt;output&gt;.report.txt</code> next to the generated XML. It has these blocks:</p>
+<ol>
+<li><strong>Header</strong>: log, aircraft, base and output airframe paths, and <code>build check: PASS | FAIL | SKIPPED</code>.</li>
+<li><strong>Flight</strong>: airborne time split into AUTO1 and AUTO2, airspeed source and mean.</li>
+<li><strong>Pitch / roll trim</strong>: body vs demanded attitude, steady elevator and aileron commands.</li>
+<li><strong>Turns / yaw</strong>: bank, rudder usage and saturation, coordination ratio, achieved radius, rudder-per-bank slope, bank needed for the target radius.</li>
+<li><strong>ETECS plant</strong>: cruise throttle and speed, the three regression slopes, sustained full-throttle climb, glide ratio.</li>
+<li><strong>Roll / course loops</strong>: roll setpoint tracking lag and RMS, AUTO2 course statistics (or <code>n/a</code>).</li>
+<li><strong>XML changes</strong>: numbered list with <code>before</code>, <code>after</code>, and <code>why</code> for every parameter touched.</li>
+<li><strong>Advice / next flight</strong>: findings that need a human decision or more data rather than an XML edit.</li>
+<li><strong>Build output tail</strong> when a compile was run.</li>
+</ol>
+<p>Example excerpt from the Talon 250G run on an AUTO1-only log:</p>
+<pre><code class="language-text">-- FLIGHT ----------------------------------------------------------------
+  airborne 541 s | AUTO1 503 s | AUTO2 19 s
+-- PITCH / ROLL TRIM  (straight+level, n=77) -------------------------
+  body pitch / demanded  : +2.43 / -3.35 deg  -&gt; error +5.78 deg
+  steady elevator cmd    : +903 pprz
+  bank / demanded        : -1.00 / +1.95 deg  -&gt; error -2.95 deg
+  steady aileron cmd     : -353 pprz
+-- ETECS PLANT  (quasi-steady, n=970) ---------------------------------
+  cruise throttle        : 84% at 10.3 m/s
+  pitch per m/s climb    : 0.057 rad/(m/s)
+  sustained climb @ WOT  : 1.34 m/s  (28% of flight at full throttle)
+  glide ratio (idle)     : 4.9 (n=114)
+
+1. TRIM: PITCH_TRIM
+   before : 0.0
+   after  : 900
+   why    : the pitch loop held a steady +903 pprz elevator in level flight (body
+            pitch +2.4 deg vs demanded -3.3 deg); moving that into the command trim
+            centres the servo and frees the integrator (flown trim +0)
+
+-- ADVICE / NEXT FLIGHT --------------------------------------------------
+* [propulsion margin] holding altitude needs 84% throttle and the aircraft spent
+  28% of the flight at full throttle. That leaves little climb authority for ETECS;
+  check propeller, motor kV, battery sag (ENERGY message) and airframe drag before
+  an AUTO2 flight.
+* [course loop] no airborne AUTO2 time &gt;= 60 s in this log (19 s found). Model
+  check: roll tracks its setpoint with 0.20 s lag ... separation 5.7x (OK).
+</code></pre>
+<p>That report is a good example of why the tool exists: the airframe file said cruise was 28 % throttle at 12 m/s with 4.3 m/s of climb available (from the simulator model), while the aircraft actually needed 84 % at 10.3 m/s and could only climb 1.3 m/s. Flying AUTO2 with the model values would have made the energy controller demand climbs it could not deliver.</p>
+<h2>Putting the Result into Service</h2>
+<ol>
+<li>Read the report, the <strong>advice</strong> block, and the <code>diff</code> between the base airframe and the <code>_optim_NNN.xml</code> file. The tool is deliberately conservative, but you know your aircraft.</li>
+<li>Point the aircraft entry in <code>conf/conf.xml</code> at the new file (or copy the accepted values into the base airframe), rebuild, and upload.</li>
+<li>Fly the same kind of AUTO1 test again and run the tool on the new log with <code>--base</code> pointing at the file you flew. A well-trimmed aircraft produces near-zero steady commands and a near-zero rudder-per-bank slope, so only the ETECS and radius parameters are refreshed.</li>
+<li>When the trims and the ETECS numbers are stable, fly a short AUTO2 circle at safe altitude. The next run then tunes <code>H_CTL_COURSE_PGAIN</code> from measured tracking instead of the model check.</li>
+</ol>
+<div class="adm warning"><strong>Warning</strong>
+
+Auto-tuning changes control mixing and attitude references. Always review the generated XML before flight, keep the first flight with a new file at safe altitude, and be ready to switch to MANUAL. The compile check proves the file is valid, not that it flies well.
+
+</div>
+
+<h2>Files</h2>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sw/tools/autotune/log_2_tuned_airframe.py</code></td>
+<td>The tool</td>
+</tr>
+<tr>
+<td><code>conf/airframes/&lt;group&gt;/&lt;airframe&gt;_optim_NNN.xml</code></td>
+<td>Generated, version-numbered airframes</td>
+</tr>
+<tr>
+<td><code>conf/airframes/&lt;group&gt;/&lt;airframe&gt;_optim_NNN.report.txt</code></td>
+<td>Audit report of each run</td>
+</tr>
+<tr>
+<td><code>doc/sphinx/source/user_guide/airframe_autotune.md</code></td>
+<td>This page (Sphinx user guide)</td>
+</tr>
+<tr>
+<td><code>doc/images/tools/autotune/*.dot</code></td>
+<td>Graphviz sources of the diagrams on this page; render with <code>dot -Tsvg X.dot -o X.svg</code></td>
+</tr>
+<tr>
+<td><code>doc/tools/autotune/airframe_autotune.html</code></td>
+<td>Standalone, self-contained HTML copy of this page (diagrams inlined)</td>
+</tr>
+</tbody>
+</table>
+<h2>Extending the Tool</h2>
+<p>The tuning rules live in <code>tune_airframe()</code>. Each rule calls <code>AirframeEditor.set_define()</code> (or <code>add_define_to_section()</code>), which records a <code>Change(what, before, after, rationale)</code> that feeds the report, or appends an <code>Advice(topic, text)</code> when the finding needs a human rather than an edit. Adding a rule for a new parameter means measuring the relevant quantity in <code>analyze()</code>, storing it in the <code>Analysis</code> dataclass, and adding one <code>set_define()</code> call with a plausibility check and a rationale string.</p>
+<p>Candidates for a third iteration, once AUTO2 logs are available: <code>H_CTL_COURSE_DGAIN</code> and <code>CARROT</code> from cross-track statistics in <code>NAVIGATION</code>, the ETECS <code>ENERGY_TOT_PGAIN</code> / <code>ENERGY_DIFF_PGAIN</code> closed-loop gains from altitude and airspeed error spectra, and the bank-angle energy feedforwards from throttle behaviour in autonomous circles.</p>
+<footer>Paparazzi UAV documentation &middot; generated from <code>doc/sphinx/source/user_guide/airframe_autotune.md</code> &middot; tool: <code>sw/tools/autotune/log_2_tuned_airframe.py</code></footer>
+</body></html>

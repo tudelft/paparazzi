@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>EARcam position and sound data flow</title>
+<style>
+  body { margin: 0; padding: 24px 32px; background: #0f172a; color: #e2e8f0;
+         font-family: "DejaVu Sans", Arial, sans-serif; }
+  h1 { font-size: 30px; margin: 0 0 10px 0; }
+  p  { font-size: 19px; line-height: 1.4; margin: 0 0 22px 0; color: #cbd5e1; max-width: 1400px; }
+  .diagram svg { width: 100%; height: auto; display: block; }
+  table { border-collapse: collapse; margin-top: 30px; font-size: 19px; }
+  th, td { border: 1px solid #475569; padding: 9px 16px; text-align: left; }
+  th { background: #1e293b; }
+  code { font-family: "DejaVu Sans Mono", monospace; background: #1e293b; padding: 1px 7px; border-radius: 4px; }
+  .note { font-size: 16px; color: #94a3b8; margin-top: 26px; }
+</style>
+</head>
+<body>
+<h1>How a sound sample gets its position</h1>
+<p>The microphone never knows where it is. <b>earcam</b> streams the newest 50 ms loudness window;
+the flight controller sends its own position with each targeted shoot; <b>CATIA</b> stamps that
+position onto the current window. Alignment error is at most one window
+(&le; 50 ms &asymp; 0.5 m at 10 m/s). Sample density is set by the flight-controller period, not by
+the microphone, which runs continuously at 20 windows per second.</p>
+
+<div class="diagram">
+<svg width="3242pt" height="542pt"
+ viewBox="0.00 0.00 3242.00 542.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(36 505.5)">
+<title>earcam_dataflow</title>
+<polygon fill="#0f172a" stroke="none" points="-36,36 -36,-505.5 3205.98,-505.5 3205.98,36 -36,36"/>
+<text xml:space="preserve" text-anchor="middle" x="1584.99" y="-440.8" font-family="DejaVu Sans Bold" font-size="26.00" fill="#f8fafc">How a sound sample gets its position</text>
+<text xml:space="preserve" text-anchor="middle" x="1584.99" y="-409.3" font-family="DejaVu Sans Bold" font-size="26.00" fill="#f8fafc">flight&#45;controller position + microphone level are fused in CATIA</text>
+<text xml:space="preserve" text-anchor="middle" x="1584.99" y="-377.8" font-family="DejaVu Sans Bold" font-size="26.00" fill="#f8fafc"> </text>
+<g id="clust1" class="cluster">
+<title>cluster_fc</title>
+<path fill="#0b1728" stroke="#60a5fa" d="M39.75,-175C39.75,-175 2017.19,-175 2017.19,-175 2023.19,-175 2029.19,-181 2029.19,-187 2029.19,-187 2029.19,-347 2029.19,-347 2029.19,-353 2023.19,-359 2017.19,-359 2017.19,-359 39.75,-359 39.75,-359 33.75,-359 27.75,-353 27.75,-347 27.75,-347 27.75,-187 27.75,-187 27.75,-181 33.75,-175 39.75,-175"/>
+<text xml:space="preserve" text-anchor="middle" x="1028.47" y="-335.05" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">FLIGHT CONTROLLER &#160;(digital_cam_uart)</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_mora</title>
+<path fill="#0b1728" stroke="#34d399" d="M621.58,-8C621.58,-8 2545.4,-8 2545.4,-8 2551.4,-8 2557.4,-14 2557.4,-20 2557.4,-20 2557.4,-155 2557.4,-155 2557.4,-161 2551.4,-167 2545.4,-167 2545.4,-167 621.58,-167 621.58,-167 615.58,-167 609.58,-161 609.58,-155 609.58,-155 609.58,-20 609.58,-20 609.58,-14 615.58,-8 621.58,-8"/>
+<text xml:space="preserve" text-anchor="middle" x="1583.49" y="-143.05" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">MORA &#160;(CATIA)</text>
+</g>
+<!-- ins -->
+<g id="node1" class="node">
+<title>ins</title>
+<path fill="#1d4ed8" stroke="#94a3b8" stroke-width="2.5" d="M277.83,-290.15C277.83,-290.15 63.75,-290.15 63.75,-290.15 57.75,-290.15 51.75,-284.15 51.75,-278.15 51.75,-278.15 51.75,-223.85 51.75,-223.85 51.75,-217.85 57.75,-211.85 63.75,-211.85 63.75,-211.85 277.83,-211.85 277.83,-211.85 283.83,-211.85 289.83,-217.85 289.83,-223.85 289.83,-223.85 289.83,-278.15 289.83,-278.15 289.83,-284.15 283.83,-290.15 277.83,-290.15"/>
+<text xml:space="preserve" text-anchor="middle" x="170.79" y="-255.8" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">INS / GNSS</text>
+<text xml:space="preserve" text-anchor="middle" x="170.79" y="-231.05" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">lat &#160;lon &#160;alt &#160;AGL</text>
+</g>
+<!-- shoot -->
+<g id="node2" class="node">
+<title>shoot</title>
+<path fill="#1d4ed8" stroke="#94a3b8" stroke-width="2.5" d="M985.66,-302.52C985.66,-302.52 635.83,-302.52 635.83,-302.52 629.83,-302.52 623.83,-296.52 623.83,-290.52 623.83,-290.52 623.83,-211.47 623.83,-211.47 623.83,-205.47 629.83,-199.47 635.83,-199.47 635.83,-199.47 985.66,-199.47 985.66,-199.47 991.66,-199.47 997.66,-205.47 997.66,-211.47 997.66,-211.47 997.66,-290.52 997.66,-290.52 997.66,-296.52 991.66,-302.52 985.66,-302.52"/>
+<text xml:space="preserve" text-anchor="middle" x="810.74" y="-268.18" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">SHOOT_TARGETED(EAR)</text>
+<text xml:space="preserve" text-anchor="middle" x="810.74" y="-243.43" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">every 0.1 s in find_loudspot</text>
+<text xml:space="preserve" text-anchor="middle" x="810.74" y="-218.68" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">carries the position</text>
+</g>
+<!-- ins&#45;&gt;shoot -->
+<g id="edge1" class="edge">
+<title>ins&#45;&gt;shoot</title>
+<path fill="none" stroke="#e2e8f0" stroke-width="3.2" d="M291.04,-251C379.16,-251 501.32,-251 604.96,-251"/>
+<polygon fill="#e2e8f0" stroke="#e2e8f0" stroke-width="3.2" points="604.91,-255.55 617.91,-251 604.91,-246.45 604.91,-255.55"/>
+<text xml:space="preserve" text-anchor="middle" x="482.7" y="-255.45" font-family="DejaVu Sans Bold" font-size="19.00" fill="#f8fafc">position at trigger</text>
+</g>
+<!-- fuse -->
+<g id="node6" class="node">
+<title>fuse</title>
+<path fill="#047857" stroke="#94a3b8" stroke-width="2.5" d="M1619.24,-110.15C1619.24,-110.15 1285.16,-110.15 1285.16,-110.15 1279.16,-110.15 1273.16,-104.15 1273.16,-98.15 1273.16,-98.15 1273.16,-43.85 1273.16,-43.85 1273.16,-37.85 1279.16,-31.85 1285.16,-31.85 1285.16,-31.85 1619.24,-31.85 1619.24,-31.85 1625.24,-31.85 1631.24,-37.85 1631.24,-43.85 1631.24,-43.85 1631.24,-98.15 1631.24,-98.15 1631.24,-104.15 1625.24,-110.15 1619.24,-110.15"/>
+<text xml:space="preserve" text-anchor="middle" x="1452.2" y="-75.8" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">position + newest window</text>
+<text xml:space="preserve" text-anchor="middle" x="1452.2" y="-51.05" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">= one geotagged sample</text>
+</g>
+<!-- shoot&#45;&gt;fuse -->
+<g id="edge2" class="edge">
+<title>shoot&#45;&gt;fuse</title>
+<path fill="none" stroke="#93c5fd" stroke-width="3.2" d="M998.85,-198.33C1091.38,-172.29 1201.92,-141.17 1290.57,-116.22"/>
+<polygon fill="#93c5fd" stroke="#93c5fd" stroke-width="3.2" points="1291.77,-120.61 1303.05,-112.7 1289.3,-111.85 1291.77,-120.61"/>
+<text xml:space="preserve" text-anchor="middle" x="1135.41" y="-192.09" font-family="DejaVu Sans Bold" font-size="19.00" fill="#f8fafc">UART frame</text>
+</g>
+<!-- stop -->
+<g id="node3" class="node">
+<title>stop</title>
+<path fill="#1d4ed8" stroke="#94a3b8" stroke-width="2.5" d="M1993.19,-277.15C1993.19,-277.15 1707.86,-277.15 1707.86,-277.15 1701.86,-277.15 1695.86,-271.15 1695.86,-265.15 1695.86,-265.15 1695.86,-210.85 1695.86,-210.85 1695.86,-204.85 1701.86,-198.85 1707.86,-198.85 1707.86,-198.85 1993.19,-198.85 1993.19,-198.85 1999.19,-198.85 2005.19,-204.85 2005.19,-210.85 2005.19,-210.85 2005.19,-265.15 2005.19,-265.15 2005.19,-271.15 1999.19,-277.15 1993.19,-277.15"/>
+<text xml:space="preserve" text-anchor="middle" x="1850.53" y="-242.8" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">STOP_TARGETED(EAR)</text>
+<text xml:space="preserve" text-anchor="middle" x="1850.53" y="-218.05" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">end of survey</text>
+</g>
+<!-- solve -->
+<g id="node8" class="node">
+<title>solve</title>
+<path fill="#b45309" stroke="#fbbf24" stroke-width="2.5" d="M2521.4,-110.15C2521.4,-110.15 2206.07,-110.15 2206.07,-110.15 2200.07,-110.15 2194.07,-104.15 2194.07,-98.15 2194.07,-98.15 2194.07,-43.85 2194.07,-43.85 2194.07,-37.85 2200.07,-31.85 2206.07,-31.85 2206.07,-31.85 2521.4,-31.85 2521.4,-31.85 2527.4,-31.85 2533.4,-37.85 2533.4,-43.85 2533.4,-43.85 2533.4,-98.15 2533.4,-98.15 2533.4,-104.15 2527.4,-110.15 2521.4,-110.15"/>
+<text xml:space="preserve" text-anchor="middle" x="2363.73" y="-75.8" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">calculated_loudestspot()</text>
+<text xml:space="preserve" text-anchor="middle" x="2363.73" y="-51.05" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">&lt; 1 ms</text>
+</g>
+<!-- stop&#45;&gt;solve -->
+<g id="edge7" class="edge">
+<title>stop&#45;&gt;solve</title>
+<path fill="none" stroke="#93c5fd" stroke-width="3.2" d="M1974.95,-197.68C2049.55,-173.31 2144.87,-142.17 2222.34,-116.86"/>
+<polygon fill="#93c5fd" stroke="#93c5fd" stroke-width="3.2" points="2223.54,-121.26 2234.48,-112.9 2220.71,-112.61 2223.54,-121.26"/>
+<text xml:space="preserve" text-anchor="middle" x="2102.44" y="-178.82" font-family="DejaVu Sans Bold" font-size="19.00" fill="#f8fafc">UART frame</text>
+</g>
+<!-- mic -->
+<g id="node4" class="node">
+<title>mic</title>
+<path fill="#7c2d12" stroke="#fb923c" stroke-width="2.5" d="M329.58,-122.53C329.58,-122.53 12,-122.53 12,-122.53 6,-122.53 0,-116.53 0,-110.53 0,-110.53 0,-31.47 0,-31.47 0,-25.47 6,-19.48 12,-19.48 12,-19.48 329.58,-19.48 329.58,-19.48 335.58,-19.48 341.58,-25.48 341.58,-31.48 341.58,-31.48 341.58,-110.53 341.58,-110.53 341.58,-116.53 335.58,-122.53 329.58,-122.53"/>
+<text xml:space="preserve" text-anchor="middle" x="170.79" y="-88.17" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">earcam &#45;&#45;server</text>
+<text xml:space="preserve" text-anchor="middle" x="170.79" y="-63.42" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">USB microphone</text>
+<text xml:space="preserve" text-anchor="middle" x="170.79" y="-38.67" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">48 kHz, 1.8&#45;3.2 kHz band</text>
+</g>
+<!-- newest -->
+<g id="node5" class="node">
+<title>newest</title>
+<path fill="#047857" stroke="#94a3b8" stroke-width="2.5" d="M975.91,-110.15C975.91,-110.15 645.58,-110.15 645.58,-110.15 639.58,-110.15 633.58,-104.15 633.58,-98.15 633.58,-98.15 633.58,-43.85 633.58,-43.85 633.58,-37.85 639.58,-31.85 645.58,-31.85 645.58,-31.85 975.91,-31.85 975.91,-31.85 981.91,-31.85 987.91,-37.85 987.91,-43.85 987.91,-43.85 987.91,-98.15 987.91,-98.15 987.91,-104.15 981.91,-110.15 975.91,-110.15"/>
+<text xml:space="preserve" text-anchor="middle" x="810.74" y="-75.8" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">newest 50 ms window</text>
+<text xml:space="preserve" text-anchor="middle" x="810.74" y="-51.05" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">level &#160;trend &#160;contrast &#160;clip</text>
+</g>
+<!-- mic&#45;&gt;newest -->
+<g id="edge3" class="edge">
+<title>mic&#45;&gt;newest</title>
+<path fill="none" stroke="#fdba74" stroke-width="3.2" d="M342.75,-71C426.57,-71 527.91,-71 614.74,-71"/>
+<polygon fill="#fdba74" stroke="#fdba74" stroke-width="3.2" points="614.62,-75.55 627.62,-71 614.62,-66.45 614.62,-75.55"/>
+<text xml:space="preserve" text-anchor="middle" x="482.7" y="-75.45" font-family="DejaVu Sans Bold" font-size="19.00" fill="#f8fafc">SAMPLE every 50 ms</text>
+</g>
+<!-- newest&#45;&gt;fuse -->
+<g id="edge4" class="edge">
+<title>newest&#45;&gt;fuse</title>
+<path fill="none" stroke="#e2e8f0" stroke-width="3.2" d="M989.02,-71C1071.32,-71 1169.45,-71 1254.07,-71"/>
+<polygon fill="#e2e8f0" stroke="#e2e8f0" stroke-width="3.2" points="1254.07,-75.55 1267.07,-71 1254.07,-66.45 1254.07,-75.55"/>
+<text xml:space="preserve" text-anchor="middle" x="1135.41" y="-75.45" font-family="DejaVu Sans Bold" font-size="19.00" fill="#f8fafc">copy (&lt;= 50 ms old)</text>
+</g>
+<!-- buffer -->
+<g id="node7" class="node">
+<title>buffer</title>
+<path fill="#047857" stroke="#94a3b8" stroke-width="2.5" d="M1998.82,-110.15C1998.82,-110.15 1702.24,-110.15 1702.24,-110.15 1696.24,-110.15 1690.24,-104.15 1690.24,-98.15 1690.24,-98.15 1690.24,-43.85 1690.24,-43.85 1690.24,-37.85 1696.24,-31.85 1702.24,-31.85 1702.24,-31.85 1998.82,-31.85 1998.82,-31.85 2004.82,-31.85 2010.82,-37.85 2010.82,-43.85 2010.82,-43.85 2010.82,-98.15 2010.82,-98.15 2010.82,-104.15 2004.82,-110.15 1998.82,-110.15"/>
+<text xml:space="preserve" text-anchor="middle" x="1850.53" y="-75.8" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">RAM buffer (max 8192)</text>
+<text xml:space="preserve" text-anchor="middle" x="1850.53" y="-51.05" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">+ earlogs/*.csv</text>
+</g>
+<!-- fuse&#45;&gt;buffer -->
+<g id="edge5" class="edge">
+<title>fuse&#45;&gt;buffer</title>
+<path fill="none" stroke="#e2e8f0" stroke-width="3.2" d="M1632.23,-71C1645.28,-71 1658.44,-71 1671.48,-71"/>
+<polygon fill="#e2e8f0" stroke="#e2e8f0" stroke-width="3.2" points="1671.32,-75.55 1684.32,-71 1671.32,-66.45 1671.32,-75.55"/>
+</g>
+<!-- buffer&#45;&gt;solve -->
+<g id="edge6" class="edge">
+<title>buffer&#45;&gt;solve</title>
+<path fill="none" stroke="#e2e8f0" stroke-width="3.2" d="M2011.88,-71C2063.81,-71 2121.88,-71 2175.58,-71"/>
+<polygon fill="#e2e8f0" stroke="#e2e8f0" stroke-width="3.2" points="2175.39,-75.55 2188.39,-71 2175.39,-66.45 2175.39,-75.55"/>
+</g>
+<!-- drop -->
+<g id="node9" class="node">
+<title>drop</title>
+<path fill="#1d4ed8" stroke="#60a5fa" stroke-width="2.5" d="M3157.98,-110.15C3157.98,-110.15 2881.65,-110.15 2881.65,-110.15 2875.65,-110.15 2869.65,-104.15 2869.65,-98.15 2869.65,-98.15 2869.65,-43.85 2869.65,-43.85 2869.65,-37.85 2875.65,-31.85 2881.65,-31.85 2881.65,-31.85 3157.98,-31.85 3157.98,-31.85 3163.98,-31.85 3169.98,-37.85 3169.98,-43.85 3169.98,-43.85 3169.98,-98.15 3169.98,-98.15 3169.98,-104.15 3163.98,-110.15 3157.98,-110.15"/>
+<text xml:space="preserve" text-anchor="middle" x="3019.81" y="-75.8" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">move DROP waypoint</text>
+<text xml:space="preserve" text-anchor="middle" x="3019.81" y="-51.05" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">to loudest spot</text>
+</g>
+<!-- solve&#45;&gt;drop -->
+<g id="edge8" class="edge">
+<title>solve&#45;&gt;drop</title>
+<path fill="none" stroke="#fbbf24" stroke-width="3.2" d="M2534.45,-71C2631.82,-71 2753.62,-71 2850.71,-71"/>
+<polygon fill="#fbbf24" stroke="#fbbf24" stroke-width="3.2" points="2850.7,-75.55 2863.7,-71 2850.7,-66.45 2850.7,-75.55"/>
+<text xml:space="preserve" text-anchor="middle" x="2703.02" y="-97.95" font-family="DejaVu Sans Bold" font-size="19.00" fill="#f8fafc">EAR_RESULT</text>
+<text xml:space="preserve" text-anchor="middle" x="2703.02" y="-75.45" font-family="DejaVu Sans Bold" font-size="19.00" fill="#f8fafc">lat lon AGL alt confidence</text>
+</g>
+</g>
+</svg>
+</div>
+
+<table>
+  <tr><th>Field in geotagged sample</th><th>Origin</th></tr>
+  <tr><td><code>lat, lon, alt</code></td><td>Flight controller INS/GNSS when the shoot frame is sent</td></tr>
+  <tr><td><code>AGL</code></td><td>Flight controller (UTM alt &minus; ground alt, or rangefinder on rotorcraft)</td></tr>
+  <tr><td><code>level, trend, contrast, tone, alarm, clip</code></td><td>Newest earcam 50 ms window when the frame arrives (rejected if older than 500 ms)</td></tr>
+  <tr><td><code>timestamp</code></td><td>earcam monotonic clock of that window</td></tr>
+</table>
+
+<p class="note">Generated locally with Graphviz from <code>earcam-dataflow.dot</code> by
+<code>update-documentation.sh</code>; no external resources.</p>
+</body>
+</html>

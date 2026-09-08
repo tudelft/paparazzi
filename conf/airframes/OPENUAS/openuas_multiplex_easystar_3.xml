@@ -284,12 +284,15 @@
     <module name="nav" type="spiral_3D"/>
     <module name="nav" type="cube"/>
     <module name="nav" type="drop">
-      <define name="TRIGGER_DELAY" value="1.0" unit="s"/> <!--TODO get correct value;  time it take from shoot command till actual release of payload -->
-      <define name="VELOCITY_AT_RELEASE" value="11" unit="m/s"/><!-- TODO not implemented - to set to min airspeed -->
-      <define name="ALPHA" value="44.18e-4"/><!-- TODO: adjust it for your specific payload -->
-      <define name="MASS" value="2.50e-3" unit="KG"/>
-      <define name="SAFE_CLIMB" value="10" unit="m"/>
+      <!-- IMAV 2026 Mission 4 first-aid kit: 200 g, 100x120x40 mm (ALPHA = 0.5*rho*Cd*A, Cd about 1) -->
+      <define name="TRIGGER_DELAY" value="0.3" unit="s"/> <!--TODO measure: time from shoot command till the kit is free -->
+      <define name="AIRSPEED_AT_RELEASE" value="10" unit="m/s"/><!-- only used without a valid airspeed measurement -->
+      <define name="ALPHA" value="6.4e-3"/>
+      <define name="MASS" value="0.2" unit="KG"/>
+      <define name="SAFE_CLIMB" value="20" unit="m"/>
       <define name="CLIMB_TIME" value="3" unit="s"/>
+      <define name="NAV_DROP_USE_AGL_DIST" value="TRUE"/><!-- fall height from the rangefinder for the 2 m release -->
+      <define name="NAV_DROP_RELEASE_WITH_DELAY" value="TRUE"/><!-- release on crossing RELEASE (approaching_time 0) -->
     </module>
     <!-- <module name="nav" type="launcher"/> -->
     <!-- <module name="nav" type="skid_landing"/> -->
@@ -317,10 +320,27 @@
       <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/>
       <!-- <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="5.0"/> --><!-- Unit: m -->
       <configure name="CAMERA_PORT" value="UART5"/> <!-- For the real Flightcontroller to MORA connection-->
-      <!-- <configure name="CAMERA_ID" value="LWIRCAM"/>
-      <configure name="CAMERA_ID" value="AICAM"/> -->
+      <!-- Camera selection is a runtime setting: digital_cam_uart_camera_id 0=ALL 1=CHDK 2=AICAM 3=LWIR 4=EAR -->
       <!--<configure name="SITL_SERIAL" value="/tmp/catia-sim"/>--><!-- for local PC -->
       <configure name="SITL_SERIAL" value="/dev/ttyUSB0"/><!-- for actual device via FTDI cable to MORA on desk -->
+    </module>
+
+    <!-- Acoustic loud-spot search with the EARcam microphone on MORA (CATIA started with the earcam option).
+         IMAV 2026 Mission 4 (easystar3_imav2026_mission4_earcam.xml): star of low legs around the given
+         centre, throttle cut over the estimate (pusher prop masks the alarm), release at 1.5 m on the
+         rangefinder through nav_drop. -->
+    <module name="digital_cam_earcam">
+      <define name="EARCAM_PERIOD_S" value="0.05" unit="s"/><!-- 20 Hz = one earcam window, 0.5 m between samples at 10 m/s -->
+      <define name="EARCAM_QUIET_DELAY_S" value="1.5" unit="s"/><!-- prop spin-down before samples count (earcam_quiet_only) -->
+      <define name="EARCAM_REFINE_HALF_LENGTH_M" value="50" unit="m"/>
+      <define name="EARCAM_REFINE_HEIGHT_MIN_M" value="8" unit="m"/>
+      <define name="EARCAM_REFINE_MAX_ITERATIONS" value="3"/>
+      <define name="EARCAM_REFINE_LEGS" value="4"/>
+      <define name="EARCAM_USE_AGL_DIST" value="TRUE"/><!-- VB22A rangefinder holds the release height -->
+      <define name="EARCAM_USE_NAV_DROP" value="TRUE"/><!-- earcam_drop_shoot() opens the hatch through nav_drop -->
+      <define name="EARCAM_DROP_RELEASE_AGL_M" value="1.5" unit="m"/>
+      <define name="EARCAM_DROP_MAX_AGL_M" value="2.0" unit="m"/><!-- rule 5.4.7: no points above 2 m -->
+      <!-- quiet sampling, leg heights, turn radius and convergence are set per flight plan -->
     </module>
 
     <!-- <module name="traffic_info"> -->

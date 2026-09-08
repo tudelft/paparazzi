@@ -1,0 +1,25 @@
+// Build verification: the base airframe is swapped, compiled, and always restored
+// Render: dot -Tsvg build_verification.dot -o build_verification.svg
+digraph build_verification {
+    rankdir=TB;
+    fontname="Helvetica";
+    node  [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, fillcolor="#fff4d6"];
+    edge  [fontname="Helvetica", fontsize=9, color="#555555"];
+
+    start   [label="tuned XML written\n<name>_optim_NNN.xml", fillcolor="#e6f7e6"];
+    wellf   [label="XML well-formed?\n(ElementTree parse)", shape=diamond, fillcolor="#e8f0fe"];
+    backup  [label="read base airframe\ninto memory"];
+    swap    [label="copy tuned XML over\nbase airframe path"];
+    make    [label="make -C $PAPARAZZI_HOME -f Makefile.ac\nAIRCRAFT=<name> ap.compile"];
+    restore [label="restore base airframe\n(finally: always runs)", fillcolor="#f3e8ff"];
+    ok      [label="build check: PASS", shape=ellipse, fillcolor="#c8f0c8"];
+    bad     [label="build check: FAIL\nAutotuneError raised,\nlast 40 build lines in report", shape=ellipse, fillcolor="#f8c8c8"];
+    malformed [label="AutotuneError:\nXML not well-formed", shape=ellipse, fillcolor="#f8c8c8"];
+
+    start -> wellf;
+    wellf -> malformed [label="no"];
+    wellf -> backup    [label="yes"];
+    backup -> swap -> make -> restore;
+    restore -> ok  [label="exit 0"];
+    restore -> bad [label="exit != 0"];
+}

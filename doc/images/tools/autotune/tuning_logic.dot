@@ -1,0 +1,46 @@
+// How each telemetry measurement maps to an airframe XML parameter
+// Render: dot -Tsvg tuning_logic.dot -o tuning_logic.svg
+digraph tuning_logic {
+    rankdir=LR;
+    fontname="Helvetica";
+    node  [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11];
+    edge  [fontname="Helvetica", fontsize=9, color="#555555"];
+
+    subgraph cluster_seg {
+        label="Flight segments"; style="dashed"; color="#888888"; fontsize=11;
+        level [label="Straight & level\n|roll| < 5°, |vz| < 0.5 m/s,\n|yaw rate| < 5°/s, AUTO1/2", fillcolor="#e8f0fe"];
+        turn  [label="Banked turns\n|roll| > 15°, AUTO1/2,\nairspeed > 7 m/s", fillcolor="#e8f0fe"];
+    }
+
+    subgraph cluster_metric {
+        label="Measured"; style="dashed"; color="#888888"; fontsize=11;
+        m_theta [label="body pitch θ  vs\ndesired pitch\n→ trim error Δθ", fillcolor="#fff4d6"];
+        m_elev  [label="steady elevator\ncommand (pprz)", fillcolor="#fff4d6"];
+        m_yaw   [label="pilot rudder per\ndegree of bank", fillcolor="#fff4d6"];
+        m_rate  [label="achieved yaw rate vs\ng·tan(φ)/V\n→ coordination ratio", fillcolor="#fff4d6"];
+        m_v     [label="mean airspeed V\n(AIR_DATA.airspeed)", fillcolor="#fff4d6"];
+    }
+
+    subgraph cluster_xml {
+        label="Airframe XML"; style="dashed"; color="#888888"; fontsize=11;
+        x_neutral [label="INS_PITCH_NEUTRAL_DEFAULT\n+= Δθ  (clamped ±5°)", fillcolor="#e6f7e6"];
+        x_cruise  [label="V_CTL_AUTO_THROTTLE_\nNOMINAL_CRUISE_PITCH = θ", fillcolor="#e6f7e6"];
+        x_mix     [label="MIXER\nRUDDERVONS_OF_ROLL = k", fillcolor="#e6f7e6"];
+        x_laws    [label="command_laws\n$ruddervons = @YAW + k·@ROLL\nS_RUDDERVATOR_L/R use it", fillcolor="#e6f7e6"];
+        x_auto    [label="auto_rc_commands\nYAW: @YAW*0.9 → @YAW", fillcolor="#e6f7e6"];
+        x_radius  [label="MISC\nMIN_CIRCLE_RADIUS,\nLANDING_CIRCLE_RADIUS = R", fillcolor="#e6f7e6"];
+    }
+
+    target [label="--turn-radius R\n(CLI, default 30 m)\nbank = atan(V²/(g·R))", shape=note, fillcolor="#f3e8ff"];
+
+    level -> m_theta; level -> m_elev; level -> m_v;
+    turn  -> m_yaw;   turn  -> m_rate;
+
+    m_theta -> x_neutral; m_elev -> x_neutral [style=dotted, label="reported"];
+    m_theta -> x_cruise;
+    m_yaw   -> x_mix [label="k = pprz/deg · 45/9600"];
+    x_mix   -> x_laws;
+    m_rate  -> x_auto [style=dotted, label="rudder saturating"];
+    m_yaw   -> x_auto;
+    m_v     -> x_radius; target -> x_radius;
+}

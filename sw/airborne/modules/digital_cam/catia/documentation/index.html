@@ -338,8 +338,16 @@ physical cameras.</p>
 <td><code>catia --local --lwircam</code></td>
 <td>Tiny 1-C one-shot capture</td>
 </tr>
+<tr>
+<td>Acoustic loud-spot search</td>
+<td><code>catia --lwircam --earcam</code></td>
+<td><code>earcam --server</code> microphone levels</td>
+</tr>
 </tbody>
 </table>
+<p><code>--earcam</code> is additive: it runs the acoustic EARcam backend next to the selected
+optical camera. EARcam does not produce a photo; it geotags filtered sound
+levels and, when told to stop, returns the loudest spot.</p>
 <p>When running <code>catia</code> directly from the repository root, use its full path:</p>
 <pre><code class="language-sh">sw/airborne/modules/digital_cam/catia/catia --aicam
 </code></pre>
@@ -371,6 +379,232 @@ shell, during CATIA initialization:</p>
    --capture-server \
    --bare
 </code></pre>
+<h3 id="earcam-acoustic-backend">EARcam acoustic backend</h3>
+<p>For a non-specialist explanation of why a single USB microphone was chosen,
+how far it can hear a motionSCOUT alarm and what the loudest-spot fusion does
+step by step, read <a href="earcam-loudest-spot-explained.md">EARcam Explained</a>
+(rendered as <code>earcam-loudest-spot-explained.html</code>).</p>
+<p>The EARcam backend starts one persistent <code>earcam --server</code> process during CATIA
+initialization. <code>earcam</code> (source in <code>earcam/</code>, symlinked to the
+<code>get_maxsoundlevel_app</code> repository) samples the USB microphone (default
+<code>--device auto</code>: the first USB-Audio card with a capture PCM, any vendor or
+device id; the PCM2902 codec used on MORA and other look-alike dongles all work) at
+48 kHz, applies the 1.8-3.2 kHz motionSCOUT band-pass and tone detector, and
+prints one <code>SAMPLE</code> line every 50 ms with level, tone frequency, contrast,
+trend, and clipping flags. CATIA keeps only the newest line.</p>
+<p>The flight controller selects cameras with an optional camera id:</p>
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Camera</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>All available cameras (legacy <code>DC_SHOOT</code> behaviour)</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td>CHDK</td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td>AI camera</td>
+</tr>
+<tr>
+<td><code>3</code></td>
+<td>Tiny 1-C LWIR</td>
+</tr>
+<tr>
+<td><code>4</code></td>
+<td>EARcam</td>
+</tr>
+</tbody>
+</table>
+<p>A <code>MORA_SHOOT_TARGETED</code> frame for id <code>4</code> copies the newest microphone
+measurement together with the shot position, AGL, and altitude into a bounded
+session buffer and appends it to <code>earlogs/ear_&lt;date&gt;.csv</code>. Recording is a
+memory copy and does not occupy a capture worker. A <code>MORA_STOP_TARGETED</code> frame
+for id <code>4</code> (or <code>0</code>) runs <code>calculated_loudestspot()</code> and answers with
+<code>MORA_EAR_RESULT</code> containing latitude, longitude, AGL, altitude, level,
+confidence, and sample count. With 200-1000 samples the fusion completes in
+well under a millisecond.</p>
+<p><code>calculated_loudestspot()</code> rejects clipped and silent windows, prefers windows
+that passed the tone detector, removes implausibly quiet outliers with a
+MAD-scaled Hampel filter, forms a power-weighted centroid of the loudest
+quartile (rising trend adds weight), and refines it with a damped Gauss-Newton
+fit of an inverse-distance source model using each sample's own AGL. A fit that
+drifts far from the surveyed track falls back to the centroid. The confidence
+combines peak prominence, spatial concentration, and sample support.</p>
+<p>On the flight controller, <code>digital_cam_uart</code> only carries the camera id and the
+generic targeted shoot/stop frames. The separate <code>digital_cam_earcam</code> module
+(<code>earcam_ctrl.c</code>) owns the acoustic workflow: <code>earcam_start()</code>, <code>earcam_solve()</code>,
+<code>earcam_stop()</code>, <code>earcam_result_valid</code>, the refinement helpers, and
+<code>earcam_result_to_waypoint(WP_DROP)</code>; see
+<code>conf/flight_plans/OPENUAS/talon_earcam_loudspot_demo.xml</code> for the
+<code>find_loudspot</code> block sequence.</p>
+<h4 id="search-strategy-coarse-survey-then-star-refinement">Search strategy: coarse survey, then star refinement</h4>
+<p>A single strip survey localizes poorly across track: for a ground source the
+received level is <code>L0 - 20 log10(sqrt(d^2 + AGL^2))</code>, so at 40 m AGL a 10 m
+lateral error costs only about 1 dB. The demo flight plan therefore uses two
+stages:</p>
+<ol>
+<li><code>find_loudspot</code>: normal <code>nav_survey_poly_osam</code> strips with EARcam sampling.
+   <code>earcam_solve()</code> requests an interim result while sampling continues.</li>
+<li><code>refine_*</code>: a star of <code>earcam_refine_legs</code> straight legs through the
+   estimate at a lower AGL, joined by circle turns. Consecutive legs meet under
+   180/N degrees, so the turn circle is placed as a fillet tangent to both leg
+   lines: the legs end at the tangent points (<code>max(earcam_refine_half_length_m,
+   R / tan(90/N))</code> from the centre, R = |nav_radius|; 97 m for 4 legs and
+   R = 40 m) and the circle exits exactly onto the next leg with the right
+   heading, so every pass over the estimate is a straight, wings-level run-in.
+   Every pass gives an independent one-dimensional peak; their intersection
+   fixes the position, and lower AGL sharpens each peak. After each star
+   <code>earcam_solve()</code> fuses all samples so far and <code>earcam_refine_update()</code>
+   re-centres; the loop ends when the estimate moves less than
+   <code>earcam_refine_converge_m</code> or after <code>earcam_refine_max_iterations</code>.</li>
+<li><code>goto_loudspot</code>: <code>earcam_stop()</code> closes the session; the plan waits for the
+   final reply (the one the sound picture shows) and moves <code>DROP</code> onto it,
+   falling back to the last interim result if no reply arrives within 5 s.
+   <code>find_loudspot_failed</code> (no plausible spot or no reply) rescans once, then
+   holds in <code>Standby</code>.</li>
+</ol>
+<p>During sampling the EAR shots advance the photo number like any camera, but
+DC_SHOT telemetry is rate-limited to <code>EARCAM_REPORT_PERIOD_S</code> (1 s) so the GCS
+shows the aircraft listening without flooding a slow telemetry link.</p>
+<p>Synthetic evaluation (<code>test_loudestspot.c</code>): a 4-strip survey at 40 m AGL with
+3 dB microphone noise gives 1-2 m error; at 60 m AGL with 4 dB noise, about 5 m.
+One or two 4-leg stars at 20-25 m AGL bring all cases to 0.3-0.5 m.</p>
+<p>Flight plan rule: block exceptions are evaluated before the block body, so a
+block must not request a solve and test the reply in the same block. The demo
+plan requests in <code>find_loudspot_finish</code> / <code>refine_next</code> and waits for
+<code>earcam_result_fresh</code> in <code>find_loudspot_wait</code> / <code>refine_solve</code>;
+<code>earcam_result_valid</code> stays true once any result exists and is what
+<code>earcam_result_to_waypoint()</code> uses; an INVALID reply never discards it.</p>
+<p>Robustness on MORA: a missing or unplugged microphone is not fatal. <code>--earcam</code>
+starts even when <code>earcam</code> cannot open the device, the optical cameras keep
+working, and <code>ear_cam_pipe</code> restarts the <code>earcam</code> server every 3 s until it
+reports <code>EARCAM_READY</code>; samples taken without a microphone are rejected (and
+logged at most once per second) and a stop without usable samples returns an
+INVALID result. The RAM session holds 16384 samples (27 min at 10 Hz); beyond
+that the oldest half is dropped.</p>
+<h4 id="sound-picture">Sound picture</h4>
+<p>The final <code>earcam_stop()</code> also writes one acoustic "photo"
+<code>photos/eNNNNNN.jpg</code> (NNNNNN = the last EAR shot number) next to the optical
+photos, with EXIF at the loudest spot and the usual SODA hand-off. It is a
+north-up map of received sound power deposited under the track with a Gaussian
+footprint of sigma = AGL/2: blue is quiet, red is loud, grey is the flown track,
+the white ring marks the fused loudest spot. The cell size is <code>max(2 m, mean AGL/4)</code>,
+so the picture never pretends to more resolution than a single microphone at
+that height can deliver; the position accuracy lives in the marker, not in the
+pixels.</p>
+<p><img alt="EARcam sound picture from the NPS mission" src="earcam-sound-picture-example.jpg"></p>
+<p>Example from the NPS run below: approach from Standby (bottom right), the
+4-leg refinement star with fillet turns (petals) crossing at the source, 50 m
+scale bar.</p>
+<h4 id="full-loop-in-the-simulator-nps">Full loop in the simulator (NPS)</h4>
+<p><code>--earcam-sim LAT,LON[,DB_AT_1M]</code> replaces the microphone by a virtual
+loudspeaker: CATIA synthesizes the level from each shot's own position
+(inverse-distance law, +/-1.5 dB noise) and no <code>earcam</code> process is started.
+With that, the whole chain flies in NPS. <code>conf/conf_earcam_sim.xml</code> defines
+<code>EasystarEar</code> (EasyStar 3 airframe, demo flight plan, earcam settings):</p>
+<pre><code class="language-sh">make CONF_XML=conf/conf_earcam_sim.xml AIRCRAFT=EasystarEar SITL_SERIAL=/tmp/catia-sim nps.compile
+python3 sw/simulator/nps/nps_earcam_mission.py --aircraft EasystarEar --ac-id 235 \
+    --speaker 48.81050,7.85160 --time-factor 4
+</code></pre>
+<p>The script starts <code>link</code>, <code>catia --local --earcam-sim ...</code> and <code>simsitl</code>,
+launches, jumps to <code>find_loudspot</code> and follows the plan through the drop. It
+prints the block timeline, DC_SHOT count, the DROP waypoint CATIA produced,
+the position error against the loudspeaker and the closest approach of the
+aircraft to DROP. Reference run: survey 54 s, one 4-leg star, 1382 EAR samples
+(173 DC_SHOT reports), DROP 0.8 m from the speaker, sound picture
+<code>photos/e001382.jpg</code>. The same file also defines <code>AdamEar</code> (Talon) for building
+the real-aircraft firmware with the demo flight plan.</p>
+<h4 id="imav-2026-mission-4-rulebook-547">IMAV 2026 Mission 4 (rulebook 5.4.7)</h4>
+<p>The demo plan above does not score in Mission 4: the drop must be released
+below 2 m (else no points), points fall from 50 cm (full) to 300 cm (none)
+from the mannequin's navel, doubled for the mannequin wearing the motionSCOUT
+K-T-R (2.6-3.0 kHz, 95 dB at 3 m), and the three mannequins lie within 25 m of
+a GPS point given on the day. <code>easystar3_imav2026_mission4_earcam.xml</code>
+(aircraft <code>EasystarM4</code> in the same conf) is tailored to that:</p>
+<ul>
+<li>No survey: <code>earcam_result_from_waypoint(WP_M4C)</code> seeds the star on the given
+  centre (move waypoint <code>M4C</code> before the flight). Results further than 35 m
+  from it are rejected (<code>earcam_result_within</code>).</li>
+<li>Low, quiet star: 4 legs of 2 x 72 m through the estimate at 12 m above
+  ground with 30 m fillet turns (about 19 deg bank at 10 m/s). The block
+  <code>pre_call</code> <code>earcam_refine_leg_throttle(40, 30)</code> kills the throttle 40 m
+  before the centre and restores it 30 m past it; with <code>earcam_quiet_only</code>
+  samples are only taken once the propeller has stopped (1.5 s), so the
+  alarm is heard while gliding from 12 m to about 6 m over the estimate.
+  Stars repeat until two estimates agree within 1.5 m (at most 3).</li>
+<li>Release with the existing <code>nav_drop</code> module exactly as flown at the OBC 2014
+  (<code>include_obc2014_mission.xml</code>): <code>nav_drop_compute_approach</code> lays out the
+  base turn, START (250 m before the spot on the present course) and the
+  RELEASE point from wind, speed and fall height; the plan glides
+  (<code>vmode="glide"</code>) from 8 m to a level-off point 50 m before RELEASE at
+  1.5 m, holds that height on the VB22A rangefinder
+  (<code>earcam_drop_altitude</code>, <code>EARCAM_USE_AGL_DIST</code>, <code>NAV_DROP_USE_AGL_DIST</code>)
+  and opens the hatch in the cycle the RELEASE perpendicular is crossed
+  (<code>NAV_DROP_RELEASE_WITH_DELAY</code>, <code>approaching_time="0"</code>), but only at or
+  below 2 m (<code>earcam_drop_shoot</code>, <code>earcam_drop_max_agl_m</code>). Too high or too
+  low (<code>earcam_drop_too_low</code>, rangefinder under 0.6 m): climb out and fly
+  the approach again, at most 3 approaches.</li>
+<li>Kit ballistics for <code>nav_drop</code>: 200 g, 100x120x40 mm, <code>ALPHA</code> 6.4e-3 kg/m,
+  <code>MASS</code> 0.2 kg, <code>TRIGGER_DELAY</code> 0.3 s. Measure the delay on the real hatch
+  and add the GPS position latency of the aircraft (10 Hz ublox: about
+  0.1 s); every 0.1 s is 1 m along track at 10 m/s.</li>
+<li>The earcam band is narrowed to the K-T-R tone: <code>catia --earcam-band
+  2400,3200</code> in <code>catia.service</code> (2.6-3.0 kHz plus 3 percent Doppler at
+  10 m/s and unit spread).</li>
+</ul>
+<pre><code class="language-sh">make CONF_XML=conf/conf_earcam_sim.xml AIRCRAFT=EasystarM4 SITL_SERIAL=/tmp/catia-sim nps.compile
+python3 sw/simulator/nps/nps_earcam_mission.py --aircraft EasystarM4 --ac-id 237 \
+    --speaker 48.81050,7.85160 --time-factor 4 --start-block m4_search
+</code></pre>
+<p>The alarm is 9 m from <code>M4C</code> in this run. The script reports, besides the
+localisation error, the release height and speed, and decomposes the impact
+<code>nav_drop</code> expects (waypoint <code>_IMPACT</code>, downlinked at the release) against
+the speaker. Reference: two stars (260 s), 507 quiet samples, loudest spot
+0.8 m from the speaker, release at 1.50 m and 10.1 m/s, impact 2.3 m from the
+speaker (1.0 m along track from the 4 Hz simulated GPS latency, 1.2 m across
+track from route following). The offline fusion test <code>test_loudestspot</code>
+covers the same geometry (<code>mission4:</code> lines, alarm 5-24 m off centre,
+sub-metre after two stars).</p>
+<p>Real-flight notes: fly the star heights (<code>earcam_refine_height_from_m</code>,
+<code>_to_m</code>, settings) and the release height as low as the field allows; the
+quiet-zone glide ends about 6 m above ground 30 m past the centre. MORA runs
+on board, so the autonomy factor is 1.0; a 1.3 kg EasyStar 3 gets a weight
+factor of about 1.87.</p>
+<p>Desk-test the whole loop without an autopilot:</p>
+<pre><code class="language-sh">make -C sw/airborne/modules/digital_cam/catia CATIA_EAR_CAM_DEVICE=default catia
+sw/airborne/modules/digital_cam/catia/catia --local --earcam --test --debug &amp;
+python3 sw/airborne/modules/digital_cam/catia/earcam_desk_test.py
+</code></pre>
+<p>The offline fusion test <code>test_loudestspot.c</code> simulates strip surveys and star
+refinement over a ground source and requires sub-metre agreement:</p>
+<pre><code class="language-sh">cd sw/airborne/modules/digital_cam/catia
+gcc -std=c11 -Wpedantic -O2 -Wall -Wextra -Werror -I. -I../../../../ext/opencv_bebop/opencv/3rdparty/libjpeg \
+    -o .build/test_loudestspot test_loudestspot.c ear_cam_pipe.c ear_heatmap.c .build/libjpeg/*.o -lpthread -lm
+./.build/test_loudestspot
+</code></pre>
+<h3 id="sound-picture-over-satellite-imagery">Sound picture over satellite imagery</h3>
+<p>In flight MORA writes <code>photos/eNNNNNN.jpg</code> (field, 1 px white sample dots with a
+black ring, loudest-spot marker, 50 m bar), <code>eNNNNNN_field.jpg</code> (field only) and
+<code>eNNNNNN.geo</code> (georeference). On the ground, <code>ear_heatmap_overlay.py</code> puts the
+field translucently over Google satellite tiles (same source and <code>var/maps/Google</code>
+cache as the GCS) and redraws the samples, the marker, an optional known source
+(<code>--truth</code>) and the aircraft track (<code>--track</code>, CSV <code>t_s,lat_deg,lon_deg,...</code>) on top:</p>
+<pre><code class="language-sh">make ear_heatmap_replay                       # re-render any earlogs/*.csv session
+./ear_heatmap_replay earlogs/ear_20260908_112128.csv photos/e000506.jpg
+python3 ear_heatmap_overlay.py photos/e000506.jpg --log earlogs/ear_20260908_112128.csv \
+    --track ../../../../../var/nps_earcam/EasystarM4_earcam_mission.track.csv --truth 48.8103725,7.8516981
+</code></pre>
+<p><code>nps_earcam_mission.py</code> writes the track CSV and runs the overlay itself at the
+end of a simulation; <code>--speaker-radius 25 --seed N</code> places the virtual speaker at
+a random point inside the 25 m Mission 4 circle instead of at the given point.</p>
 <h2 id="test-any-camera-selection">Test Any Camera Selection</h2>
 <p>Add <code>--test</code> to bypass camera hardware while retaining the selected backend in
 the logs. This is useful before connecting CHDK or Raspberry Pi hardware.</p>
@@ -696,6 +930,11 @@ its source files ad hoc.</p>
 <td><code>catia/photos/</code></td>
 <td><code>c000006.jpg</code></td>
 </tr>
+<tr>
+<td>EARcam</td>
+<td><code>catia/earlogs/</code></td>
+<td><code>ear_20260907_213330.csv</code></td>
+</tr>
 </tbody>
 </table>
 <p>Change paths or the camera command at build time:</p>
@@ -705,7 +944,10 @@ its source files ad hoc.</p>
    CATIA_AI_CAM_COMMAND=/usr/bin/rpicam-still \
     CATIA_LWIR_CAM_PHOTO_DIR=/data/photos \
     CATIA_CHDK_PHOTO_DIR=/data/photos \
-   CATIA_LWIR_CAM_COMMAND=/opt/catia/sample
+   CATIA_LWIR_CAM_COMMAND=/opt/catia/sample \
+   CATIA_EAR_CAM_COMMAND=/opt/catia/earcam \
+   CATIA_EAR_CAM_DEVICE=auto \
+   CATIA_EAR_CAM_LOG_DIR=/data/earlogs
 </code></pre>
 <h2 id="command-reference">Command Reference</h2>
 <table>
@@ -735,6 +977,14 @@ its source files ad hoc.</p>
 <tr>
 <td><code>--lwircam</code></td>
 <td>Select the Tiny 1-C LWIR camera backend</td>
+</tr>
+<tr>
+<td><code>--earcam</code></td>
+<td>Also run the acoustic EARcam backend (camera id 4)</td>
+</tr>
+<tr>
+<td><code>--earcam-sim LAT,LON[,DB]</code></td>
+<td>EARcam backend with a virtual loudspeaker instead of a microphone (NPS)</td>
 </tr>
 <tr>
 <td><code>--test</code></td>

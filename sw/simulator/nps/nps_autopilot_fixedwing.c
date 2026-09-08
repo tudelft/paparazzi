@@ -259,7 +259,8 @@ void sim_overwrite_ins(void)
     struct LlaCoor_f lla;
     LLA_COPY(lla, fdm.lla_pos);
     struct UtmCoor_f utm;
-    utm.zone = (lla.lon / 1e7 + 180) / 6 + 1;
+    // fdm.lla_pos is in radians; use the origin zone so ENU differences stay valid.
+    utm.zone = stateGetUtmOrigin_f()->zone;
     utm_of_lla_f(&utm, &lla);
     stateSetPositionUtm_f(MODULE_NPS_ID, &utm);
   }

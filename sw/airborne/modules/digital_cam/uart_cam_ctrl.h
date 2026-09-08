@@ -32,6 +32,7 @@
 #define DIGITAL_CAM_UART_H
 
 #include "modules/digital_cam/dc.h"
+#include "modules/digital_cam/catia/protocol.h"
 
 extern void digital_cam_uart_init(void);
 
@@ -40,5 +41,21 @@ extern void digital_cam_uart_event(void);
 
 extern int digital_cam_uart_thumbnails;
 extern int digital_cam_uart_status;
+
+/** Camera selection for targeted MORA commands (MORA_CAMERA_ALL = every camera). */
+extern uint8_t digital_cam_uart_camera_id;
+
+/** Shoot with one camera (or all with MORA_CAMERA_ALL), sending the current pose.
+ *  The photo number always advances; with report=false no DC_SHOT telemetry is sent
+ *  (high-rate sampling on slow links). */
+extern uint8_t digital_cam_uart_shoot(uint8_t camera_id, bool report);
+/** Ask one camera (or all) to stop/finalize. With keep_session the camera reports an
+ *  interim result but keeps collecting (used by EARcam refinement). */
+extern uint8_t digital_cam_uart_stop(uint8_t camera_id, bool keep_session);
+
+/** Handler for MORA messages this module does not consume itself (e.g. EARcam results).
+ *  Called with the parsed frame in mora_protocol; return true when handled. */
+typedef bool (*digital_cam_uart_rx_handler_t)(const struct mora_transport *frame);
+extern void digital_cam_uart_set_rx_handler(digital_cam_uart_rx_handler_t handler);
 
 #endif // GPIO_CAM_CTRL_H

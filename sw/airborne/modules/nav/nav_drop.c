@@ -67,6 +67,20 @@
 #define AIRSPEED_AT_RELEASE 14.
 #endif
 
+#ifndef NAV_DROP_USE_AGL_DIST
+#define NAV_DROP_USE_AGL_DIST FALSE
+#endif
+#if NAV_DROP_USE_AGL_DIST
+#include "modules/sonar/agl_dist.h"
+#endif
+
+/** Move RELEASE back by the ground travel during TRIGGER_DELAY so the flight plan
+ * can command the release when crossing it (approaching_time="0"): the distance
+ * test of a non-zero approaching_time fires late when there is a cross-track error. */
+#ifndef NAV_DROP_RELEASE_WITH_DELAY
+#define NAV_DROP_RELEASE_WITH_DELAY FALSE
+#endif
+
 float nav_drop_trigger_delay = TRIGGER_DELAY;
 float airspeed = AIRSPEED_AT_RELEASE;
 float nav_drop_start_qdr;
@@ -79,6 +93,8 @@ static void integrate(uint8_t wp_target)
 {
   /* Inspired from Arnold Schroeter's code */
   int i = 0;
+  float vx0 = nav_drop_vx;
+  float vy0 = nav_drop_vy;
   while (nav_drop_z > 0. && i < MAX_STEPS) {
     /* relative wind experienced by the ball (wind in NED frame) */
     float airx = -nav_drop_vx + stateGetHorizontalWindspeed_f()->y;
@@ -106,10 +122,23 @@ static void integrate(uint8_t wp_target)
     float t = - nav_drop_z / nav_drop_vz;
     nav_drop_x += nav_drop_vx * t;
     nav_drop_y += nav_drop_vy * t;
+  } else if (nav_drop_z < 0. && nav_drop_vz < 0.) {
+    /* Last step went below ground: take back the overshoot (matters for
+       low releases, where a whole DT step is a large part of the fall) */
+    float t = nav_drop_z / nav_drop_vz;
+    nav_drop_x -= nav_drop_vx * t;
+    nav_drop_y -= nav_drop_vy * t;
   }
 
   waypoints[WP_RELEASE].x = waypoints[wp_target].x - nav_drop_x;
   waypoints[WP_RELEASE].y = waypoints[wp_target].y - nav_drop_y;
+#if NAV_DROP_RELEASE_WITH_DELAY
+  waypoints[WP_RELEASE].x -= vx0 * nav_drop_trigger_delay;
+  waypoints[WP_RELEASE].y -= vy0 * nav_drop_trigger_delay;
+#else
+  (void)vx0;
+  (void)vy0;
+#endif
 }
 
 
@@ -118,6 +147,12 @@ unit_t nav_drop_update_release(uint8_t wp_target)
 {
 
   nav_drop_z = stateGetPositionUtm_f()->alt - waypoints[wp_target].a;
+#if NAV_DROP_USE_AGL_DIST
+  // Low releases: the rangefinder height beats barometric altitude minus target altitude.
+  if (agl_dist_valid) {
+    nav_drop_z = agl_dist_value_filtered;
+  }
+#endif
   nav_drop_x = 0.;
   nav_drop_y = 0.;
 

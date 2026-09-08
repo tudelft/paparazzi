@@ -1,5 +1,5 @@
 [Unit]
-Description=CATIA MORA LWIR camera service
+Description=CATIA MORA LWIR and EAR camera service
 Documentation=file:/home/air/digital_cam/documentation/index.html
 After=local-fs.target systemd-udevd.service
 RequiresMountsFor=/home/air/digital_cam
@@ -16,8 +16,9 @@ Environment=HOME=/home/air
 Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ExecStartPre=/usr/bin/test -x /home/air/digital_cam/catia
 ExecStartPre=/usr/bin/test -x /home/air/digital_cam/sample
+ExecStartPre=/usr/bin/test -x /home/air/digital_cam/earcam
 ExecStartPre=/usr/bin/test -c /dev/serial0
-ExecStart=/home/air/digital_cam/catia --lwircam
+ExecStart=/home/air/digital_cam/catia --lwircam --earcam --earcam-band 2400,3200
 Restart=always
 RestartSec=3s
 TimeoutStartSec=45s
