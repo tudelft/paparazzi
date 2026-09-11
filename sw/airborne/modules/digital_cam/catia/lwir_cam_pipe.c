@@ -1,7 +1,9 @@
 #include "lwir_cam_pipe.h"
 
 #include <errno.h>
+#include <stdlib.h>
 #include <limits.h>
+#include <math.h>
 #include <poll.h>
 #include <signal.h>
 #include <spawn.h>
@@ -17,7 +19,7 @@
 #endif
 
 #ifndef CATIA_LWIR_CAM_COMMAND
-#define CATIA_LWIR_CAM_COMMAND "lwircam/sample"
+#define CATIA_LWIR_CAM_COMMAND "lwircam/lwircam"
 #endif
 
 extern char **environ;
@@ -25,6 +27,59 @@ extern char **environ;
 static pid_t capture_server_pid = -1;
 static int capture_server_input = -1;
 static int capture_server_output = -1;
+static double capture_delay_s = -1;
+static struct capture_timing capture_times;
+static bool native_raw_enabled;
+static const char *calibration_path;
+
+void lwir_cam_pipe_set_native_raw(int enabled)
+{
+  native_raw_enabled = enabled != 0;
+}
+
+int lwir_cam_pipe_set_calibration(const char *path)
+{
+  if (path == NULL || path[0] == '\0') return -1;
+  calibration_path = path;
+  return 0;
+}
+
+struct capture_timing lwir_cam_pipe_capture_timing(void)
+{
+  return capture_times;
+}
+
+static int parse_capture_timing(const char *text, struct capture_timing *timing, bool callback)
+{
+  uint64_t values[4] = {0};
+  const size_t count = callback ? 4 : 2;
+  for (size_t index = 0; index < count; ++index) {
+    char *end;
+    if (*text < '0' || *text > '9') return 0;
+    errno = 0;
+    unsigned long long value = strtoull(text, &end, 10);
+    if (errno != 0 || value > UINT64_MAX) return 0;
+    values[index] = value;
+    if (index + 1 == count) {
+      if (*end != '\0') return 0;
+    } else {
+      if (*end != ' ') return 0;
+      text = end + 1;
+    }
+  }
+  struct capture_timing parsed = {
+    .request_monotonic_us = values[0], .arrival_monotonic_us = values[1],
+    .callback_sequence = values[2], .callback_drops = values[3], .callback_arrival = callback
+  };
+  if (!capture_timing_valid(&parsed)) return 0;
+  *timing = parsed;
+  return 1;
+}
+
+double lwir_cam_pipe_capture_delay(void)
+{
+  return capture_delay_s;
+}
 
 static int read_server_status(const char *expected, int timeout_ms)
 {
@@ -55,6 +110,26 @@ static int read_server_status(const char *expected, int timeout_ms)
     }
 
     line[line_size] = '\0';
+    double delay;
+    char trailing;
+    if (strcmp(expected, "LWIR_SERVER_OK") == 0 && !capture_timing_valid(&capture_times)
+        && sscanf(line, "LWIR_SERVER_DELAY %lf %c", &delay, &trailing) == 1
+        && isfinite(delay) && delay >= 0 && delay <= 20) {
+      capture_delay_s = delay;
+    }
+    const char timing_prefix[] = "LWIR_SERVER_TIMING ";
+    if (strcmp(expected, "LWIR_SERVER_OK") == 0
+        && !capture_times.callback_arrival
+        && strncmp(line, timing_prefix, sizeof(timing_prefix) - 1) == 0
+        && parse_capture_timing(line + sizeof(timing_prefix) - 1, &capture_times, false)) {
+      capture_delay_s = (capture_times.arrival_monotonic_us - capture_times.request_monotonic_us) / 1e6;
+    }
+    const char callback_prefix[] = "LWIR_SERVER_CALLBACK_TIMING ";
+    if (strcmp(expected, "LWIR_SERVER_OK") == 0
+        && strncmp(line, callback_prefix, sizeof(callback_prefix) - 1) == 0
+        && parse_capture_timing(line + sizeof(callback_prefix) - 1, &capture_times, true)) {
+      capture_delay_s = (capture_times.arrival_monotonic_us - capture_times.request_monotonic_us) / 1e6;
+    }
     if (strcmp(line, expected) == 0) {
       return 0;
     }
@@ -141,12 +216,13 @@ int lwir_cam_pipe_init(const char *unused)
     return -1;
   }
 
-  char *const arguments[] = {
-    (char *)CATIA_LWIR_CAM_COMMAND,
-    (char *)"--capture-server",
-    (char *)"--bare",
-    NULL
-  };
+  char *arguments[5];
+  size_t count = 0;
+  arguments[count++] = (char *)CATIA_LWIR_CAM_COMMAND;
+  arguments[count++] = (char *)"--capture-server";
+  arguments[count++] = (char *)"--bare";
+  if (native_raw_enabled) arguments[count++] = (char *)"--native-raw";
+  arguments[count] = NULL;
   int spawn_result = posix_spawn(&capture_server_pid, CATIA_LWIR_CAM_COMMAND,
                                  &actions, NULL, arguments, environ);
   posix_spawn_file_actions_destroy(&actions);
@@ -174,8 +250,64 @@ int lwir_cam_pipe_init(const char *unused)
   return 0;
 }
 
+static int process_image(char *filename, int geolocate)
+{
+  if (filename == NULL || filename[0] == '\0') {
+    return -1;
+  }
+
+  char *arguments[7];
+  size_t count = 0;
+  arguments[count++] = (char *)CATIA_LWIR_CAM_COMMAND;
+  if (geolocate) {
+    arguments[count++] = (char *)"--geolocate";
+    arguments[count++] = filename;
+    if (calibration_path != NULL) {
+      arguments[count++] = (char *)"--calibration";
+      arguments[count++] = (char *)calibration_path;
+    }
+  } else {
+    arguments[count++] = (char *)"--mock-image";
+    arguments[count++] = filename;
+    arguments[count++] = (char *)"--output";
+    arguments[count++] = filename;
+  }
+  arguments[count] = NULL;
+  pid_t camera_pid;
+  int spawn_result = posix_spawn(&camera_pid, CATIA_LWIR_CAM_COMMAND,
+                                 NULL, NULL, arguments, environ);
+  if (spawn_result != 0) {
+    fprintf(stderr, "LWIR_CAM_PIPE:\tfailed to start image processing: %s\n",
+                strerror(spawn_result));
+    return -1;
+  }
+
+  int status;
+  pid_t wait_result;
+  do {
+    wait_result = waitpid(camera_pid, &status, 0);
+  } while (wait_result < 0 && errno == EINTR);
+  if (wait_result < 0 || !WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+    fprintf(stderr, "LWIR_CAM_PIPE:\timage processing failed\n");
+    return -1;
+  }
+  return 0;
+}
+
+int lwir_cam_pipe_process_mock(char *filename)
+{
+  return process_image(filename, 0);
+}
+
+int lwir_cam_pipe_geolocate(char *filename)
+{
+  return process_image(filename, 1);
+}
+
 int lwir_cam_pipe_shoot(char *filename, size_t filename_size, int image_number)
 {
+  capture_delay_s = -1;
+  capture_times = (struct capture_timing){0};
   if (filename == NULL || filename_size == 0 || image_number < 0) {
     return -1;
   }

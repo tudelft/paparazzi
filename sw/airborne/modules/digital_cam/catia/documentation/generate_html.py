@@ -21,6 +21,22 @@ DOCUMENTATION_DIR = Path(__file__).resolve().parent
 
 # (source markdown, output html, title, description, lede)
 DOCUMENTS = (
+  (
+    "mission2-score-first.md",
+    "mission2-score-first.html",
+    "Mission 2: Maximize Points, Keep The Airframe",
+    "Fixed-hardware IMAV 2026 Mission 2 scoring, airframe preservation and validation plan",
+    "Maximize our chance of winning with the existing aircraft. Improve "
+    "the onboard software and bring the Talon back with its Mission 2 results.",
+  ),
+  (
+    "lwir-calibration.md",
+    "lwir-calibration.html",
+    "LWIR Camera Calibration",
+    "Practical Tiny1-C lens and mounting calibration using an ordinary workshop target",
+    "A measured lens, a known mounting direction, and evidence you can keep. "
+    "Work through the Tiny1-C calibration one clear checkpoint at a time.",
+  ),
     (
         "README.md",
         "index.html",
@@ -112,7 +128,7 @@ nav a {
   text-decoration: none;
 }
 nav a:hover { border-color: var(--cyan); color: var(--cyan); background: white; }
-main { min-width: 0; }
+main { min-width: 0; overflow-wrap: anywhere; }
 main > h1 { display: none; }
 h1, h2, h3 { line-height: 1.18; letter-spacing: 0; }
 h2 {

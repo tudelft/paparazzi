@@ -27,15 +27,15 @@
  *
  * where checksum is computed over length and payload:
  * @code
- * mora_ck_a = mora_ck_b = length
+ * catia_ck_a = catia_ck_b = length
  * for each byte b in payload
- *     mora_ck_a += b;
- *     mora_ck_b += mora_ck_a;
+ *     catia_ck_a += b;
+ *     catia_ck_b += catia_ck_a;
  * @endcode
  */
 
-#ifndef MORA_TRANSPORT_H
-#define MORA_TRANSPORT_H
+#ifndef CATIA_TRANSPORT_H
+#define CATIA_TRANSPORT_H
 
 #include <inttypes.h>
 #include <stdbool.h>
@@ -43,8 +43,8 @@
 /////////////////////////////////////////////////////////////////////
 // MESSAGES
 
-#define MORA_SHOOT              1
-#define MORA_SHOOT_MSG_SIZE     (4*10)
+#define CATIA_SHOOT              1
+#define CATIA_SHOOT_MSG_SIZE     (4*10)
 
 // 7 * 4 bytes int32_t
 // nr, lat, lon, h, phi, theta, psi
@@ -62,69 +62,88 @@ union dc_shot_union {
     int32_t course;
     int32_t groundalt;
   } data;
-  uint8_t bin[MORA_SHOOT_MSG_SIZE];
+  uint8_t bin[CATIA_SHOOT_MSG_SIZE];
   int32_t i[10];
 };
 
-#define MORA_BUFFER_EMPTY       2
+#define CATIA_BUFFER_EMPTY       2
 
 // 0 bytes payload: null
 
-#define MORA_PAYLOAD            3
-#define MORA_PAYLOAD_MSG_SIZE   70
+#define CATIA_PAYLOAD            3
+#define CATIA_PAYLOAD_MSG_SIZE   70
 
 
 // 72 bytes
 
-#define MORA_STATUS             4
-#define MORA_STATUS_MSG_SIZE    (4*2)
+#define CATIA_STATUS             4
+#define CATIA_STATUS_MSG_SIZE    (4*2)
 
 // 4*2 bytes
-union mora_status_union {
-  struct mora_status_struct {
+union catia_status_union {
+  struct catia_status_struct {
     uint16_t cpu;
     uint16_t threads;
     uint16_t shots;
     uint16_t extra;
   } data;
-  uint8_t bin[MORA_STATUS_MSG_SIZE];
+  uint8_t bin[CATIA_STATUS_MSG_SIZE];
 };
 
 /////////////////////////////////////////////////////////////////////
-// CAMERA SELECTION (additive; legacy MORA_SHOOT means MORA_CAMERA_ALL)
+// CAMERA SELECTION (additive; legacy CATIA_SHOOT means CATIA_CAMERA_ALL)
 
-#define MORA_CAMERA_ALL         0
-#define MORA_CAMERA_CHDK        1
-#define MORA_CAMERA_AICAM       2
-#define MORA_CAMERA_LWIRCAM     3
-#define MORA_CAMERA_EARCAM      4
+#define CATIA_CAMERA_ALL         0
+#define CATIA_CAMERA_CHDK        1
+#define CATIA_CAMERA_AICAM       2
+#define CATIA_CAMERA_LWIRCAM     3
+#define CATIA_CAMERA_EARCAM      4
 
-#define MORA_SHOOT_TARGETED          5
-#define MORA_SHOOT_TARGETED_MSG_SIZE (MORA_SHOOT_MSG_SIZE + 4)
+#define CATIA_CAMERA_MASK_NONE   0x00U
+#define CATIA_CAMERA_MASK_CHDK   0x01U
+#define CATIA_CAMERA_MASK_AICAM  0x02U
+#define CATIA_CAMERA_MASK_LWIR   0x04U
+#define CATIA_CAMERA_MASK_EAR    0x08U
+#define CATIA_CAMERA_MASK_ALL    0xFFU
+#define CATIA_CAMERA_MASK_SUPPORTED 0x0FU
+
+#define CATIA_SHOOT_MASK          12
+#define CATIA_SHOOT_MASK_MSG_SIZE  (CATIA_SHOOT_MSG_SIZE + 4)
+
+union dc_shot_mask_union {
+  struct {
+    union dc_shot_union shot;
+    uint32_t camera_mask;
+  } data;
+  uint8_t bin[CATIA_SHOOT_MASK_MSG_SIZE];
+};
+
+#define CATIA_SHOOT_TARGETED          5
+#define CATIA_SHOOT_TARGETED_MSG_SIZE (CATIA_SHOOT_MSG_SIZE + 4)
 
 union dc_shot_targeted_union {
   struct {
     union dc_shot_union shot;
     int32_t camera_id;
   } data;
-  uint8_t bin[MORA_SHOOT_TARGETED_MSG_SIZE];
+  uint8_t bin[CATIA_SHOOT_TARGETED_MSG_SIZE];
 };
 
-#define MORA_STOP_TARGETED           6
-#define MORA_STOP_TARGETED_MSG_SIZE  4
-// camera_id low byte selects the camera; MORA_STOP_FLAG_KEEP requests an
+#define CATIA_STOP_TARGETED           6
+#define CATIA_STOP_TARGETED_MSG_SIZE  4
+// camera_id low byte selects the camera; CATIA_STOP_FLAG_KEEP requests an
 // intermediate result while the sample session continues (refinement stages).
-#define MORA_STOP_FLAG_KEEP          0x100
+#define CATIA_STOP_FLAG_KEEP          0x100
 
-#define MORA_EAR_RESULT              7
-#define MORA_EAR_RESULT_MSG_SIZE     (4*8)
+#define CATIA_EAR_RESULT              7
+#define CATIA_EAR_RESULT_MSG_SIZE     (4*8)
 
-#define MORA_EAR_RESULT_INVALID      0
-#define MORA_EAR_RESULT_VALID        1
+#define CATIA_EAR_RESULT_INVALID      0
+#define CATIA_EAR_RESULT_VALID        1
 
-union mora_ear_result_union {
+union catia_ear_result_union {
   struct {
-    int32_t status;        // MORA_EAR_RESULT_VALID or MORA_EAR_RESULT_INVALID
+    int32_t status;        // CATIA_EAR_RESULT_VALID or CATIA_EAR_RESULT_INVALID
     int32_t lat;           // 1e7 deg
     int32_t lon;           // 1e7 deg
     int32_t agl_mm;        // listening height above the spot (median AGL of the loudest windows)
@@ -133,48 +152,106 @@ union mora_ear_result_union {
     int32_t confidence;    // 0..1000
     int32_t sample_count;
   } data;
-  uint8_t bin[MORA_EAR_RESULT_MSG_SIZE];
+  uint8_t bin[CATIA_EAR_RESULT_MSG_SIZE];
 };
 
 /////////////////////////////////////////////////////////////////////
 // SENDING
 
+#define CATIA_POSE_SAMPLE             8
+#define CATIA_POSE_SAMPLE_MSG_SIZE    100
+#define CATIA_POSE_SAMPLE_GPS_PRESENT 1U
+
+union catia_pose_sample_union {
+  struct {
+    uint32_t sequence;
+    uint32_t sample_begin_us;
+    uint32_t sample_end_us;
+    union dc_shot_union shot;
+    int32_t velocity_north_bfp;
+    int32_t velocity_east_bfp;
+    int32_t velocity_down_bfp;
+    uint32_t gps_tow_ms;
+    uint32_t gps_week;
+    uint32_t gps_hacc_cm;
+    uint32_t gps_vacc_cm;
+    uint32_t gps_sacc_cm_s;
+    uint32_t gps_fix;
+    uint32_t gps_num_sv;
+    uint32_t gps_valid_fields;
+    uint32_t flags;
+  } data;
+  uint8_t bin[CATIA_POSE_SAMPLE_MSG_SIZE];
+};
+
+#define CATIA_CLOCK_REQUEST           9
+#define CATIA_CLOCK_REQUEST_MSG_SIZE  8
+#define CATIA_CLOCK_REPLY             10
+#define CATIA_CLOCK_REPLY_MSG_SIZE    16
+#define CATIA_POSE_CLOCKED            11
+#define CATIA_POSE_CLOCKED_MSG_SIZE   (CATIA_POSE_SAMPLE_MSG_SIZE + 8)
+
+union catia_clock_request_union {
+  struct {
+    uint32_t token_low;
+    uint32_t token_high;
+  } data;
+  uint8_t bin[CATIA_CLOCK_REQUEST_MSG_SIZE];
+};
+
+union catia_clock_reply_union {
+  struct {
+    union catia_clock_request_union request;
+    uint32_t receive_us;
+    uint32_t transmit_us;
+  } data;
+  uint8_t bin[CATIA_CLOCK_REPLY_MSG_SIZE];
+};
+
+union catia_pose_clocked_union {
+  struct {
+    union catia_pose_sample_union sample;
+    union catia_clock_request_union request;
+  } data;
+  uint8_t bin[CATIA_POSE_CLOCKED_MSG_SIZE];
+};
+
 // Each platform supplies CameraLinkTransmit; this shared header stays OS-independent.
 
-extern uint8_t mora_ck_a, mora_ck_b;
+extern uint8_t catia_ck_a, catia_ck_b;
 
 #define STX  0x99
 
-#define MoraSizeOf(_payload) (_payload+5)
+#define CatiaSizeOf(_payload) (_payload+5)
 
-#define MoraPutUint8( _byte) {     \
-    mora_ck_a += _byte;              \
-    mora_ck_b += mora_ck_a;          \
+#define CatiaPutUint8( _byte) {     \
+    catia_ck_a += _byte;              \
+    catia_ck_b += catia_ck_a;          \
     CameraLinkTransmit(_byte);     \
   }
 
-#define MoraHeader(msg_id, payload_len) {           \
+#define CatiaHeader(msg_id, payload_len) {           \
     CameraLinkTransmit(STX);                        \
-    uint8_t msg_len = MoraSizeOf( payload_len);       \
+    uint8_t msg_len = CatiaSizeOf( payload_len);       \
     CameraLinkTransmit(msg_len);                    \
-    mora_ck_a = msg_len; mora_ck_b = msg_len;         \
-    MoraPutUint8(msg_id);                             \
+    catia_ck_a = msg_len; catia_ck_b = msg_len;         \
+    CatiaPutUint8(msg_id);                             \
   }
 
-#define MoraTrailer() {               \
-    CameraLinkTransmit(mora_ck_a);    \
-    CameraLinkTransmit(mora_ck_b);    \
+#define CatiaTrailer() {               \
+    CameraLinkTransmit(catia_ck_a);    \
+    CameraLinkTransmit(catia_ck_b);    \
   }
 
-#define MoraPut1ByteByAddr( _byte) {  \
+#define CatiaPut1ByteByAddr( _byte) {  \
     uint8_t _x = *(_byte);              \
-    MoraPutUint8( _x);                  \
+    CatiaPutUint8( _x);                  \
   }
 
 /////////////////////////////////////////////////////////////////////
 // PARSING
 
-struct mora_transport {
+struct catia_transport {
   // generic interface
   uint8_t payload[256];
   uint8_t error;
@@ -187,9 +264,9 @@ struct mora_transport {
   uint8_t ck_a, ck_b;
 };
 
-extern struct mora_transport mora_protocol;
+extern struct catia_transport catia_protocol;
 
-void parse_mora(struct mora_transport *t, uint8_t c);
+void parse_catia(struct catia_transport *t, uint8_t c);
 
 
 #endif

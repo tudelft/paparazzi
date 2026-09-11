@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Fixed-hardware IMAV 2026 Mission 2 scoring, airframe preservation and validation plan">
+  <title>Mission 2: Maximize Points, Keep The Airframe Guide</title>
+  <style>
+:root {
+  color-scheme: light;
+  --ink: #14213d;
+  --muted: #53627a;
+  --paper: #f7f9fc;
+  --surface: #ffffff;
+  --line: #d8e0ea;
+  --cyan: #007f8b;
+  --green: #237a45;
+  --amber: #a85c00;
+  --code: #101827;
+  --code-ink: #dce8f5;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    linear-gradient(90deg, rgba(0, 127, 139, 0.045) 1px, transparent 1px),
+    linear-gradient(rgba(0, 127, 139, 0.045) 1px, transparent 1px),
+    var(--paper);
+  background-size: 28px 28px;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  line-height: 1.65;
+}
+a { color: var(--cyan); }
+code, pre { font-family: "IBM Plex Mono", "Liberation Mono", monospace; }
+.masthead { color: white; background: #11243c; border-bottom: 5px solid #20b6bb; }
+.masthead-inner {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 48px 0 38px;
+}
+.eyebrow {
+  margin: 0 0 8px;
+  color: #78e3df;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.masthead h1 { margin: 0; color: white; font-size: clamp(2.25rem, 7vw, 4.7rem); }
+.lede { max-width: 760px; margin: 14px 0 0; color: #cfdae8; font-size: 1.12rem; }
+.layout {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 850px);
+  gap: 48px;
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 38px 0 80px;
+}
+nav { position: sticky; top: 24px; align-self: start; }
+nav strong {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+nav ul { margin: 0; padding: 0; list-style: none; }
+.toc > ul > li > a { display: none; }
+.toc ul ul { display: block; margin: 0; padding: 0; list-style: none; }
+nav a {
+  display: block;
+  padding: 8px 12px;
+  border-left: 2px solid var(--line);
+  color: var(--ink);
+  text-decoration: none;
+}
+nav a:hover { border-color: var(--cyan); color: var(--cyan); background: white; }
+main { min-width: 0; overflow-wrap: anywhere; }
+main > h1 { display: none; }
+h1, h2, h3 { line-height: 1.18; letter-spacing: 0; }
+h2 {
+  margin: 54px 0 16px;
+  padding-bottom: 9px;
+  border-bottom: 2px solid var(--line);
+  font-size: 1.75rem;
+  scroll-margin-top: 24px;
+}
+main > h2:first-of-type { margin-top: 0; }
+h3 { margin: 30px 0 10px; font-size: 1.18rem; scroll-margin-top: 24px; }
+p { margin: 10px 0 16px; }
+blockquote {
+  margin: 18px 0;
+  padding: 14px 18px;
+  border-left: 4px solid var(--amber);
+  background: #fff7e8;
+}
+blockquote:first-of-type { border-color: var(--cyan); background: #edf8f8; }
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 28px auto 48px;
+  border: 1px solid #1a334f;
+  background: #07111f;
+}
+pre {
+  overflow-x: auto;
+  margin: 14px 0 20px;
+  padding: 16px 18px;
+  border-left: 4px solid #20b6bb;
+  color: var(--code-ink);
+  background: var(--code);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+code:not(pre code) { padding: 0.12em 0.34em; color: #8c3142; background: #f0e9ec; }
+table { width: 100%; border-collapse: collapse; margin: 18px 0 26px; background: white; }
+th, td { padding: 11px 13px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { color: white; background: #233a56; }
+tbody tr:nth-child(even) { background: #f4f7fa; }
+ul, ol { padding-left: 24px; }
+hr { border: 0; border-top: 2px solid var(--line); }
+footer { padding: 25px 20px; color: #ccd8e6; background: #11243c; text-align: center; }
+@media (max-width: 820px) {
+  .layout { grid-template-columns: 1fr; gap: 24px; }
+  nav { position: static; }
+  .toc > ul > li > ul { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .masthead-inner { padding-top: 34px; }
+}
+@media (max-width: 520px) {
+  .layout, .masthead-inner { width: min(100% - 24px, 1180px); }
+  .toc > ul > li > ul { grid-template-columns: 1fr; }
+  .masthead h1 { font-size: 2.25rem; }
+  th, td { padding: 8px; }
+}
+</style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <p class="eyebrow">Paparazzi UAV / MORA / SODA</p>
+      <h1>Mission 2: Maximize Points, Keep The Airframe</h1>
+      <p class="lede">Maximize our chance of winning with the existing aircraft. Improve the onboard software and bring the Talon back with its Mission 2 results.</p>
+    </div>
+  </header>
+  <div class="layout">
+    <nav aria-label="Guide sections">
+      <strong>On this page</strong>
+      <div class="toc">
+<ul>
+<li><a href="#mission-2-maximize-points-keep-the-airframe">Mission 2: Maximize Points, Keep The Airframe</a><ul>
+<li><a href="#quick-n-dirty-checklist">Quick 'n Dirty Checklist</a></li>
+<li><a href="#agreed-constraints">Agreed Constraints</a></li>
+<li><a href="#safety-gate">Safety Gate</a></li>
+<li><a href="#what-earns-points">What Earns Points</a></li>
+<li><a href="#first-test-checklist">First-Test Checklist</a></li>
+<li><a href="#implementation-order">Implementation Order</a></li>
+<li><a href="#land-retrieve-submit">Land, Retrieve, Submit</a></li>
+<li><a href="#offline-assessment-tool">Offline Assessment Tool</a></li>
+<li><a href="#evidence-to-keep">Evidence To Keep</a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+    </nav>
+    <main><h1 id="mission-2-maximize-points-keep-the-airframe">Mission 2: Maximize Points, Keep The Airframe</h1>
+<p>A fixed-hardware implementation plan for the Talon, Tiny1-C, M10N and MORA.</p>
+<p><a href="index.html">Back to CATIA</a> | <a href="lwir-calibration.html">Calibration guide</a> |
+<a href="../Rulebook_IMAV2026_V4-1.pdf#page=35">Rulebook, Table 8</a></p>
+<h2 id="quick-n-dirty-checklist">Quick 'n Dirty Checklist</h2>
+<p><strong>Short on time? Start here.</strong> Assume current photo timing is usable for a
+first attempt, not proven accurate. No timing experiment, pose logging, clock
+handshake, new firmware just for diagnostics, or new algorithm is required for
+this quick path. Keep the normal approximately four-second photo interval.</p>
+<p><strong>Prerequisite TODO:</strong> complete the installed lens/mount calibration using the
+<a href="lwir-calibration.html">calibration guide</a> and put the reviewed calibration file
+on MORA before testing. The checklist below assumes
+this is done; calibration has not been marked complete by this document.</p>
+<ol>
+<li><strong>Start the real camera setup.</strong> Use the established CATIA launch on MORA with
+  <code>--lwircam</code>, not mock/test mode. Check the intended SD storage is mounted,
+  writable and has room. Pass the completed calibration file with
+  <code>--lwir-calibration</code>. Leave optional motion compensation off for this test.</li>
+<li><strong>Take three photos on the ground.</strong> With propulsion disabled, use the normal
+  FC photo command and a clearly visible warm target. Check that all three
+  JPEGs open and that each reports temperatures when analyzed; captures store
+  the temperature plane inside the JPEG. With <code>--lwir-raw</code>, check
+  instead for a matching <code>.jpg.raw</code> file of <strong>196608 bytes</strong> in the current
+  256 x 192 image mode.</li>
+<li><strong>Check the ground-shot results.</strong> Confirm the calibration loads and inspect
+  the JPEG hotspot result, not just its camera GPS tags. Check that the warm
+  target is detected. Ground shots need not produce coordinates if AGL/geometry
+  is invalid; check the actual target coordinates after the flight.</li>
+<li><strong>Make one ordinary short test flight.</strong> Only after the capture check passes,
+  use the already-reviewed route and normal margins over a known warm target.
+  Keep the existing altitude, speed and turns. No extra low or tight pass.
+  Aim to obtain at least one usable target observation, not perfect timing data.</li>
+<li><strong>Land, stop cleanly, recover the card.</strong> Wait for capture/writes to finish,
+  use the established shutdown/unmount procedure, then copy the JPEGs, plus any
+  raw companions if those were enabled. Keep partial results even if some shots failed.</li>
+<li><strong>Make one practical decision.</strong> Does an onboard hotspot coordinate fall
+  near the known target, and can you retrieve it promptly? If yes, retain this
+  setup for the next test. If no, first check detections, whether the intended
+  calibration file was loaded, mount orientation and AGL; do not start by
+  adding timing algorithms.</li>
+</ol>
+<p><strong>Quick pass:</strong> real images and raw data recovered, at least one plausible
+onboard hotspot coordinate, and a working retrieval process. An ordinary map
+comparison is a sanity check, not proof of the competition's 5 m tolerance.</p>
+<p>On a development PC with ExifTool installed, inspect a recovered image with:</p>
+<pre><code class="language-sh">exiftool -s -ImageDescription -UserComment /path/to/recovered-photo.jpg
+</code></pre>
+<p>Look in <code>LWIR_HOTSPOTS_V1</code> for the result status, count and per-hotspot
+latitude/longitude. ExifTool is only for this optional inspection, not a MORA
+dependency. Do not confuse multiple observations with distinct targets.</p>
+<p><strong>Before competition:</strong> identify how the final two onboard coordinates will be
+selected and handed over within <strong>300 seconds of landing</strong>. Automatic final
+two-target export is not implemented. This quick test does not solve that gap;
+manual inspection here is development work, not a claim of onboard autonomy.
+Detailed timing and survey checks below can wait until this basic test works.</p>
+<blockquote>
+<p><strong>Objective:</strong> maximize our chance of winning with the existing hardware.
+For Mission 2, the practical consequence of airframe loss is that we may not
+recover all the data needed for the submission. Land and retrieve the SD card;
+assess the usable results actually recovered rather than assume that either
+all data or all points are lost. Missions 3 and 4 use separate aircraft.
+Improve the software first; change flight behaviour only when there is no
+good alternative and the aircraft's operating margins remain intact.
+No score calculation authorizes a flight.</p>
+</blockquote>
+<h2 id="agreed-constraints">Agreed Constraints</h2>
+<ul>
+<li>Keep the existing aircraft, camera, installed optics and GNSS hardware.</li>
+<li>Plan to land after Mission 2 to retrieve the SD card. No in-flight access to
+  its results is assumed; onboard result readiness is not submission to the judges.</li>
+<li>Prefer calibration, exposure/pose timing, onboard detection and processing
+  improvements that do not change the trajectory or aircraft settings.</li>
+<li>Consider flight-behaviour changes only if those alternatives are inadequate.</li>
+<li>Do not lower the aircraft toward trees, reduce stall margins, tighten turns,
+  breach the geofence or compromise return and landing to improve a measurement.</li>
+<li>Keep safety supervision and override authority regardless of autonomy points.</li>
+<li>No changes to flight code, routes, airframe configuration or deployment are
+  made by the offline tools described here.</li>
+</ul>
+<p>The aircraft allocation is <strong>Mission 2: Talon; Mission 3: a separate quadcopter;
+Mission 4: EasyStar</strong>. Do not model loss of the Talon as loss of the Mission 3
+or Mission 4 airframe or their availability.</p>
+<p>The earlier 40 m AGL example is an error-budget calculation, <strong>not a prescribed
+flight altitude</strong>. Use the existing approved flight envelope and clearance
+requirements. The rulebook's 80 m AGL maximum is an upper limit, not evidence
+that the space below it is clear of obstacles.</p>
+<h2 id="safety-gate">Safety Gate</h2>
+<p>Here, the safety gate also serves a concrete competitive purpose: avoid losing
+the airframe to trees, terrain, loss of control or an exhausted landing reserve.
+Protecting people and complying with the flight rules remain mandatory.</p>
+<p>Review the existing flight as well as any proposed alternative. A numerical
+GNSS accuracy estimate, a geofence, or a terrain-only elevation map cannot
+establish tree clearance on its own.</p>
+<table>
+<thead>
+<tr>
+<th>Review</th>
+<th>Evidence required before accepting the flight</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Trees, terrain and structures</td>
+<td>A current obstacle assessment, including canopy height and uncertain or unmapped objects; no unverified low pass</td>
+</tr>
+<tr>
+<td>Vertical clearance</td>
+<td>A consistent height datum and a margin covering height-estimation error, obstacle uncertainty and tracking error over the complete route</td>
+</tr>
+<tr>
+<td>Lateral clearance</td>
+<td>The aircraft's swept path and wingspan, turn geometry, navigation uncertainty, tracking error, wind drift and space for a safe abort</td>
+</tr>
+<tr>
+<td>Flight envelope</td>
+<td>Previously validated airspeed, bank and turn limits for this aircraft, load and wind; ground speed is not stall margin</td>
+</tr>
+<tr>
+<td>Energy and escape</td>
+<td>Validated return, missed-approach and landing reserve; a safe continuation if a target or extra observation is abandoned</td>
+</tr>
+<tr>
+<td>Geofence and people</td>
+<td>All route segments, turns, launch, approach and abort paths remain within the approved operating area</td>
+</tr>
+<tr>
+<td>Software isolation</td>
+<td>Image processing must not starve navigation, delay safety commands or exhaust storage; degrade image collection before flight safety</td>
+</tr>
+</tbody>
+</table>
+<p><strong>If any required clearance is unknown, the affected precision pass is not
+approved.</strong> If safe clearance conflicts with the height limit, omit that route
+or sector and accept the lost opportunity. Never make the problem disappear
+by changing a software margin. Safety intervention takes precedence over any
+autonomy-factor penalty.</p>
+<p>Neither the score calculator nor the coordinate validator computes obstacle
+clearance or models aircraft dynamics. Their safety-review field is a human
+review record, not a safety certificate.</p>
+<h2 id="what-earns-points">What Earns Points</h2>
+<p>Sections 5.4.3 and 5.4.4 require two distinct heat-point positions, decimal
+degrees, within 5 m, delivered within 300 seconds of landing. Confirm with the
+organizers the reference point on each source, survey datum/uncertainty, the
+distance convention and the treatment of ambiguous or duplicate submissions.
+Table 9's sample coordinates are not actual mission targets.</p>
+<p>For the fixed-wing aircraft, Table 8 gives:</p>
+<pre><code class="language-text">HP = 3.5 * number_of_valid_hotspots                  (0, 1 or 2)
+CF = 1.0                                          (fixed wing, not adjustable)
+CP = min(3, flight_seconds * 50 / (voltage_v * consumed_mah))
+W2 = 2 * (1 - exp(-5 / (1.4 * takeoff_mass_kg)))
+A2 = 1.0 onboard; 0.7 offboard computation; 0.4 manual actions
+S2 = (8 / 11.75) * (CF * HP + CP) * W2 * A2 + landing_points + self_made_points
+</code></pre>
+<p>Use actual launch-to-landing-and-stop duration, maximum voltage after charging,
+and consumed charge measured by recharge, as described in the rulebook. Do not
+substitute battery nameplate capacity for consumed charge. Confirm measurement
+practice and the printed formula with the judges; this is an offline estimate,
+not an official scoring decision.</p>
+<p>For otherwise identical safe fixed-wing flights, one additional accepted
+hotspot contributes 3.5 base points, more than the whole 3-point power-factor
+range. Reliability on both targets is therefore a strong priority. The factor
+uses <strong>time divided by consumed charge</strong>, so it does not simply reward the
+shortest flight. At constant average electrical consumption rate, time and
+charge rise together. Do not extend a flight to manipulate this factor or
+spend safety reserve on another observation.</p>
+<p>Keep mass and configuration fixed in comparisons. Preserve onboard computation
+and automatic result generation where practical. Evaluate precision landing
+points only using an already validated safe landing procedure; they do not
+justify a risky approach. Self-made points are a documentation/judging input,
+not a reason to modify the aircraft.</p>
+<p>Landing is also how we access Mission 2 data, not merely an optional bonus.
+The calculator's <code>--landing none</code> means zero landing-bonus points after a
+completed flight, not an airborne aircraft or an unrecovered SD card.</p>
+<p>Optimize the competition outcome, not just the score conditional on a perfect
+flight. Include the chance of recovering the Mission 2 data and delivering
+usable coordinates on time. Incomplete data does not automatically mean zero
+valid hotspots: assess whatever results were recovered, without claiming missing
+observations or a complete two-target result. The calculator does not model
+data-recovery probabilities or the cost of airframe loss; do not invent them
+to justify a higher nominal score. Its review gate preserves the agreed flight
+constraints while we compare measured improvements.</p>
+<h2 id="first-test-checklist">First-Test Checklist</h2>
+<p><strong>Software checkpoint, 2026-09-10:</strong> native capture integration, actual-SDK
+callback regression, native raw/EXIF preservation, pose sender (eight host
+configurations), logger, clock bounds and UART partial-write tests pass. The
+current ARM64 build also passes. These are hardware-free checks, not a configured
+Talon firmware build or a camera/flight test. Existing vendor <code>fread</code> and static
+OpenCV <code>dlopen</code> build warnings remain; execution on MORA must still be checked.</p>
+<p>Freeze features here. The first test is an operational bench test, followed by
+a baseline accuracy test when measured calibration and independent references
+are available. Keep the Talon, Tiny1-C, M10N and MORA, the existing validated
+flight behaviour and the usual approximately four-second shot interval.</p>
+<h3 id="prepare-the-bench">Prepare The Bench</h3>
+<ol>
+<li>Record the FC/MORA software revisions, camera mode, installed lens and mount.
+  Build and review the <strong>actual Talon configuration</strong> with
+  <code>DIGITAL_CAM_UART_POSE_STREAM=1</code> before installing it. Verify the configured
+  UART TX buffer can provide at least <strong>162 free bytes</strong> for clocked poses plus
+  command headroom; a 128-byte ring skips every sample. No airframe has been
+  enabled or firmware installed by this software checkpoint.</li>
+<li>Use the established bench setup with propulsion disabled. Deploy the reviewed
+  matching ARM64 binaries through the existing installation procedure. Confirm
+  CATIA uses the real <code>--lwircam</code> backend, actual FC serial device and intended
+  SD photo directory, not <code>--test</code>, mock transforms or a local simulator.</li>
+<li>Add the following to CATIA's <strong>actual start command</strong>. Create the
+  directory first on the intended mounted storage, writable by CATIA's user;
+  this example path does not itself prove that an SD card is mounted there.</li>
+</ol>
+<p><code>text
+  --pose-log /home/air/digital_cam/pose-logs
+  --clock-align</code></p>
+<p>Omit <code>--lwir-motion-compensation</code> for this test. Keep the established launch
+  arguments and add <code>--debug</code>; save stdout/stderr
+  through shutdown. Avoid starting a second CATIA instance beside its service.
+  Add <code>--lwir-calibration</code> only with the measured, reviewed installed-camera
+  calibration when available. Missing/unverified calibration may block real
+  coordinates, but does not prevent testing capture and evidence storage.</p>
+<h3 id="run-and-check">Run And Check</h3>
+<ol>
+<li>Allow normal camera warm-up, then request at least 15 shots about four seconds
+  apart using the existing FC command path. Stop requests before shutdown.
+  Confirm every acknowledged capture has a readable JPEG whose stored
+  temperature plane still yields hotspot results. If <code>--lwir-raw</code> is
+  set, check the matching untouched <code>.jpg.raw</code> file instead; in the current
+  256 x 192 image mode it is 196608 bytes, generally <code>4 * width * height</code> bytes,
+  and two file renames are not a crash-atomic pair, so check both recovered files.</li>
+<li>Check image EXIF for <code>capture_time_kind=sdk_callback_not_exposure</code>, nonzero
+  request time, strictly later frame-arrival time and increasing callback
+  sequence within the same capture-server run. Sequence gaps between shots
+  are normal; one SDK delivery must not be reused for separate requests.</li>
+<li>Check that a schema-2 pose CSV contains continuing samples, that accepted
+  clock replies increase, and that mapped sample intervals continue after
+  startup. JPEG and CSV must share a known <code>mora_boot_id</code>. Inspect UART skips,
+  queue/callback drops, rejected data and clock rejections; unexplained loss,
+  persistent unmapped rows or stalled capture fails the timing-evidence gate.
+  Mapping is not sensor exposure synchronization and is not used by projection.</li>
+<li>Stop CATIA cleanly using the established service stop or SIGINT/SIGTERM.
+  Wait for capture workers and the pose writer to finish. Require final pose
+  <code>accepted == synced</code>, <code>error=0</code>, no incomplete-log report and no unexplained
+  drops/rejections. Do not pull power to shorten a blocked SD shutdown.</li>
+<li>Complete the established clean unmount/shutdown and recover the card. Retain
+  JPEG/raw pairs, pose CSV, full console/final status, software identifiers,
+  camera settings and calibration together under one test identifier. Verify
+  the recovered copies, not just files still visible on MORA.</li>
+</ol>
+<p><strong>Bench pass:</strong> captures, timing evidence and cleanly recovered files meet all
+checks above without disrupting ordinary commands. Record any failure and fix
+that observed issue before adding algorithms. This does not certify five-metre
+accuracy or complete competition submission readiness.</p>
+<h3 id="first-accuracy-baseline">First Accuracy Baseline</h3>
+<p>Use measured lens/mount calibration and independently surveyed target positions
+with stated uncertainty. Do not turn an example calibration's <code>verified</code> flag
+on to bypass measurement. Keep compensation off for the baseline and use the
+existing reviewed route, clearance and landing margins. Preserve recovered
+onboard coordinates, reference truth and the evaluator's report, including
+partial results. Check height/AGL assumptions and GNSS quality explicitly.</p>
+<p>Rehearse landing, shutdown, card access, copying and handover against the full
+300-second deadline (180-second rehearsal target). The first bench/baseline
+test may archive individual image results; automatic final two-target export
+is <strong>not implemented</strong> and a timed archive copy is not a completed scored
+submission. Pose interpolation, effective-lag estimation, prediction, fusion,
+replanning and final export are deferred beyond this first-test scope.</p>
+<h2 id="implementation-order">Implementation Order</h2>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Work</th>
+<th>Gate before proceeding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Baseline evidence</td>
+<td>Record the present route, capture mode, measured mass, energy, timing and final submissions; establish independent reference positions</td>
+<td>Safety review complete; measurements and their uncertainty identified</td>
+</tr>
+<tr>
+<td>2. Same flight, better measurements</td>
+<td>Validate existing lens/mount calibration, native-frame integrity, timing, navigation age, height datum and detector thresholds</td>
+<td>Held-out results improve without aircraft or trajectory changes</td>
+</tr>
+<tr>
+<td>3. Same flight, better onboard decisions</td>
+<td>Select well-timed, well-conditioned observations already available; associate two targets and combine observations robustly</td>
+<td>No double counting; uncertainty includes common GNSS bias; deadline and compute/storage budgets met</td>
+</tr>
+<tr>
+<td>4. Conditional flight review</td>
+<td>Only if stages 2-3 cannot meet the target, assess the smallest useful change inside the validated envelope</td>
+<td>Obstacle/terrain review, simulation/replay and supervised test evidence; no automatically generated low or tight pursuit manoeuvre</td>
+</tr>
+<tr>
+<td>5. Blind mission validation</td>
+<td>Freeze calibration and algorithms, then rehearse capture, landing, SD-card retrieval and actual submission</td>
+<td>Both targets within 5 m on time, with measured reliability, recovery and safety evidence</td>
+</tr>
+</tbody>
+</table>
+<p>The current implementation measures server-request-to-frame-arrival time, not
+true exposure time. The optional constant-velocity correction is a partial
+estimate and is off by default. Test sensor buffering, FC pose age, clock offset
+and changing attitude before attributing better coordinates to synchronization.
+The eight-frame stability counter now runs between requests; its remaining
+startup/recovery criteria still need camera evidence. Do not remove quality
+checks solely to make a timing statistic look better.</p>
+<p>The next evidence component is now implemented: an opt-in 10 Hz timestamped FC
+pose stream, a bounded CATIA CSV logger on MORA, and monotonic request/frame-arrival times
+in image EXIF with the same boot identity. The usual four-second shot interval
+is unchanged. See <a href="index.html#pose-and-image-timing-evidence">pose and image timing evidence</a>
+for enabling, buffer requirements, units, loss counters and SD-card retrieval.
+An opt-in request/reply exchange now maps FC sample times to bounded MORA
+intervals in schema-2 CSV. It does not synchronize camera exposures or feed
+mapped poses into geolocation. No airframe configuration enables it
+automatically; no hardware was changed.</p>
+<p>Still captures now use timestamped SDK callbacks and a latest-frame mailbox,
+avoiding reproduced duplicate reads from the bundled SDK's polling buffer.
+No evidence currently establishes variable Tiny1-C integration time. First
+collect the bench/baseline evidence above. A mode-specific effective lag and
+pose interpolation are later candidates if the measured error requires them;
+do not assume zero sensor latency. See the
+<a href="index.html#lwir-integration-and-effective-lag">investigation and prediction model</a>.</p>
+<p>For GNSS, distinguish dimensionless HDOP from a horizontal-accuracy estimate in
+metres. Use existing M10N data and independent reference measurements. Never
+use the same receiver's average as proof of its absolute accuracy. Combining
+neighboring frames does not remove a shared GNSS bias. If the existing hardware
+cannot satisfy the budget in the tested conditions, report that limitation and
+accept fewer points; hardware replacement is outside this plan.</p>
+<p>The 4 m engineering target leaves 1 m below the rulebook tolerance. It must be
+tested at the <strong>actual safe altitude and viewing angles</strong>, not carried over
+unchanged from a 40 m calculation. If a well-conditioned image is unavailable,
+skip it or retain an explicitly uncertain estimate rather than inventing
+confidence or steering toward an obstacle.</p>
+<h2 id="land-retrieve-submit">Land, Retrieve, Submit</h2>
+<p>The intended sequence is <strong>Mission 2 capture and onboard processing -&gt; return
+and land -&gt; retrieve SD-card results -&gt; submit</strong>. Plan the return and landing
+after Mission 2 rather than depend on an in-flight download or postpone access
+for an unrelated mission leg. Use the existing validated return/landing sequence;
+this plan does not add a new landing controller or change the route automatically.
+End acquisition in time to retain the required return, approach and landing
+reserve, even when target evidence is incomplete.</p>
+<p>The onboard software should prepare a small, clearly named, flight-identified
+submission table with the two final coordinates and retain supporting JPEG/raw
+pairs separately. Keep a recoverable result as processing progresses, and finish
+pending writes before storage removal. Durable result publication and automatic
+final two-target export are implementation requirements, <strong>not capabilities
+provided by the offline evaluator</strong>. Do not rely on a successful rename alone
+as proof that data has reached the SD card.</p>
+<p>Rehearse the complete handover with the actual equipment and team:</p>
+<ol>
+<li>Record the landing event used by the judges for the five-minute deadline;
+  confirm its definition in advance. The timer does not start again at card removal.</li>
+<li>Stop and disarm, recover the aircraft, and use the established clean shutdown
+  or unmount procedure before disconnecting power or removing storage. Include
+  walking, access and shutdown time; do not rush card removal or recovery.</li>
+<li>Read the card, confirm the flight identifier, and copy the small finalized
+  table first. Do not wait for a full image archive copy before handing it over.</li>
+<li>Deliver the unchanged onboard result through the judges' agreed submission
+  method and record that time. File-copy completion is not yet judge submission.</li>
+<li>Archive the supporting data and prepare the Talon for any further Talon
+  flights after completing this handover. Missions 3 and 4 use their own aircraft.</li>
+</ol>
+<p>Use <strong>180 seconds from landing to submission as a rehearsal target</strong>, leaving
+120 seconds below the 300-second limit. This is a planning target, not a measured
+retrieval time or permission to skip proper shutdown. Test card mounting, file
+identification and delivery as well as coordinate accuracy. Fix a slow handover
+through preparation and software, not a rushed recovery or riskier landing.</p>
+<p>Onboard calculation and SD-card delivery are different operations. Plan for
+copying and submitting already-computed coordinates, not manual target selection
+or localization on the laptop after landing. Confirm the organizers' treatment
+of result transfer under the autonomy rules; SD delivery by itself does not
+establish the awarded autonomy factor. Do not claim a completed two-target
+result when the onboard file is missing, incomplete or from an earlier flight.</p>
+<h2 id="offline-assessment-tool">Offline Assessment Tool</h2>
+<p><a href="mission2_assess.py">mission2_assess.py</a> is a development-PC tool. It has no
+flight-control, deployment, telemetry or network output. Its JSON is an offline
+report on standard output, not a new runtime JPEG sidecar. It does not introduce
+Python or GeographicLib into the flight application. Development validation on
+a PC is separate from doing scored mission computation offboard.</p>
+<p>From the Paparazzi repository root, prepare an isolated environment:</p>
+<pre><code class="language-sh">python3 -m venv .venv-mission2
+.venv-mission2/bin/pip install -r \
+  sw/airborne/modules/digital_cam/catia/documentation/mission2-assessment-requirements.txt
+.venv-mission2/bin/python \
+  sw/airborne/modules/digital_cam/catia/documentation/test_mission2_assess.py
+</code></pre>
+<h3 id="compare-scores">Compare Scores</h3>
+<p>The following is an <strong>illustrative scenario</strong>, not measured Talon performance
+and not an approved flight. By default, a safety-unreviewed scenario produces
+<code>score: null</code> and exits with status 2:</p>
+<pre><code class="language-sh">.venv-mission2/bin/python \
+  sw/airborne/modules/digital_cam/catia/documentation/mission2_assess.py score \
+  --mass-kg 2 --voltage-v 16.8 --flight-seconds 600 --consumed-mah 1000 \
+  --valid-hotspots 2 --autonomy onboard --landing zone --self-made-points 0
+</code></pre>
+<p>After a real human review, <code>--safety-review passed</code> records that review and
+allows calculation. <code>--safety-review rejected</code> blocks the score. Setting the
+field does not inspect obstacles, authorize flight or resolve safety concerns.
+For actual trials, use measured values and valid hotspot counts; for scenario
+analysis, label the inputs as hypothetical. No reliability probabilities or
+actual receiver accuracy are inferred from a score.</p>
+<p>Compare <code>gain_per_additional_valid_hotspot</code> and
+<code>remaining_power_score_headroom</code> across otherwise comparable safe trials. A
+deterministic scenario score is not expected mission score: also compare failure
+rates, target misses, report delays and energy-reserve outcomes across trials.</p>
+<h3 id="validate-final-coordinates">Validate Final Coordinates</h3>
+<p>Keep reference truth separate from the localization algorithm. Create a reference
+CSV with exactly two rows and these columns:</p>
+<pre><code class="language-csv">target_id,latitude_deg,longitude_deg,uncertainty_m
+</code></pre>
+<p><code>uncertainty_m</code> must be a defensible horizontal bound for the independently
+surveyed physical reference point, not an unexamined HDOP or one-sigma value.
+Use existing independently surveyed control or suitable reference data; do not
+alter the aircraft hardware. Without independent truth, report repeatability
+only and do not claim absolute 5 m validation.</p>
+<p>The actual final submission CSV has at most two rows:</p>
+<pre><code class="language-csv">report_id,latitude_deg,longitude_deg
+</code></pre>
+<p>A header-only submission records a missed mission. Do not give the validator
+every candidate and let it select the best against known truth. Duplicate IDs,
+duplicate coordinates, invalid numbers and extra reports are rejected.</p>
+<pre><code class="language-sh">.venv-mission2/bin/python \
+  sw/airborne/modules/digital_cam/catia/documentation/mission2_assess.py validate \
+  --reference mission-test/reference.csv --submission mission-test/submitted.csv \
+  --submission-delay-s 120
+</code></pre>
+<p>Use measured seconds from landing to actual submission, including aircraft
+recovery, storage shutdown, SD-card access, copying and handover. Coordinates
+computed before landing are not already submitted. The validator cannot verify
+those events; it relies on the recorded elapsed time. It computes WGS84 horizontal geodesic distances and matches
+reports one-to-one, maximizing the number within 5 m before minimizing total
+distance. Each reference can earn at most one provisional hotspot result. An
+ambiguous match is flagged and blocks the stricter engineering gate. Coordinate
+matching alone does not prove the detector found two distinct physical sources;
+inspect the retained image/frame evidence too.</p>
+<p>The report distinguishes:</p>
+<ul>
+<li><code>provisional_valid_hotspots</code>: reports within 5 m, provided the deadline was met;
+  an offline interpretation, not a judge's award.</li>
+<li><code>conservative_error_m</code>: measured separation plus reference uncertainty.</li>
+<li><code>design_gate_passed</code>: both conservatively within 4 m, unambiguous matching,
+  and submission on time. This is <strong>only a localization gate</strong>, never flight safety.</li>
+</ul>
+<p>Exit status is 0 when the design gate passes, or 2 when it fails or input is
+invalid. Invalid input produces a diagnostic rather than a score. A single
+passing submission does not establish statistical reliability; archive all
+trials, including failures, and keep tuning and held-out evaluation sets separate.</p>
+<h2 id="evidence-to-keep">Evidence To Keep</h2>
+<p>For each trial, retain the safety review reference, unchanged airframe/route
+version, target survey and uncertainty, native JPEG/raw pairs, available FC and
+MORA logs, timing method, calibration version, final submitted coordinates,
+landing time, SD-card retrieval time, submission time, takeoff mass, consumed
+charge, voltage, flight time and landing
+outcome. Record interventions and failures instead of discarding them.</p>
+<p>The evaluator implements the first assessment step only. It does not claim
+five-metre accuracy, obstacle avoidance, exposure synchronization or a fully
+autonomous Mission 2 solution. Subsequent changes should be justified by this
+evidence, keeping the fixed-hardware and safety constraints intact.</p></main>
+  </div>
+  <footer>CATIA documentation / Paparazzi UAV</footer>
+</body>
+</html>

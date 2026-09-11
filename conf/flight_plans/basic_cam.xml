@@ -3,6 +3,7 @@
 <flight_plan alt="355" ground_alt="295" lat0="43.46223" lon0="1.27289" max_dist_from_home="1500" name="Basic" security_height="25">
   <header>
 #include "modules/datalink/datalink.h"
+#include "modules/digital_cam/uart_cam_ctrl.h"
 </header>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
@@ -44,6 +45,13 @@
       <circle radius="nav_radius" wp="STDBY"/>
     </block>
     <block name="Oval 1-2" strip_button="Oval (wp 1-2)" strip_icon="oval.png" group="base_pattern">
+      <call_once fun="uart_cam_ctrl_set_camera_mask(CATIA_CAMERA_MASK_AICAM)"/>
+      <call_once fun="dc_send_command(DC_SHOOT)"/>
+      <set value="DC_AUTOSHOOT_PERIODIC" var="dc_autoshoot"/>
+      <oval p1="1" p2="2" radius="nav_radius"/>
+    </block>
+    <block name="XOval 1-2" strip_button="XOval (wp 1-2)" strip_icon="lookdown.png" group="base_pattern">
+      <call_once fun="uart_cam_ctrl_set_camera_mask(CATIA_CAMERA_MASK_LWIR)"/>
       <call_once fun="dc_send_command(DC_SHOOT)"/>
       <set value="DC_AUTOSHOOT_PERIODIC" var="dc_autoshoot"/>
       <oval p1="1" p2="2" radius="nav_radius"/>

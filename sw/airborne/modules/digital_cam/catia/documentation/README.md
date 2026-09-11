@@ -11,6 +11,12 @@ flow SVG, and HTML page are generated files.
 
 [Open the standalone HTML guide](index.html)
 
+[LWIR calibration workshop guide](lwir-calibration.html): ordinary materials,
+lens fitting, mounting alignment and independent checks.
+
+[Mission 2: maximize points, keep the airframe](mission2-score-first.html):
+fixed hardware, software-first improvements and offline score/accuracy assessment.
+
 ## Start Here: Local Simulation
 
 This is the simplest way to verify the complete chain without camera hardware.
@@ -21,6 +27,60 @@ Run these commands from the Paparazzi repository root.
 ```sh
 make -C sw/airborne/modules/digital_cam/catia
 ```
+
+The default builds both native and ARM64 programs. For development-PC-only
+work without a cross-toolchain, use `make native`. From this directory:
+
+```sh
+make -j32          # native and ARM64, in parallel
+make -j32 native   # development machine only
+make -j32 arm64    # MORA only, native executables unchanged
+```
+
+All outputs are in this top-level directory:
+
+| Application | Native executable | ARM64 executable | Installed on MORA |
+| --- | --- | --- | --- |
+| CATIA | `catia` | `catia-arm64` | `catia` |
+| SODA | `soda` | `soda-arm64` | `soda` |
+| LWIRcam | `lwircam-native` | `lwircam-arm64` | `lwircam` |
+| EARcam | `earcam-native` | `earcam-arm64` | `earcam` |
+
+The native camera suffix avoids colliding with the existing `lwircam` and
+`earcam` source directories. Their standalone builds remain independent.
+Native CATIA launches the top-level native camera executables. ARM64 CATIA
+uses `/dev/serial0` and `/home/air/digital_cam` runtime paths, with unsuffixed
+program names. Native objects use `.build/project` and ARM64 objects use
+`.build/arm64/project`; JPEG and EXIF objects are also separate. Never override
+`CC`/`CXX` on the default dual build: use `native` or `arm64` targets instead.
+
+Every `arm64` build appends `-g0` to the optimization flags and runs
+`$(CROSS_COMPILE)strip --strip-all` on all four ARM64 executables after a
+successful build, including incremental builds. The default remains `-O2`
+for execution speed; no size-optimization flags are added. Native builds are
+unaffected. Stripping removes debug information and static symbol tables, not
+runtime error messages or the optional CATIA `--debug` diagnostics. Static
+libraries still contribute to executable size.
+
+AIcam and CHDKcam are backends linked into both CATIA executables, not separate
+programs in this source tree. `make aicam chdkcam` builds the containing native
+CATIA. AIcam requires the external `rpicam-still` runtime; CHDK uses its existing
+external control script (currently the hard-coded `SHELL` path in
+`chdk_pipe.c`). Building these backends does not install those external tools
+or validate their hardware operation.
+
+Prerequisites for the full build: native C/C++ compilers, GNU Make,
+`pkg-config`, native ALSA development files, GNU AArch64 C/C++ compilers and strip, and
+ARM64 ALSA development files. Configure `ARM64_SYSROOT` and
+`ARM64_PKG_CONFIG_LIBDIR` for a separate sysroot; the default uses host-installed
+ARM64 multiarch packages. `CROSS_COMPILE` defaults to `aarch64-linux-gnu-`.
+Missing cross dependencies fail the full build; `make native` remains available.
+CATIA, SODA, and default LWIRcam are static; EARcam links the ALSA runtime.
+
+`bash tests/build_layout_test.sh` checks architectures, native preservation,
+backend symbols in native executables and ARM64 objects, runtime paths, and
+absence of debug/static symbol sections in ARM64 executables. `bash tests/deploy_upload_test.sh`
+checks ARM64-to-runtime upload names without contacting MORA.
 
 ### 2. Start the local camera service
 
@@ -77,9 +137,23 @@ created.
 
 ## Start Here: Physical Desk Test With MORA
 
-Use this setup to test the deployed CATIA binary on for example a Raspberry Pi Zero 2 W
-while Simualtion runs on a local PC. The USB-to-UART link carries the exact same MORA camera
-messages used by the aircraft. When MORA (Magic Onboard Recognition Apparatus) is mentioned, it's the Computer Board with a camera.
+Use this setup to test the deployed CATIA binary on, for example, a Raspberry Pi Zero 2 W
+while simulation runs on a local PC. The USB-to-UART link carries the same CATIA camera
+messages used by the aircraft.
+
+### Naming: CATIA service, MORA board
+
+**MORA** (Magic Onboard Recognition Apparatus) is the companion compute board with
+one or more cameras. **CATIA** is the camera service running on that board or, for
+local tests, on the development PC. Deploy binaries to MORA; send camera commands
+to CATIA; restart the CATIA service on MORA.
+
+Camera IDs, masks, messages and protocol helpers use `CATIA_*`, `catia_*`, or
+`Catia*`, for example `CATIA_CAMERA_MASK_AICAM` and `parse_catia()`. Hardware and
+deployment names such as `MORA_INSTALL_DIR`, `deploy_mora.sh`, and the board-clock
+field `mora_boot_id` retain MORA. The protocol-symbol rename changes no message
+IDs, bit values, payload layouts or checksums, so existing deployed CATIA binaries
+remain wire-compatible. Source callers must use the renamed symbols when rebuilt.
 
 ![Local PC, USB-to-UART adapter, MORA, and Raspberry Pi camera desk-test setup](desk-test-setup.png)
 
@@ -108,22 +182,22 @@ ssh -t air@theatre \
    'exec /home/air/digital_cam/catia --debug --mocktransform --test'
 ```
 
-This first run exercises the physical UART, MORA framing, attitude transform,
+This first run exercises the physical UART, CATIA framing, attitude transform,
 EXIF metadata, and SODA while keeping the physical camera out of the test. Wait
 for:
 
 ```text
 CATIA:  serial device: /dev/serial0
 Started OK
-CATIA DEBUG:  waiting for MORA camera messages on /dev/serial0
+CATIA DEBUG:  waiting for CATIA camera messages on /dev/serial0
 ```
 
 Start `Easystar_3` NPS on the laptop and trigger `DC_SHOOT`. A successful shot
 progresses through these diagnostics:
 
 ```text
-received MORA frame start
-accepted MORA message id 1
+received CATIA frame start
+accepted CATIA message id 1
 photo trigger received
 Shooting: got image ...
 Shooting: EXIF metadata added
@@ -158,7 +232,7 @@ ssh -t air@theatre \
    'exec /home/air/digital_cam/catia --lwircam --debug'
 ```
 
-Trigger `DC_SHOOT` again. CATIA starts the deployed `sample` executable in
+Trigger `DC_SHOOT` again. CATIA starts the deployed `lwircam` executable in
 one-shot mode, waits for a usable thermal frame, and writes a numbered JPEG as
 `/home/air/digital_cam/photos/lNNNNNN.jpg`. CATIA then inserts the same flight
 EXIF metadata used by the other camera backends and invokes SODA.
@@ -194,7 +268,7 @@ physical cameras.
 | Complete local simulation | `catia --local` | Bundled mock JPEG |
 | CHDK on the default serial port | `catia --chdk` | CHDK capture and download |
 | Raspberry Pi camera | `catia --aicam` | `rpicam-still` |
-| Tiny 1-C thermal camera | `catia --lwircam` | `sample --capture --output ...` |
+| Tiny 1-C thermal camera | `catia --lwircam` | `lwircam --capture --output ...` |
 | NPS transport with AI camera | `catia --local --aicam` | `rpicam-still` |
 | NPS transport with CHDK | `catia --local --chdk` | CHDK capture and download |
 | NPS transport with LWIR camera | `catia --local --lwircam` | Tiny 1-C one-shot capture |
@@ -243,14 +317,114 @@ capture.
 
 ### LWIR camera command
 
-The LWIR backend starts one persistent `sample` process directly, without a
+The LWIR backend starts one persistent `lwircam` process directly, without a
 shell, during CATIA initialization:
 
 ```sh
-/home/air/digital_cam/sample \
+/home/air/digital_cam/lwircam \
    --capture-server \
    --bare
 ```
+
+LWIR uses the same CATIA shot dispatcher, EXIF writer, and SODA hand-off as
+AICam. Camera ID `3` selects LWIR (`2` selects AICam); legacy untargeted shots
+select the active optical backend. Each successful capture is saved as one file,
+`photos/lNNNNNN.jpg`, which carries the complete Tiny1-C temperature plane
+losslessly inside the JPEG as `LWIRRAW1` APP15 segments. Capture writes no
+sidecar: no `.jpg.raw` companion and no `.hotspots.json` report.
+
+Thermal detection runs exactly once, in the geolocation pass, which reads those
+embedded little-endian Kelvin-times-64 samples and writes hotspot positions and
+temperatures into the JPEG EXIF. The earlier capture-side detection produced no
+result that geolocation did not compute again, and was removed.
+
+For calibration or evidence work that needs the untouched combined sensor frame,
+start CATIA with the option:
+
+```sh
+./catia --lwircam --lwir-raw
+```
+
+That restores the `photos/lNNNNNN.jpg.raw` companion, the unchanged Tiny1-C UVC
+frame, and then the JPEG carries no embedded plane. For the CATIA systemd
+service on MORA, add `--lwir-raw` to the unit's `ExecStart` line and restart
+CATIA. Omit the option for the default single-file output. CATIA passes it to
+the capture server as `--native-raw`, which standalone LWIRcam also accepts with
+`--capture` or `--capture-server`. Existing `.raw` and
+report files from earlier flights are never deleted by this change.
+
+The detector defaults to a 100 C threshold, eight-connected regions, and a
+minimum of three pixels. Each region includes its pixel count, inclusive
+bounding box, centroid, peak pixel, and peak/mean Celsius temperatures.
+Coordinates have a top-left origin, with x increasing right and y down.
+CATIA writes the flight-provided altitude and attitude into the JPEG EXIF.
+
+The current `soda` verifies that the image is readable and nonempty, then
+dispatches to a placeholder function for the requested camera.
+It does not consume hotspot JSON, geolocate hotspots, or send hotspot results
+back to the flight controller. Hotspot results are read from the JPEG EXIF.
+
+### SODA camera dispatch
+
+SODA is built from `soda.cpp` as the executable `soda`; `make soda` builds it.
+CATIA's build-time `CATIA_SODA` setting selects its path and defaults to the
+executable in this directory. Deployment installs it as
+`/home/air/digital_cam/soda`.
+
+SODA accepts one optional camera selector: `--aicam`, `--chdkcam`, `--lwircam`,
+or `--earcam`. Only double-dash selectors are supported. For example:
+
+```sh
+./soda --lwircam photos/l000039.jpg
+```
+
+The LWIR handler prints exactly:
+
+```text
+Now I can do nifty stuff for lwircam
+```
+
+The other handlers print the same sentence with their camera name. CATIA adds
+the selector automatically, including in camera test mode. EAR sound pictures
+always use `--earcam`, independently of the active optical camera. Calls without
+a selector retain the generic legacy behavior used by local-only captures.
+
+The image argument remains required. The ten optional positional int32 shot
+values retain their existing order: number, latitude, longitude, altitude,
+roll, pitch, yaw, ground speed, course, and ground altitude. Selectors may appear
+before or after these arguments. Unknown options, duplicate/conflicting camera
+selectors, incomplete metadata, and out-of-range integers return status 2.
+Missing/unreadable/empty images return status 1 without running a handler.
+`--help` displays the application name, version, build Git SHA and option
+descriptions without requiring an image. `--version` prints only the version
+line. `--local` selects development-PC mode and logs that choice to stderr;
+the placeholder handlers still operate on the supplied local image, without
+hardware or remote connections. CATIA forwards this flag when running with
+local transport. For example, `./soda --local --lwircam photos/m000039.jpg`.
+`--` ends option parsing for filenames beginning with
+a dash. The handlers currently print only; they do not perform image analysis.
+
+Run `bash tests/soda_test.sh` from the CATIA directory for CLI tests. The
+`tests/lwir_integration_test.sh` regression also checks all four CATIA-to-SODA
+camera selectors.
+
+### Application versions
+
+CATIA, SODA, LWIRcam, and EARcam support `--help` and `--version` without opening
+camera, microphone, or serial hardware. Version resources are `version.h` in
+CATIA (CATIA/SODA), `lwircam/version.h`, and `earcam/version.h`. Each currently
+declares `v1.0`. The Makefiles embed a 12-character Git HEAD SHA from the owning
+repository when building. CATIA/SODA share a repository revision; standalone
+LWIRcam and EARcam use their own repositories. The SHA identifies the base
+commit, not uncommitted changes. If Git metadata or a commit is unavailable,
+the revision is explicitly `unknown`, including EARcam's current uncommitted
+repository. Direct compiler builds without the Makefile also default to
+`unknown`. A release built from a source archive can supply `CATIA_GIT_SHA`,
+`LWIRCAM_GIT_SHA`, or `EARCAM_GIT_SHA` as a Make command-line variable.
+
+CATIA logs its version after successful startup; LWIRcam includes its version
+in its existing startup banner. EARcam's server stdout protocol remains
+unchanged; query its version with `earcam --version`.
 
 ### EARcam acoustic backend
 
@@ -278,12 +452,12 @@ The flight controller selects cameras with an optional camera id:
 | `3` | Tiny 1-C LWIR |
 | `4` | EARcam |
 
-A `MORA_SHOOT_TARGETED` frame for id `4` copies the newest microphone
+A `CATIA_SHOOT_TARGETED` frame for id `4` copies the newest microphone
 measurement together with the shot position, AGL, and altitude into a bounded
 session buffer and appends it to `earlogs/ear_<date>.csv`. Recording is a
-memory copy and does not occupy a capture worker. A `MORA_STOP_TARGETED` frame
+memory copy and does not occupy a capture worker. A `CATIA_STOP_TARGETED` frame
 for id `4` (or `0`) runs `calculated_loudestspot()` and answers with
-`MORA_EAR_RESULT` containing latitude, longitude, AGL, altitude, level,
+`CATIA_EAR_RESULT` containing latitude, longitude, AGL, altitude, level,
 confidence, and sample count. With 200-1000 samples the fusion completes in
 well under a millisecond.
 
@@ -302,6 +476,33 @@ generic targeted shoot/stop frames. The separate `digital_cam_earcam` module
 `earcam_result_to_waypoint(WP_DROP)`; see
 `conf/flight_plans/OPENUAS/talon_earcam_loudspot_demo.xml` for the
 `find_loudspot` block sequence.
+
+#### Choosing EARcam settings in Paparazzi Center
+
+Choose how many EARcam controls you want to see in the GCS:
+
+| Settings file | What it provides |
+| --- | --- |
+| `settings/earcam_tuning.xml` | 3 basic controls: sampling interval, quiet-only sampling, and propeller spin-down delay. |
+| `settings/earcam_tuning_advanced.xml` | 16 additional tuning and status entries for refinement, result quality, and release height. |
+
+Use the basic file for everyday operation. Select both files for all 19 original
+EARcam settings.
+
+1. In **Paparazzi Center**, select your aircraft, for example **Easystar_3**.
+2. In the aircraft's **Settings** list, **uncheck** `modules/digital_cam_earcam.xml`.
+3. Add and check `settings/earcam_tuning.xml`.
+4. For the full set, also add and check `settings/earcam_tuning_advanced.xml`.
+5. Save the configuration and rebuild the aircraft. After installing the rebuilt
+   firmware, reload the aircraft configuration in the GCS so the setting indices match.
+
+**Uncheck only the settings entry. Keep the `digital_cam_earcam` module enabled
+in the airframe.** This does not stop EARcam; it avoids listing the three basic
+controls twice. Settings you do not expose retain their configured values.
+
+The **whole aircraft**, not just EARcam, must have at most **256 settings**.
+If adding the advanced file exceeds this limit, uncheck other unused settings
+groups before rebuilding; do not disable modules that the aircraft needs.
 
 #### Search strategy: coarse survey, then star refinement
 
@@ -512,7 +713,7 @@ the overlay shades cells with objects above 3 m red. NPS results with the
 final plan (speaker 8.6 m south of the point unless noted):
 
 | case | localisation | release | impact | min tree clearance | fence |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | calm | 1.6 m | 1.52 m, 10.2 m/s | 2.1 m | 27 m (star) | 42 m |
 | 4 m/s from 240 | 0.6 m | 1.55 m, 11.5 m/s | 0.8 m | 20 m | 30 m |
 | 5 m/s from 200 (tailwind) | 0.6 m | 1.81 m, 14.5 m/s | 1.1 m | 20 m | 20 m |
@@ -524,7 +725,7 @@ below 5 m clearance and 16 m INSIDE the canopy, which is why it was changed.
 `documentation/imav2026_m4_nps_overview.jpg` is the calm-air overlay:
 samples, track, search circle, red tree cells, alarm and drop point.
 
-Real-flight notes: MORA runs on board, so the autonomy factor is 1.0; a 1.3 kg
+Real-flight notes: CATIA runs on the onboard MORA, so the autonomy factor is 1.0; a 1.3 kg
 EasyStar 3 gets a weight factor of about 1.87. Measure the real climb rate and
 turn radius and put them in `M4_CLIMBOUT_RATE_MPS` / `M4_EXIT_TURN_RADIUS_M`;
 if `M4C` moves by more than a few metres, refetch the LiDAR grid and re-check
@@ -550,7 +751,7 @@ gcc -std=c11 -Wpedantic -O2 -Wall -Wextra -Werror -I. -I../../../../ext/opencv_b
 
 ### Sound picture over satellite imagery
 
-In flight MORA writes `photos/eNNNNNN.jpg` (field, 1 px white sample dots with a
+In flight CATIA writes `photos/eNNNNNN.jpg` on MORA (field, 1 px white sample dots with a
 black ring, loudest-spot marker, 50 m bar), `eNNNNNN_field.jpg` (field only) and
 `eNNNNNN.geo` (georeference). On the ground, `ear_heatmap_overlay.py` puts the
 field translucently over Google satellite tiles (same source and `var/maps/Google`
@@ -587,7 +788,48 @@ catia --local --lwircam --test
 ```
 
 In all seven cases, CATIA uses a test JPEG and still performs the normal EXIF and
-SODA stages. It does **not** start CHDK, `rpicam-still`, or the LWIR sample.
+SODA stages. It does **not** start CHDK, `rpicam-still`, or open the USB thermal
+camera. For `--lwircam --test`, it does run LWIRcam in `--mock-image` mode after
+any optional attitude transform and before EXIF/SODA. A processing failure
+prevents the SODA hand-off. Other camera test modes retain the image-copy path.
+
+To test the supplied thermal image through the regular CATIA shot chain:
+
+```sh
+sw/airborne/modules/digital_cam/catia/catia --local --lwircam --test \
+   --mock-image sw/airborne/modules/digital_cam/catia/lwircam/mock_lwir_01.jpg
+```
+
+Trigger a shot as usual from Paparazzi. The test writes `photos/mNNNNNN.jpg`
+without a JSON sidecar. Mock temperatures come from the embedded
+synthetic Kelvin-times-64 plane when available. Otherwise, decoded luminance
+is mapped linearly through black (0) = 15 C, middle gray (128) = 20 C, and
+very white (230 or above) = 600 C. The plane is retained as custom `LWIRSIM1`
+JPEG APP15 chunks, including through CATIA's EXIF write. This is not a vendor
+radiometric JPEG format. See `lwircam/README.md` for the binary layout.
+Standalone mock processing preserves source EXIF/XMP without assuming an altitude.
+Without an attitude transform, the replacement generated fixture produces two
+regions above 100 C, with source centers `(88,78)` and `(171,119)` in a 256x192
+image. Its embedded temperatures are generated independently of brightness.
+JPEG brightness is not a measured temperature. `--mocktransform` discards
+custom metadata while rewriting the image; LWIR then synthesizes a new plane
+from the transformed image rather than retaining misaligned original pixels.
+CATIA replaces source EXIF with the incoming shot metadata, as for AICam, then
+invokes LWIRcam `--geolocate` to append hotspot information to EXIF UserComment.
+Without camera calibration, temperatures are retained but target coordinates
+are omitted with an explicit status. `--mocktransform` changes the pixel geometry
+without calibrated intrinsics and is excluded from hotspot geolocation.
+
+Run the hardware-free integration regression with GCC and the native
+build dependencies installed:
+
+```sh
+bash sw/airborne/modules/digital_cam/catia/tests/lwir_integration_test.sh
+```
+
+This uses temporary output files and checks targeted CATIA dispatch, the mock
+hotspot result, EXIF altitude, SODA success, and the unchanged AICam test path.
+It exercises the dispatcher directly, not the physical serial link or camera.
 
 ### Use a test-photo set
 
@@ -625,7 +867,7 @@ catia --aicam --test --mock-image /absolute/path/example.jpg
 ## Simulate Aircraft Attitude
 
 `--mocktransform` makes an image look as though it was captured at the
-aircraft attitude carried in the MORA shot:
+aircraft attitude carried in the CATIA shot:
 
 ```sh
 catia --local --aicam --test --mocktransform
@@ -681,6 +923,121 @@ The blur factor is reserved for future use. No blur is currently applied.
 The answer depends on the selected source. CATIA does not use one universal
 JPEG-saving function.
 
+Camera masks select any combination of cameras. The rightmost bit selects camera
+1, the next bit camera 2, and so on, up to eight slots:
+
+Camera IDs remain **1=CHDKcam, 2=AIcam, 3=LWIRcam, 4=EARcam**; IDs 5 through 8
+are reserved. The mask is a set of selected IDs, not a replacement camera ID.
+For example, `00000101` selects IDs 1 and 3, not camera ID 5.
+
+| Camera | Bit Pattern | Decimal Mask | Image Prefix |
+| --- | --- | --- | --- |
+| None | `00000000` | `0` | No capture |
+| 1: CHDK | `00000001` | `1` | `c` |
+| 2: AIcam | `00000010` | `2` | `a` |
+| 3: LWIR | `00000100` | `4` | `l` |
+| 4: EARcam | `00001000` | `8` | `e` on final stop |
+| CHDK + AIcam | `00000011` | `3` | `c` and `a` |
+| CHDK + AIcam + LWIR | `00000111` | `7` | `c`, `a`, and `l` |
+| CHDK + LWIR | `00000101` | `5` | `c` and `l` |
+| AIcam + EARcam | `00001010` | `10` | `a` and acoustic samples |
+| All current cameras | `00001111` | `15` | All four |
+| All eight slots | `11111111` | `255` | Supported cameras run |
+
+Bits 4 through 7 (masks `16`, `32`, `64`, `128`) are reserved for cameras 5 through
+8. They are accepted by the FC but logged and skipped by current CATIA; supported
+bits in the same mask still run. Use decimal or hexadecimal values in XML/C;
+the binary patterns above are explanatory, not zero-padded C literals (which are octal).
+
+One `CATIA_SHOOT_MASK` message (ID 12, 44-byte payload, 49 bytes on UART) carries
+the mask and shared shot pose/number. Photos from that trigger retain their
+camera-specific prefixes, for example `c000042.jpg` and `l000042.jpg` for mask 5.
+The normal FC photo number advances once per trigger, not once per selected camera.
+Mask 0 sends no shot and does not advance that number. It does not finalize an
+existing EARcam session: use the existing EARcam stop/solve command for that.
+
+Optical jobs run in arrival order, with at most eight pending/active jobs. Within
+a job, CHDK, AIcam, and LWIR capture and processing run sequentially. A full queue
+rejects the new optical job with a log message; there is no unbounded backlog.
+EARcam samples are recorded on receipt independently of optical work. These are
+**not simultaneous or exposure-synchronized captures**: startup, capture, queued
+work and analysis add latency. Existing pose metadata still describes the trigger.
+Choosing a mask does not alter autoshoot cadence; choose a sustainable rate for
+the selected cameras and their processing cost.
+
+Backends initialize on demand and stay open for reuse until CATIA shuts down.
+An initialization or capture error in one camera does not suppress other selected
+cameras. A failed capture closes and invalidates that backend so the next trigger
+can initialize it again. The persistent LWIR server monitors its CATIA parent
+process and command input, not the lifetime of the individual launch thread:
+Linux parent-death signals track that thread and would stop LWIR after its first
+capture worker exits. This is covered by `make -C lwircam test-capture-server-lifecycle`
+from the CATIA directory, using the real server loop with synthetic frames.
+
+Photo numbers count FC trigger requests across all cameras, including failed
+captures, not successful files per camera. After failed LWIR shots 9 through 113,
+switching back to AIcam correctly produces `a000114.jpg`; the skipped files
+indicate capture failures, not a resettable per-camera counter.
+
+Selecting no cameras stops new requests, not
+jobs already accepted. Legacy targeted messages retain camera-ID interpretation
+(1=CHDK, 2=AIcam, 3=LWIR, 4=EARcam). Legacy ID 0 and untargeted CATIA_SHOOT now
+request all supported cameras rather than just the last optical backend.
+
+### Select a camera per flight block
+
+The runtime variable is `digital_cam_uart_camera_mask`. The airframe define
+`DIGITAL_CAM_UART_CAMERA_MASK` supplies its startup value only. Include this header
+in your flight plan's existing `<header>` section:
+
+```c
+#include "modules/digital_cam/uart_cam_ctrl.h"
+```
+
+Use the checked setter before the first shot in each camera-specific block:
+
+```xml
+<block name="CHDK and LWIR pass">
+   <call_once fun="uart_cam_ctrl_set_camera_mask(5)"/>
+   <call_once fun="dc_send_command(DC_SHOOT)"/>
+   <circle wp="STDBY" radius="nav_radius"/>
+</block>
+<block name="AIcam and EARcam pass">
+   <call_once fun="uart_cam_ctrl_set_camera_mask(10)"/>
+   <call_once fun="dc_send_command(DC_SHOOT)"/>
+   <circle wp="STDBY" radius="nav_radius"/>
+</block>
+```
+
+These examples use the demo flight plan's existing `STDBY` waypoint. The circles
+remain active until another block is selected; adapt the navigation stages to your
+mission. The explicit shots are optional: existing autoshoot uses the same selection
+and keeps its configured period. No extra selection packet or service restart is needed.
+
+For a literal assignment, `<set var="digital_cam_uart_camera_mask" value="10"/>`
+also works. Prefer `uart_cam_ctrl_set_camera_mask()` for computed values: it rejects
+negative, out-of-range, fractional, and non-finite values, returns `false`, and
+retains the previous selection. Valid selections return `true` without taking a
+photo or advancing its number. The GCS `camera mask` setting uses this same validation.
+Selection persists across blocks and can be changed by the GCS until the next
+flight-plan assignment. Named bit constants are `CATIA_CAMERA_MASK_CHDK`,
+`CATIA_CAMERA_MASK_AICAM`, `CATIA_CAMERA_MASK_LWIR`, `CATIA_CAMERA_MASK_EAR`,
+`CATIA_CAMERA_MASK_NONE`, and `CATIA_CAMERA_MASK_ALL`; combine them with bitwise OR.
+Existing `uart_cam_ctrl_set_camera(id)` calls still accept a camera ID, convert it
+to a mask, and select one camera (ID 0 selects all eight slots). Existing
+`digital_cam_uart_shoot(id, report)` calls target their explicit camera without
+changing the default variable, even when the normal mask is zero.
+
+Upgrade CATIA on MORA to this mask-capable release **before** running rebuilt FC
+firmware or a rebuilt simulator. Earlier CATIA versions ignore message ID 12.
+Older airframe `DIGITAL_CAM_UART_CAMERA_ID` defines are converted when no mask
+define is present; ID 0 defaults to all. Replace direct assignments to the removed
+`digital_cam_uart_camera_id` variable with mask assignments or the ID helper.
+Never treat the old ID 3 as mask 3: LWIR's mask is 4. Allow for
+pending captures/processing and hardware startup when switching, especially LWIR
+warm-up; block selection does not imply instantaneous sensor readiness. EARcam
+index `4` records acoustic samples; its final sound picture is produced on stop.
+
 ### Local and test images
 
 `local_pipe_shoot()` copies the chosen source JPEG to `photos/m%06d.jpg`. It uses
@@ -697,7 +1054,7 @@ encodes the image.** The default result is `photos/a%06d.jpg`.
 ### Tiny 1-C LWIR camera
 
 `lwir_cam_pipe_shoot()` uses `posix_spawn()` to execute the configured LWIR
-sample with `--capture --output <filename>`. The sample owns USB acquisition,
+LWIRcam with `--capture --output <filename>`. The application owns USB acquisition,
 startup-frame rejection, YUYV-to-RGB conversion, and initial JPEG encoding.
 The default result is `photos/l%06d.jpg`.
 
@@ -720,7 +1077,7 @@ After any backend returns a JPEG, the shared processing pipeline runs:
 4. SODA starts only after the final JPEG and EXIF metadata are ready.
 
 The EXIF record includes GPS coordinates, MSL and ground altitude, roll, pitch,
-yaw, ground speed, course, shot index, and the original raw MORA fields.
+yaw, ground speed, course, shot index, and the original raw CATIA fields.
 
 ## Performance and Target CPUs
 
@@ -740,64 +1097,44 @@ sudo apt update
 sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 ```
 
-From the Paparazzi repository root, clean any objects built for another CPU and
-build CATIA with the cross-compilers:
+From the Paparazzi repository root, build the ARM64 family without cleaning or
+overwriting native executables:
 
 ```sh
-make -C sw/airborne/modules/digital_cam/catia clean
-make -C sw/airborne/modules/digital_cam/catia -j"$(nproc)" \
-   CC=aarch64-linux-gnu-gcc \
-   CXX=aarch64-linux-gnu-g++ \
-   LWIR_ARCH=aarch64-gnu \
-   LWIR_STATIC=1 \
-   LWIR_VIDEO_DISPLAY=0
+make -C sw/airborne/modules/digital_cam/catia -j"$(nproc)" arm64
 ```
 
-This builds CATIA, SODA, and the LWIR `sample`. The LWIR build selects
+This builds CATIA, SODA, LWIRcam, and EARcam. The LWIR build selects
 the bundled AArch64 SDK archives, links them statically for headless operation on MORA.
 
-Confirm that all three executables target ARM64:
+Confirm that all four executables target ARM64:
 
 ```sh
-file sw/airborne/modules/digital_cam/catia/{catia,soda_local}
-file sw/airborne/modules/digital_cam/catia/lwircam/sample
+file sw/airborne/modules/digital_cam/catia/*-arm64
 ```
 
-All lines should contain `ARM aarch64` and `statically linked`. The static
+All lines should contain `ARM aarch64`; EARcam is dynamically linked. The static
 executables include their required C/C++ runtime code and bundled libraries,
 but CATIA still needs its selected camera program, writable output directories,
-and `soda_local` on the target.
+and `soda` on the target.
 
-CATIA embeds default file and directory paths at build time. If the Paparazzi
-checkout has the same absolute path on both computers, the command above is
-enough. Otherwise, set paths for the target computer while cross-compiling. For
-example, to install the runtime files in `/opt/catia`:
+CATIA embeds default file and directory paths at build time. ARM64 defaults to
+`/home/air/digital_cam`. For a custom manual installation, use
+`MORA_INSTALL_DIR`; the supplied service/deployment still requires its canonical
+directory:
 
 ```sh
-make -C sw/airborne/modules/digital_cam/catia clean
-make -C sw/airborne/modules/digital_cam/catia -j"$(nproc)" \
-   CC=aarch64-linux-gnu-gcc \
-   CXX=aarch64-linux-gnu-g++ \
-   LWIR_ARCH=aarch64-gnu \
-   LWIR_STATIC=1 \
-   LWIR_VIDEO_DISPLAY=0 \
-   CATIA_MOCK_IMAGE=/opt/catia/mock_image_01.jpg \
-   CATIA_LOCAL_SODA=/opt/catia/soda_local \
-   CATIA_LOCAL_PHOTO_DIR=/opt/catia/photos \
-   CATIA_AI_CAM_PHOTO_DIR=/opt/catia/photos \
-   CATIA_LWIR_CAM_PHOTO_DIR=/opt/catia/photos \
-   CATIA_CHDK_PHOTO_DIR=/opt/catia/photos \
-   CATIA_LWIR_CAM_COMMAND=/opt/catia/sample
+make -C sw/airborne/modules/digital_cam/catia -j"$(nproc)" arm64 \
+   MORA_INSTALL_DIR=/opt/catia
 ```
 
 #### Build and deploy with one command
 
-`deploy_mora.sh` automates a clean ARM64 release build, creates the runtime directories
-over SSH, and transfers CATIA, SODA, the LWIR sample, and both mock test images
-with `rsync`. It also installs and reloads the Tiny 1-C udev rule, installs and
-validates `catia.service`, enables it for every boot, starts it, and verifies
-that it remains active. Its defaults match a MORA available as `itsme@itsmypie`
-and install into `/home/itsme/digital_cam`:
+`deploy_mora.sh` automates an incremental ARM64 release build and transfers CATIA,
+SODA, LWIRcam, EARcam, and both mock images into a unique staging directory
+with `rsync`. The thermal fixture comes from `lwircam/mock_lwir_01.jpg`, which
+contains the embedded synthetic temperature layer. Its defaults are
+`air@theatre` and `/home/air/digital_cam`:
 
 ```sh
 sw/airborne/modules/digital_cam/catia/deploy_mora.sh
@@ -807,7 +1144,7 @@ Before using the script, verify that public-key login works without a password
 prompt:
 
 ```sh
-ssh itsme@itsmypie true
+ssh air@theatre true
 ```
 
 The development computer needs `make`, `file`, `ssh`, `rsync`, and the AArch64
@@ -817,13 +1154,52 @@ not stripped, any debug section remains, or an unmanaged CATIA or LWIR server
 is still running. This avoids replacing a live executable or competing for the
 Tiny 1-C.
 
+MORA needs Bash, `flock`, systemd, udev, `rsync`, `pgrep`, noninteractive
+`sudo -n` permission for installation/service commands, and the ARM64 ALSA
+runtime (`libasound.so.2`) used by EARcam. Its `air` user must have write access
+to `/home/air/digital_cam` and the service's `dialout` and `plugdev` groups.
+The build host also needs native and ARM64 ALSA development files and
+`pkg-config` for the EARcam build/tests.
+
+The remote `deploy_mora_remote.sh` helper locks deployment, runs the staged
+EARcam self-test and LWIR mock processing, and aborts on either failure before
+stopping the service. It records the old service's active/enabled states and
+backs up all replaced runtime files, the systemd unit, and the udev rule.
+It requires a successful stop and an inactive state before replacing files;
+an unmanaged camera process aborts deployment. It then installs the staged
+files, validates the unit, reloads udev/systemd, and enables and starts CATIA.
+Success requires `enabled`, `active`, and `SubState=running` after startup.
+This checks initial readiness, not long-term service health.
+
+If activation fails, the helper stops the new service, restores the backed-up
+files and prior enablement, and restarts the old service only if it was active
+before deployment. It refuses masked or unusual prior enablement states rather
+than guessing how to restore them. An unmanaged process leaves CATIA stopped
+to avoid competing for hardware. Failed rollback is reported; the backup is
+retained under the printed `.deploy.XXXXXXXX/backup` directory. Staging and
+backups are retained after success too; remove old directories deliberately
+after confirming the release. This is rollback on handled errors, not an
+atomic multi-file update or protection against power loss/SIGKILL. If the SSH
+connection is lost, inspect MORA's journal and retained backup before retrying.
+
+The script builds and strips only the `*-arm64` release executables, then
+uploads each under its unsuffixed runtime name. It does not clean or replace
+native executables, so laptop testing can continue after deployment.
+No photos or EARcam logs are removed by deployment or rollback.
+
+Run the local, hardware-free deployment regression without SSH or privileges:
+
+```sh
+bash sw/airborne/modules/digital_cam/catia/tests/deploy_mora_test.sh
+```
+
 Supply a different SSH destination as the first argument. The systemd unit uses
 the fixed canonical installation directory `/home/air/digital_cam`, so the
 optional second argument must have that value:
 
 ```sh
 sw/airborne/modules/digital_cam/catia/deploy_mora.sh \
-   itsme@itsmypie /home/itsm/digital_cam
+   air@other-mora /home/air/digital_cam
 ```
 
 Set `BUILD_JOBS` to limit parallel compilation when needed:
@@ -848,7 +1224,7 @@ ssh air@theatre 'systemctl status catia.service'
 ssh air@theatre 'journalctl -fu catia.service'
 ```
 
-CATIA and standalone `sample` runs require exclusive Tiny 1-C ownership. Stop
+CATIA and standalone `lwircam` runs require exclusive Tiny 1-C ownership. Stop
 the service for maintenance or a manual test, and restart it afterward:
 
 ```sh
@@ -866,28 +1242,576 @@ ssh air@theatre 'sudo systemctl disable --now catia.service'
 ssh air@theatre 'sudo systemctl enable --now catia.service'
 ```
 
+Test locally without a camera, from the CATIA directory:
+
+```sh
+make -j32 lwircam
+./lwircam-native --mock-image lwircam/mock_lwir_01.jpg --output /tmp/lwir-opencv.jpg
+xdg-open /tmp/lwir-opencv.jpg
+```
+
+The build uses headless OpenCV core/imgproc from
+`lwircam/ext/opencv_bebop/opencv`, with separate native and ARM64 build directories.
+CMake is required on the build machine. Mock processing draws green bounding
+boxes and center crosses for up to two thermal candidates using OpenCV.
+Canny stays disabled, live JPEG capture is unchanged, and `--mock-layer` adds
+no overlay. Both real and mock thermal reports include the new `fire_detection`
+section. Set `LWIR_OPENCV_ROOT=` at build time to disable OpenCV candidate
+detection and annotation while retaining the legacy hotspot report.
+
+### IMAV2026 Mission 2: Pixel Detection Stage
+
+Rulebook V4-1 section 5.4.3 requires locating two thermal sources in the red
+search area, reporting decimal-degree GPS positions within 5 m, no later than
+five minutes after landing. They need not be fires. The general maximum is
+80 m AGL. The rulebook does not specify emitter type, dimensions, or temperature.
+Do not infer a particular device from the military venue. A hot plate, heater,
+or burner is possible, but no evidence establishes which is most likely.
+Organizer confirmation is not expected. The team's working hypothesis is a
+butane-heated metal plate, approximately 0.30 x 0.30 m to 1.00 x 1.00 m.
+This is an assumption, not a documented IMAV device specification.
+
+Public-source check (9 September 2026):
+[ThermBright](https://www.thermbright.com/) describes military thermal targets
+that require neither power nor a heat source, and reports testing by the
+British Army. This supplier evidence establishes a passive alternative, not
+the target used at IMAV. The research did not substantiate a standard military
+butane plate of the proposed dimensions. Search access was limited; no ranking
+of actual IMAV devices can be justified from that initial material.
+
+Further venue-focused research on the same date found:
+
+- The [official venue page](https://2026.imavs.org/venues/) identifies the
+   2nd Hussard Regiment's military camp at Haguenau, with the public address
+   27 Rue du Rosenfeld. Rulebook section 5.2 places the outdoor field at
+   48.806567024502456, 7.852133729228434 and assigns supervision/logistics to
+   the regiment. This does not assign manufacture or supply of heat sources.
+- The [official event homepage](https://2026.imavs.org/) confirms coordination
+   with SIS67 and the regiment, with a fire-rescue theme. The fire-service link
+   makes fire-training equipment worth considering alongside military targetry.
+- [SIS67's R-HYFIE announcement](https://www.sis67.alsace/fr/actualites/un-partenariat-novateur-entre-les-sapeurs-pompiers-du-bas-rhin-et-r-gds)
+   describes gas-fire training with R-GDS in Strasbourg. It documents relevant
+   experience, not a portable tray inventory, IMAV supplier, or equipment at
+   Haguenau. Do not confuse this public service with the private business
+   named Securite Incendie Service at sis-67.com.
+- [LEADER GF42](https://www.leader-group.company/fr/materiel-formation-incendie/bac-feu-generateur-de-flamme/accessoires-bac-feu/bac-feu-gf42)
+   is a portable propane fire-training tray with a documented 0.42 square metre
+   fire surface. That is equivalent in area to a square about 0.65 m wide,
+   not a statement of its actual dimensions or its nadir LWIR footprint.
+- [LEADER PYROS 3](https://www.leader-group.company/fr/materiel-formation-incendie/bac-feu-generateur-de-flamme/accessoires-bac-feu/bac-feu-pyros-3)
+   documents a 0.83 square metre fire surface, equivalent to a square about
+   0.91 m wide. These examples support the practicality of a sub-metre training
+   source but do not establish that SIS67 or IMAV owns or uses either product.
+
+Engineering assessment, not identification: prioritize tests for a compact
+gas-heated plate or portable fire tray, while retaining an electrically heated
+surface as an alternative. Propane is directly supported by the GF42 example;
+butane remains the team's hypothesis, not a verified fuel. A plate covering a
+burner has not been documented for IMAV. Passive military thermal targets exist,
+but there is no competition-specific evidence favoring them either. No numeric
+probabilities are justified. The research itself did not change configuration;
+the subsequent tray-first selection requested by the team is described below.
+
+Public competition, organization, and sponsor pages plus targeted English/French
+searches did not reveal a Mission 2 device photo, supplier, or temperature
+specification. Some search/product pages were inaccessible; this is not proof
+that no further information exists. Rulebook history could not be inspected
+reliably from the public download page; the local V4-1 remains the rule source.
+The two coordinates in Table 9 are explicitly a **sample submission**, not
+disclosed heat-source positions. Do not turn them into target waypoints or use
+their separation to assume that two sources cannot share an image.
+
+Practical next validation cases: physical widths 0.3, 0.5, and 1.0 m; nonuniform
+plate heating; fragmented or wind-displaced flame signatures; two sources in
+one frame; partially clipped sources; and warm-ground distractors. A gas flame
+need not resemble a filled white square in the Tiny1-C band, and apparent
+temperature need not equal flame temperature. The current connected-component
+detector can split one source into several candidates, so later grouping and
+multi-view consistency matter more than inferring the fuel. No threshold,
+navigation, or geofence changes are warranted solely by these venue clues.
+
+Change the working assumptions in `lwircam/fire_target_config.h`, then rebuild
+with `make -j32 lwircam` (or `make arm64` for MORA). Defaults are:
+
+| Setting | Value | Meaning |
+| --- | --- | --- |
+| `hypothesis` | `gas_heated_metal_plate` | Unverified physical source model |
+| `fuel_hypothesis` | `butane` | Team estimate, not a detected property |
+| `expected_min_side_m` | 0.30 | Expected lower side length |
+| `expected_max_side_m` | 1.00 | Expected upper side length |
+| `unlikely_above_side_m` | 4.00 | Soft outer size expectation |
+| `verified` | false | Hypothesis has not been confirmed |
+| `size_filter_enabled` | false | No metric rejection is implemented |
+
+These values appear under `fire_detection.target_prior` in each OpenCV thermal
+report. They are descriptive metadata, not active segmentation or ranking
+parameters. Compile-time checks reject invalid size intervals. Enabling the
+size-filter flag deliberately fails compilation until geometry-based filtering
+is implemented. Detector temperature settings remain in `FireOptions` in
+`lwircam/fire_detector.h`.
+
+A gas-heated plate can have a nonuniform temperature distribution. Bare metal
+can have low emissivity and reflect the sky or nearby objects: apparent LWIR
+temperature is not necessarily true surface temperature. The segmented hot
+footprint may be smaller than the physical plate, and its thermal centroid may
+not equal the plate's geometric center. Neither a square shape nor 100 C is
+required by the detector. The current 60 C floor can still miss cooler or
+low-apparent-temperature sources; passive targets are not covered reliably by
+this hot-source detector. Keep these failure cases in future mock/field tests.
+
+Stage one uses the required Tiny1-C raw temperatures and OpenCV thresholding
+and 8-connected components. A robust median/MAD global background threshold and
+local background comparison reject ordinary warm ground. Defaults (60 C floor,
+20 C global rise, 15 C local contrast) are provisional and tunable through
+`FireOptions` in `lwircam/fire_detector.h`; no field performance is claimed.
+Candidates have temperature-weighted centers, inclusive pixel bounding boxes,
+peak/mean temperatures, and local contrast. These feed the hotspot entries that
+geolocation writes into the JPEG EXIF. The original `regions` schema is
+preserved for the mock and streaming report paths.
+
+The preferred pass is now a GF42/PYROS-3-inspired fire-tray hypothesis: at least
+4 hot pixels, at least 2 pixels in each bounding-box dimension, peak at least
+100 C, local contrast at least 40 C, fill ratio at least 0.25, aspect ratio at
+most 3, and no clipping at the image edge. These are editable `tray_*` settings
+in `FireOptions`, not measured LEADER signatures. No metric fire-area matching
+is possible yet without calibrated ground scale. The algorithm does not identify
+a product model, fuel, or confirmed fire.
+
+If any tray candidates qualify, rank them by integrated temperature excess above
+local background, then peak contrast. Otherwise use the generic hotspots, ranked
+by peak contrast then integrated excess. Retain up to two; never force two.
+One tray candidate does not cause a generic candidate to fill the other slot.
+Set `prefer_fire_trays=false` and rebuild for generic-only behavior.
+This fallback is **per frame**, not a determination that an entire search
+contains no trays. Whole-search decisions need the later multi-image stage.
+
+JSON records `selection_pass`, `selection_scope=single_frame`,
+`model_identified=false`, both `generic_candidate_count` and
+`tray_candidate_count`, and the selected pass's pre-truncation `candidate_count`.
+`excluded_generic_count` exposes candidates removed by tray preference;
+`ambiguous` remains true whenever more than two generic candidates existed.
+Candidates include `tray_like`, `fill_ratio`, and `aspect_ratio`.
+Single pixels and clipped or cooler sources remain available in generic fallback.
+All detections remain unconfirmed. A false tray-like region can suppress a real
+generic source; one tray with separated hot patches can still count as multiple
+components. Neither failure is solved by these provisional shape heuristics.
+
+Coordinates are in the raw temperature image, with x right and y down. They
+are not GPS coordinates, and rotated/mirrored images need a coordinate transform.
+The replacement synthetic fixture yields two generic and two tray-like regions,
+with selected centers near `(171.01,119.01)` and `(88.00,78.00)`. It represents
+an idealized positive case, not identification of competition sources. The
+previous smoke-test image is backed up as `lwircam/mock_lwir_01_original.jpg`.
+Regenerate with `bash lwircam/tests/regenerate_fire_mock.sh` from CATIA.
+The scene has nominal 0.42/0.83 square metre heated patches at 0.10 m/pixel,
+textured ground, warm distractor surfaces, and temperatures peaking near 224 C.
+These are invented simulation parameters, not measured LEADER signatures.
+No detector thresholds were changed to fit the new image. Merged sources,
+defective pixels, and diluted subpixel
+signals remain limitations. Canny is not needed for radiometric segmentation.
+
+The team's expectation that sources are unlikely to exceed 4 m is a **soft
+prior**, not a rulebook limit. No metric size rejection is applied without
+calibrated optics and actual AGL. Retain bounding boxes now; apply a size
+plausibility check after georeferencing. Do not exclude smaller-than-30-cm sources.
+
+For a nadir camera over approximately level ground, pixel ground spacing is
+approximately `AGL * pixel_pitch / focal_length`. At 40 m, **if** the detector
+pitch is confirmed as 12 micrometers, the approximate figures are:
+
+| Lens | Ground spacing | 256x192 footprint | 0.3 m target width | 4 m target width |
+| --- | --- | --- | --- | --- |
+| 4.3 mm | 0.112 m/pixel | 28.6 x 21.4 m | 2.7 pixels | 35.8 pixels |
+| 9.1 mm | 0.0527 m/pixel | 13.5 x 10.1 m | 5.7 pixels | 75.8 pixels |
+
+These are conditional pinhole estimates, not verified Tiny1-C specifications.
+At 80 m the spacing/footprint double and target pixel widths halve. The 9.1 mm
+lens gives 2.12 times more target pixels per dimension but narrows coverage;
+choose it for small-source resolution only after checking scan time, overlap,
+motion blur, lens focus, and the Talon's operating envelope. Forty metres AGL
+is a proposed scan altitude, not a verified safe clearance. A red search zone
+is not evidence of absent trees or obstacles.
+
+For the later 5 m position requirement, an M10N without RTK leaves a limited
+error budget for GNSS bias, attitude, AGL, terrain, lens distortion, boresight,
+and capture timing. Repeated views help reject false detections and random
+error, but do not remove systematic GNSS bias or guarantee 5 m accuracy.
+Do not change navigation or attempt target approaches based on this first-stage
+candidate report alone. No hardware deployment or flight validation is included.
+
 Test the deployed LWIR processing path without a USB camera using the bundled
 mock image:
 
 ```sh
 ssh air@theatre \
-  'cd /home/air/digital_cam && ./sample \
+  'cd /home/air/digital_cam && ./lwircam \
    --mock-image mock_lwir_01.jpg \
    --output mock_lwir_processed.jpg'
 ```
 
 This decodes the JPEG, converts its luminance to synthetic Y14 samples, runs the
-vendor enhancement and RGB conversion functions, and writes a processed JPEG.
-Because a JPEG has no radiometric temperature plane, the mock test reports a
-constant synthetic `25.0 C` value. That value tests data plumbing only; it is
-not a measured temperature. Running `./sample` without mock options retains the
-vendor USB-camera workflow for the later hardware test.
+vendor enhancement and RGB conversion functions, applies the OpenCV mock overlay,
+and writes a processed JPEG.
+The bundled JPEG includes a synthetic radiometric plane in custom APP15
+metadata, which mock processing reads and retains. The supplied fixture uses
+generated ground and source temperatures; only JPEGs without a layer use the
+fallback brightness mapping (black = 15 C, gray128 = 20 C, white230+ = 600 C).
+It is synthetic test data, not measured temperature or a vendor JPEG
+format. Source EXIF/XMP is preserved; mock processing writes no JSON sidecar. Running
+`./lwircam` without mock options retains the USB-camera workflow for hardware
+testing.
+
+### Hotspot GPS Coordinates And Center Temperatures
+
+Production CATIA and LWIRcam read/write EXIF with bundled libexif, linked into
+the native and ARM64 executables. Neither ExifTool nor Perl is required on MORA
+for capture, geolocation or EXIF output. ExifTool is a development-only tool for
+generating mock fixtures and independently inspecting metadata in selected tests.
+The CATIA integration test runs the application with an empty tool-search PATH
+and an unavailable EXIFTOOL override, and verifies hotspot metadata with libexif.
+
+The CATIA LWIR path is capture, flight EXIF, `lwircam --geolocate`, then SODA.
+EXIF UserComment contains an `LWIR_HOTSPOTS_V1` section with up to two selected
+sources: center pixel, raw Kelvin-times-64 sample, Celsius temperature, estimated
+latitude/longitude, ground altitude, slant range, and validity status. Camera GPS
+tags remain the aircraft position. Re-analysis replaces the hotspot section;
+it does not create mock JSON. UserComment is rebuilt from ImageDescription and
+the new analysis section, rather than retaining unrelated previous comment text.
+
+GPS uses the fractional-pixel temperature-excess weighted centroid, not the
+hottest pixel. `projection_pixel_x` and `projection_pixel_y` retain that center
+without rounding before ray projection. This avoids up to half a pixel per
+axis of extra image-coordinate error; it does not remove GNSS or timing bias.
+`pixel_x` and `pixel_y` still identify the nearest integer pixel used for the
+actual raw temperature sample, not an interpolated temperature. Metadata reports
+`center_method=subpixel_temperature_weighted_centroid` and
+`temperature_sample_method=nearest_pixel`. Concave regions can have a center on cooler ground; the
+`center_above_detection_threshold` field reports this without substituting a
+hotter sample. Detection still uses the tray-first/generic fallback policy.
+
+Geometry undistorts camera rays using Brown-Conrady coefficients, applies the
+camera-to-body rotation and Paparazzi body-to-NED roll/pitch/yaw, then intersects
+a horizontal ground plane at AGL. Yaw rotates off-center ground offsets and is
+essential. NED offsets are converted through WGS84 ECEF to latitude/longitude.
+GPS-to-camera offset is zero for the nearly colocated mounting; the projection
+library supports a measured lever arm if needed later. Rays within about 11.5
+degrees of the horizon or above it are rejected.
+
+CATIA `groundalt` means **AGL**, not terrain altitude (Q8 metres). Fixed-wing
+firmware sends aircraft altitude minus reference ground altitude; other
+airframes use state AGL. Estimated ground MSL is aircraft MSL minus AGL.
+The ECEF calculation approximates ellipsoidal height with MSL, without a geoid
+correction. This introduces a small horizontal scale error and is not a
+survey-grade vertical datum model. There is no terrain DEM intersection.
+
+Pass `--lwir-calibration FILE` to CATIA with an absolute YAML path, or analyze
+an existing flight-tagged JPEG from the CATIA directory:
+
+```sh
+./lwircam-native --geolocate photos/l000001.jpg --calibration /absolute/path/camera.yml
+```
+
+Required OpenCV YAML keys are `image_width`, `image_height`, `fx`, `fy`, `cx`,
+`cy`, `k1`, `k2`, `p1`, `p2`, `k3`, `verified` (0 or 1), and a nine-element
+row-major `camera_to_body` rotation. Intrinsics use pixels in the saved native
+JPEG grid, with integer pixel centers. Camera axes are right/down/forward;
+body axes are forward/right/down. The example mounting
+`[0,-1,0, 1,0,0, 0,0,1]` means nadir with image top toward the aircraft nose.
+Confirm the installed orientation; GPS proximity does not establish boresight.
+Calibration dimensions must match exactly, and non-normal EXIF orientation is
+rejected. Invalid/missing pose, calibration or ground intersection yields a
+status instead of target coordinates.
+
+The profiles in `lwircam/tests/mock_camera_256x191.yml` and
+`mock_camera_256x192.yml` assume 4.3 mm optics, 12 micrometre pixels and zero
+distortion. They are deliberately unverified and only suitable for synthetic
+fixtures. Live sensor data requires verified calibration; setting a flag is
+not a substitute for measuring the lens and mounting. No real calibration is
+selected automatically, including when EXIF contains a focal length.
+
+Unrotated/unmirrored live combined-mode captures save **one file**: the ordinary
+JPEG with EXIF, carrying the exact 256x192 little-endian Kelvin-times-64
+temperature samples in `LWIRRAW1` APP15 segments. Those are byte-identical to
+the samples the SDK's `raw_data_cut()` produces during acquisition, so no
+temperature measurement is lost; only the pre-JPEG display bytes are not kept.
+The configured sensor endpoint remains 256x384: a 256x192 YUV422 image followed
+by the 256x192 temperature plane, 196608 bytes combined. This is the combined
+image/temperature mode, not a claim that every Tiny1-C mode outputs Y14.
+No EXIF loader changes are required.
+
+With CATIA's `--lwir-raw` (LWIRcam `--native-raw`), capture instead writes the
+`.jpg.raw` companion containing the **unchanged native Tiny1-C UVC frame**,
+without an added header or private JPEG temperature chunks, and the JPEG then
+holds no embedded plane. Keep such a pair together with matching names, including
+when copying, renaming, or archiving a shot. The raw file has no EXIF or
+dimensions header; this reader uses the paired JPEG dimensions and requires the
+exact combined-frame size. Do not pair a raw frame with an unrelated, rotated,
+cropped or resized JPEG. Each file is published by rename, but two files are not
+a crash-atomic transaction; after an interrupted capture, discard the incomplete
+pair and recapture. Successful
+capture is acknowledged only after the required writes succeed. Unsupported
+capture grids store no temperature plane for geolocation.
+
+Geolocation prefers the native companion when present, reported as
+`temperature_source=tiny1c_native_frame`. An invalid companion records
+`invalid_native_frame` and omits coordinates rather than falling back. Otherwise
+it reads the embedded plane: `tiny1c_embedded_plane` for `LWIRRAW1` sensor
+samples and `synthetic_embedded_layer` for `LWIRSIM1` mock layers, which keeps
+existing files and mock tests working. These formats are not vendor radiometric
+JPEGs; existing APP15-first
+files may require marker normalization before the original EXIF loader can
+read their metadata. EXIF updates leave
+the stored temperatures untouched. Temperatures come from numerical sensor samples,
+never display brightness.
+Sensor values are labeled `sensor_apparent`, not guaranteed true surface
+temperatures: emissivity, reflected temperature, atmospheric attenuation,
+saturation, sensor calibration and mixed pixels still matter. Synthetic values
+are explicitly labeled `synthetic`.
+
+**Accuracy is not yet field-validated.** GNSS bias, AGL/terrain errors, boresight,
+attitude uncertainty and motion blur remain. At 40 m, one degree of attitude
+error is roughly 0.70 m near nadir and worse off-axis. The current protocol has
+trigger-time pose but no exposure timestamp. Stability now accumulates continuously;
+a request does not reset it. An already stable stream can use the next acceptable
+frame, while startup warm-up and eight-frame recovery remain. Their necessity
+and thresholds still need hardware validation; image motion can resemble instability.
+
+Each new server response reports monotonic request-to-SDK-callback delay, excluding
+validation and file-writing time. CATIA records it in EXIF. Optionally start CATIA
+with `--lwir-motion-compensation` to advance live LWIR GPS using constant ground
+speed/course over that interval. This is off by default and bounded to 0-2 s,
+0-100 m/s and latitudes within 85 degrees. Original latitude/longitude and the
+method are preserved in ImageDescription/UserComment; corrected GPS and pose
+fields feed hotspot projection. Attitude, altitude and AGL are unchanged.
+Unknown FC transport and sensor/USB latency are not compensated. A measured
+0.32 s at 15 m/s implies 4.8 m travel, but is not a fixed correction constant.
+See the [flight accuracy gate](lwir-calibration.html#11-the-flight-accuracy-gate)
+for limits and validation. These estimates still state
+`capture_pose_synchronized=false`, `location_status=estimated`, and
+`absolute_accuracy_m=unknown`, even with verified optics.
+
+Operational accuracy requires exposure timestamps and time-aligned FC pose,
+measured lens/boresight calibration, validated target terrain height, and tests
+against surveyed hot targets across bank/pitch/yaw. This implementation does
+not synchronize exposures or send targets to the FC. The optional pose-evidence
+message below extends the UART protocol without changing existing messages.
+Analysis failure preserves the photo and records an explicit failure status.
+
+### Pose And Image Timing Evidence
+
+The usual four-second shot interval can remain unchanged. A separate, opt-in
+10 Hz FC pose stream records how the aircraft moves between images; it does
+not command photos or select a faster flight/capture pattern.
+
+To enable this on a reviewed build, define `DIGITAL_CAM_UART_POSE_STREAM=1`
+for the existing UART camera module. No provided airframe enables it by default.
+`CATIA_POSE_SAMPLE` is message ID 8 with a 100-byte payload, 105 bytes including
+framing. After a clock handshake, `CATIA_POSE_CLOCKED` (ID 11) adds the accepted
+8-byte token: 108 payload bytes, 113 including framing. At 10 Hz these use
+approximately 1.05/1.13 kB/s, or 9.1/9.8 percent of 115200-baud 8N1, excluding
+clock replies and other traffic. One pose packet takes about 9.1/9.8 ms on that
+wire. The sender requires **154 free bytes unclocked, 162 clocked**, leaving
+capacity for one 49-byte targeted shot command. A 128-byte TX ring cannot satisfy this requirement and
+will skip every diagnostic sample. Verify the actual configured UART buffer;
+do not interpret an empty log as successful telemetry. This reservation is not
+a guarantee for arbitrary bursts of concurrent commands.
+
+The sequence number advances on every attempted sample, including UART skips.
+Existing shot IDs, image numbering and EARcam commands are unchanged. The
+message contains FC sample begin/end timestamps, the existing shot-pose fields,
+NED velocity and cached GPS quality/time fields. The `next_shot_nr` field is
+not an image acknowledgement or unique frame ID. Samples read several state
+accessors in sequence, not a hardware-atomic pose; the begin/end interval bounds
+the read duration. The timestamp is not necessarily the estimator's measurement
+epoch. Cached GPS time-of-week and accuracy may refer to an older fix. A present
+GPS flag is not a fresh-fix guarantee.
+
+On MORA, create a log directory on the intended storage volume and start CATIA
+with it, for example:
+
+```sh
+./catia --lwircam --pose-log /home/air/digital_cam/pose-logs
+```
+
+The directory must already exist. CATIA creates a unique
+`pose-<UTC-start>-<random>.csv` per run and never overwrites an old log. The name's
+UTC time is for identification only, not clock synchronization. Omitting
+`--pose-log` disables logging. Opening or writing failure is reported, but normal
+camera processing continues; inspect the log status before claiming evidence
+was recorded. Use `--debug` for periodic counters; counters are also printed at
+shutdown. These are local diagnostic files, not mock image JSON sidecars or
+offboard localization used during the scored mission.
+
+Also add `--clock-align` to enable diagnostic clock probes (default
+off). CATIA attempts at most one probe per second, only when its UART output
+queue is idle. ID 9 requests carry a random token; ID 10 replies echo it with
+FC receive/transmit timestamps. The FC responder is enabled by the same pose
+stream flag. CATIA's bounded, serialized output queue retains partial writes;
+busy output defers probes rather than interleaving them with mission replies.
+
+CSV **schema 2** retains raw pose fields and adds the token, a mapped flag,
+earliest/latest MORA sample times and the four exchange timestamps. Mapping
+uses an interval, not an exact offset or symmetric-delay assumption. Replies
+over 100 ms round-trip and mappings older than 2 seconds are rejected; bounds
+include an assumed relative clock drift of +/-1000 ppm and timestamp
+quantization. Validate that assumption on the actual FC/MORA pair. Unmapped
+rows retain raw evidence with zero mapped bounds. Tokens, stale-data checks
+and legacy-pose invalidation prevent silently reusing an old mapping after
+reset; there is still no explicit FC boot ID or GPS fix-age measurement.
+Use `--debug` to retain `CATIA CLOCK` probe/accepted/rejected counters.
+**Mapped intervals are diagnostic only; geolocation does not consume them.**
+
+The serial path only validates and tries to enqueue a fixed-size record. It
+does not allocate per sample, wait for SD writes or wait for queue space. A
+256-record queue and a separate writer isolate normal disk delays; contention
+or a full queue drops diagnostics and increments a counter. The writer takes
+up to 32 records at a time, flushes and calls `fdatasync()` after each batch,
+with approximately one-second flush scheduling when I/O keeps up. A 64 MiB
+file limit stops logging rather than growing without bound. Disk failure or
+the limit disables further recording for that run; accepted-but-not-synced
+records are not certified as durable. Error and drop counters must be reviewed.
+Each CSV row records cumulative queue drops so far; drops after the last saved
+row are visible only in the final status. Keep that status with the log.
+
+On normal shutdown CATIA drains and joins the writer, then closes the log. A
+stalled SD write can delay shutdown even though the serial path does not block.
+Do not pull power or the card while writes are pending. A crash can lose the
+unsynced tail, and successful sync calls remain subject to the card/filesystem's
+durability guarantees. This implementation is not protection against complete
+SD-card or airframe loss.
+
+The CSV records raw integer units to avoid conversions during serial handling:
+
+| Field | Meaning |
+| --- | --- |
+| `mora_boot_id` | Linux boot identity; `unknown` if unavailable |
+| `receive_monotonic_us` | MORA `CLOCK_MONOTONIC` at the return of the serial read containing the final packet bytes; a batched read can give several packets the same timestamp |
+| `fc_sample_begin_us`, `fc_sample_end_us` | Raw uint32 FC uptime microseconds; wrap roughly every 71.6 minutes; use valid mapped bounds for MORA-time comparison |
+| `fc_sequence` | uint32 attempted-sample sequence; gaps expose omissions and it restarts with the FC |
+| `lat_e7deg`, `lon_e7deg`, `ellipsoid_alt_mm` | Existing FC state latitude/longitude and ellipsoid altitude; do not treat this as a new MSL measurement |
+| Angle, speed and AGL BFP fields | Existing scales: angles /4096 radians, speeds /524288 m/s, AGL /256 m |
+| `gps_tow_ms`, `gps_week`, GPS accuracy/status fields | Cached GNSS time and quality, with accuracy in cm and speed accuracy in cm/s; interpretation requires flags, validity and fix status |
+
+New LWIR capture-server responses provide request and SDK-callback timestamps.
+CATIA writes `camera_request_monotonic_us`, `frame_arrival_monotonic_us`,
+`mora_boot_id`, `callback_sequence`, `callback_drops` and
+`capture_time_kind=sdk_callback_not_exposure` into EXIF. These
+times can be compared with pose-log receive times **only for the same MORA boot**;
+valid mapped sample intervals also use that MORA clock. Raw FC timestamps
+cannot be compared directly with camera timestamps. Unknown boot
+identity is not enough to join files across runs. Older absolute polling responses
+remain labeled `uvc_return_not_exposure`; delay-only responses do not acquire
+invented absolute timestamps. Invalid,
+reversed, overflowing or over-20-second absolute timing is rejected.
+
+The callback-based still-capture path bypasses an SDK polling freshness problem:
+the bundled library keeps one latest frame and a pending count, so two arrivals
+can be read as the same latest frame twice. A hardware-free test reproduces this
+using the actual native SDK; the ARM64 binary shows the same implementation.
+No vendor code is modified. The SDK's supported callback copies into a bounded
+application mailbox, timestamped at callback entry. Each delivered sequence is
+consumed at most once. Old undelivered frames are replaced with the latest, not
+queued for later JPEG processing. Sequence gaps reset the stability count.
+
+For a requested shot, only callbacks timestamped strictly after request acceptance
+are eligible. This means fresh **host delivery**, not proof of post-request
+sensor integration. Callback lock contention drops a delivery and increments
+`callback_drops`; sequence gaps also reveal overwritten deliveries. Warm-up and
+request recovery use monotonic elapsed deadlines, not an assumed number of
+polls at the frame rate. The server retains the five-second warm-up and eight
+consecutive stable-delivery heuristic; these are not per-shot exposure delays.
+The mailbox must outlive streaming, and capture shuts the SDK stream down before
+destroying it. The inherited interactive preview path is not converted here.
+
+### LWIR Integration And Effective Lag
+
+The camera runs continuously; a four-second shot interval selects images from
+that stream. At 25 Hz, frames are nominally 40 ms apart. **40 ms is not a
+measured integration duration or sensor-to-host delay.** A thermal detector has
+a finite response and readout interval even without a visible-camera-style
+variable-exposure control. Fixed frame rate, fixed integration and fixed delivery
+latency are separate claims.
+
+Investigation of the available Tiny1-C SDK did not establish variable integration
+time, nor did it provide a measured fixed integration time or exposure timestamp.
+The shared SDK declares shutter-correction, gain and temporal-noise-reduction
+controls; support and active settings vary by camera/mode. Their presence is
+not evidence that a particular feature is enabled on this Tiny1-C or affects
+the temperature samples. No camera settings were changed. Manufacturer material
+could not be verified through the product site during this investigation.
+
+A practical next model, acceptable as an explicitly labeled estimate, is:
+
+```text
+estimated_observation_time = callback_time - effective_camera_lag
+position_estimate = position_at_reference_time + NED_velocity * time_difference
+```
+
+Determine the effective lag for the actual mode, including detector response,
+readout, internal processing and USB delivery. Begin with a constant-lag model,
+validate it across temperature, load and shutter events, and introduce additional
+parameters only if residual errors justify them. Do not set the lag to 0, 20 or
+40 ms merely because frames arrive at 25 Hz. At 15 m/s a 20 ms time error is
+0.30 m, and a 40 ms error is 0.60 m before angular-motion effects.
+
+After validating the diagnostic clock bounds on hardware, a later correction
+can use pose interpolation from bracketing samples;
+results are only retrieved after landing, so there is no need to invent a future
+pose when another short processing delay can provide it. Use shortest-path
+quaternion interpolation for attitude. For missing future samples, use bounded
+NED-velocity prediction, and angular-rate prediction only when valid rate data
+is available. Acceleration estimates need evidence before adding noise and
+complexity. Reject stale inputs and propagate timing/model uncertainty to target
+coordinates. The effective observation may precede request acceptance; the
+time difference can therefore be negative, unlike the current partial
+request-to-arrival forward correction.
+
+Fit lag and boresight against independent stationary targets observed on
+different headings and speeds, holding out passes for validation. A spatial
+offset can mimic a delay at one speed; one pass is not enough. Do not tune away
+GNSS bias or use blurred/flame-moving centers as precise timing truth. Exact
+hardware exposure timestamps are helpful, but a validated lag estimate with
+measured uncertainty can meet the mission budget without them. **This effective-lag
+estimator and exposure-pose interpolation are not yet wired into runtime.**
+
+Keep the pose CSV, shutdown status and corresponding JPEG/raw pairs together
+after landing. FC reboot, timestamp wrap, gaps, unknown queue latency and camera
+buffering must be checked before relying on clock bounds or interpolating an
+exposure-time pose. This evidence stream is diagnostic only: it does not change
+the runtime projection or prove five-metre accuracy. No new hardware, aircraft
+configuration, shot rate, flight path or deployment was selected by this work.
+Start with the [minimal first-test checklist](mission2-score-first.html#first-test-checklist);
+lag estimation, interpolation and fusion are deferred until baseline evidence
+shows what is needed.
+
+Hardware-free tests from the CATIA directory:
+
+```sh
+make -C lwircam test-geolocation test-temperature-layer test-native-frame
+make -C lwircam test-sdk-frame-polling test-frame-mailbox test-capture-feed
+bash lwircam/tests/geolocation_exif_test.sh "$PWD/lwircam-native"
+bash tests/lwir_integration_test.sh
+bash tests/capture_motion_test.sh
+bash tests/pose_sender_test.sh
+bash tests/pose_log_test.sh
+bash tests/clock_alignment_test.sh
+```
+
+The EXIF test needs ExifTool, ImageMagick and g++; `EXIFTOOL` can select a local
+executable. Coverage includes combined attitude, distortion, lever arms,
+horizon rejection, missing/malformed calibration, sensor provenance, unchanged
+camera GPS/pixels, repeated analysis, and zero/one/two-source paths.
+The sender harness compiles the actual FC source across stream/GPS/fixed-wing
+on/off combinations with hardware stubs. The logger tests cover queue/lock
+contention, CSV integrity, invalid input, storage limits and disk-full errors
+with address/undefined-behaviour sanitizers. These checks do not operate a camera
+or substitute for the configured Talon firmware build and bench timing tests.
 
 Run a standalone real-camera one-shot test with:
 
 ```sh
 ssh air@theatre \
-   'cd /home/air/digital_cam && ./sample \
+   'cd /home/air/digital_cam && ./lwircam \
     --capture --output lwir_standalone.jpg'
 ```
 
@@ -895,7 +1819,7 @@ To explicitly request the unfiltered image plane, add `--bare`:
 
 ```sh
 ssh air@theatre \
-   'cd /home/air/digital_cam && ./sample \
+   'cd /home/air/digital_cam && ./lwircam \
     --capture --bare --output lwir_standalone_bare.jpg'
 ```
 
@@ -971,7 +1895,7 @@ make -C sw/airborne/modules/digital_cam/catia \
    CATIA_AI_CAM_COMMAND=/usr/bin/rpicam-still \
     CATIA_LWIR_CAM_PHOTO_DIR=/data/photos \
     CATIA_CHDK_PHOTO_DIR=/data/photos \
-   CATIA_LWIR_CAM_COMMAND=/opt/catia/sample \
+   CATIA_LWIR_CAM_COMMAND=/opt/catia/lwircam \
    CATIA_EAR_CAM_COMMAND=/opt/catia/earcam \
    CATIA_EAR_CAM_DEVICE=auto \
    CATIA_EAR_CAM_LOG_DIR=/data/earlogs
@@ -979,20 +1903,70 @@ make -C sw/airborne/modules/digital_cam/catia \
 
 ## Command Reference
 
-| Option | Meaning |
-| --- | --- |
-| `--local` | Create `/tmp/catia-sim` and `/tmp/catia-app` for local simulation |
-| `--serial DEVICE` | Use a specific real serial endpoint |
-| `--chdk` | Select the CHDK camera backend |
-| `--aicam` | Select the Raspberry Pi camera backend |
-| `--lwircam` | Select the Tiny 1-C LWIR camera backend |
-| `--earcam` | Also run the acoustic EARcam backend (camera id 4) |
-| `--earcam-sim LAT,LON[,DB]` | EARcam backend with a virtual loudspeaker instead of a microphone (NPS) |
-| `--test` | Replace physical capture with a test JPEG |
-| `--mock-image FILE` | Use one explicit JPEG instead of `testphotos` |
-| `--mocktransform` | Apply test-only roll, pitch, and yaw transformation |
-| `--debug` | Show serial traffic, MORA frame, trigger, and capture diagnostics |
-| `--help` | Print the built-in command help |
+All behavior is steered by command-line options. CATIA and its sub-applications
+read **no configuration environment variables**; the only variable used at all is
+`NOTIFY_SOCKET`, which systemd itself sets to receive the service-ready
+notification. Storage paths and helper command locations are build-time settings
+(see [Output Locations](#output-locations)), so a running service is fully
+described by its `ExecStart` line.
+
+### Why Each CATIA Parameter Exists
+
+| Option | What it does | Why it exists / benefit |
+| --- | --- | --- |
+| `--serial DEVICE` | Use a specific real serial endpoint | The flight controller link differs per board and test rig; naming it explicitly avoids capturing against the wrong port |
+| `--local` | Create `/tmp/catia-sim` and `/tmp/catia-app` for local simulation | Lets the whole chain be tested on a PC with NPS, without hardware |
+| `--chdk` | Select the CHDK camera backend | Chooses which camera is initialized; backends open lazily |
+| `--aicam` | Select the Raspberry Pi camera backend | As above, for the IMX500 AI camera |
+| `--lwircam` | Select the Tiny 1-C LWIR camera backend | As above, for the thermal camera |
+| `--earcam` | Also run the acoustic EARcam backend (camera id 4) | Sound capture runs beside optical shots, so it is enabled separately from the optical backend |
+| `--earcam-sim LAT,LON[,DB]` | EARcam with a virtual loudspeaker instead of a microphone | Allows acoustic testing in NPS and on boards without a microphone |
+| `--earcam-band LOW,HIGH` | Tone search band in Hz | The competition's sound source has a known band; narrowing it rejects wind and motor noise |
+| `--test` | Replace physical capture with a test JPEG | Exercises the real dispatch, EXIF and SODA path when no camera is attached |
+| `--mock-image FILE` | Use one explicit JPEG instead of `testphotos` | Makes a test run reproducible instead of randomly selected |
+| `--mocktransform` | Apply test-only roll, pitch and yaw transformation | Shows how attitude affects a frame without flying; marked unsupported for thermal results |
+| `--debug` | Show serial, frame, trigger and capture diagnostics | Keeps normal output readable while still allowing deep inspection when something fails |
+| `--pose-log DIR` | Record 10 Hz flight pose samples as CSV in `DIR` | Evidence for how far the aircraft moved between images; off by default so no flight writes unexpected files |
+| `--clock-align` | Send clock probes to bound the FC-to-MORA time offset | Turns "the timestamps look close" into a measured interval; costs UART traffic, so it is opt-in |
+| `--lwir-calibration FILE` | Camera YAML used to turn LWIR hotspots into coordinates | Without measured optics and mounting, no hotspot can become a trustworthy latitude/longitude; naming the file prevents silently using a stale or wrong calibration |
+| `--lwir-raw` | Keep `photos/lNNNNNN.jpg.raw` instead of storing temperatures in the JPEG | Calibration and evidence work may want the untouched combined sensor frame; the default single file is smaller and simpler to recover |
+| `--lwir-motion-compensation` | Advance LWIR GPS over the measured capture delay | Capture happens slightly after the trigger pose; this bounded correction can reduce that offset, but it is unvalidated, so it is off by default |
+| `--help` / `--version` | Print help or the build version | Confirms which build is actually installed on MORA |
+
+Defaults are deliberately the safe, lean choice: no extra files, no extra UART
+traffic, no unvalidated corrections. Every option above only *adds* behavior.
+
+### Sub-Application Parameters
+
+CATIA starts these helpers itself and passes the matching options, so you
+normally only configure CATIA. Run them directly for bench work and analysis.
+
+**LWIRcam** (`lwircam`, thermal capture and analysis):
+
+| Option | What it does | Why it exists / benefit |
+| --- | --- | --- |
+| `--capture --output FILE` | Take one thermal JPEG | Simple bench check of the camera without CATIA |
+| `--capture-server` | Keep the stream warm, read output paths from stdin | The sensor needs warm-up and stable frames; reusing one process is what makes ~4 s shot intervals possible |
+| `--bare` | Compatibility flag | Capture is already unfiltered; retained so existing commands keep working |
+| `--native-raw` | Save `FILE.raw` instead of embedding temperatures in the JPEG | What CATIA's `--lwir-raw` selects; keeps the exact combined sensor frame for calibration evidence |
+| `--geolocate FILE` | Write hotspot GPS and temperature into an existing shot's EXIF | The single detection pass that produces the mission result; separate so a photo can be re-analyzed later with a better calibration |
+| `--calibration FILE` | Camera YAML for `--geolocate` | Same purpose as CATIA's `--lwir-calibration`; an explicit path makes the analysis reproducible |
+| `--mock-image FILE` / `--mock-layer FILE` | Process a JPEG with a synthetic temperature layer | Hardware-free testing of detection and EXIF handling |
+| `--help` / `--version` | Print help or build version | Verifies the deployed binary |
+
+**SODA** (`soda`, per-camera post-capture dispatch) takes the image path and
+camera identity from CATIA; it has no user-facing behavior options yet.
+
+**EARcam** (`earcam`, acoustic capture) is configured through CATIA's
+`--earcam*` options above, which set the device, band and simulated source.
+
+A complete flight-style command then reads, for example:
+
+```sh
+./catia --serial /dev/serial0 --lwircam --earcam --earcam-band 2400,3200 \
+  --lwir-calibration /home/air/digital_cam/calibration/tiny1c-mounted.yml \
+  --pose-log /home/air/digital_cam/pose-logs
+```
 
 ## Troubleshooting
 
@@ -1016,13 +1990,13 @@ process with `Ctrl+C`, then start the demo again.
 order:
 
 1. `Started OK` confirms CATIA initialized.
-2. `CATIA DEBUG: waiting for MORA data: 0 bytes, 0 valid frames, 0 rejected
+2. `CATIA DEBUG: waiting for CATIA data: 0 bytes, 0 valid frames, 0 rejected
    frames` means CATIA is healthy but has not received camera traffic yet. A
    reconnect-capable NPS instance will attach automatically within a short
    interval; the next camera trigger should then appear.
-3. `received MORA frame start` confirms serial bytes reached CATIA.
-4. `rejected MORA frame` indicates framing or checksum failure.
-5. `accepted MORA message id 1` and `photo trigger received` confirm a valid
+3. `received CATIA frame start` confirms serial bytes reached CATIA.
+4. `rejected CATIA frame` indicates framing or checksum failure.
+5. `accepted CATIA message id 1` and `photo trigger received` confirm a valid
    shot command.
 6. `SHOT NR` shows the decoded flight and attitude data.
 7. `Shooting: got image ...` confirms capture or test-copy completion.
@@ -1059,7 +2033,7 @@ cannot be recovered, but later commands are delivered after reconnection.
 ### Build shows libexif or libjpeg warnings
 
 The bundled third-party sources may emit compiler warnings. A successful build
-still creates the `catia` and `soda_local` executables. Errors reported against
+still creates the `catia` and `soda` executables. Errors reported against
 CATIA-owned sources should be investigated.
 
 ## Regenerate the Diagram

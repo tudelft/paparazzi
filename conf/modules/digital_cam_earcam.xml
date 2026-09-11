@@ -2,12 +2,21 @@
 <module name="digital_cam_earcam" dir="digital_cam">
   <doc>
     <description>
-      EARcam acoustic loud-spot search over the MORA camera UART link.
+      EARcam acoustic loud-spot search through CATIA over the UART link to MORA.
+
+      The default datalink settings expose sampling period and quiet-sampling controls.
+      settings/earcam_tuning.xml provides these same three basic controls separately.
+      settings/earcam_tuning_advanced.xml adds the other 16 tuning and status settings.
+      Select both files for the full original set of 19. When using earcam_tuning.xml,
+      deselect modules/digital_cam_earcam.xml from settings_modules to avoid duplicates.
+      Keep the digital_cam_earcam module enabled in the airframe. Select the full set
+      only if the aircraft stays within 256 total settings (the datalink setting
+      index is uint8). All airframe defines remain available.
 
       During a survey block the module sends EARcam-targeted shoot commands through
-      digital_cam_uart at earcam_period_s; the MORA companion computer (CATIA with
-      --earcam) geotags its microphone level with the transmitted position. On
-      earcam_stop() MORA computes the loudest spot and returns it; the flight plan
+      digital_cam_uart at earcam_period_s; CATIA running with --earcam on the MORA
+      companion computer geotags the microphone level with the transmitted position. On
+      earcam_stop() CATIA computes the loudest spot and returns it; the flight plan
       then applies it to a waypoint with earcam_result_to_waypoint(WP).
 
       Typical flight plan sequence (see talon_earcam_loudspot_demo.xml):
@@ -73,24 +82,8 @@
     <dl_settings name="control">
       <dl_settings name="earcam">
         <dl_setting max="2" min="0.05" step="0.05" var="earcam_period_s" shortname="ear_period" unit="s"/>
-        <dl_setting max="1" min="0" step="1" var="earcam_result_valid" shortname="ear_valid"/>
-        <dl_setting max="1" min="0" step="0.001" var="earcam_confidence" shortname="ear_conf"/>
-        <dl_setting max="65535" min="0" step="1" var="earcam_samples" shortname="ear_n"/>
-        <dl_setting max="200" min="20" step="5" var="earcam_refine_half_length_m" shortname="ref_len" unit="m"/>
-        <dl_setting max="20" min="1" step="0.5" var="earcam_refine_converge_m" shortname="ref_conv" unit="m"/>
-        <dl_setting max="6" min="1" step="1" var="earcam_refine_max_iterations" shortname="ref_iter"/>
-        <dl_setting max="8" min="2" step="1" var="earcam_refine_legs" shortname="ref_legs"/>
-        <dl_setting max="200" min="0" step="0.1" var="earcam_refine_shift_m" shortname="ref_shift" unit="m"/>
-        <dl_setting max="100" min="0" step="1" var="earcam_refine_turn_radius_m" shortname="ref_radius" unit="m"/>
-        <dl_setting max="80" min="0" step="1" var="earcam_refine_height_from_m" shortname="ref_h_from" unit="m"/>
-        <dl_setting max="80" min="0" step="1" var="earcam_refine_height_to_m" shortname="ref_h_to" unit="m"/>
-        <dl_setting max="20" min="0" step="0.5" var="earcam_refine_height_step_m" shortname="ref_h_step" unit="m"/>
-        <dl_setting max="30" min="2" step="0.5" var="earcam_refine_height_min_m" shortname="ref_h_min" unit="m"/>
         <dl_setting max="1" min="0" step="1" var="earcam_quiet_only" shortname="quiet_only"/>
         <dl_setting max="5" min="0" step="0.1" var="earcam_quiet_delay_s" shortname="quiet_delay" unit="s"/>
-        <dl_setting max="5" min="0.5" step="0.1" var="earcam_drop_release_agl_m" shortname="drop_agl" unit="m"/>
-        <dl_setting max="5" min="0.5" step="0.1" var="earcam_drop_max_agl_m" shortname="drop_max_agl" unit="m"/>
-        <dl_setting max="100" min="0" step="0.1" var="earcam_drop_agl_m" shortname="drop_h" unit="m"/>
       </dl_settings>
     </dl_settings>
   </settings>

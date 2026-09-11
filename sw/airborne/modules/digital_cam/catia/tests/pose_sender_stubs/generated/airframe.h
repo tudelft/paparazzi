@@ -1,0 +1,3 @@
+#ifndef POSE_TEST_AIRFRAME_H
+#define POSE_TEST_AIRFRAME_H
+#endif

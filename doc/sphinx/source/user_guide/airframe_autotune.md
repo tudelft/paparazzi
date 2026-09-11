@@ -18,7 +18,9 @@ The tool targets the complaints that show up most often after the first stabiliz
 | --- | --- | --- |
 | Elevator sits permanently off-centre in level flight; the pitch integrator is doing the trimming | The pitch loop holds a constant `COMMANDS` elevator while body pitch $\theta$ from `ATTITUDE` differs from the `DESIRED` pitch | `COMMAND_PITCH_TRIM` absorbs the steady elevator; the nominal cruise pitch is set to the measured value |
 | One wing heavy; aileron never centred | The roll loop holds a constant `COMMANDS` aileron to fly wings level | `COMMAND_ROLL_TRIM` absorbs the steady aileron |
-| Turns are wide, the pilot has to hold a lot of rudder to keep them coordinated | `COMMANDS` yaw is large and saturating whenever `ATTITUDE` roll is large | Roll is mixed into the ruddervators (`RUDDERVONS_OF_ROLL`), rudder attenuation in AUTO is removed, navigation radii are set to the requested minimum |
+| Turns are wide, the pilot has to hold a lot of rudder to keep them coordinated | `COMMANDS` yaw is large and saturating whenever `ATTITUDE` roll is large; achieved yaw rate is below $g\tan\varphi/V$ | The firmware coordinated-turn yaw loop is enabled (`H_CTL_YAW_LOOP`, `YAW_DGAIN`, `AUTO1_MAX_YAW_RATE`); any hand-made roll-to-rudder mixer in the command laws is removed |
+| Circle blown out downwind, roll setpoint pinned at the limit | Roll setpoint at `ROLL_MAX_SETPOINT` for a large share of AUTO2, large radial error vs the `CIRCLE` message | `DEFAULT/MIN/LANDING_CIRCLE_RADIUS` sized so that the downwind bank stays at 25° in the estimated wind |
+| Roll "wobble" upwind | Roll-setpoint rate much higher at low groundspeed than at high, while roll tracking error is equal | `H_CTL_COURSE_DGAIN` set to 0: the derivative on GPS course amplifies noise when groundspeed is low |
 | The ETECS energy controller was tuned from a simulator model and the real aircraft flies at a different throttle, speed or climb capability | Throttle, climb rate and airspeed in quasi-steady flight describe the real plant | Cruise throttle, cruise airspeed, throttle-per-climb, pitch-per-climb, throttle-per-airspeed, maximum climb and glide ratio are set from measurements |
 | Unknown whether the course loop will oscillate in AUTO2 | Roll-setpoint tracking lag in AUTO1; course error statistics if AUTO2 exists | `H_CTL_COURSE_PGAIN` is reduced when the bandwidth separation to the roll loop is unsafe, or trimmed &plusmn;20 % from measured AUTO2 tracking |
 
@@ -117,7 +119,7 @@ In straight and level flight the attitude loops should have nothing left to do. 
 
 $$\text{trim}_{\text{new}} = \text{trim}_{\text{flown}} + \overline{\text{command}_{\text{level}}}$$
 
-rounded to 10 pprz and clipped to the firmware limit of &plusmn;960 pprz (10 % of full scale). If the required trim exceeds that limit the report tells you to move the mechanical linkage instead. Steady commands below 100 pprz are treated as noise. The report also prints the body attitude versus the `DESIRED` attitude so you can see the loop error that the trim was hiding.
+rounded to 10 pprz and clipped to the firmware limit of &plusmn;960 pprz (10 % of full scale). When at least 30 s of quasi-level AUTO2 exists, the steady elevator is taken from AUTO2 rather than AUTO1: in AUTO1 the transmitter pitch trim biases the setpoint, in AUTO2 no stick is in the loop. A large disagreement between the two is reported as an RC-trim warning. If the required trim exceeds the limit the report tells you to move the CG aft or the linkage. Steady commands below 100 pprz are treated as noise. The report also prints the body attitude versus the `DESIRED` attitude so you can see the loop error that the trim was hiding.
 
 Because the measured level pitch is the real cruise attitude, `V_CTL_AUTO_THROTTLE_NOMINAL_CRUISE_PITCH` is set to $\theta$ in radians when that lies in a sensible range (0 to 0.2 rad).
 
@@ -125,15 +127,19 @@ Because the measured level pitch is the real cruise attitude, `V_CTL_AUTO_THROTT
 `INS_PITCH_NEUTRAL_DEFAULT` / `INS_ROLL_NEUTRAL_DEFAULT` are **not** touched. Those defines are only read by a few legacy INS drivers (Xsens, VN100, ArduIMU, `ahrs_sim`); with `ahrs float_cmpl_quat` + `ins alt_float` they have no effect. The IMU-to-body mounting angle lives in `IMU_BODY_TO_IMU_THETA` and should be set from a bench measurement, not from flight data.
 :::
 
-### Step 5: Ruddervator mixing and turn radius
+### Step 5: Turn coordination and turn radius
 
-A coordinated turn at bank angle $\varphi$ and airspeed $V$ has a yaw rate of $g\tan\varphi / V$. In the turning segment the tool compares the achieved yaw rate with that ideal value and, more importantly, measures how much rudder the pilot had to hold per degree of bank. On a V-tail (ruddervator) aircraft with only pitch and yaw in the tail mixer, that rudder must come from the pilot's thumb in every turn. The tool converts the measured slope (pprz per degree of bank) into a roll-to-rudder gain
+A coordinated turn at bank angle $\varphi$ and airspeed $V$ has a yaw rate of $g\tan\varphi / V$. In the turning segment the tool compares the achieved yaw rate with that ideal value (the *coordination ratio*) and measures how much rudder the pilot held per degree of bank. On a V-tail aircraft with only pitch and yaw in the tail mixer, that rudder must otherwise come from the pilot in every turn.
 
-$$k = \frac{\text{pprz/deg} \cdot 45^\circ}{9600}$$
+The fix is the firmware's own coordinated-turn yaw loop in `stabilization_adaptive.c`: it commands rudder as `YAW_DGAIN * (g/V * sin(roll_setpoint) - r)` from the gyro, in AUTO1 and AUTO2, and turns the pilot's rudder stick into a yaw-rate setpoint bounded by `AUTO1_MAX_YAW_RATE`. The tool inserts `H_CTL_YAW_LOOP=TRUE`, `YAW_DGAIN=5000`, `YAW_TRIM_NY=FALSE`, `AUTO1_MAX_YAW_RATE=60 deg/s`, and removes the RC yaw passthrough from `<auto_rc_commands>` so a transmitter rudder trim no longer leaks into AUTO2 as a constant offset.
 
-clamped to [0.3, 1.0], and rewrites the command laws so the ruddervators receive `@YAW + k·@ROLL` instead of `@YAW` alone. The gain is exposed as `RUDDERVONS_OF_ROLL` in the `MIXER` section so it can be trimmed by hand later. The `auto_rc_commands` attenuation `@YAW*0.9` is removed, since attenuating a channel that was already saturating is counter-productive once the mixer provides coordination.
+:::{warning}
+Earlier versions of this tool injected roll into the ruddervators with a command-law mixer (`@YAW + k*@ROLL`). That is **wrong** on Paparazzi fixed-wing: in AUTO modes `COMMAND_ROLL` is `-h_ctl_aileron_setpoint`, so the mixer adds rudder against the turn. It measurably worsened coordination (0.88 &rarr; 0.68). The tool now detects and removes such a mixer. If you added one by hand, remove it too.
+:::
 
-Finally, `MIN_CIRCLE_RADIUS` and `LANDING_CIRCLE_RADIUS` are set to the requested `--turn-radius`. The report states the bank angle required for that radius at the measured airspeed, $\varphi = \arctan\left(V^2 / (gR)\right)$, so you can confirm it is well inside `H_CTL_ROLL_MAX_SETPOINT`.
+**Circle radius in wind.** Downwind the groundspeed is $V + W$ and the bank needed to hold a circle of radius $R$ is $\arctan\big(V(V+W)/(gR)\big)$. When the AUTO2 roll setpoint sat at its limit for more than 10 % of the time, the tool raises `DEFAULT_CIRCLE_RADIUS`, `MIN_CIRCLE_RADIUS` and `LANDING_CIRCLE_RADIUS` so that this bank is 25° in the wind estimated from the log. Otherwise `MIN_CIRCLE_RADIUS` is set to the requested `--turn-radius`.
+
+**Upwind wobble.** If the roll-setpoint rate at low groundspeed is more than twice that at high groundspeed while the roll tracking error is the same, the course loop is chasing GPS course noise; `H_CTL_COURSE_DGAIN` is set to 0.
 
 :::{note}
 All edits are made as surgical text substitutions on the original XML, not through an XML library rewrite. Your comments, indentation, and commented-out experiments are preserved exactly; only the touched attribute values and the two inserted lines change. Every inserted line carries an `autotune` XML comment.

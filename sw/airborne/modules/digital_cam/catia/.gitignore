@@ -1,7 +1,14 @@
 catia
-soda_local
-photox/
+soda
+catia-arm64
+soda-arm64
+lwircam-native
+lwircam-arm64
+earcam-native
+earcam-arm64
 photos/
 documentation/__pycache__/
+.build/
+.build-mora/
 .near-horizon-*
 .build/

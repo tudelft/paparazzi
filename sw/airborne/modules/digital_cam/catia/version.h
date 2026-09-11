@@ -1,0 +1,10 @@
+#ifndef CATIA_VERSION_H
+#define CATIA_VERSION_H
+#ifndef CATIA_GIT_SHA
+#define CATIA_GIT_SHA "unknown"
+#endif
+#define CATIA_VERSION "v1.0"
+#define SODA_VERSION "v1.0"
+#define CATIA_BUILD_VERSION "CATIA " CATIA_VERSION " (Git " CATIA_GIT_SHA ")"
+#define SODA_BUILD_VERSION "SODA " SODA_VERSION " (Git " CATIA_GIT_SHA ")"
+#endif

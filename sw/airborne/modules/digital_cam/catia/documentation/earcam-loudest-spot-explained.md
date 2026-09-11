@@ -223,7 +223,7 @@ geometry and statistics.
 ## Geotagging: attaching a place to every reading
 
 The Paparazzi autopilot treats EARcam like a camera. During a search it sends a
-"targeted shoot" message to the MORA computer every 100 ms containing the
+"targeted shoot" message to CATIA on the MORA computer every 100 ms containing the
 aircraft's latitude, longitude, altitude, height above ground, heading, roll
 and pitch, exactly as it would for a photo. CATIA pairs each message with the
 newest microphone reading and stores the pair. Up to 16 384 such samples fit
@@ -263,7 +263,7 @@ tens of metres. The survey stops as soon as the polygon has been swept once.
 
 ### Star refinement
 
-The autopilot asks MORA for an interim result while the microphone keeps
+The autopilot asks CATIA for an interim result while the microphone keeps
 listening. It then lays out a star of four straight legs, each 100 m long,
 all passing through the estimated spot, at 40 m above ground. Each leg
 crosses the loudness hill from a different direction, so the across-track
@@ -282,7 +282,7 @@ hand from the ground station as well.
 
 ### Going to the spot
 
-Listening is stopped, MORA computes the final answer from every sample and
+Listening is stopped, CATIA computes the final answer from every sample and
 renders the sound picture. The autopilot moves the `DROP` waypoint to the
 result and places a run-in waypoint three turn radii before it, aligned with
 the last leg, so the drop approach is a stable straight line. If nothing was
@@ -291,7 +291,7 @@ standby instead of dropping blindly.
 
 ## Turning readings into one position
 
-This is what happens inside MORA each time the autopilot asks for a result.
+This is what happens inside CATIA on MORA each time the autopilot asks for a result.
 Every step exists to defeat a specific way in which real data misleads.
 
 ### Step 1: gate the samples
@@ -371,7 +371,7 @@ based on it being valid and on the star iterations converging.
 
 ### Step 7: the answer
 
-MORA replies with latitude, longitude, the ground altitude under the spot, the
+CATIA replies with latitude, longitude, the ground altitude under the spot, the
 median height above ground of the loudest samples, the peak level, the
 confidence and the number of samples used. The autopilot keeps the last valid
 answer if a later request returns invalid, so a moment of silence at the wrong
@@ -379,7 +379,7 @@ time cannot erase a good result.
 
 ## The sound picture
 
-Besides the position, MORA renders a JPEG "sound picture" so a human can judge
+Besides the position, CATIA renders a JPEG "sound picture" so a human can judge
 the result at a glance and so the image can flow through the same photo
 pipeline as an ordinary camera picture (EXIF geotag, SODA analysis).
 

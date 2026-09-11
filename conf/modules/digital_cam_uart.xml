@@ -16,10 +16,33 @@
       4) Finally, the module will also relay over telemetry all data it receives from the attached computer
       or camera using the PAYLOAD message. This can for instance be used to downlink thumbnails.
       5) Targeted commands: digital_cam_uart_shoot(id, report) / digital_cam_uart_stop(id, keep) address one camera
-      (0=all, 1=CHDK, 2=AI cam, 3=LWIR, 4=EARcam). The camera setting selects which camera the
-      regular DC_SHOOT path (autoshoot, manual shoot) addresses; 0 keeps the legacy MORA_SHOOT frame.
-      Other modules (e.g. digital_cam_earcam) can register a receive handler for MORA messages
+      (0=all, 1=CHDK, 2=AI cam, 3=LWIR, 4=EARcam). These IDs are not masks.
+      Regular DC_SHOOT uses digital_cam_uart_camera_mask: bit 0=CHDK, bit 1=AIcam,
+      bit 2=LWIR, bit 3=EARcam; bits 4 through 7 are reserved for future cameras.
+      Examples: 0=none, 5=CHDK+LWIR, 10=AIcam+EARcam, 15=all four, 255=all eight slots.
+      Define DIGITAL_CAM_UART_CAMERA_MASK for the startup mask. Without it the legacy
+      DIGITAL_CAM_UART_CAMERA_ID is converted to a mask (default ID 0 means all).
+      Flight plans and the GCS setting use uart_cam_ctrl_set_camera_mask(mask), which
+      accepts only integer masks 0 through 255 and retains the old mask on invalid input.
+      uart_cam_ctrl_set_camera(id) remains a single-camera helper (IDs 1 through 8; 0=all).
+      Selecting sends no command, does not reset autoshoot, and does not change numbering.
+      A zero mask suppresses normal shots entirely. Each nonzero trigger sends one
+      CATIA_SHOOT_MASK frame with one photo number shared by all selected cameras.
+      CATIA on MORA must be upgraded for this new message before using rebuilt FC firmware.
+      Physical optical captures are serialized; they are not exposure-synchronized.
+      Other modules (e.g. digital_cam_earcam) can register a receive handler for CATIA messages
       this module does not consume.
+
+      Optional diagnostic pose stream: define DIGITAL_CAM_UART_POSE_STREAM=1 to emit
+      CATIA_POSE_SAMPLE from the existing 10 Hz periodic task. Default is disabled.
+      Unclocked frames use 105 UART bytes and require 154 free bytes. After a clock
+      handshake, CATIA_POSE_CLOCKED uses 113 bytes and requires 162 free bytes to leave
+      space for one targeted shot command. A full or smaller buffer skips the sample.
+      The stream does not trigger a shot or alter the configured shot interval.
+      CATIA logs schema-2 samples using CATIA_POSE_LOG_DIR; CATIA_CLOCK_ALIGNMENT=1
+      enables request/reply clock bounds. These are diagnostic only, not camera
+      exposure synchronization or a geolocation correction. Review link load and
+      UART capacity before enabling.
 
       The linux program used to parse the UART command is given in the subdirectory.
     </description>
@@ -33,7 +56,7 @@
           <strip_button name="DL Thumbs STOP" icon="off.png" value="0" group="ticket"/>
         </dl_setting>
         <dl_setting max="2" min="0" step="1" var="digital_cam_uart_status" shortname="status" />
-        <dl_setting max="4" min="0" step="1" var="digital_cam_uart_camera_id" shortname="camera" values="ALL|CHDK|AICAM|LWIR|EAR"/>
+        <dl_setting max="255" min="0" step="1" var="digital_cam_uart_camera_mask" shortname="camera mask" header="modules/digital_cam/uart_cam_ctrl" handler="set_camera_mask"/>
       </dl_settings>
     </dl_settings>
   </settings>

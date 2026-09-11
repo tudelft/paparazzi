@@ -20,7 +20,7 @@
  */
 
 /** @file modules/digital_cam/earcam_ctrl.c
- *  EARcam acoustic loud-spot search over the MORA camera link.
+ *  EARcam acoustic loud-spot search through CATIA over the UART link to MORA.
  */
 
 #include "earcam_ctrl.h"
@@ -185,20 +185,20 @@ static void result_to_local_xy(const struct LlaCoor_i *lla, float *x, float *y);
 static void place_leg_waypoints(uint8_t wp_from, uint8_t wp_to, uint8_t wp_turn);
 static void set_wp_xy(uint8_t wp_id, float x, float y);
 
-static bool earcam_rx_handler(const struct mora_transport *frame)
+static bool earcam_rx_handler(const struct catia_transport *frame)
 {
-  if (frame->msg_id != MORA_EAR_RESULT || frame->payload_len != MORA_EAR_RESULT_MSG_SIZE) {
+  if (frame->msg_id != CATIA_EAR_RESULT || frame->payload_len != CATIA_EAR_RESULT_MSG_SIZE) {
     return false;
   }
-  union mora_ear_result_union result;
-  for (int i = 0; i < MORA_EAR_RESULT_MSG_SIZE; i++) {
+  union catia_ear_result_union result;
+  for (int i = 0; i < CATIA_EAR_RESULT_MSG_SIZE; i++) {
     result.bin[i] = frame->payload[i];
   }
   earcam_samples = (result.data.sample_count < 0) ? 0 :
                    (result.data.sample_count > 65535 ? 65535 : (uint16_t)result.data.sample_count);
   earcam_level_db = result.data.level_cdb / 100.f;
   earcam_confidence = result.data.confidence / 1000.f;
-  if (result.data.status != MORA_EAR_RESULT_VALID
+  if (result.data.status != CATIA_EAR_RESULT_VALID
       || result.data.lat < -900000000 || result.data.lat > 900000000
       || result.data.lon < -1800000000 || result.data.lon > 1800000000) {
     // Keep the last good estimate; only the awaited reply is missing.
@@ -242,7 +242,7 @@ void earcam_periodic(void)
     if (report) {
       last_report_time = now;
     }
-    digital_cam_uart_shoot(MORA_CAMERA_EARCAM, report);
+    digital_cam_uart_shoot(CATIA_CAMERA_EARCAM, report);
   }
 }
 
@@ -268,19 +268,19 @@ uint8_t earcam_start(void)
 uint8_t earcam_stop(void)
 {
   sampling_active = false;
-  return digital_cam_uart_stop(MORA_CAMERA_EARCAM, false);
+  return digital_cam_uart_stop(CATIA_CAMERA_EARCAM, false);
 }
 
 uint8_t earcam_solve(void)
 {
-  // Sampling keeps running; MORA answers with an interim MORA_EAR_RESULT.
+  // Sampling keeps running; CATIA answers with an interim CATIA_EAR_RESULT.
   // The last result stays available; only the "fresh" flag waits for the reply.
   if (earcam_result_valid) {
     previous_result_lla = result_lla;
     previous_result_valid = true;
   }
   earcam_result_fresh = false;
-  return digital_cam_uart_stop(MORA_CAMERA_EARCAM, true);
+  return digital_cam_uart_stop(CATIA_CAMERA_EARCAM, true);
 }
 
 uint8_t earcam_result_clear(void)

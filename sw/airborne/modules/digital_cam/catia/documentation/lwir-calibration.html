@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Practical Tiny1-C lens and mounting calibration using an ordinary workshop target">
+  <title>LWIR Camera Calibration Guide</title>
+  <style>
+:root {
+  color-scheme: light;
+  --ink: #14213d;
+  --muted: #53627a;
+  --paper: #f7f9fc;
+  --surface: #ffffff;
+  --line: #d8e0ea;
+  --cyan: #007f8b;
+  --green: #237a45;
+  --amber: #a85c00;
+  --code: #101827;
+  --code-ink: #dce8f5;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    linear-gradient(90deg, rgba(0, 127, 139, 0.045) 1px, transparent 1px),
+    linear-gradient(rgba(0, 127, 139, 0.045) 1px, transparent 1px),
+    var(--paper);
+  background-size: 28px 28px;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  line-height: 1.65;
+}
+a { color: var(--cyan); }
+code, pre { font-family: "IBM Plex Mono", "Liberation Mono", monospace; }
+.masthead { color: white; background: #11243c; border-bottom: 5px solid #20b6bb; }
+.masthead-inner {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 48px 0 38px;
+}
+.eyebrow {
+  margin: 0 0 8px;
+  color: #78e3df;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.masthead h1 { margin: 0; color: white; font-size: clamp(2.25rem, 7vw, 4.7rem); }
+.lede { max-width: 760px; margin: 14px 0 0; color: #cfdae8; font-size: 1.12rem; }
+.layout {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 850px);
+  gap: 48px;
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 38px 0 80px;
+}
+nav { position: sticky; top: 24px; align-self: start; }
+nav strong {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+nav ul { margin: 0; padding: 0; list-style: none; }
+.toc > ul > li > a { display: none; }
+.toc ul ul { display: block; margin: 0; padding: 0; list-style: none; }
+nav a {
+  display: block;
+  padding: 8px 12px;
+  border-left: 2px solid var(--line);
+  color: var(--ink);
+  text-decoration: none;
+}
+nav a:hover { border-color: var(--cyan); color: var(--cyan); background: white; }
+main { min-width: 0; overflow-wrap: anywhere; }
+main > h1 { display: none; }
+h1, h2, h3 { line-height: 1.18; letter-spacing: 0; }
+h2 {
+  margin: 54px 0 16px;
+  padding-bottom: 9px;
+  border-bottom: 2px solid var(--line);
+  font-size: 1.75rem;
+  scroll-margin-top: 24px;
+}
+main > h2:first-of-type { margin-top: 0; }
+h3 { margin: 30px 0 10px; font-size: 1.18rem; scroll-margin-top: 24px; }
+p { margin: 10px 0 16px; }
+blockquote {
+  margin: 18px 0;
+  padding: 14px 18px;
+  border-left: 4px solid var(--amber);
+  background: #fff7e8;
+}
+blockquote:first-of-type { border-color: var(--cyan); background: #edf8f8; }
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 28px auto 48px;
+  border: 1px solid #1a334f;
+  background: #07111f;
+}
+pre {
+  overflow-x: auto;
+  margin: 14px 0 20px;
+  padding: 16px 18px;
+  border-left: 4px solid #20b6bb;
+  color: var(--code-ink);
+  background: var(--code);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+code:not(pre code) { padding: 0.12em 0.34em; color: #8c3142; background: #f0e9ec; }
+table { width: 100%; border-collapse: collapse; margin: 18px 0 26px; background: white; }
+th, td { padding: 11px 13px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { color: white; background: #233a56; }
+tbody tr:nth-child(even) { background: #f4f7fa; }
+ul, ol { padding-left: 24px; }
+hr { border: 0; border-top: 2px solid var(--line); }
+footer { padding: 25px 20px; color: #ccd8e6; background: #11243c; text-align: center; }
+@media (max-width: 820px) {
+  .layout { grid-template-columns: 1fr; gap: 24px; }
+  nav { position: static; }
+  .toc > ul > li > ul { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .masthead-inner { padding-top: 34px; }
+}
+@media (max-width: 520px) {
+  .layout, .masthead-inner { width: min(100% - 24px, 1180px); }
+  .toc > ul > li > ul { grid-template-columns: 1fr; }
+  .masthead h1 { font-size: 2.25rem; }
+  th, td { padding: 8px; }
+}
+</style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <p class="eyebrow">Paparazzi UAV / MORA / SODA</p>
+      <h1>LWIR Camera Calibration</h1>
+      <p class="lede">A measured lens, a known mounting direction, and evidence you can keep. Work through the Tiny1-C calibration one clear checkpoint at a time.</p>
+    </div>
+  </header>
+  <div class="layout">
+    <nav aria-label="Guide sections">
+      <strong>On this page</strong>
+      <div class="toc">
+<ul>
+<li><a href="#lwir-camera-calibration">LWIR Camera Calibration</a><ul>
+<li><a href="#1-know-what-you-are-calibrating">1. Know What You Are Calibrating</a></li>
+<li><a href="#2-gather-ordinary-materials">2. Gather Ordinary Materials</a></li>
+<li><a href="#3-make-a-target-the-camera-can-see">3. Make A Target The Camera Can See</a></li>
+<li><a href="#4-freeze-the-camera-setup">4. Freeze The Camera Setup</a></li>
+<li><a href="#5-take-a-useful-set-of-photos">5. Take A Useful Set Of Photos</a></li>
+<li><a href="#6-fit-the-lens-on-the-laptop">6. Fit The Lens On The Laptop</a></li>
+<li><a href="#7-measure-the-mounting-without-guessing">7. Measure The Mounting Without Guessing</a></li>
+<li><a href="#8-check-distances-before-checking-gps">8. Check Distances Before Checking GPS</a></li>
+<li><a href="#9-install-the-profile-deliberately">9. Install The Profile Deliberately</a></li>
+<li><a href="#10-keep-temperature-checks-separate">10. Keep Temperature Checks Separate</a></li>
+<li><a href="#11-the-flight-accuracy-gate">11. The Flight Accuracy Gate</a></li>
+<li><a href="#12-quick-troubleshooting">12. Quick Troubleshooting</a></li>
+<li><a href="#13-save-a-reusable-calibration-pack">13. Save A Reusable Calibration Pack</a></li>
+<li><a href="#references-and-scope">References And Scope</a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+    </nav>
+    <main><h1 id="lwir-camera-calibration">LWIR Camera Calibration</h1>
+<p>A workshop guide for the Tiny1-C, CATIA and a fixed, downward-looking camera.</p>
+<p><a href="lwir-calibration.html">Open the illustrated HTML guide</a> | <a href="index.html">Back to CATIA</a></p>
+<blockquote>
+<p><strong>The goal:</strong> turn a hotspot pixel into a trustworthy camera direction.
+You can measure the lens and mounting with a flat homemade target, a tape
+measure, a spirit level and a computer. Accurate flight GPS also needs
+exposure-time position and attitude; calibration does not remove that requirement.</p>
+</blockquote>
+<h2 id="1-know-what-you-are-calibrating">1. Know What You Are Calibrating</h2>
+<p>There are three different jobs. Do them in this order so that a bad temperature
+reading is not mistaken for a bad lens, or a timing error for a mounting error.</p>
+<table>
+<thead>
+<tr>
+<th>Job</th>
+<th>What it fixes</th>
+<th>What you will keep</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lens geometry</td>
+<td>Pixel direction, lens distortion and optical center</td>
+<td>Measured intrinsics and distortion in a YAML file</td>
+</tr>
+<tr>
+<td>Mounting alignment</td>
+<td>The camera's direction relative to the aircraft</td>
+<td>A measured <code>camera_to_body</code> rotation in that file</td>
+</tr>
+<tr>
+<td>Temperature check</td>
+<td>Whether reported surface temperatures are plausible</td>
+<td>A separate check record, not lens coefficients</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Four stages: make a thermal target, fit the lens, measure the mounting, then validate" src="lwir-calibration-workflow.png"></p>
+<p>Allow an unhurried workshop session, then a separate outdoor check. You do not
+need RTK or a blackbody to measure lens geometry. You do need a traceable
+temperature reference to claim calibrated absolute temperature, and a surveyed
+reference to prove absolute GPS accuracy better than ordinary GNSS.</p>
+<p><strong>Finish line for this guide:</strong> a measured lens profile, a measured mounting
+profile, saved evidence, and a short list of any checks still outstanding.
+No file will be automatically marked verified.</p>
+<h2 id="2-gather-ordinary-materials">2. Gather Ordinary Materials</h2>
+<ul>
+<li>The actual camera, lens and final mounting bracket.</li>
+<li>A rigid flat board, preferably a smooth metal sheet with safe, covered edges.</li>
+<li>Thin matte tape and smooth aluminum foil tape, a ruler, square and craft knife.</li>
+<li>A spirit level, tape measure and string with a small plumb weight.</li>
+<li>Gentle warmth: a warm room, warm water container behind the board, or a
+  low-temperature heating pad used according to its instructions.</li>
+<li>A laptop and a safe support for the camera or aircraft.</li>
+<li>For temperature checks: a reasonably calibrated contact probe and a matte
+  high-emissivity target surface whose temperature can be measured.</li>
+</ul>
+<p><strong>Remove the propeller and disconnect propulsion power.</strong> Secure the aircraft;
+do not balance it on loose objects. Keep liquids away from electronics. Do not
+use fire, boiling water, a heat gun or a hot plate to make a calibration target.
+Never point the LWIR camera at the sun or a powerful hot source.</p>
+<p>An ordinary black-and-white printed chessboard often looks nearly uniform to
+LWIR. Visible ink color is not enough. The camera needs a difference in thermal
+emission or reflected long-wave infrared radiation.</p>
+<h2 id="3-make-a-target-the-camera-can-see">3. Make A Target The Camera Can See</h2>
+<h3 id="build-one-small-test-patch-first">Build one small test patch first</h3>
+<p>Put one matte square beside one smooth foil square on the same flat backing.
+View it with the LWIR camera, from the intended distance and a modest tilt.
+Try gentle, uniform warming if the squares merge together.</p>
+<p><strong>Continue only when the boundary is sharp and stable.</strong> Foil reflects the
+thermal surroundings: your body, a radiator or the sky can change its apparent
+brightness. Move yourself and warm objects away from the reflection. Neither
+the displayed brightness nor the apparent foil temperature is a temperature
+reference. A contrast reversal is acceptable if all corners remain clear.</p>
+<p>If the patch only works from one angle, improve it before building the full
+board. Wrinkled foil, thick tape, bowed backing and local heating make fitting
+needlessly difficult. A purpose-made thermal checkerboard is the fallback if
+the homemade board cannot give repeatable edges.</p>
+<h3 id="build-the-full-checkerboard">Build the full checkerboard</h3>
+<p>Use <strong>8 columns by 7 rows of squares</strong>. That makes <strong>7 by 6 inner corners</strong>,
+which is what the helper asks for. Add a uniform border at least half a square
+wide. Cut clean edges; avoid overlaps and gaps at the crossings.</p>
+<p><img alt="An eight-by-seven thermal checkerboard with seven-by-six inner corners and a measured square pitch" src="lwir-calibration-target.png"></p>
+<p><em>Construction diagram, not an image captured by the camera. The colored dots
+mark the internal corners; they are not objects to put on the board.</em></p>
+<p>Measure the finished square <strong>pitch</strong>, from one grid line to the next, not the
+width of the remaining exposed foil. Measure across several squares and divide
+by their count. Check both directions. For example, five pitches measuring
+250 mm means 50 mm per square. If horizontal and vertical pitches differ or
+the grid is visibly crooked, rebuild it rather than averaging the error away.</p>
+<p>Do not print the illustration and assume its physical scale is correct.</p>
+<h3 id="choose-a-size-that-stays-in-focus">Choose a size that stays in focus</h3>
+<p>Start by finding a distance where the final flight-focus setting gives sharp
+corners. <strong>Do not refocus just to make a small indoor board usable.</strong> A change
+in focus can change the calibration; use a larger board farther away instead.</p>
+<p>For planning only, square width in pixels is approximately:</p>
+<pre><code class="language-text">square_pixels = focal_length_pixels * square_pitch_metres / distance_metres
+</code></pre>
+<p>With the unverified 4.3 mm / 12 micrometre assumption, focal length is about
+358 pixels. A 50 mm square at 1 m spans about 18 pixels. Eight squares span
+about 143 pixels before the border. At 3 m, a 150 mm square gives the same
+angular size, but needs a much bigger board. These are sizing examples, not
+measured Tiny1-C specifications or instructions to change focus.</p>
+<p>Aim for roughly 10-20 pixels per square in many of the photos; avoid tiny,
+blurred squares. For a longer lens, increase distance or reduce target size
+while keeping the target sharp and fully visible.</p>
+<p><strong>Checkpoint:</strong> the complete grid and border fit in the image; internal
+crossings are recognizable at 100% view, including moderate tilts.</p>
+<h2 id="4-freeze-the-camera-setup">4. Freeze The Camera Setup</h2>
+<ol>
+<li>Choose the lens that will fly. Make separate profiles for 4.3 mm and 9.1 mm.</li>
+<li>Set flight focus and secure it without moving the lens.</li>
+<li>Use the final camera orientation, resolution and capture settings.</li>
+<li>Let the camera settle according to its manual. Wait for automatic shutter
+   correction to finish before keeping a frame.</li>
+<li>Save native JPEGs. Do not rotate, crop, resize, undistort or annotate them.</li>
+</ol>
+<p>Normal Tiny1-C combined capture has a 256x192 visible image and an aligned
+256x192 temperature plane. Check the actual saved files. The 256x191 mock
+fixture is not a reason to crop a real 256x192 capture.</p>
+<p>On MORA, with CATIA stopped so it is not using the camera, an existing deployed
+LWIRcam can capture a bench photo:</p>
+<pre><code class="language-sh">cd /home/air/digital_cam
+mkdir -p calibration/photos
+./lwircam --capture --bare --output calibration/photos/view01.jpg
+</code></pre>
+<p>Take the next photo with a new filename. <code>--bare</code> is a compatibility option;
+current capture remains unfiltered. Single-shot capture may take time to warm
+up. Do not start another instance before it finishes, and do not use
+<code>--mock-image</code> or <code>--mocktransform</code> for real calibration photos.</p>
+<p>Copy the finished JPEGs to the laptop using your normal file-transfer method.
+Each JPEG already contains its temperature plane, so no companion file is
+needed unless captures were taken with CATIA's <code>--lwir-raw</code>; then copy the
+matching <code>.jpg.raw</code> files too. Keep matching filenames and do not resize or
+re-encode the JPEGs, which would discard the stored temperatures. This guide
+does not require ExifTool on MORA.</p>
+<h2 id="5-take-a-useful-set-of-photos">5. Take A Useful Set Of Photos</h2>
+<p>Keep the camera still and move the target for this stage. Secure the target
+at each pose; do not take photos while it is moving.</p>
+<p><img alt="Image-coverage plan: center, corners, two tilt directions and changed distance" src="lwir-calibration-coverage.png"></p>
+<p><em>Schematic positions, not prescribed rotations. Keep the entire board visible
+and its corners sharp. Edge views matter as much as the centered view.</em></p>
+<p>Collect about <strong>25-35 usable views</strong>, with variety rather than a burst of
+nearly identical frames:</p>
+<ul>
+<li>Several central views, including one almost front-on.</li>
+<li>Views near each image corner and each edge, with the full target visible.</li>
+<li>Moderate left/right tilt and forward/back tilt, roughly 15-35 degrees if
+  contrast and focus permit.</li>
+<li>A few changes in distance and in-plane rotation.</li>
+</ul>
+<p>Set aside <strong>5-8 additional views</strong> as a check set. They must be genuinely new
+views, not duplicates of fitting photos. Do not use them to fit the lens.</p>
+<p>Do not pursue a target number at the expense of quality. A frame with clipped
+corners, glare, a shutter event or motion blur should be retaken. The helper
+skips frames where it cannot find the full pattern and prints their filenames.</p>
+<p><strong>Checkpoint:</strong> the corners have visited most of the sensor, including the
+edges, and the board is not parallel to the camera in every picture.</p>
+<h2 id="6-fit-the-lens-on-the-laptop">6. Fit The Lens On The Laptop</h2>
+<h3 id="prepare-the-desktop-helper">Prepare the desktop helper</h3>
+<p>The accompanying <a href="lwir_calibrate.py">calibration helper</a> uses OpenCV. It runs
+only on the development computer; Python, NumPy and desktop OpenCV are not
+new flight-application dependencies. Its output matches CATIA's YAML keys.</p>
+<p>From the Paparazzi repository root:</p>
+<pre><code class="language-sh">python3 -m venv .venv-lwir-calibration
+.venv-lwir-calibration/bin/pip install numpy opencv-python-headless
+</code></pre>
+<p>Keep fitting images in <code>calibration/photos/</code>, independent check images in
+<code>calibration/check/</code>, and mounting images in <code>calibration/mount/</code>. These paths
+are examples relative to your current directory. Do not put annotated previews
+back into the input directories.</p>
+<h3 id="run-the-fit">Run the fit</h3>
+<p>For a board with 7x6 internal corners and measured 50 mm pitch:</p>
+<pre><code class="language-sh">.venv-lwir-calibration/bin/python \
+  sw/airborne/modules/digital_cam/catia/documentation/lwir_calibrate.py lens \
+  --images calibration/photos --check calibration/check \
+  --columns 7 --rows 6 --square-mm 50 \
+  --output calibration/tiny1c-lens.yml
+</code></pre>
+<p>Use your measured pitch. The helper requires at least 15 detected fitting
+views, rejects mixed image sizes and refuses to overwrite an existing result.
+Choose a new output name for another attempt so earlier evidence stays intact.
+It writes:</p>
+<ul>
+<li>The lens YAML, with a <strong>nominal, unmeasured mounting</strong> and <code>verified: 0</code>.</li>
+<li>A report giving detected/skipped images, per-view errors and check-set errors.</li>
+<li>Enlarged corner previews for inspection. Enlarging these previews does not
+  change the calibration images or fitted pixel coordinates.</li>
+</ul>
+<p>Open the preview images first. The colored corners must sit on the true
+crossings all the way around the grid. A small reported error does not rescue
+incorrect corner detection.</p>
+<h3 id="decide-whether-to-keep-the-result">Decide whether to keep the result</h3>
+<p>Reprojection RMS is the typical discrepancy, in pixels, between the detected
+corners and the fitted model. It is <strong>not GPS error in metres</strong>. The check set
+uses fixed lens parameters and fits only each board pose, so it is a useful
+consistency check, not an independent survey of absolute accuracy.</p>
+<p>As workshop triage, not camera specifications:</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Next action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fit and check errors mostly below about 0.5 pixel, with correct overlays</td>
+<td>Continue to mounting and independent physical checks</td>
+</tr>
+<tr>
+<td>Some views around 0.5-1 pixel</td>
+<td>Inspect those frames, grid flatness and edge coverage</td>
+</tr>
+<tr>
+<td>Many errors above 1 pixel or the check set much worse than fitting</td>
+<td>Fix the target, focus or pose variety before continuing</td>
+</tr>
+</tbody>
+</table>
+<p>Do not delete difficult images just to improve the score. Remove only images
+with an identifiable problem, replace them with good views of the same region,
+and save the reason. A model fitted only near the image center is not validated
+at the edge.</p>
+<p>Compare two independently collected sets. Large changes in focal length,
+optical center or predicted edge rays mean the setup needs attention. There
+is no universal coefficient threshold that guarantees a good calibration.</p>
+<p><strong>Checkpoint:</strong> you have inspected every retained overlay and the independent
+check views behave comparably to the fitting set.</p>
+<h2 id="7-measure-the-mounting-without-guessing">7. Measure The Mounting Without Guessing</h2>
+<p>Lens calibration does not tell CATIA which way the camera points relative to
+the aircraft. Near-zero GPS-to-camera distance removes a translation concern;
+it does not remove a small angular mounting error.</p>
+<h3 id="make-the-board-a-body-axis-reference">Make the board a body-axis reference</h3>
+<p>Remove the propeller. Secure the complete aircraft on a support above the
+flat target, with the camera in its final bracket. Do not move that bracket
+between lens fitting, mounting measurement and flight.</p>
+<p><img alt="Mounting reference: aircraft forward, aircraft right, down, and the target corner ordering" src="lwir-calibration-mount.png"></p>
+<ol>
+<li>Establish the aircraft body reference using the flight controller's defined
+   level attitude and correctly configured board alignment. Check the actual
+   airframe datum with a level; a convenient sloping fuselage surface is not
+   automatically that datum. If these disagree, resolve the FC alignment first.</li>
+<li>Level the target in the same horizontal reference. The aircraft body axes
+   and the board reference must agree; the helper cannot correct a tilted stand.</li>
+<li>Align a board column direction with <strong>aircraft right</strong>. Increasing row number
+   must run <strong>toward the tail</strong>. Use string, a square and the aircraft centerline,
+   not a phone compass beside electronics.</li>
+<li>Put the board on a stable support where the full pattern is sharp. It may
+   be offset from directly under the camera; exact height and centering are not
+   needed for the rotation fit. Keep it horizontal and aligned to the aircraft.</li>
+<li>Mark the board's near-nose, aircraft-left inner corner on its border as
+   the intended corner zero. Do not cover an actual checker intersection.</li>
+</ol>
+<p>Misleveling by one degree is already approximately 0.70 m at 40 m AGL near
+nadir. A phone level may help rough setup but is not proof of a precise datum.</p>
+<h3 id="fit-and-inspect-one-mounting-view">Fit and inspect one mounting view</h3>
+<p>Capture a photo without disturbing the alignment, then run:</p>
+<pre><code class="language-sh">.venv-lwir-calibration/bin/python \
+  sw/airborne/modules/digital_cam/catia/documentation/lwir_calibrate.py mount \
+  --image calibration/mount/mount01.jpg \
+  --lens calibration/tiny1c-lens.yml \
+  --columns 7 --rows 6 --square-mm 50 \
+  --output calibration/tiny1c-mounted.yml
+</code></pre>
+<p>Inspect the numbered preview. <strong>0 must be the near-nose, aircraft-left inner
+corner; 1 must be the next inner corner toward aircraft right; 7 must be the
+first corner in the next row toward the tail</strong> for a 7-column pattern.</p>
+<p>A checkerboard can be found in the opposite order. If it is reversed by 180
+degrees, rerun with <code>--reverse-corners</code> and a new output name. If it is rotated
+sideways, or the order does not match the board reference, stop and correct
+the setup; do not try random signs in the matrix. Lens fitting does not need
+this absolute corner orientation, but mounting measurement does.</p>
+<p>The helper uses measured lens parameters and OpenCV <code>solvePnP</code>, with board
+points expressed in body-aligned axes. It exports the inverse rotation as
+<code>camera_to_body</code>. Translation is fitted only to locate the board; it does not
+become a GPS lever arm. The mounting YAML still has <code>verified: 0</code>.</p>
+<p>Repeat at least three times, repositioning the board while keeping its axes
+aligned and its plane level. Compare the resulting rotations and ground-check
+errors. Do not average matrix entries by hand. Nearly front-on planar pose
+estimates can be sensitive to corner noise: a low reprojection error alone
+does not settle their angular accuracy. If repeated results disagree beyond
+your error budget, improve the target size/reference setup or have the mounting
+measured with a better fixture. Keep the best-supported result, not merely the
+one closest to the nominal matrix.</p>
+<p><strong>Checkpoint:</strong> corner order is physically confirmed, independent mounting
+measurements agree, and the next ground check supports that alignment.</p>
+<h2 id="8-check-distances-before-checking-gps">8. Check Distances Before Checking GPS</h2>
+<p>First test the projection in a stationary, local setup. This separates camera
+geometry from ordinary GNSS errors and camera-trigger delay.</p>
+<ol>
+<li>Secure the aircraft above a level patch with propulsion disabled. Measure
+   the camera height above that patch and use a plumb line to mark its ground
+   projection. Keep supports out of the image.</li>
+<li>Place a few small, safely warmed matte targets at measured offsets: center,
+   forward, right, and near the usable image edges. Mark their centers and
+   measure offsets with a tape. They must be large enough to occupy multiple
+   pixels, well separated, and within the detector's operating range.</li>
+<li>Use correctly tagged stationary shots with actual position, attitude and
+   AGL. Do not substitute a stale in-flight pose or the simulated 40 m EXIF.</li>
+<li>Check direction first: a target to aircraft right must not project left.
+   Check all four directions before interpreting small distance differences.</li>
+<li>Repeat with modest supported bank/pitch angles and changed heading, keeping
+   the actual pose and height known. The target coordinate should remain fixed
+   within the uncertainty of your measurements.</li>
+</ol>
+<p><strong>Practical limitation:</strong> the production detector normally needs a sufficiently
+hot target (generic minimum about 60 C, and stronger tray criteria). Do not heat
+a household target dangerously just to make it pass. Lens and mounting fitting
+use checker corners and do not require hotspot detection. A geometric check can
+instead use recorded corner/target pixels and the same ray projection, with
+help from the developer. There is currently no end-user arbitrary-pixel CLI.</p>
+<p>For hot-target end-to-end checks, use a suitable controlled target and safe
+handling procedure. The ordinary checkerboard is not automatically a fire-test
+target. CATIA may report zero hotspots on it even when lens calibration is good.</p>
+<p>Tape measurements validate relative geometry, not absolute latitude/longitude.
+A non-RTK M10N fix cannot establish a sub-metre surveyed truth point. For an
+absolute test, compare against an independently surveyed target, and record
+the uncertainty of both reference and aircraft position.</p>
+<h3 id="read-error-patterns-rather-than-chasing-numbers">Read error patterns rather than chasing numbers</h3>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Likely place to check first</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Error grows toward image edges</td>
+<td>Lens fit, distortion, mismatched image size or crop</td>
+</tr>
+<tr>
+<td>Similar offset everywhere that rotates with aircraft heading</td>
+<td>Camera mounting alignment</td>
+</tr>
+<tr>
+<td>Offset scales with height</td>
+<td>Angular alignment or focal-length error</td>
+</tr>
+<tr>
+<td>Error changes with speed or turn direction</td>
+<td>Exposure/pose timing or motion blur</td>
+</tr>
+<tr>
+<td>All targets share a slowly drifting displacement</td>
+<td>GNSS bias</td>
+</tr>
+<tr>
+<td>Error changes over sloping ground</td>
+<td>AGL reference and flat-ground assumption</td>
+</tr>
+</tbody>
+</table>
+<p>These are diagnostic clues, not unique diagnoses. Check one cause at a time.</p>
+<h2 id="9-install-the-profile-deliberately">9. Install The Profile Deliberately</h2>
+<p>Keep the lens-only file and reports unchanged. In the final mounting profile,
+change <code>verified: 0</code> to <code>verified: 1</code> <strong>only after</strong> you have reviewed lens
+evidence, confirmed corner order and mounting axes, and passed the independent
+geometry checks. This flag means you reviewed calibration; it does not mean
+GPS timing or field accuracy is certified.</p>
+<p>The runtime expects these keys:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>image_width</code>, <code>image_height</code></td>
+<td>Exact native capture dimensions</td>
+</tr>
+<tr>
+<td><code>fx</code>, <code>fy</code>, <code>cx</code>, <code>cy</code></td>
+<td>Focal lengths and optical center in original image pixels</td>
+</tr>
+<tr>
+<td><code>k1</code>, <code>k2</code>, <code>p1</code>, <code>p2</code>, <code>k3</code></td>
+<td>Brown-Conrady distortion, in that order</td>
+</tr>
+<tr>
+<td><code>camera_to_body</code></td>
+<td>Nine row-major entries mapping camera right/down/forward to body forward/right/down</td>
+</tr>
+<tr>
+<td><code>verified</code></td>
+<td>Your explicit calibration-review gate, 0 or 1</td>
+</tr>
+</tbody>
+</table>
+<p>Use the original fitted camera matrix, <strong>not</strong> a cropped or optimized display
+matrix from an undistortion preview. Do not undistort saved images first:
+LWIRcam already undistorts the ray during projection.</p>
+<p>Transfer the reviewed YAML to MORA, for example
+<code>/home/air/digital_cam/calibration/tiny1c-mounted.yml</code>, and name it on the CATIA
+start command in the service's actual configuration:</p>
+<pre><code class="language-text">--lwir-calibration /home/air/digital_cam/calibration/tiny1c-mounted.yml
+</code></pre>
+<p>Editing a command in your interactive SSH terminal does not update a service that is
+already running. Restart the relevant service through your normal deployment
+procedure while the aircraft is safe on the ground. This guide does not assume
+a particular service-unit name.</p>
+<p>To analyze a copy of an existing flight-tagged JPEG on MORA:</p>
+<pre><code class="language-sh">cd /home/air/digital_cam
+cp photos/l000001.jpg calibration/check-shot.jpg
+./lwircam --geolocate calibration/check-shot.jpg \
+  --calibration calibration/tiny1c-mounted.yml
+</code></pre>
+<p>Copy the JPEG as one file; its temperature plane travels with it. If the shot
+was taken with <code>--lwir-raw</code>, also copy <code>photos/l000001.jpg.raw</code> to
+<code>calibration/check-shot.jpg.raw</code> and keep that pair together. The raw companion
+is the original combined
+Tiny1-C frame, not another JPEG. The command updates the JPEG in place and
+leaves the raw bytes untouched. Camera GPS remains the camera position; target
+GPS and center temperature go in EXIF UserComment under <code>LWIR_HOTSPOTS_V1</code>.
+Missing or unverified real-camera calibration suppresses coordinates.</p>
+<p>Optional inspection on the development PC:</p>
+<pre><code class="language-sh">exiftool -b -UserComment calibration/check-shot.jpg
+</code></pre>
+<p><strong>ExifTool is not required by the final application.</strong> CATIA and LWIRcam use
+bundled libexif. The helper and inspection commands are workshop tools only.</p>
+<h2 id="10-keep-temperature-checks-separate">10. Keep Temperature Checks Separate</h2>
+<p>The checkerboard measures geometry. Its foil squares deliberately exploit
+reflection and must not be used to calibrate temperature.</p>
+<p>For a basic sanity check, use a large, uniform matte surface at a safe stable
+temperature, with a contact probe attached to the surface being observed.
+Make the observed patch large enough to cover many pixels. Let the probe and
+surface settle; check for gradients and avoid reflections of your hands.
+Compare several readings at two or three safe temperatures, including ambient
+and a gently warmed surface. Record distance, ambient conditions, surface
+material, emissivity settings and probe uncertainty.</p>
+<p>The temperature of water behind a plate is not automatically the temperature
+of its front surface. A kitchen thermometer in that water is not a reference
+for a tiny remote pixel. Shiny metal can look hot or cold because of reflected
+radiation, even when a contact probe gives a different reading.</p>
+<p>This exercise can reveal a gross problem. It cannot prove accuracy at fire
+temperatures, validate saturated pixels or replace a traceable blackbody
+calibration. Do not write vendor factory correction tables from this check.
+For quantitative high-temperature work, use an appropriate calibrated reference
+and the vendor procedure. Runtime values remain sensor-apparent temperatures,
+not automatically emissivity/atmosphere-corrected true surface temperatures.</p>
+<p><strong>Checkpoint:</strong> you know what your temperature check establishes, and what it
+does not. Keep that record with the geometric calibration, not inside its lens
+coefficients.</p>
+<h2 id="11-the-flight-accuracy-gate">11. The Flight Accuracy Gate</h2>
+<p>The capture server now tracks frame stability continuously, including between
+requests. It no longer starts an eight-frame wait for every shot: an already
+stable stream can use the next acceptable frame acquired after the request.
+The startup warm-up and eight-frame recovery criterion remain after instability.
+These are image-content heuristics, not a Tiny1-C exposure-ready signal. Eight
+has not been established as the minimum required by hardware. Motion, texture,
+or a shutter correction can still trigger recovery; verify this on the camera
+before reducing or removing those remaining checks.</p>
+<p>The server measures each request-to-selected-frame <strong>arrival</strong> interval using
+a monotonic clock at SDK callback entry, before application copying, validation,
+JPEG encoding, raw writing and analysis. Each callback delivery can be used only
+once; sequence gaps reset stability. This avoids a reproduced SDK polling issue
+where the same latest frame could be returned repeatedly after processing pauses.
+CATIA records <code>request_to_frame_arrival_s</code> in EXIF. This is not yet the interval
+from the FC pose timestamp to exposure: transport, scheduling before server
+acceptance and sensor/USB buffering remain unmeasured.</p>
+<p>The Tiny1-C runs continuously; requesting a still does not start an exposure.
+At 25 Hz, the 40 ms frame period does not tell us integration time. Available
+SDK evidence did not confirm variable integration time or a numerical fixed lag.
+We should not assume visible-camera auto-exposure behaviour. A fixed effective
+lag is a reasonable model to test, not a proven camera constant.</p>
+<h3 id="optional-straight-flight-position-estimate">Optional straight-flight position estimate</h3>
+<p>Add <code>--lwir-motion-compensation</code> to CATIA's start command to enable a
+constant-ground-velocity estimate for live LWIR shots. It is off by default.
+The estimate advances the reported position using ground speed, ground course
+(not nose heading), and the measured server interval. WGS84 local curvature
+converts north/east displacement to latitude/longitude. For illustration, a
+measured 0.32 s at 15 m/s gives 4.8 m of estimated travel; this is not a fixed
+delay to subtract or a claim that all shots now incur that delay.</p>
+<p>The estimated position is written to normal GPS tags and the pose fields used
+for hotspot projection. EXIF also retains <code>original_lat_deg</code>, <code>original_lon_deg</code>,
+the measured interval and <code>position_compensation=constant_ground_velocity_estimate</code>.
+Attitude, altitude and AGL remain unchanged. Delays outside 0-2 seconds, speed
+outside 0-100 m/s, invalid inputs or latitude outside 85 degrees are not corrected.
+Missing timing from an older server also leaves position unchanged.</p>
+<p>This is a partial, explicitly labeled estimate, not exposure synchronization.
+It assumes constant velocity and does not correct banking, acceleration, climb,
+or unknown buffering. Test straight passes in both directions with compensation
+off and on before relying on it. A smaller numerical residual on one pass is
+not sufficient validation. Keep original metadata for comparison.</p>
+<p>A practical next estimate is callback arrival minus a measured camera lag,
+using time-aligned FC position and attitude. Interpolate bracketing poses when
+available; reserve bounded forward prediction for cases where later samples
+are missing. A 20 ms residual timing error at 15 m/s contributes 0.30 m before
+rotation effects, so perfect exposure timestamps are not a prerequisite if
+the measured total error stays inside the mission budget. See the
+<a href="index.html#lwir-integration-and-effective-lag">effective-lag model</a>.</p>
+<p>Before relying on accurate moving-aircraft GPS, validate either exposure
+timestamps or an effective-lag estimate and its uncertainty. Neither the lag
+estimator nor exposure-time pose interpolation is implemented yet. Record
+errors over stationary, slow and faster passes, in both directions, and across
+bank/pitch/yaw. Do not tune the camera mounting to hide a timing error.</p>
+<p>Other remaining limits include GNSS bias, terrain slope, AGL uncertainty,
+motion blur and the local flat-ground model. A target on terrain higher than
+the reference plane will be projected to the wrong intersection. Choose an
+application error budget before deciding whether a result is acceptable.</p>
+<p>The EXIF fields <code>capture_pose_synchronized=false</code> and
+<code>absolute_accuracy_m=unknown</code> are intentional. <code>verified: 1</code> does not change them.</p>
+<h2 id="12-quick-troubleshooting">12. Quick Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>What you see</th>
+<th>Try this first</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>No detectable checkerboard</td>
+<td>Test a matte/foil patch, improve thermal contrast, check 7x6 inner-corner count</td>
+</tr>
+<tr>
+<td>Only front-on photos are detected</td>
+<td>Remove foil reflections; reduce tilt; make squares larger</td>
+</tr>
+<tr>
+<td>Many corners rejected near edges</td>
+<td>Keep the whole border visible and check focus</td>
+</tr>
+<tr>
+<td>Different dimensions in one set</td>
+<td>Separate camera modes; never resize to force a match</td>
+</tr>
+<tr>
+<td>Good score but poor ground positions</td>
+<td>Check mounting, image orientation, AGL and timing</td>
+</tr>
+<tr>
+<td>Mounting result points the wrong way</td>
+<td>Inspect labels 0, 1 and 7; correct physical board axes or reverse ordering</td>
+</tr>
+<tr>
+<td>Repeated mounting results disagree</td>
+<td>Improve leveling, corner contrast and board size; do not average matrix entries</td>
+</tr>
+<tr>
+<td><code>unverified_camera_calibration</code></td>
+<td>Complete the review gate; do not merely bypass it</td>
+</tr>
+<tr>
+<td><code>invalid_camera_calibration</code></td>
+<td>Check YAML syntax, required keys and exact capture dimensions</td>
+</tr>
+<tr>
+<td><code>missing_shot_pose</code></td>
+<td>Use a native-orientation JPEG with CATIA flight metadata, not an ordinary exported image</td>
+</tr>
+<tr>
+<td><code>no_temperature_plane</code></td>
+<td>Use the original capture JPEG with its embedded plane, or its <code>.jpg.raw</code> companion; brightness is not temperature</td>
+</tr>
+<tr>
+<td><code>invalid_native_frame</code></td>
+<td>Restore the original complete JPEG/raw pair; do not mix frames or change dimensions</td>
+</tr>
+<tr>
+<td><code>no_hotspots</code> on the checkerboard</td>
+<td>Expected if it is below detector thresholds; corner calibration is a different operation</td>
+</tr>
+</tbody>
+</table>
+<h2 id="13-save-a-reusable-calibration-pack">13. Save A Reusable Calibration Pack</h2>
+<p>Keep one folder per camera, lens, focus and mounting combination:</p>
+<pre><code class="language-text">tiny1c-aircraft-date/
+  notes.txt
+  photos/             original lens-fitting captures
+  check/              independent views
+  mount/              mounting captures and axis photographs
+  tiny1c-lens.yml
+  tiny1c-mounted.yml
+  *.report.txt
+  *-previews/
+  ground-checks.csv
+  temperature-checks.txt
+</code></pre>
+<p>Record camera identity, lens, focus mark, image dimensions, measured board pitch,
+mounting photographs, FC board alignment, software version, dates and reviewer.
+Record actual errors and reference uncertainty, not just a pass label.</p>
+<p>Repeat lens calibration after changing lens, focus or resolution. Repeat
+mounting checks after moving the camera, changing the bracket, a hard landing
+or changing FC alignment. Recheck temperature after relevant sensor service or
+when measurements become inconsistent. Retaining the old pack makes comparison
+straightforward instead of starting from memory.</p>
+<h2 id="references-and-scope">References And Scope</h2>
+<ul>
+<li><a href="https://docs.opencv.org/4.x/dc/dbb/tutorial_py_calibration.html">OpenCV camera calibration tutorial</a>: internal corners, multiple views, camera matrix and distortion.</li>
+<li><a href="https://docs.opencv.org/4.x/d5/d1f/calib3d_solvePnP.html">OpenCV pose estimation</a>: object-to-camera pose convention.</li>
+<li><a href="index.html#hotspot-gps-coordinates-and-center-temperatures">CATIA geolocation implementation guide</a>: metadata, calibration keys and runtime limitations.</li>
+</ul>
+<p>The thermal-board construction is a practical workshop approach, not a
+manufacturer-certified calibration target. Photo counts and pixel-error bands
+are starting points for diagnosis, not guaranteed Tiny1-C performance. The
+illustrations are original schematics. No actual camera was calibrated while
+preparing this guide.</p></main>
+  </div>
+  <footer>CATIA documentation / Paparazzi UAV</footer>
+</body>
+</html>

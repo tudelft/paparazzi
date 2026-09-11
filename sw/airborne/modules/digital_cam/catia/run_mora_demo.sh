@@ -8,7 +8,7 @@ PAPARAZZI_HOME=$(cd -- "$SCRIPT_DIR/../../../../.." && pwd)
 cd "$PAPARAZZI_HOME"
 
 echo "MORA CATIA: building local camera application"
-make -C sw/airborne/modules/digital_cam/catia
+make -C sw/airborne/modules/digital_cam/catia native
 
 echo "MORA CATIA: starting verbose local mode"
 echo "MORA CATIA: simulator endpoint is /tmp/catia-sim"

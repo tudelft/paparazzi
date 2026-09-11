@@ -138,7 +138,7 @@
 <!-- ***** ...then the rest ***** -->
 
       <module name="actuators" type="pwm">
-        <define name="SERVO_HZ" value="40"/><!-- not higher than 40 else lightcontroller does not work -->
+        <!--<define name="SERVO_HZ" value="40"/>--><!-- not higher than 40 else lightcontroller does not work -->
         <define name="USE_SERVOS_7AND8"/>
       </module>
 
@@ -320,7 +320,6 @@
       <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/>
       <!-- <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="5.0"/> --><!-- Unit: m -->
       <configure name="CAMERA_PORT" value="UART5"/> <!-- For the real Flightcontroller to MORA connection-->
-      <!-- Camera selection is a runtime setting: digital_cam_uart_camera_id 0=ALL 1=CHDK 2=AICAM 3=LWIR 4=EAR -->
       <!--<configure name="SITL_SERIAL" value="/tmp/catia-sim"/>--><!-- for local PC -->
       <configure name="SITL_SERIAL" value="/dev/ttyUSB0"/><!-- for actual device via FTDI cable to MORA on desk -->
     </module>

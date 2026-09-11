@@ -130,6 +130,26 @@
       <program name="MORA Local CATIA"/>
       <program name="EasyStar MORA Camera Demo Starter"/>
     </session>
+    <session name="IMAV2026 Outdoor Competition">
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="Easystar_3"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS Classic">
+        <arg flag="--maximize"/>
+        <arg flag="--speech"/>
+      </program>
+      <program name="Environment Simulator (Legacy)"/>
+    </session>
     <session name="SIM IMAV2026 NPS new QTGUI">
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
@@ -149,7 +169,7 @@
       </program>
       <program name="Environment Simulator (Legacy)"/>
     </session>
-    <session name="Remote to CATIA">
+    <session name="Remote2Catia">
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
         <arg flag="-a" constant="Easystar_3"/>
@@ -168,6 +188,29 @@
         <arg flag="--speech"/>
       </program>
       <program name="Environment Simulator (Legacy)"/>
+    </session>
+    <session name="SIM IMAV2026 Outdoor Competition">
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="Easystar_3"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS Classic">
+        <arg flag="--maximize"/>
+        <arg flag="--speech"/>
+      </program>
+      <program name="Environment Simulator (Legacy)">
+        <arg flag="-w3"/>
+        <arg flag="-d123"/>
+      </program>
     </session>
   </section>
 </control_panel>

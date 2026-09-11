@@ -1,0 +1,24 @@
+<!DOCTYPE settings SYSTEM "settings.dtd">
+<settings>
+  <dl_settings>
+    <dl_settings name="earcam_tuning_advanced">
+      <include header="modules/digital_cam/earcam_ctrl"/>
+      <dl_setting max="1" min="0" step="1" var="earcam_result_valid" shortname="ear_valid"/>
+      <dl_setting max="1" min="0" step="0.001" var="earcam_confidence" shortname="ear_conf"/>
+      <dl_setting max="65535" min="0" step="1" var="earcam_samples" shortname="ear_n"/>
+      <dl_setting max="200" min="20" step="5" var="earcam_refine_half_length_m" shortname="ref_len" unit="m"/>
+      <dl_setting max="20" min="1" step="0.5" var="earcam_refine_converge_m" shortname="ref_conv" unit="m"/>
+      <dl_setting max="6" min="1" step="1" var="earcam_refine_max_iterations" shortname="ref_iter"/>
+      <dl_setting max="8" min="2" step="1" var="earcam_refine_legs" shortname="ref_legs"/>
+      <dl_setting max="200" min="0" step="0.1" var="earcam_refine_shift_m" shortname="ref_shift" unit="m"/>
+      <dl_setting max="100" min="0" step="1" var="earcam_refine_turn_radius_m" shortname="ref_radius" unit="m"/>
+      <dl_setting max="80" min="0" step="1" var="earcam_refine_height_from_m" shortname="ref_h_from" unit="m"/>
+      <dl_setting max="80" min="0" step="1" var="earcam_refine_height_to_m" shortname="ref_h_to" unit="m"/>
+      <dl_setting max="20" min="0" step="0.5" var="earcam_refine_height_step_m" shortname="ref_h_step" unit="m"/>
+      <dl_setting max="30" min="2" step="0.5" var="earcam_refine_height_min_m" shortname="ref_h_min" unit="m"/>
+      <dl_setting max="5" min="0.5" step="0.1" var="earcam_drop_release_agl_m" shortname="drop_agl" unit="m"/>
+      <dl_setting max="5" min="0.5" step="0.1" var="earcam_drop_max_agl_m" shortname="drop_max_agl" unit="m"/>
+      <dl_setting max="100" min="0" step="0.1" var="earcam_drop_agl_m" shortname="drop_h" unit="m"/>
+    </dl_settings>
+  </dl_settings>
+</settings>

@@ -31,6 +31,13 @@ dot -Tsvg catia-flow.dot -o catia-flow.svg
 dot -Tpng -Gdpi=180 catia-flow.dot -o catia-flow.png
 dot -Tsvg earcam-dataflow.dot -o earcam-dataflow.svg
 dot -Tpng -Gdpi=110 earcam-dataflow.dot -o earcam-dataflow.png
+dot -Tsvg lwir-calibration-workflow.dot -o lwir-calibration-workflow.svg
+dot -Tpng -Gdpi=150 lwir-calibration-workflow.dot -o lwir-calibration-workflow.png
+python3 generate_calibration_illustrations.py
+for diagram in target coverage mount; do
+  inkscape "lwir-calibration-$diagram.svg" --export-type=png \
+    --export-width=1320 --export-filename="lwir-calibration-$diagram.png"
+done
 desk_base=$(mktemp --suffix=.png)
 desk_screen=$(mktemp --suffix=.png)
 trap 'rm -f "$desk_base" "$desk_screen"' EXIT
@@ -48,11 +55,11 @@ magick "$desk_base" "$desk_screen" \
   desk-test-setup.png
 python3 generate_html.py
 
-for generated_file in catia-flow.svg catia-flow.png earcam-dataflow.svg earcam-dataflow.png desk-test-setup.png index.html earcam-loudest-spot-explained.html; do
+for generated_file in catia-flow.svg catia-flow.png earcam-dataflow.svg earcam-dataflow.png desk-test-setup.png index.html earcam-loudest-spot-explained.html lwir-calibration.html mission2-score-first.html lwir-calibration-workflow.png lwir-calibration-target.png lwir-calibration-coverage.png lwir-calibration-mount.png; do
   if [[ ! -s "$generated_file" ]]; then
     echo "update-documentation.sh: failed to generate $generated_file" >&2
     exit 1
   fi
 done
 
-echo "CATIA documentation updated: README.md, index.html, earcam-loudest-spot-explained.html, catia-flow.svg, catia-flow.png, earcam-dataflow.svg, earcam-dataflow.png"
+echo "CATIA documentation updated: main, EARcam, LWIR calibration and Mission 2 guides"

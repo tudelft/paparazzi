@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include "version.h"
 #include <math.h>
 #include <poll.h>
 #include <signal.h>
@@ -12,6 +13,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/file.h>
+#include <sys/random.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -24,12 +26,14 @@
 #include "ear_cam_pipe.h"
 #include "lwir_cam_pipe.h"
 #include "serial.h"
+#include "serial_tx.h"
 #include "chdk_pipe.h"
 #include "image_exif.h"
 #include "image_mock_transform.h"
 #include "local_pipe.h"
 #include "std.h"
 #include "protocol.h"
+#include "pose_log.h"
 #include "socket.h"
 
 #define MAX_FILENAME 512
@@ -37,7 +41,7 @@
 #define MAX_IMAGE_BUFFERS 25
 #define IMAGE_SIZE 70
 // Search&Rescue Onboard Detection Application
-#define SODA "./soda_local"
+#define SODA "./soda"
 #define ANGLE_BFP_SCALE 4096.0
 #define SPEED_BFP_SCALE 524288.0
 #define POSITION_BFP_SCALE 256.0
@@ -72,8 +76,8 @@
 #define CATIA_CHDK_PHOTO_DIR "photos"
 #endif
 
-#ifndef CATIA_LOCAL_SODA
-#define CATIA_LOCAL_SODA "soda_local"
+#ifndef CATIA_SODA
+#define CATIA_SODA "soda"
 #endif
 
 enum camera_backend_type {
@@ -92,12 +96,19 @@ struct camera_backend {
   const char *soda_application;
 };
 
+struct capture_job {
+  union dc_shot_union shot;
+  uint8_t camera_mask;
+  uint64_t ticket;
+};
+
 static void *handle_msg_shoot(void *ptr);
+static void capture_image(const union dc_shot_union *shoot, bool multiple);
 static void handle_received_message(void);
-static void start_shoot_worker(union dc_shot_union *shoot);
+static void start_shoot_worker(const union dc_shot_union *shoot, uint8_t camera_mask);
 static void handle_targeted_stop(int32_t camera_id);
 static void send_msg_ear_result(const struct ear_loudest_spot *spot);
-static int run_soda(const char *filename, const union dc_shot_union *shoot);
+static int run_soda(const char *filename, const union dc_shot_union *shoot, int camera_id);
 static void release_worker_slot(void);
 static inline void send_msg_image_buffer(void);
 static inline void send_msg_status(void);
@@ -110,6 +121,8 @@ static void handle_signal(int signal_number);
 static void notify_systemd_ready(void);
 static int move_file(const char *source, const char *destination);
 static int camera_backend_select(enum camera_backend_type type, bool test_mode);
+static int camera_prepare(int camera_id);
+static void cameras_deinit(void);
 static int chdk_backend_init(const char *source_image);
 static int chdk_backend_shoot(char *filename, size_t filename_size, int image_number);
 
@@ -118,9 +131,13 @@ static char image_buffer[MAX_IMAGE_BUFFERS][IMAGE_SIZE];
 static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t camera_available = PTHREAD_COND_INITIALIZER;
 static pthread_cond_t workers_finished = PTHREAD_COND_INITIALIZER;
+static uint64_t next_job_ticket, next_capture_ticket;
 static bool local_mode;
 static enum camera_backend_type requested_camera_backend = CAMERA_BACKEND_UNSELECTED;
 static struct camera_backend camera;
+static bool camera_initialized[4];
+static bool local_capture_only;
+static const char *camera_source_image;
 static bool local_bridge_requested;
 static bool local_bridge_owned;
 static volatile sig_atomic_t keep_running = 1;
@@ -132,8 +149,61 @@ static bool debug_enabled;
 static bool test_capture_enabled;
 static bool earcam_requested;
 static bool earcam_active;
-static int optical_camera_id = MORA_CAMERA_ALL;
-static pthread_mutex_t tx_mutex = PTHREAD_MUTEX_INITIALIZER;
+static int optical_camera_id = CATIA_CAMERA_ALL;
+static uint64_t serial_receive_monotonic_us;
+static struct clock_alignment fc_clock;
+static bool clock_probes_enabled;
+static const char *pose_log_dir;
+static bool motion_compensation_enabled;
+static uint64_t next_clock_probe_us, clock_probe_count, clock_reply_count, clock_rejected_count;
+
+static uint64_t monotonic_time_us(void)
+{
+  struct timespec now;
+  return clock_gettime(CLOCK_MONOTONIC, &now) == 0
+      ? (uint64_t)now.tv_sec * 1000000U + (uint64_t)now.tv_nsec / 1000U : 0;
+}
+
+static void send_clock_probe(uint64_t now_us)
+{
+  if (!clock_probes_enabled || now_us == 0 || now_us < next_clock_probe_us
+      || now_us > UINT64_MAX - 1000000) return;
+  next_clock_probe_us = now_us + 1000000;
+  union catia_clock_request_union token;
+  if (getrandom(token.bin, sizeof(token.bin), GRND_NONBLOCK) != (ssize_t)sizeof(token.bin)) return;
+  const uint64_t sent_us = monotonic_time_us();
+  if (!clock_alignment_request(&fc_clock, token, sent_us)) return;
+  if (serial_tx_send_if_idle(CATIA_CLOCK_REQUEST, token.bin, sizeof(token.bin)) != 0) {
+    fc_clock.pending = false;
+    return;
+  }
+  ++clock_probe_count;
+}
+
+static void record_clocked_pose(void)
+{
+  if (catia_protocol.payload_len != CATIA_POSE_CLOCKED_MSG_SIZE) {
+    pose_log_record(NULL, 0, serial_receive_monotonic_us);
+    return;
+  }
+  union catia_pose_clocked_union message;
+  for (size_t index = 0; index < sizeof(message.bin); ++index) message.bin[index] = catia_protocol.payload[index];
+  struct pose_clock_evidence evidence = {.token = message.data.request};
+  struct clock_interval begin, end;
+  if (clock_alignment_map(&fc_clock, message.data.request, message.data.sample.data.sample_begin_us,
+                           serial_receive_monotonic_us, &begin)
+      && clock_alignment_map(&fc_clock, message.data.request, message.data.sample.data.sample_end_us,
+                              serial_receive_monotonic_us, &end)) {
+    evidence.sample_time = (struct clock_interval){begin.earliest_us, end.latest_us};
+    evidence.probe_sent_us = fc_clock.mapped_sent_us;
+    evidence.probe_received_us = fc_clock.received_us;
+    evidence.probe_receive_fc_us = fc_clock.receive_fc_us;
+    evidence.probe_transmit_fc_us = fc_clock.anchor_fc_us;
+    evidence.mapped = true;
+  }
+  pose_log_record_clocked(message.data.sample.bin, sizeof(message.data.sample.bin),
+                          serial_receive_monotonic_us, &evidence);
+}
 
 extern char **environ;
 
@@ -163,11 +233,17 @@ int main(int argc, char *argv[])
     {"mocktransform", no_argument, NULL, 'f'},
     {"debug", no_argument, NULL, 'd'},
     {"mock-image", required_argument, NULL, 'i'},
+    {"pose-log", required_argument, NULL, 'p'},
+    {"clock-align", no_argument, NULL, 'k'},
+    {"lwir-raw", no_argument, NULL, 'r'},
+    {"lwir-calibration", required_argument, NULL, 'y'},
+    {"lwir-motion-compensation", no_argument, NULL, 'm'},
     {"help", no_argument, NULL, 'h'},
+    {"version", no_argument, NULL, 1000},
     {NULL, 0, NULL, 0}
   };
 
-  while ((option = getopt_long(argc, argv, "s:lcaweE:B:tfdi:h", long_options, NULL)) != -1) {
+  while ((option = getopt_long(argc, argv, "s:lcaweE:B:tfdi:p:kry:mh", long_options, NULL)) != -1) {
     switch (option) {
       case 's':
         serial_device = optarg;
@@ -238,6 +314,31 @@ int main(int argc, char *argv[])
         mock_image = optarg;
         mock_image_was_selected = true;
         break;
+      case 'p':
+        if (optarg[0] == '\0') {
+          fprintf(stderr, "CATIA:\t--pose-log expects a directory\n");
+          return 2;
+        }
+        pose_log_dir = optarg;
+        break;
+      case 'k':
+        clock_probes_enabled = true;
+        break;
+      case 'r':
+        lwir_cam_pipe_set_native_raw(1);
+        break;
+      case 'y':
+        if (lwir_cam_pipe_set_calibration(optarg) != 0) {
+          fprintf(stderr, "CATIA:\t--lwir-calibration expects a camera YAML file\n");
+          return 2;
+        }
+        break;
+      case 'm':
+        motion_compensation_enabled = true;
+        break;
+      case 1000:
+        puts(CATIA_BUILD_VERSION);
+        return 0;
       case 'h':
         print_usage(argv[0]);
         return 0;
@@ -320,7 +421,7 @@ int main(int argc, char *argv[])
   if (local_mode) {
     printf("CATIA:\tlocal simulator device: %s\n", CATIA_LOCAL_SIM_DEVICE);
   }
-  const char *camera_source_image = NULL;
+  camera_source_image = NULL;
   if (selected_camera_backend == CAMERA_BACKEND_LOCAL && !test_mode) {
     printf("CATIA:\tmock camera image: %s\n", mock_image);
     camera_source_image = mock_image;
@@ -328,19 +429,22 @@ int main(int argc, char *argv[])
     camera_source_image = mock_image_was_selected ? mock_image : NULL;
   }
   signal(SIGPIPE, SIG_IGN);
-  if (camera.init(camera_source_image) != 0) {
+  if ((test_mode || selected_camera_backend == CAMERA_BACKEND_LOCAL)
+      && camera.init(camera_source_image) != 0) {
     stop_local_serial_bridge();
     return 1;
   }
+  local_capture_only = selected_camera_backend == CAMERA_BACKEND_LOCAL && !test_mode;
   switch (selected_camera_backend) {
-    case CAMERA_BACKEND_CHDK: optical_camera_id = MORA_CAMERA_CHDK; break;
-    case CAMERA_BACKEND_AI_CAM: optical_camera_id = MORA_CAMERA_AICAM; break;
-    case CAMERA_BACKEND_LWIR_CAM: optical_camera_id = MORA_CAMERA_LWIRCAM; break;
-    default: optical_camera_id = MORA_CAMERA_ALL; break;
+    case CAMERA_BACKEND_CHDK: optical_camera_id = CATIA_CAMERA_CHDK; break;
+    case CAMERA_BACKEND_AI_CAM: optical_camera_id = CATIA_CAMERA_AICAM; break;
+    case CAMERA_BACKEND_LWIR_CAM: optical_camera_id = CATIA_CAMERA_LWIRCAM; break;
+    default: optical_camera_id = CATIA_CAMERA_ALL; break;
   }
+  camera_initialized[optical_camera_id] = test_mode || local_capture_only;
   if (earcam_requested) {
     if (ear_cam_pipe_init(NULL) != 0) {
-      camera.deinit();
+      cameras_deinit();
       stop_local_serial_bridge();
       return 1;
     }
@@ -352,27 +456,41 @@ int main(int argc, char *argv[])
     if (earcam_active) {
       ear_cam_pipe_deinit();
     }
-    camera.deinit();
+    cameras_deinit();
     stop_local_serial_bridge();
     return -1;
   }
   socket_init(1);
+  if (serial_tx_start(fd) != 0) {
+    fprintf(stderr, "CATIA:\tunable to initialize nonblocking UART output: %s\n", strerror(errno));
+    close(fd);
+    if (earcam_active) ear_cam_pipe_deinit();
+    cameras_deinit();
+    stop_local_serial_bridge();
+    return 1;
+  }
+  fc_clock = (struct clock_alignment){0};
+  next_clock_probe_us = clock_probe_count = clock_reply_count = clock_rejected_count = 0;
+  if (pose_log_start(pose_log_dir) != 0) {
+    fprintf(stderr, "CATIA POSE:\tlog unavailable: %s; capture continues\n", strerror(errno));
+  }
   signal(SIGINT, handle_signal);
   signal(SIGTERM, handle_signal);
 
   // Initial settings
   is_shooting = 0;
-  mora_protocol.status = 0;
+  catia_protocol.status = 0;
   image_idx = 0;
   image_count = 0;
   shooting_count = 0;
   shooting_thread_count = 0;
 
+  puts(CATIA_BUILD_VERSION);
   printf("Started OK\n");
   notify_systemd_ready();
   if (debug_enabled) {
     next_debug_heartbeat = time(NULL) + DEBUG_HEARTBEAT_SECONDS;
-    printf("CATIA DEBUG:\twaiting for MORA camera messages on %s\n", serial_device);
+    printf("CATIA DEBUG:\twaiting for CATIA camera messages on %s\n", serial_device);
   }
 
   struct pollfd event_sources[2] = {
@@ -382,6 +500,8 @@ int main(int argc, char *argv[])
 
   // MAIN loop
   while (keep_running) {
+    send_clock_probe(monotonic_time_us());
+    event_sources[0].events = POLLIN | (serial_tx_pending() ? POLLOUT : 0);
     int poll_result;
     do {
       poll_result = poll(event_sources, 2, EVENT_LOOP_TIMEOUT_MS);
@@ -394,35 +514,40 @@ int main(int argc, char *argv[])
       fprintf(stderr, "CATIA:\tserial device disconnected\n");
       break;
     }
+    if ((event_sources[0].revents & POLLOUT) != 0 && serial_tx_flush() != 0) {
+      fprintf(stderr, "CATIA:\tUART output failed: %s\n", strerror(errno));
+      break;
+    }
 
     // Drain available serial data in one syscall and process frames in order.
     ssize_t bytes_read = 0;
     if ((event_sources[0].revents & POLLIN) != 0) {
       bytes_read = read(fd, serial_buffer, sizeof(serial_buffer));
+        serial_receive_monotonic_us = monotonic_time_us();
     }
     if (bytes_read > 0) {
       for (ssize_t index = 0; index < bytes_read; index++) {
         serial_byte_count++;
-        uint8_t parser_errors_before = mora_protocol.error;
+        uint8_t parser_errors_before = catia_protocol.error;
         if (debug_enabled && serial_buffer[index] == STX) {
-          printf("CATIA DEBUG:\treceived MORA frame start at serial byte %llu\n",
+          printf("CATIA DEBUG:\treceived CATIA frame start at serial byte %llu\n",
                  (unsigned long long)serial_byte_count);
         }
-        parse_mora(&mora_protocol, serial_buffer[index]);
-        if (mora_protocol.error != parser_errors_before) {
+        parse_catia(&catia_protocol, serial_buffer[index]);
+        if (catia_protocol.error != parser_errors_before) {
           rejected_frame_count++;
           if (debug_enabled) {
-            printf("CATIA DEBUG:\trejected MORA frame at serial byte %llu (total rejected: %llu)\n",
+            printf("CATIA DEBUG:\trejected CATIA frame at serial byte %llu (total rejected: %llu)\n",
                    (unsigned long long)serial_byte_count,
                    (unsigned long long)rejected_frame_count);
           }
         }
-        if (mora_protocol.msg_received) {
+        if (catia_protocol.msg_received) {
           valid_frame_count++;
           if (debug_enabled) {
-            printf("CATIA DEBUG:\taccepted MORA message id %u with %u payload bytes "
+            printf("CATIA DEBUG:\taccepted CATIA message id %u with %u payload bytes "
                    "(frame %llu)\n",
-                   mora_protocol.msg_id, mora_protocol.payload_len,
+                   catia_protocol.msg_id, catia_protocol.payload_len,
                    (unsigned long long)valid_frame_count);
           }
           handle_received_message();
@@ -433,12 +558,20 @@ int main(int argc, char *argv[])
     }
 
     if (debug_enabled && time(NULL) >= next_debug_heartbeat) {
-      printf("CATIA DEBUG:\twaiting for MORA data: %llu bytes, %llu valid frames, "
+      printf("CATIA DEBUG:\twaiting for CATIA data: %llu bytes, %llu valid frames, "
              "%llu rejected frames\n",
              (unsigned long long)serial_byte_count,
              (unsigned long long)valid_frame_count,
              (unsigned long long)rejected_frame_count);
+          struct pose_log_stats pose_status = pose_log_status();
+          printf("CATIA POSE:\taccepted=%" PRIu64 " synced=%" PRIu64 " dropped=%" PRIu64
+             " rejected=%" PRIu64 " error=%d\n", pose_status.accepted, pose_status.synced,
+             pose_status.dropped, pose_status.rejected, pose_status.error);
       next_debug_heartbeat = time(NULL) + DEBUG_HEARTBEAT_SECONDS;
+      if (clock_probes_enabled) {
+        printf("CATIA CLOCK:\tprobes=%" PRIu64 " accepted=%" PRIu64 " rejected=%" PRIu64 "\n",
+               clock_probe_count, clock_reply_count, clock_rejected_count);
+      }
     }
 
     // Read the socket
@@ -454,6 +587,7 @@ int main(int argc, char *argv[])
   }
 
   // Close
+  serial_tx_stop();
   close(fd);
   pthread_mutex_lock(&mut);
   pthread_cond_broadcast(&camera_available);
@@ -464,9 +598,14 @@ int main(int argc, char *argv[])
   if (earcam_active) {
     ear_cam_pipe_deinit();
   }
-  camera.deinit();
+  cameras_deinit();
   stop_local_serial_bridge();
 
+    if (pose_log_stop() != 0) fprintf(stderr, "CATIA POSE:\tlog incomplete: %s\n", strerror(errno));
+    struct pose_log_stats pose_status = pose_log_status();
+    fprintf(stderr, "CATIA POSE:\tfinal accepted=%" PRIu64 " synced=%" PRIu64
+      " dropped=%" PRIu64 " rejected=%" PRIu64 " error=%d\n",
+      pose_status.accepted, pose_status.synced, pose_status.dropped, pose_status.rejected, pose_status.error);
   printf("CATIA:\tShutdown\n");
   return 0;
 }
@@ -500,7 +639,7 @@ static void notify_systemd_ready(void)
     return;
   }
 
-  static const char ready_message[] = "READY=1\nSTATUS=LWIR camera and MORA serial ready";
+  static const char ready_message[] = "READY=1\nSTATUS=MORA serial ready; camera selected on shoot command";
   socklen_t address_length = (socklen_t)(offsetof(struct sockaddr_un, sun_path)
                                         + path_length + (abstract_socket ? 0 : 1));
   if (sendto(notify_fd, ready_message, sizeof(ready_message) - 1, MSG_NOSIGNAL,
@@ -513,18 +652,16 @@ static void notify_systemd_ready(void)
 
 static void *handle_msg_shoot(void *ptr)
 {
-  char filename[MAX_FILENAME] = "";
-  union dc_shot_union *shoot = (union dc_shot_union *) ptr;
-  bool image_ready = false;
+  struct capture_job *job = ptr;
 
   pthread_mutex_lock(&mut);
-  while (is_shooting && keep_running) {
+  while (job->ticket != next_capture_ticket && keep_running) {
     pthread_cond_wait(&camera_available, &mut);
   }
   if (!keep_running) {
     pthread_mutex_unlock(&mut);
     release_worker_slot();
-    free(shoot);
+    free(job);
     return NULL;
   }
 
@@ -532,6 +669,27 @@ static void *handle_msg_shoot(void *ptr)
   shooting_count++;
   pthread_mutex_unlock(&mut);
 
+  bool multiple = (job->camera_mask & (job->camera_mask - 1U)) != 0;
+  for (int camera_id = CATIA_CAMERA_CHDK; camera_id <= CATIA_CAMERA_LWIRCAM && keep_running; ++camera_id) {
+    if ((job->camera_mask & (1U << (camera_id - 1))) != 0 && camera_prepare(camera_id) == 0) {
+      capture_image(&job->shot, multiple);
+    }
+  }
+
+  pthread_mutex_lock(&mut);
+  is_shooting = 0;
+  ++next_capture_ticket;
+  pthread_cond_broadcast(&camera_available);
+  pthread_mutex_unlock(&mut);
+  release_worker_slot();
+  free(job);
+  return NULL;
+}
+
+static void capture_image(const union dc_shot_union *shoot, bool multiple)
+{
+  char filename[MAX_FILENAME] = "";
+  bool image_ready = false;
   printf("CATIA-%d:\tShooting: start\n", shoot->data.nr);
   if (debug_enabled) {
     if (test_capture_enabled) {
@@ -543,7 +701,19 @@ static void *handle_msg_shoot(void *ptr)
   }
   if (camera.shoot(filename, sizeof(filename), shoot->data.nr) != 0) {
     fprintf(stderr, "CATIA-%d:\t%s camera capture failed\n", shoot->data.nr, camera.name);
+    camera.deinit();
+    camera_initialized[optical_camera_id] = false;
     filename[0] = '\0';
+  }
+  if (filename[0] != '\0' && multiple && (test_capture_enabled || local_capture_only)) {
+    char destination[MAX_FILENAME];
+    int length = snprintf(destination, sizeof(destination), "%s-cam%d.jpg", filename, optical_camera_id);
+    if (length < 0 || (size_t)length >= sizeof(destination) || rename(filename, destination) != 0) {
+      fprintf(stderr, "CATIA:\tfailed to separate multi-camera test image\n");
+      filename[0] = '\0';
+    } else {
+      for (int index = 0; index <= length; ++index) filename[index] = destination[index];
+    }
   }
   printf("CATIA-%d:\tShooting: got image %s\n", shoot->data.nr, filename);
   if (filename[0] != '\0' && mock_transform_enabled) {
@@ -559,70 +729,122 @@ static void *handle_msg_shoot(void *ptr)
       printf("CATIA-%d:\tShooting: mock attitude transform applied\n", shoot->data.nr);
     }
   }
+  if (filename[0] != '\0' && test_capture_enabled
+      && optical_camera_id == CATIA_CAMERA_LWIRCAM
+      && lwir_cam_pipe_process_mock(filename) != 0) {
+    fprintf(stderr, "CATIA-%d:\tLWIR mock processing failed\n", shoot->data.nr);
+    filename[0] = '\0';
+  }
   if (filename[0] != '\0') {
     if (debug_enabled) {
       printf("CATIA-%d DEBUG:\twriting flight metadata to captured JPEG\n", shoot->data.nr);
     }
-    if (image_exif_write(filename, shoot) == 0) {
+    const double capture_delay = optical_camera_id == CATIA_CAMERA_LWIRCAM && !test_capture_enabled
+                   ? lwir_cam_pipe_capture_delay() : -1;
+    const int compensate = motion_compensation_enabled;
+    const struct capture_timing capture_times = optical_camera_id == CATIA_CAMERA_LWIRCAM && !test_capture_enabled
+      ? lwir_cam_pipe_capture_timing() : (struct capture_timing){0};
+    if (image_exif_write_capture(filename, shoot, capture_delay, compensate, &capture_times) == 0) {
       image_ready = true;
       printf("CATIA-%d:\tShooting: EXIF metadata added\n", shoot->data.nr);
+      if (optical_camera_id == CATIA_CAMERA_LWIRCAM) {
+        if (mock_transform_enabled) {
+          if (image_exif_write_hotspots(filename, "status=unsupported_mock_transform; coordinates_omitted=true") != 0) {
+            fprintf(stderr, "CATIA-%d:\tfailed to record unsupported thermal transform\n", shoot->data.nr);
+          }
+        } else if (lwir_cam_pipe_geolocate(filename) != 0) {
+          fprintf(stderr, "CATIA-%d:\tLWIR hotspot geolocation failed; photo retained\n", shoot->data.nr);
+          if (image_exif_write_hotspots(filename, "status=analysis_failed; coordinates_omitted=true") != 0) {
+            fprintf(stderr, "CATIA-%d:\tfailed to record hotspot analysis failure\n", shoot->data.nr);
+          }
+        }
+      }
       printf("Photo take %d\n", shoot->data.nr);
     } else {
       fprintf(stderr, "CATIA-%d:\tfailed to add EXIF metadata to %s\n", shoot->data.nr, filename);
     }
   }
 
-  pthread_mutex_lock(&mut);
-  is_shooting = 0;
-  pthread_cond_broadcast(&camera_available);
-  pthread_mutex_unlock(&mut);
-
   if (image_ready) {
-    int soda_result = run_soda(filename, shoot);
+    int soda_result = run_soda(filename, shoot, optical_camera_id);
     printf("CATIA-%d:\tShooting: soda return %d of image %s\n",
            shoot->data.nr, soda_result, filename);
   }
 
-  release_worker_slot();
-
-  free(shoot);
-  return NULL;
 }
 
 static void handle_received_message(void)
 {
-  mora_protocol.msg_received = false;
+  catia_protocol.msg_received = false;
 
-  if (mora_protocol.msg_id == MORA_SHOOT || mora_protocol.msg_id == MORA_SHOOT_TARGETED) {
-    bool targeted = mora_protocol.msg_id == MORA_SHOOT_TARGETED;
-    uint8_t expected = targeted ? MORA_SHOOT_TARGETED_MSG_SIZE : MORA_SHOOT_MSG_SIZE;
+  if (catia_protocol.msg_id == CATIA_CLOCK_REPLY) {
+    if (clock_probes_enabled) {
+      if (clock_alignment_reply(&fc_clock, catia_protocol.payload, catia_protocol.payload_len,
+                                  serial_receive_monotonic_us)) ++clock_reply_count;
+      else ++clock_rejected_count;
+    }
+    return;
+  }
+  if (catia_protocol.msg_id == CATIA_POSE_CLOCKED) {
+    record_clocked_pose();
+    return;
+  }
+  if (catia_protocol.msg_id == CATIA_POSE_SAMPLE) {
+    fc_clock.valid = false;
+    pose_log_record(catia_protocol.payload, catia_protocol.payload_len, serial_receive_monotonic_us);
+    return;
+  }
+  if (catia_protocol.msg_id == CATIA_SHOOT || catia_protocol.msg_id == CATIA_SHOOT_TARGETED
+      || catia_protocol.msg_id == CATIA_SHOOT_MASK) {
+    bool targeted = catia_protocol.msg_id == CATIA_SHOOT_TARGETED;
+    bool masked = catia_protocol.msg_id == CATIA_SHOOT_MASK;
+    uint8_t expected = masked ? CATIA_SHOOT_MASK_MSG_SIZE
+                             : targeted ? CATIA_SHOOT_TARGETED_MSG_SIZE : CATIA_SHOOT_MSG_SIZE;
     if (debug_enabled) {
       printf("CATIA DEBUG:\tphoto trigger received; decoding shot payload\n");
     }
-    if (mora_protocol.payload_len != expected) {
-      fprintf(stderr, "CATIA:\tinvalid MORA shot payload length %u\n", mora_protocol.payload_len);
+    if (catia_protocol.payload_len != expected) {
+      fprintf(stderr, "CATIA:\tinvalid CATIA shot payload length %u\n", catia_protocol.payload_len);
       return;
     }
 
-    union dc_shot_union *shoot = malloc(sizeof(*shoot));
-    if (shoot == NULL) {
-      fprintf(stderr, "CATIA:\tfailed to allocate shot message\n");
-      return;
+    union dc_shot_union shot;
+    union dc_shot_union *shoot = &shot;
+    for (size_t index = 0; index < CATIA_SHOOT_MSG_SIZE; index++) {
+      shoot->bin[index] = catia_protocol.payload[index];
     }
-    for (size_t index = 0; index < MORA_SHOOT_MSG_SIZE; index++) {
-      shoot->bin[index] = mora_protocol.payload[index];
-    }
-    int32_t camera_id = MORA_CAMERA_ALL;
+    int32_t camera_id = CATIA_CAMERA_ALL;
+    uint32_t camera_mask = CATIA_CAMERA_MASK_ALL;
     if (targeted) {
       union dc_shot_targeted_union targeted_msg;
-      for (size_t index = 0; index < MORA_SHOOT_TARGETED_MSG_SIZE; index++) {
-        targeted_msg.bin[index] = mora_protocol.payload[index];
+      for (size_t index = 0; index < CATIA_SHOOT_TARGETED_MSG_SIZE; index++) {
+        targeted_msg.bin[index] = catia_protocol.payload[index];
       }
       camera_id = targeted_msg.data.camera_id;
+      if (camera_id < 0 || camera_id > 8) {
+        fprintf(stderr, "CATIA:\tinvalid camera id %d\n", camera_id);
+        return;
+      }
+      camera_mask = camera_id == CATIA_CAMERA_ALL ? CATIA_CAMERA_MASK_ALL : 1U << (camera_id - 1);
     }
-    printf("CATIA:\tSHOT %d cam %d | lat %.7f lon %.7f | MSL %.1f m AGL %.1f m | "
+    if (masked) {
+      union dc_shot_mask_union message;
+      for (size_t index = 0; index < sizeof(message.bin); ++index) message.bin[index] = catia_protocol.payload[index];
+      camera_mask = message.data.camera_mask;
+      if (camera_mask > CATIA_CAMERA_MASK_ALL) {
+        fprintf(stderr, "CATIA:\tinvalid camera mask %" PRIu32 "\n", camera_mask);
+        return;
+      }
+    }
+    if (camera_mask == CATIA_CAMERA_MASK_NONE) return;
+    if ((camera_mask & ~CATIA_CAMERA_MASK_SUPPORTED) != 0) {
+      fprintf(stderr, "CATIA:\tunsupported camera bits 0x%02" PRIx32 "; supported cameras continue\n",
+              camera_mask & ~CATIA_CAMERA_MASK_SUPPORTED);
+    }
+    camera_mask &= CATIA_CAMERA_MASK_SUPPORTED;
+    printf("CATIA:\tSHOT %d mask 0x%02" PRIx32 " | lat %.7f lon %.7f | MSL %.1f m AGL %.1f m | "
            "roll %.1f pitch %.1f yaw %.1f deg | speed %.1f m/s course %.1f deg\n",
-           shoot->data.nr, camera_id,
+           shoot->data.nr, camera_mask,
            shoot->data.lat / 1e7,
            shoot->data.lon / 1e7,
            shoot->data.alt / 1000.0,
@@ -633,76 +855,125 @@ static void handle_received_message(void)
            shoot->data.vground / SPEED_BFP_SCALE,
            shoot->data.course / ANGLE_BFP_SCALE * RAD_TO_DEG);
 
-    bool wants_ear = camera_id == MORA_CAMERA_ALL || camera_id == MORA_CAMERA_EARCAM;
-    bool wants_optical = camera_id == MORA_CAMERA_ALL || camera_id == optical_camera_id;
+    bool wants_ear = (camera_mask & CATIA_CAMERA_MASK_EAR) != 0;
+    if (wants_ear && !earcam_active) {
+      earcam_active = ear_cam_pipe_init(NULL) == 0;
+    }
     if (wants_ear && earcam_active) {
       // Geotagging is a memory copy; do it inline so no worker slot is consumed.
       if (ear_cam_pipe_record(shoot) == 0 && debug_enabled) {
         printf("CATIA-%d DEBUG:\tearcam sample recorded\n", shoot->data.nr);
       }
-    } else if (camera_id == MORA_CAMERA_EARCAM) {
+    } else if (wants_ear) {
       fprintf(stderr, "CATIA-%d:\tearcam requested but not active\n", shoot->data.nr);
     }
-    if (wants_optical) {
-      start_shoot_worker(shoot);
-      return;
+    if ((camera_mask & (CATIA_CAMERA_MASK_CHDK | CATIA_CAMERA_MASK_AICAM | CATIA_CAMERA_MASK_LWIR)) != 0) {
+      start_shoot_worker(shoot, (uint8_t)camera_mask);
     }
-    if (camera_id != MORA_CAMERA_EARCAM) {
-      fprintf(stderr, "CATIA-%d:\tno backend for camera id %d\n", shoot->data.nr, camera_id);
-    }
-    free(shoot);
-  } else if (mora_protocol.msg_id == MORA_STOP_TARGETED) {
-    if (mora_protocol.payload_len != MORA_STOP_TARGETED_MSG_SIZE) {
-      fprintf(stderr, "CATIA:\tinvalid MORA stop payload length %u\n", mora_protocol.payload_len);
+  } else if (catia_protocol.msg_id == CATIA_STOP_TARGETED) {
+    if (catia_protocol.payload_len != CATIA_STOP_TARGETED_MSG_SIZE) {
+      fprintf(stderr, "CATIA:\tinvalid CATIA stop payload length %u\n", catia_protocol.payload_len);
       return;
     }
     int32_t camera_id = 0;
-    for (size_t index = 0; index < MORA_STOP_TARGETED_MSG_SIZE; index++) {
-      camera_id |= (int32_t)mora_protocol.payload[index] << (8 * index);
+    for (size_t index = 0; index < CATIA_STOP_TARGETED_MSG_SIZE; index++) {
+      camera_id |= (int32_t)catia_protocol.payload[index] << (8 * index);
     }
     handle_targeted_stop(camera_id);
-  } else if (mora_protocol.msg_id == MORA_BUFFER_EMPTY) {
+  } else if (catia_protocol.msg_id == CATIA_BUFFER_EMPTY) {
     send_msg_image_buffer();
   }
 }
 
-static void start_shoot_worker(union dc_shot_union *shoot)
+static int camera_prepare(int camera_id)
 {
+  enum camera_backend_type type;
+  switch (camera_id) {
+    case CATIA_CAMERA_ALL: type = CAMERA_BACKEND_UNSELECTED; break;
+    case CATIA_CAMERA_CHDK: type = CAMERA_BACKEND_CHDK; break;
+    case CATIA_CAMERA_AICAM: type = CAMERA_BACKEND_AI_CAM; break;
+    case CATIA_CAMERA_LWIRCAM: type = CAMERA_BACKEND_LWIR_CAM; break;
+    default:
+      fprintf(stderr, "CATIA:\tinvalid camera id %d\n", camera_id);
+      return -1;
+  }
+  if (!keep_running) return -1;
+  if (local_capture_only) type = CAMERA_BACKEND_LOCAL;
+  if (camera_backend_select(type, test_capture_enabled) != 0) return -1;
+  optical_camera_id = camera_id;
+  if (camera_initialized[camera_id]) return 0;
+  if (camera.init(camera_source_image) != 0) {
+    camera.deinit();
+    fprintf(stderr, "CATIA:\tunable to initialize %s for camera id %d\n", camera.name, camera_id);
+    return -1;
+  }
+  camera_initialized[camera_id] = true;
+  printf("CATIA:\tactive camera backend: %s (id %d)\n", camera.name, optical_camera_id);
+  return 0;
+}
+
+static void cameras_deinit(void)
+{
+  for (int camera_id = 0; camera_id <= CATIA_CAMERA_LWIRCAM; ++camera_id) {
+    if (!camera_initialized[camera_id]) continue;
+    enum camera_backend_type type = CAMERA_BACKEND_LOCAL;
+    if (!local_capture_only) {
+      switch (camera_id) {
+        case CATIA_CAMERA_CHDK: type = CAMERA_BACKEND_CHDK; break;
+        case CATIA_CAMERA_AICAM: type = CAMERA_BACKEND_AI_CAM; break;
+        case CATIA_CAMERA_LWIRCAM: type = CAMERA_BACKEND_LWIR_CAM; break;
+      }
+    }
+    if (camera_backend_select(type, test_capture_enabled) == 0) camera.deinit();
+    camera_initialized[camera_id] = false;
+  }
+}
+
+static void start_shoot_worker(const union dc_shot_union *shoot, uint8_t camera_mask)
+{
+  struct capture_job *job = malloc(sizeof(*job));
+  if (job == NULL) {
+    fprintf(stderr, "CATIA:\tfailed to allocate capture job\n");
+    return;
+  }
+  job->shot = *shoot;
+  job->camera_mask = camera_mask;
   pthread_mutex_lock(&mut);
   if (shooting_thread_count >= MAX_PROCESSING_THREADS) {
     pthread_mutex_unlock(&mut);
     fprintf(stderr, "CATIA-%d:\tprocessing queue is full\n", shoot->data.nr);
-    free(shoot);
+    free(job);
     return;
   }
   shooting_thread_count++;
-  pthread_mutex_unlock(&mut);
+  job->ticket = next_job_ticket;
 
   pthread_t shooting_thread;
-  int thread_result = pthread_create(&shooting_thread, NULL, handle_msg_shoot, shoot);
+  int thread_result = pthread_create(&shooting_thread, NULL, handle_msg_shoot, job);
   if (thread_result != 0) {
-    pthread_mutex_lock(&mut);
     shooting_thread_count--;
     pthread_mutex_unlock(&mut);
     fprintf(stderr, "CATIA-%d:\tfailed to start shooting thread: %s\n",
             shoot->data.nr, strerror(thread_result));
-    free(shoot);
+    free(job);
     return;
   }
+  ++next_job_ticket;
+  pthread_mutex_unlock(&mut);
   pthread_detach(shooting_thread);
   send_msg_status();
 }
 
 static void handle_targeted_stop(int32_t camera_id)
 {
-  bool keep = (camera_id & MORA_STOP_FLAG_KEEP) != 0;
+  bool keep = (camera_id & CATIA_STOP_FLAG_KEEP) != 0;
   camera_id &= 0xFF;
   printf("CATIA:\tSTOP cam %d%s\n", camera_id, keep ? " (interim)" : "");
-  if (camera_id != MORA_CAMERA_ALL && camera_id != MORA_CAMERA_EARCAM) {
+  if (camera_id != CATIA_CAMERA_ALL && camera_id != CATIA_CAMERA_EARCAM) {
     return;
   }
   if (!earcam_active) {
-    if (camera_id == MORA_CAMERA_EARCAM) {
+    if (camera_id == CATIA_CAMERA_EARCAM) {
       struct ear_loudest_spot none = {0};
       send_msg_ear_result(&none);
     }
@@ -730,7 +1001,7 @@ static void handle_targeted_stop(int32_t camera_id)
       if (image_exif_write(sound_picture, &picture_shot) == 0) {
         printf("CATIA:\tEAR sound picture %s\n", sound_picture);
         printf("Photo take %d\n", picture_shot.data.nr);
-        int soda_result = run_soda(sound_picture, &picture_shot);
+        int soda_result = run_soda(sound_picture, &picture_shot, CATIA_CAMERA_EARCAM);
         printf("CATIA-%d:\tShooting: soda return %d of image %s\n",
                picture_shot.data.nr, soda_result, sound_picture);
       } else {
@@ -755,9 +1026,9 @@ static void handle_targeted_stop(int32_t camera_id)
 
 static void send_msg_ear_result(const struct ear_loudest_spot *spot)
 {
-  union mora_ear_result_union result;
+  union catia_ear_result_union result;
   memset(&result, 0, sizeof(result));
-  result.data.status = spot->valid ? MORA_EAR_RESULT_VALID : MORA_EAR_RESULT_INVALID;
+  result.data.status = spot->valid ? CATIA_EAR_RESULT_VALID : CATIA_EAR_RESULT_INVALID;
   if (spot->valid) {
     result.data.lat = (int32_t)llround(spot->lat_deg * 1e7);
     result.data.lon = (int32_t)llround(spot->lon_deg * 1e7);
@@ -768,17 +1039,25 @@ static void send_msg_ear_result(const struct ear_loudest_spot *spot)
   }
   result.data.sample_count = (int32_t)spot->sample_count;
 
-  pthread_mutex_lock(&tx_mutex);
-  MoraHeader(MORA_EAR_RESULT, MORA_EAR_RESULT_MSG_SIZE);
-  for (size_t index = 0; index < MORA_EAR_RESULT_MSG_SIZE; index++) {
-    MoraPutUint8(result.bin[index]);
+  if (serial_tx_send(CATIA_EAR_RESULT, result.bin, sizeof(result.bin)) != 0) {
+    fprintf(stderr, "CATIA:\tEAR result UART send failed: %s\n", strerror(errno));
   }
-  MoraTrailer();
-  pthread_mutex_unlock(&tx_mutex);
 }
 
-static int run_soda(const char *filename, const union dc_shot_union *shoot)
+static int run_soda(const char *filename, const union dc_shot_union *shoot, int camera_id)
 {
+  const char *soda_application = camera_id == CATIA_CAMERA_CHDK && !test_capture_enabled ? SODA : CATIA_SODA;
+  const char *camera_option = NULL;
+  switch (camera_id) {
+    case CATIA_CAMERA_ALL: break;
+    case CATIA_CAMERA_CHDK: camera_option = "--chdkcam"; break;
+    case CATIA_CAMERA_AICAM: camera_option = "--aicam"; break;
+    case CATIA_CAMERA_LWIRCAM: camera_option = "--lwircam"; break;
+    case CATIA_CAMERA_EARCAM: camera_option = "--earcam"; break;
+    default:
+      fprintf(stderr, "CATIA:\tinvalid SODA camera id %d\n", camera_id);
+      return -1;
+  }
   char values[10][16];
   const int32_t fields[10] = {
     shoot->data.nr, shoot->data.lat, shoot->data.lon, shoot->data.alt,
@@ -793,17 +1072,21 @@ static int run_soda(const char *filename, const union dc_shot_union *shoot)
   }
 
   char *arguments[] = {
-    (char *)camera.soda_application, (char *)filename,
+    (char *)soda_application, (char *)filename,
     values[0], values[1], values[2], values[3], values[4],
-    values[5], values[6], values[7], values[8], values[9], NULL
+    values[5], values[6], values[7], values[8], values[9], NULL, NULL, NULL
   };
+  size_t argument_count = 12;
+  if (camera_option != NULL) arguments[argument_count++] = (char *)camera_option;
+  if (local_mode) arguments[argument_count++] = (char *)"--local";
+  arguments[argument_count] = NULL;
   if (debug_enabled) {
     printf("CATIA-%d DEBUG:\tstarting SODA directly: %s\n",
-           shoot->data.nr, camera.soda_application);
+           shoot->data.nr, soda_application);
   }
 
   pid_t soda_pid;
-  int spawn_result = posix_spawnp(&soda_pid, camera.soda_application, NULL, NULL,
+  int spawn_result = posix_spawnp(&soda_pid, soda_application, NULL, NULL,
                                   arguments, environ);
   if (spawn_result != 0) {
     fprintf(stderr, "CATIA-%d:\tfailed to start SODA: %s\n",
@@ -846,8 +1129,6 @@ static void release_worker_slot(void)
 
 static inline void send_msg_image_buffer(void)
 {
-  int i;
-
   // Check if image is available
   if (image_count > 0) {
     printf("CATIA:\thandle_msg_buffer: Send %d\n", image_idx);
@@ -855,19 +1136,15 @@ static inline void send_msg_image_buffer(void)
     image_idx = (MAX_IMAGE_BUFFERS + image_idx - 1) % MAX_IMAGE_BUFFERS;
     image_count--;
 
-    MoraHeader(MORA_PAYLOAD, MORA_PAYLOAD_MSG_SIZE);
-    for (i = 0; i < IMAGE_SIZE; i++) {
-      MoraPutUint8(image_buffer[image_idx][i]);
+    if (serial_tx_send(CATIA_PAYLOAD, (const uint8_t *)image_buffer[image_idx], IMAGE_SIZE) != 0) {
+      fprintf(stderr, "CATIA:\timage UART send failed: %s\n", strerror(errno));
     }
-    MoraTrailer();
   }
 }
 
 static inline void send_msg_status(void)
 {
-  int i;
-  struct mora_status_struct status_msg;
-  char *buffer = (char *) &status_msg;
+  struct catia_status_struct status_msg;
 
   pthread_mutex_lock(&mut);
   status_msg.cpu = 0;
@@ -876,15 +1153,14 @@ static inline void send_msg_status(void)
   status_msg.extra = 0;
   pthread_mutex_unlock(&mut);
 
-  MoraHeader(MORA_STATUS, MORA_STATUS_MSG_SIZE);
-  for (i = 0; i < MORA_STATUS_MSG_SIZE; i++) {
-    MoraPutUint8(buffer[i]);
+  if (serial_tx_send(CATIA_STATUS, (const uint8_t *)&status_msg, sizeof(status_msg)) != 0) {
+    fprintf(stderr, "CATIA:\tstatus UART send failed: %s\n", strerror(errno));
   }
-  MoraTrailer();
 }
 
 static void print_usage(const char *program)
 {
+  puts(CATIA_BUILD_VERSION);
   printf("Usage: %s [--serial DEVICE | --local] [--chdk | --aicam | --lwircam] [--earcam] [--test] [OPTIONS]\n", program);
   printf("  --serial DEVICE   serial endpoint (default: %s)\n", CATIA_SERIAL_DEVICE);
   printf("  --local           create local serial bridge %s <-> %s\n",
@@ -898,9 +1174,16 @@ static void print_usage(const char *program)
   printf("  --test            process a mock image for any camera backend\n");
   printf("                    randomly selects testphotos/*.jpg beside this executable\n");
   printf("  --mocktransform   transform test image using shot roll, pitch, and yaw\n");
-  printf("  --debug           show serial, MORA frame, trigger, and capture diagnostics\n");
+  printf("  --debug           show serial, CATIA frame, trigger, and capture diagnostics\n");
   printf("  --mock-image FILE image used by local or test capture (default: %s)\n", CATIA_MOCK_IMAGE);
+  printf("  --pose-log DIR    record flight pose samples as CSV in DIR (default: off)\n");
+  printf("  --clock-align     send clock probes to bound FC-to-MORA time offset (default: off)\n");
+  printf("  --lwir-calibration FILE  camera YAML used to turn LWIR hotspots into coordinates\n");
+  printf("  --lwir-raw        keep the full sensor frame as photos/lNNNNNN.jpg.raw instead of\n");
+  printf("                    storing the temperatures inside the JPEG\n");
+  printf("  --lwir-motion-compensation  advance LWIR GPS over the measured capture delay\n");
   printf("  --help            show this help\n");
+  printf("  --version         show application version and build Git revision\n");
 }
 
 static int camera_backend_select(enum camera_backend_type type, bool test_mode)
@@ -913,18 +1196,18 @@ static int camera_backend_select(enum camera_backend_type type, bool test_mode)
       break;
     case CAMERA_BACKEND_LOCAL:
       camera = (struct camera_backend) {
-        "local", local_pipe_init, local_pipe_shoot, local_pipe_deinit, CATIA_LOCAL_SODA
+        "local", local_pipe_init, local_pipe_shoot, local_pipe_deinit, CATIA_SODA
       };
       break;
     case CAMERA_BACKEND_AI_CAM:
       camera = (struct camera_backend) {
-        "aicam", ai_cam_pipe_init, ai_cam_pipe_shoot, ai_cam_pipe_deinit, CATIA_LOCAL_SODA
+        "aicam", ai_cam_pipe_init, ai_cam_pipe_shoot, ai_cam_pipe_deinit, CATIA_SODA
       };
       break;
     case CAMERA_BACKEND_LWIR_CAM:
       camera = (struct camera_backend) {
         "lwircam", lwir_cam_pipe_init, lwir_cam_pipe_shoot,
-        lwir_cam_pipe_deinit, CATIA_LOCAL_SODA
+        lwir_cam_pipe_deinit, CATIA_SODA
       };
       break;
     case CAMERA_BACKEND_UNSELECTED:
@@ -936,7 +1219,7 @@ static int camera_backend_select(enum camera_backend_type type, bool test_mode)
     camera.init = local_pipe_test_init;
     camera.shoot = local_pipe_shoot;
     camera.deinit = local_pipe_deinit;
-    camera.soda_application = CATIA_LOCAL_SODA;
+    camera.soda_application = CATIA_SODA;
   }
   return 0;
 }
@@ -957,8 +1240,7 @@ static int chdk_backend_init(const char *source_image)
             CATIA_CHDK_PHOTO_DIR);
     return -1;
   }
-  chdk_pipe_init();
-  return 0;
+  return chdk_pipe_init();
 }
 
 static int chdk_backend_shoot(char *filename, size_t filename_size, int image_number)

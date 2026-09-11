@@ -19,7 +19,7 @@ digraph earcam_dataflow {
   mic [label="earcam --server\nUSB microphone\n48 kHz, 1.8-3.2 kHz band", fillcolor="#7c2d12", color="#fb923c"];
 
   subgraph cluster_mora {
-    label="MORA  (CATIA)"; fontsize=21; color="#34d399";
+    label="CATIA service on MORA"; fontsize=21; color="#34d399";
     fillcolor="#0b1728"; style="rounded,filled"; margin=24;
     newest [label="newest 50 ms window\nlevel  trend  contrast  clip", fillcolor="#047857"];
     fuse   [label="position + newest window\n= one geotagged sample", fillcolor="#047857"];

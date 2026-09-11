@@ -1,4 +1,6 @@
 #include "image_exif.h"
+#include "boot_id.h"
+#include "motion_compensation.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -147,8 +149,17 @@ static uint32_t scaled_unsigned(double value, double scale)
   return scaled >= UINT32_MAX ? UINT32_MAX : (uint32_t)llround(scaled);
 }
 
-static int add_shot_tags(ExifData *exif, const union dc_shot_union *shot)
+static int add_shot_tags(ExifData *exif, const union dc_shot_union *original, double delay, int compensate,
+                         const struct capture_timing *timing)
 {
+  union dc_shot_union adjusted = *original;
+  int32_t latitude = original->data.lat;
+  int32_t longitude = original->data.lon;
+  const int applied = compensate && compensate_ground_position(&latitude, &longitude,
+      original->data.vground / SPEED_BFP_SCALE, original->data.course / ANGLE_BFP_SCALE, delay);
+  adjusted.data.lat = latitude;
+  adjusted.data.lon = longitude;
+  const union dc_shot_union *shot = &adjusted;
   ExifEntry *version = replace_tag(exif, EXIF_IFD_GPS, EXIF_TAG_GPS_VERSION_ID, EXIF_FORMAT_BYTE, 4);
   if (version == NULL) {
     return -1;
@@ -190,7 +201,7 @@ static int add_shot_tags(ExifData *exif, const union dc_shot_union *shot)
     return -1;
   }
 
-  char comment[768];
+  char comment[1536];
   int comment_length = snprintf(comment, sizeof(comment),
                                 "Paparazzi CATIA MORA; nr=%" PRId32 "; lat_e7deg=%" PRId32
                                 "; lon_e7deg=%" PRId32 "; alt_mm=%" PRId32
@@ -210,6 +221,35 @@ static int add_shot_tags(ExifData *exif, const union dc_shot_union *shot)
                                 speed_m_s, course_deg, shot->data.groundalt / POSITION_BFP_SCALE);
   if (comment_length < 0 || (size_t)comment_length >= sizeof(comment)) {
     return -1;
+  }
+  if (isfinite(delay) && delay >= 0) {
+    int extra = snprintf(comment + comment_length, sizeof(comment) - (size_t)comment_length,
+        "; original_lat_deg=%.7f; original_lon_deg=%.7f; request_to_frame_arrival_s=%.9f"
+        "; position_compensation=%s; timing_reference=%s"
+        "; exposure_latency_known=false; attitude_compensated=false; altitude_compensated=false",
+        original->data.lat / 1e7, original->data.lon / 1e7, delay,
+        applied ? "constant_ground_velocity_estimate" : "not_applied",
+        capture_timing_valid(timing) && timing->callback_arrival ? "server_request_to_callback" : "server_request_to_uvc_return");
+    if (extra < 0 || (size_t)extra >= sizeof(comment) - (size_t)comment_length) return -1;
+    comment_length += extra;
+  }
+  if (capture_timing_valid(timing)) {
+    char boot_id[37];
+    catia_boot_id(boot_id);
+    int extra = snprintf(comment + comment_length, sizeof(comment) - (size_t)comment_length,
+        "; mora_boot_id=%s; camera_request_monotonic_us=%" PRIu64
+        "; frame_arrival_monotonic_us=%" PRIu64 "; capture_time_kind=%s",
+        boot_id, timing->request_monotonic_us, timing->arrival_monotonic_us,
+        timing->callback_arrival ? "sdk_callback_not_exposure" : "uvc_return_not_exposure");
+    if (extra < 0 || (size_t)extra >= sizeof(comment) - (size_t)comment_length) return -1;
+    comment_length += extra;
+      if (timing->callback_arrival) {
+        extra = snprintf(comment + comment_length, sizeof(comment) - (size_t)comment_length,
+          "; callback_sequence=%" PRIu64 "; callback_drops=%" PRIu64,
+          timing->callback_sequence, timing->callback_drops);
+        if (extra < 0 || (size_t)extra >= sizeof(comment) - (size_t)comment_length) return -1;
+        comment_length += extra;
+      }
   }
   if (set_ascii_tag(exif, EXIF_IFD_0, EXIF_TAG_IMAGE_DESCRIPTION, comment) != 0
       || set_ascii_tag(exif, EXIF_IFD_0, EXIF_TAG_SOFTWARE, "Paparazzi CATIA") != 0) {
@@ -371,7 +411,48 @@ static int rewrite_jpeg(FILE *input, FILE *output, const unsigned char *exif_dat
   }
 }
 
+static int save_exif(const char *filename, ExifData *exif);
+
+int image_exif_write_hotspots(const char *filename, const char *information)
+{
+  if (filename == NULL || information == NULL || strlen(information) > 8192) return -1;
+  ExifData *exif = exif_data_new_from_file(filename);
+  if (exif == NULL) return -1;
+  ExifEntry *description = exif_content_get_entry(exif->ifd[EXIF_IFD_0], EXIF_TAG_IMAGE_DESCRIPTION);
+  if (description == NULL || description->format != EXIF_FORMAT_ASCII || description->size > 8192) {
+    exif_data_unref(exif);
+    return -1;
+  }
+  size_t description_length = strnlen((const char *)description->data, description->size);
+  const char separator[] = "\nLWIR_HOTSPOTS_V1\n";
+  size_t length = ASCII_COMMENT_PREFIX_SIZE + description_length + strlen(separator) + strlen(information) + 1;
+  ExifEntry *entry = replace_tag(exif, EXIF_IFD_EXIF, EXIF_TAG_USER_COMMENT, EXIF_FORMAT_UNDEFINED, length);
+  if (entry == NULL) {
+    exif_data_unref(exif);
+    return -1;
+  }
+  const unsigned char prefix[8] = {'A', 'S', 'C', 'I', 'I', 0, 0, 0};
+  size_t offset = 0;
+  for (size_t index = 0; index < sizeof(prefix); ++index) entry->data[offset++] = prefix[index];
+  for (size_t index = 0; index < description_length; ++index) entry->data[offset++] = description->data[index];
+  for (size_t index = 0; index < strlen(separator); ++index) entry->data[offset++] = (unsigned char)separator[index];
+  for (size_t index = 0; index < strlen(information); ++index) entry->data[offset++] = (unsigned char)information[index];
+  return save_exif(filename, exif);
+}
+
 int image_exif_write(const char *filename, const union dc_shot_union *shot)
+{
+  return image_exif_write_timed(filename, shot, -1, 0);
+}
+
+int image_exif_write_timed(const char *filename, const union dc_shot_union *shot,
+                           double capture_delay_s, int compensate)
+{
+  return image_exif_write_capture(filename, shot, capture_delay_s, compensate, NULL);
+}
+
+int image_exif_write_capture(const char *filename, const union dc_shot_union *shot,
+                             double capture_delay_s, int compensate, const struct capture_timing *timing)
 {
   if (filename == NULL || shot == NULL) {
     errno = EINVAL;
@@ -392,12 +473,20 @@ int image_exif_write(const char *filename, const union dc_shot_union *shot)
   exif_data_set_data_type(exif, EXIF_DATA_TYPE_COMPRESSED);
   exif_data_set_byte_order(exif, byte_order);
   exif_data_fix(exif);
-  if (add_shot_tags(exif, shot) != 0) {
+  if (capture_timing_valid(timing)) {
+    capture_delay_s = (timing->arrival_monotonic_us - timing->request_monotonic_us) / 1e6;
+  }
+  if (add_shot_tags(exif, shot, capture_delay_s, compensate, timing) != 0) {
     fprintf(stderr, "EXIF:\tfailed to create shot metadata for %s\n", filename);
     exif_data_unref(exif);
     return -1;
   }
 
+  return save_exif(filename, exif);
+}
+
+static int save_exif(const char *filename, ExifData *exif)
+{
   unsigned char *exif_data = NULL;
   unsigned int exif_size = 0;
   exif_data_save_data(exif, &exif_data, &exif_size);

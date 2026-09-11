@@ -77,7 +77,7 @@ nav a {
   text-decoration: none;
 }
 nav a:hover { border-color: var(--cyan); color: var(--cyan); background: white; }
-main { min-width: 0; }
+main { min-width: 0; overflow-wrap: anywhere; }
 main > h1 { display: none; }
 h1, h2, h3 { line-height: 1.18; letter-spacing: 0; }
 h2 {
@@ -440,7 +440,7 @@ acoustic left to do on the aircraft after this point; everything else is
 geometry and statistics.</p>
 <h2 id="geotagging-attaching-a-place-to-every-reading">Geotagging: attaching a place to every reading</h2>
 <p>The Paparazzi autopilot treats EARcam like a camera. During a search it sends a
-"targeted shoot" message to the MORA computer every 100 ms containing the
+"targeted shoot" message to CATIA on the MORA computer every 100 ms containing the
 aircraft's latitude, longitude, altitude, height above ground, heading, roll
 and pitch, exactly as it would for a photo. CATIA pairs each message with the
 newest microphone reading and stores the pair. Up to 16 384 such samples fit
@@ -473,7 +473,7 @@ safe and getting the flat top problem under control.</p>
 alarm is heard at all and to get a first estimate that is good to within a few
 tens of metres. The survey stops as soon as the polygon has been swept once.</p>
 <h3 id="star-refinement">Star refinement</h3>
-<p>The autopilot asks MORA for an interim result while the microphone keeps
+<p>The autopilot asks CATIA for an interim result while the microphone keeps
 listening. It then lays out a star of four straight legs, each 100 m long,
 all passing through the estimated spot, at 40 m above ground. Each leg
 crosses the loudness hill from a different direction, so the across-track
@@ -488,14 +488,14 @@ aircraft on the straight legs when it matters and avoids wasted S-turns.</p>
 flown around the new estimate, at most three times. The star can be started by
 hand from the ground station as well.</p>
 <h3 id="going-to-the-spot">Going to the spot</h3>
-<p>Listening is stopped, MORA computes the final answer from every sample and
+<p>Listening is stopped, CATIA computes the final answer from every sample and
 renders the sound picture. The autopilot moves the <code>DROP</code> waypoint to the
 result and places a run-in waypoint three turn radii before it, aligned with
 the last leg, so the drop approach is a stable straight line. If nothing was
 heard, the survey is flown once more; if it still fails, the aircraft goes to
 standby instead of dropping blindly.</p>
 <h2 id="turning-readings-into-one-position">Turning readings into one position</h2>
-<p>This is what happens inside MORA each time the autopilot asks for a result.
+<p>This is what happens inside CATIA on MORA each time the autopilot asks for a result.
 Every step exists to defeat a specific way in which real data misleads.</p>
 <h3 id="step-1-gate-the-samples">Step 1: gate the samples</h3>
 <p>Samples are thrown out if the microphone reported clipping, if the level was
@@ -559,13 +559,13 @@ built from three parts:</p>
 <p>The confidence is informative; the autopilot's decision to accept a result is
 based on it being valid and on the star iterations converging.</p>
 <h3 id="step-7-the-answer">Step 7: the answer</h3>
-<p>MORA replies with latitude, longitude, the ground altitude under the spot, the
+<p>CATIA replies with latitude, longitude, the ground altitude under the spot, the
 median height above ground of the loudest samples, the peak level, the
 confidence and the number of samples used. The autopilot keeps the last valid
 answer if a later request returns invalid, so a moment of silence at the wrong
 time cannot erase a good result.</p>
 <h2 id="the-sound-picture">The sound picture</h2>
-<p>Besides the position, MORA renders a JPEG "sound picture" so a human can judge
+<p>Besides the position, CATIA renders a JPEG "sound picture" so a human can judge
 the result at a glance and so the image can flow through the same photo
 pipeline as an ordinary camera picture (EXIF geotag, SODA analysis).</p>
 <p><img alt="Example sound picture from the simulator" src="earcam-sound-picture-example.jpg"></p>

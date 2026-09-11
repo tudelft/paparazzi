@@ -136,10 +136,10 @@
         <!-- Installed pitot port order produces negative raw pressure for forward airflow. -->
         <define name="SDP3X_DYNAMIC_PRESSURE_SWAPPED" value="TRUE"/>
         <!-- <define name="USE_AIRSPEED_LOWPASS_FILTER" value="FALSE"/> --><!-- TRUE per default -->
-        <!-- Filter pressure at about 1 Hz; the published airspeed remains in m/s. -->
-        <define name="SDP3X_LOWPASS_TAU" value="0.15"/><!-- 0.15 is the default, but consider upto 0.10 if logs show noticeable airspeed-control lag-->
+        <!-- ~0.3 Hz: flight 3 log showed 0.97 m/s HF airspeed noise and no control lag at 0.15 (1 Hz). -->
+        <define name="SDP3X_LOWPASS_TAU" value="0.5"/>
         <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
-        <!-- <define name="USE_AIRSPEED" value="TRUE"/> --><!-- automaticaly set with one above -->
+        <define name="USE_AIRSPEED" value="TRUE"/><!-- autotune: state airspeed was 0 in flight, ETECS flew blind -->
         <!--<define name="SDP3X_SYNC_SEND" value="TRUE"/>--><!-- Disable after debugging; sends unfiltered samples at 100 Hz. -->
       </module>
 
@@ -164,6 +164,7 @@
         <configure name="SBUS_PORT" value="UART2"/>
         <define name="RADIO_HATCH" value="RADIO_AUX2"/>
         <define name="RADIO_MANUALRELEASE" value="RADIO_AUX2"/>
+        <define name="RADIO_SHUTTER" value="RADIO_AUX2"/>
         <define name="RADIO_BRAKE" value="RADIO_AUX4"/>
       </module>
 
@@ -328,7 +329,10 @@
 
     <!-- *** Modules used for all targets, also simulation -->
 
-    <module name="actuators" type="pwm"/>
+    <module name="actuators" type="pwm">
+      <!-- <define name="SERVO_HZ" value="330"/> -->
+    </module>
+
     <module name="air_data"/>
     <module name="control" type="energyadaptive"/>
 
@@ -495,7 +499,7 @@
   </rc_commands>
 
   <auto_rc_commands>
-    <set command="YAW" value="@YAW*0.9"/><!-- can be disabled after all tuning-->
+    <!-- autotune: RC yaw passthrough removed, COMMAND_YAW is owned by the yaw loop -->
     <!-- To determine best pitch for flare in auto2 one can add Pitch command temporary while landing-->
     <!--WARNING only enable if you know why <set command="PITCH" value="@PITCH"/>-->
   </auto_rc_commands>
@@ -543,13 +547,14 @@
   <!-- *** End actuation related settings -->
 
   <section name="AUTO1" prefix="AUTO1_">
-    <define name="MAX_ROLL" value="45" unit="deg"/>
+    <define name="MAX_YAW_RATE" value="60" unit="deg/s"/><!-- autotune: deg/s full rudder stick in AUTO1 with the yaw loop -->
+    <define name="MAX_ROLL" value="40" unit="deg"/>
     <define name="MAX_PITCH" value="35" unit="deg"/>
   </section>
 
   <section name="TRIM" prefix="COMMAND_">
-    <define name="ROLL_TRIM" value="0.0"/>
-    <define name="PITCH_TRIM" value="0.0"/>
+    <define name="ROLL_TRIM" value="-350"/>
+    <define name="PITCH_TRIM" value="960"/>
   </section>
 
   <section name="IMU" prefix="IMU_">
@@ -563,14 +568,17 @@
     <define name="MAG_Z_NEUTRAL" value="0"/>
 
     <define name="BODY_TO_IMU_PHI" value="0.0" unit="rad"/>
-    <define name="BODY_TO_IMU_THETA" value="0.12" unit="rad"/>
+    <define name="BODY_TO_IMU_THETA" value="0.16" unit="rad"/>
     <define name="BODY_TO_IMU_PSI" value="0.0" unit="rad"/>
 
   </section> 
 
   <section name="AIR_DATA" prefix="AIR_DATA_">
     <define name="CALC_AIRSPEED" value="TRUE"/>
-    <define name="CALC_TAS_FACTOR" value="FALSE"/>
+    <define name="CALC_TAS_FACTOR" value="TRUE"/>
+    <!-- No OAT sensor: SDP33 die is heated by design, DPS310 reads FC-board temperature.
+         Unbinding TEMPERATURE makes air_data fall back to ISA at baro AMSL (~1% TAS error). -->
+    <define name="TEMPERATURE_ID" value="ABI_DISABLE"/>
     <define name="CALC_AMSL_BARO" value="TRUE"/>
   </section>
 
@@ -631,15 +639,21 @@
   </section>
 
   <section name="HORIZONTAL CONTROL" prefix="H_CTL_">
+    <!-- autotune: coordinated-turn yaw loop (rudder = YAW_DGAIN*(g/V*sin(roll_sp) - r)).
+         Replaces the command-law roll->rudder mixer, which was sign-inverted in AUTO. -->
+    <define name="YAW_LOOP" value="TRUE"/>
+    <define name="YAW_DGAIN" value="5000."/>
+    <define name="YAW_TRIM_NY" value="FALSE"/>
+    <define name="YAW_NY_IGAIN" value="0."/>
     <define name="COURSE_PGAIN" value="0.9"/>
-    <define name="COURSE_DGAIN" value="0.05"/>
+    <define name="COURSE_DGAIN" value="0.0"/>
     <define name="COURSE_TAU" value="0.7"/>
     <define name="COURSE_PRE_BANK_CORRECTION" value="0.99"/>
 
-    <define name="ROLL_MAX_SETPOINT" value="45" unit="deg"/>
+    <define name="ROLL_MAX_SETPOINT" value="40" unit="deg"/>
     <!-- max climb path is ~24 deg; ETECS bounds its pitch to these -->
     <define name="PITCH_MAX_SETPOINT" value="30" unit="deg"/>
-    <define name="PITCH_MIN_SETPOINT" value="-25" unit="deg"/>
+    <define name="PITCH_MIN_SETPOINT" value="-20" unit="deg"/>
 
     <define name="PITCH_PGAIN" value="6000"/>
     <define name="PITCH_DGAIN" value="80"/>
@@ -698,38 +712,38 @@
     <define name="ALTITUDE_ACCEL_CAPTURE" value="0.8" unit="m/s2"/>
     <!-- max climb: 4.3 m/s available at full throttle; 2.0 keeps climbs
          gentle and leaves the speed loop plenty of throttle authority -->
-    <define name="ALTITUDE_MAX_CLIMB" value="2.0" unit="m/s"/>
+    <define name="ALTITUDE_MAX_CLIMB" value="1.1" unit="m/s"/>
     <!-- climb-setpoint acceleration limit (was hardcoded 2 m/s2 upstream):
          4 lets the altitude feedback catch the turn-entry dip and unwind
          before it balloons, without overshooting the correction -->
     <define name="ALTITUDE_MAX_CLIMB_DOT" value="4.0" unit="m/s2"/>
     <!-- max level acceleration: (T-D)/W ~ 0.44 g at 10 m/s; bound below it -->
-    <define name="MAX_ACCELERATION" value="0.35" unit="G"/>
+    <define name="MAX_ACCELERATION" value="0.15" unit="G"/>
     <!-- measured best glide (used for pitch-down when throttle is killed) -->
-    <define name="GLIDE_RATIO" value="9."/>
+    <define name="GLIDE_RATIO" value="3.4"/>
 
     <!-- ETECS operating point (adaptive: these are initial values)
          cruise 12 m/s: throttle 28 %, pitch ~ alpha = 3.5 deg = 0.06 rad -->
-    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.28" unit="%"/>
-    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.06" unit="rad"/>
+    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.83" unit="%"/>
+    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.096" unit="rad"/>
 
     <!-- feedforwards, from the model:
          throttle per climb rate: (1.00-0.28)/4.3 m/s = 0.17 /(m/s)
          pitch per climb rate: gamma = Vz/V = 1/11.5 = 0.085 rad/(m/s) -->
-    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.17" unit="%/(m/s)"/>
-    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.085" unit="rad/(m/s)"/>
+    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.1" unit="%/(m/s)"/>
+    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.047" unit="rad/(m/s)"/>
 
     <!-- speed error to desired acceleration: 0.2 -> 5 m/s error = 0.1 g -->
     <define name="AIRSPEED_PGAIN" value="0.20"/>
 
     <!-- throttle of airspeed: cruise throttle slope measured ~0.06 /(m/s) -->
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.06" unit="%/(m/s)"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.033" unit="%/(m/s)"/>
     <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.01"/>
     <!-- pitch of airspeed: converts overspeed into climb (in turns the
          energy tends to sit in speed while altitude sags: 0.03 trades it
          back to height promptly) -->
     <define name="AUTO_PITCH_OF_AIRSPEED_PGAIN" value="0.03"/>
-    <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.004"/>
+    <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.001"/>
     <define name="AUTO_PITCH_OF_AIRSPEED_DGAIN" value="0.03"/>
 
     <!-- total energy (throttle) / energy distribution (pitch) loops
@@ -739,7 +753,7 @@
     <define name="ENERGY_TOT_PGAIN" value="0.45"/>
     <define name="ENERGY_TOT_IGAIN" value="0.20"/>
     <define name="ENERGY_DIFF_PGAIN" value="0.60"/>
-    <define name="ENERGY_DIFF_IGAIN" value="0.10"/>
+    <define name="ENERGY_DIFF_IGAIN" value="0.02"/>
 
     <!-- bank-angle energy feedforward, lead/washout structure driven by
          the COMMANDED roll setpoint (see energy_ctrl.c):
@@ -770,7 +784,7 @@
 
     <!-- envelope for the airspeed setpoint (GCS-adjustable):
          floor is auto-bounded by ETECS at 1.23 * STALL_AIRSPEED = 8.2 m/s -->
-    <define name="AUTO_AIRSPEED_SETPOINT" value="12.0" unit="m/s"/>
+    <define name="AUTO_AIRSPEED_SETPOINT" value="9" unit="m/s"/>
     <define name="AIRSPEED_MAX" value="16.0" unit="m/s"/>
     <define name="AIRSPEED_MIN" value="8.0" unit="m/s"/>
   </section>
@@ -820,10 +834,10 @@
   <section name="MISC">
     <!-- All from the validated JSBSim model with 2 blade 5x5 pusher prop -->
     <define name="MINIMUM_AIRSPEED" value="8.0" unit="m/s"/>  <!-- 1.23 x stall -->
-    <define name="NOMINAL_AIRSPEED" value="12.0" unit="m/s"/> <!-- ~30% throttle -->
+    <define name="NOMINAL_AIRSPEED" value="9" unit="m/s"/> <!-- ~30% throttle -->
     <define name="MAXIMUM_AIRSPEED" value="15.0" unit="m/s"/> <!-- Vmax level is 16 -->
     <define name="CLIMB_AIRSPEED" value="9.0" unit="m/s"/>   <!-- best climb, 4.3 m/s avail -->
-    <define name="TRACKING_AIRSPEED" value="13.0" unit="m/s"/>
+    <define name="TRACKING_AIRSPEED" value="10" unit="m/s"/>
     <define name="GLIDE_AIRSPEED" value="10.0" unit="m/s"/>   <!-- best L/D ~9 -->
     <define name="STALL_AIRSPEED" value="6.7" unit="m/s"/>    <!-- 1g, power off -->
     <define name="RACE_AIRSPEED" value="15.0" unit="m/s"/>
@@ -842,10 +856,10 @@
 
     <define name="KILL_MODE_DISTANCE" value="MAX_DIST_FROM_HOME*1.1+HOME_RADIUS" unit="m"/>
     <!-- circle radius sized for <=30 deg bank at 12 m/s: R = V^2/(g tan30) = 25 m -->
-    <define name="DEFAULT_CIRCLE_RADIUS" value="30.0" unit="m"/>
+    <define name="DEFAULT_CIRCLE_RADIUS" value="40" unit="m"/>
     <define name="HOME_RADIUS" value="DEFAULT_CIRCLE_RADIUS" unit="m"/>
-    <define name="LANDING_CIRCLE_RADIUS" value="25.0" unit="m"/>
-    <define name="MIN_CIRCLE_RADIUS" value="25.0" unit="m"/>
+    <define name="LANDING_CIRCLE_RADIUS" value="40" unit="m"/>
+    <define name="MIN_CIRCLE_RADIUS" value="40" unit="m"/>
 
     <define name="CARROT" value="4.0" unit="s"/><!-- Optimum for DEFAULT_CIRCLE_RADIUS radius of 30m -->
 

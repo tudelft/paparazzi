@@ -28,13 +28,29 @@
 #include "tfmini.h"
 #include "state.h"
 
+#if USE_LIDAR_CORRECTION
+#include "modules/lidar/slam/lidar_correction.h"
+#else
+#include "nps_fdm.h"
+#endif
+
 // Messages
 #include "pprzlink/messages.h"
 #include "modules/datalink/downlink.h"
 #include "modules/core/abi.h"
 
+#ifndef LIDAR_MIN_RANGE
 #define LIDAR_MIN_RANGE 0.1
+#endif
+#ifndef LIDAR_MAX_RANGE
 #define LIDAR_MAX_RANGE 12.0
+#endif
+#ifndef USE_TFMINI_AGL
+#define USE_TFMINI_AGL true
+#endif
+#ifndef USE_LIDAR_CORRECTION
+#define USE_LIDAR_CORRECTION 0
+#endif
 
 struct TFMini tfmini;
 
@@ -64,6 +80,7 @@ void tfmini_init(void)
 {
   tfmini.distance = 0;
   tfmini.device = &((TFMINI_PORT).device);
+  tfmini.update_agl = USE_TFMINI_AGL && !USE_LIDAR_CORRECTION;
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_LIDAR, tfmini_send_lidar);
@@ -78,9 +95,9 @@ void tfmini_event(void)
 
 
 
-// If you want to use the lidar simulation, you need to use the lidar correction module
 void sim_overwrite_lidar(void)
 {
+#if USE_LIDAR_CORRECTION
   if (!stateIsLocalCoordinateValid()) { return; }
 
   // Convert GPS position to NED coordinates
@@ -113,6 +130,9 @@ void sim_overwrite_lidar(void)
 
   // Store that data in the variable tfmini.distance
   setLidarDistance_f(min_distance);
+#else
+  setLidarDistance_f((float)fdm.agl);
+#endif
 }
 
 
@@ -122,7 +142,7 @@ void sim_overwrite_lidar(void)
  */
 void setLidarDistance_f(float distance)
 {
-  if (distance < LIDAR_MIN_RANGE || distance > LIDAR_MAX_RANGE) {
+  if (!isfinite(distance) || distance < LIDAR_MIN_RANGE || distance > LIDAR_MAX_RANGE) {
     distance = 0;
   }
   tfmini.distance = distance;
@@ -130,10 +150,13 @@ void setLidarDistance_f(float distance)
 }
 
 
-// Send the lidar message (if requested, OBSTACLE_DETECTION)
 void tfmini_send_abi(void)
 {
-#ifndef USE_SERVO_LIDAR
+  if (tfmini.update_agl && tfmini.distance > 0) {
+    uint32_t now_ts = get_sys_time_usec();
+    AbiSendMsgAGL(AGL_LIDAR_TFMINI_ID, now_ts, tfmini.distance);
+  }
+#if USE_LIDAR_CORRECTION && !defined(USE_SERVO_LIDAR)
   //send message (if there is not servo module)
   AbiSendMsgOBSTACLE_DETECTION(AGL_LIDAR_TFMINI_ID, tfmini.distance, 0, 0);
 #endif

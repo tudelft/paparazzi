@@ -1,0 +1,11 @@
+digraph calibration {
+  graph [rankdir=TB, bgcolor="#f4f8fa", pad="0.4", nodesep="0.3", ranksep="0.35", fontname="DejaVu Sans"];
+  node [shape=box, style="rounded,filled", fillcolor="white", color="#bacbd3", fontname="DejaVu Sans", fontsize=17, margin="0.25,0.18", width=5.5];
+  edge [color="#007f8b", penwidth=2, arrowsize=0.7];
+  target [label="01  MAKE THE TARGET\nFlat board, sharp thermal corners", fillcolor="#e1f3f0"];
+  lens [label="02  MEASURE THE LENS\nVaried views + independent check set"];
+  mount [label="03  ALIGN TO THE AIRCRAFT\nLevel reference + confirmed corner order"];
+  check [label="04  CHECK KNOWN DISTANCES\nStationary first, then moving-flight timing", fillcolor="#fff0d6"];
+  archive [label="KEEP THE EVIDENCE\nPhotos, overlays, YAML and measured errors", fillcolor="#e1f3f0"];
+  target -> lens -> mount -> check -> archive;
+}

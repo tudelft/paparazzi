@@ -2,7 +2,7 @@
 
 #include "protocol.h"
 
-uint8_t mora_ck_a, mora_ck_b;
+uint8_t catia_ck_a, catia_ck_b;
 
 
 /** Receiving pprz messages */
@@ -15,9 +15,9 @@ uint8_t mora_ck_a, mora_ck_b;
 #define GOT_PAYLOAD 4
 #define GOT_CRC1    5
 
-struct mora_transport mora_protocol;
+struct catia_transport catia_protocol;
 
-void parse_mora(struct mora_transport *t, uint8_t c)
+void parse_catia(struct catia_transport *t, uint8_t c)
 {
 //printf("%02X %d %d\n",c, t->status, t->error);
 

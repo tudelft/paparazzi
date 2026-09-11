@@ -8,6 +8,7 @@
 #include <poll.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 #include <signal.h>
@@ -19,13 +20,16 @@
 #define READ 0
 #define WRITE 1
 #define MAX_FILENAME 255
-#define SHELL "/root/develop/allthings_obc2014/src/popcorn/popcorn.sh"
+#ifndef CATIA_CHDK_COMMAND
+#define CATIA_CHDK_COMMAND "/root/develop/allthings_obc2014/src/popcorn/popcorn.sh"
+#endif
 
 
 const char *setup =
   "lua props=require(\"propcase\");print(\"SetupScript\");set_prop(props.ISO_MODE,3200);set_prop(props.FLASH_MODE,2);set_prop(props.RESOLUTION,0);set_prop(props.DATE_STAMP,0);set_prop(props.AF_ASSIST_BEAM,0);set_prop(props.QUALITY,0);print(\"Ready\");\n";
 
-static int fo, fi;
+static int fo = -1, fi = -1;
+static pid_t camera_pid = -1;
 static int write_command(const char *command, size_t length);
 static int make_deadline(struct timespec *deadline, int timeout_seconds);
 static int milliseconds_until(const struct timespec *deadline);
@@ -55,19 +59,24 @@ static pid_t popen2(const char *command, int *infp, int *outfp);
 /**
  * Initialize the CHDK pipe
  */
-void chdk_pipe_init(void)
+int chdk_pipe_init(void)
 {
-  /* Check if SHELL is started */
-  if (popen2(SHELL, &fi, &fo) <= 0) {
-    perror("Can't start SHELL");
-    exit(1);
+  chdk_pipe_deinit();
+  if (access(CATIA_CHDK_COMMAND, X_OK) != 0) {
+    fprintf(stderr, "CHDK_PIPE:\tcamera command unavailable: %s\n", CATIA_CHDK_COMMAND);
+    return -1;
   }
-  wait_for_cmd(10);
+  camera_pid = popen2(CATIA_CHDK_COMMAND, &fi, &fo);
+  if (camera_pid <= 0 || wait_for_cmd(10) != 0) {
+    chdk_pipe_deinit();
+    return -1;
+  }
 
   /* Connect to the camera */
   if (write_command("connect\n", sizeof("connect\n") - 1) != 0 || wait_for_cmd(10) != 0) {
     fprintf(stderr, "CHDK_PIPE:\tfailed to connect to camera\n");
-    exit(1);
+    chdk_pipe_deinit();
+    return -1;
   }
 
   /* Kill all running scripts */
@@ -77,14 +86,17 @@ void chdk_pipe_init(void)
   /* Start recording mode */
   if (write_command("rec\n", sizeof("rec\n") - 1) != 0 || wait_for_cmd(10) != 0) {
     fprintf(stderr, "CHDK_PIPE:\tfailed to enter record mode\n");
-    exit(1);
+    chdk_pipe_deinit();
+    return -1;
   }
 
   /* Start rsint mode */
   if (write_command(setup, strlen(setup)) != 0 || wait_for_cmd(10) != 0) {
     fprintf(stderr, "CHDK_PIPE:\tfailed to configure camera\n");
-    exit(1);
+    chdk_pipe_deinit();
+    return -1;
   }
+  return 0;
 }
 
 /**
@@ -92,14 +104,14 @@ void chdk_pipe_init(void)
  */
 void chdk_pipe_deinit(void)
 {
-  /* Stop rsint mode */
-  //write(fi, "q\n", 2);
-  //wait_for_cmd(10);
-
-  /* Quit SHELL */
-  if (write_command("quit\n", sizeof("quit\n") - 1) != 0) {
-    fprintf(stderr, "CHDK_PIPE:\tfailed to stop camera shell\n");
+  if (camera_pid > 0) {
+    kill(camera_pid, SIGKILL);
+    while (waitpid(camera_pid, NULL, 0) < 0 && errno == EINTR) {}
+    camera_pid = -1;
   }
+  if (fi >= 0) close(fi);
+  if (fo >= 0) close(fo);
+  fi = fo = -1;
 }
 
 /**
@@ -228,25 +240,45 @@ static pid_t popen2(const char *command, int *infp, int *outfp)
   int p_stdin[2], p_stdout[2];
   pid_t pid;
 
-  if (pipe(p_stdin) != 0 || pipe(p_stdout) != 0) {
+  if (pipe(p_stdin) != 0) {
+    return -1;
+  }
+  if (pipe(p_stdout) != 0) {
+    close(p_stdin[READ]);
+    close(p_stdin[WRITE]);
+    return -1;
+  }
+  if (fcntl(p_stdin[WRITE], F_SETFD, FD_CLOEXEC) < 0
+      || fcntl(p_stdout[READ], F_SETFD, FD_CLOEXEC) < 0) {
+    close(p_stdin[READ]);
+    close(p_stdin[WRITE]);
+    close(p_stdout[READ]);
+    close(p_stdout[WRITE]);
     return -1;
   }
 
   pid = fork();
 
   if (pid < 0) {
+    close(p_stdin[READ]);
+    close(p_stdin[WRITE]);
+    close(p_stdout[READ]);
+    close(p_stdout[WRITE]);
     return pid;
   } else if (pid == 0) {
     close(p_stdin[WRITE]);
-    dup2(p_stdin[READ], READ);
+    if (dup2(p_stdin[READ], READ) < 0) _exit(1);
+    close(p_stdin[READ]);
     close(p_stdout[READ]);
-    dup2(p_stdout[WRITE], WRITE);
+    if (dup2(p_stdout[WRITE], WRITE) < 0) _exit(1);
+    close(p_stdout[WRITE]);
 
-    execl("/bin/sh", "sh", "-c", command, NULL);
-    perror("execl");
-    exit(1);
+    execl(command, command, NULL);
+    _exit(1);
   }
 
+  close(p_stdin[READ]);
+  close(p_stdout[WRITE]);
   if (infp == NULL) {
     close(p_stdin[WRITE]);
   } else {

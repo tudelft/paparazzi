@@ -20,7 +20,7 @@
 <g id="clust2" class="cluster">
 <title>cluster_mora</title>
 <path fill="#0b1728" stroke="#34d399" d="M621.58,-8C621.58,-8 2545.4,-8 2545.4,-8 2551.4,-8 2557.4,-14 2557.4,-20 2557.4,-20 2557.4,-155 2557.4,-155 2557.4,-161 2551.4,-167 2545.4,-167 2545.4,-167 621.58,-167 621.58,-167 615.58,-167 609.58,-161 609.58,-155 609.58,-155 609.58,-20 609.58,-20 609.58,-14 615.58,-8 621.58,-8"/>
-<text xml:space="preserve" text-anchor="middle" x="1583.49" y="-143.05" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">MORA &#160;(CATIA)</text>
+<text xml:space="preserve" text-anchor="middle" x="1583.49" y="-143.05" font-family="DejaVu Sans Bold" font-size="21.00" fill="#f8fafc">CATIA service on MORA</text>
 </g>
 <!-- ins -->
 <g id="node1" class="node">

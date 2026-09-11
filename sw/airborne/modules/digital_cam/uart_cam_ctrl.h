@@ -42,10 +42,12 @@ extern void digital_cam_uart_event(void);
 extern int digital_cam_uart_thumbnails;
 extern int digital_cam_uart_status;
 
-/** Camera selection for targeted MORA commands (MORA_CAMERA_ALL = every camera). */
-extern uint8_t digital_cam_uart_camera_id;
+extern uint8_t digital_cam_uart_camera_mask;
 
-/** Shoot with one camera (or all with MORA_CAMERA_ALL), sending the current pose.
+extern bool uart_cam_ctrl_set_camera(float camera_id);
+extern bool uart_cam_ctrl_set_camera_mask(float camera_mask);
+
+/** Shoot with one camera (or all with CATIA_CAMERA_ALL), sending the current pose.
  *  The photo number always advances; with report=false no DC_SHOT telemetry is sent
  *  (high-rate sampling on slow links). */
 extern uint8_t digital_cam_uart_shoot(uint8_t camera_id, bool report);
@@ -53,9 +55,9 @@ extern uint8_t digital_cam_uart_shoot(uint8_t camera_id, bool report);
  *  interim result but keeps collecting (used by EARcam refinement). */
 extern uint8_t digital_cam_uart_stop(uint8_t camera_id, bool keep_session);
 
-/** Handler for MORA messages this module does not consume itself (e.g. EARcam results).
- *  Called with the parsed frame in mora_protocol; return true when handled. */
-typedef bool (*digital_cam_uart_rx_handler_t)(const struct mora_transport *frame);
+/** Handler for CATIA messages this module does not consume itself (e.g. EARcam results).
+ *  Called with the parsed frame in catia_protocol; return true when handled. */
+typedef bool (*digital_cam_uart_rx_handler_t)(const struct catia_transport *frame);
 extern void digital_cam_uart_set_rx_handler(digital_cam_uart_rx_handler_t handler);
 
 #endif // GPIO_CAM_CTRL_H

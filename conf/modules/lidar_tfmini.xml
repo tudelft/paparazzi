@@ -6,6 +6,10 @@
       TFMini Lidar driver with separate implementations for:
       - Real hardware using a single UART for communication (ap target)
       - NPS simulator (nps target)
+      NPS reports flight-model height above ground through the TFMini AGL ABI
+      by default. Samples outside LIDAR_MIN_RANGE/LIDAR_MAX_RANGE are not
+      published as AGL. The optional lidar_correction module selects wall
+      simulation instead and disables AGL publication at initialization.
     </description>
     <configure name="TFMINI_PORT" value="UART3" description="UART device to use for lidar"/>
     <configure name="TFMINI_BAUD" value="B115200" description="baudrate of the TFMini UART port"/>
@@ -77,6 +81,8 @@
     <configure name="LIDAR_MAX_RANGE" default="12.0"/>
     <define name="LIDAR_MIN_RANGE" value="$(LIDAR_MIN_RANGE)"/>
     <define name="LIDAR_MAX_RANGE" value="$(LIDAR_MAX_RANGE)"/>
+    <configure name="USE_TFMINI_AGL" default="true"/>
+    <define name="USE_TFMINI_AGL" value="$(USE_TFMINI_AGL)"/>
     <file name="tfmini_nps.c"/>
   </makefile>
 </module>

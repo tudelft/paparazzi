@@ -41,7 +41,7 @@ digraph CATIA {
   ];
 
   transport [
-    label="2  MORA TRANSPORT\nreal serial device  or  local PTY bridge",
+    label="2  CATIA TRANSPORT\nreal serial device  or  local PTY bridge",
     fillcolor="#1e3a5f",
     color="#60a5fa"
   ];
@@ -83,7 +83,7 @@ digraph CATIA {
     ];
 
     lwircam [
-      label="LWIR CAMERA\nTiny 1-C sample --capture\nreject startup frames\nphotos/l%06d.jpg",
+      label="LWIR CAMERA\nTiny 1-C lwircam --capture-server\nreject startup frames\nphotos/l%06d.jpg + hotspot JSON",
       fillcolor="#134e4a",
       color="#2dd4bf"
     ];
@@ -98,9 +98,15 @@ digraph CATIA {
   ];
 
   exif [
-    label="6  EXIF METADATA\nGPS + altitude + attitude\nspeed + course + raw MORA\nbundled libexif",
+    label="6  EXIF METADATA\nGPS + altitude + attitude\nspeed + course + raw CATIA shot\nLWIR: hotspot GPS + center temperature\ncalibration required for coordinates",
     fillcolor="#831843",
     color="#f9a8d4"
+  ];
+
+  mock_hotspots [
+    label="LWIR TEST ONLY\nlwircam --mock-image\nembedded temperature plane\nsource EXIF/XMP retained",
+    fillcolor="#134e4a",
+    color="#2dd4bf"
   ];
 
   final [
@@ -111,7 +117,7 @@ digraph CATIA {
   ];
 
   soda [
-    label="8  SODA\nrun image analysis\nreturn detections to Paparazzi",
+    label="8  SODA HAND-OFF\n--aicam / --chdkcam / --lwircam / --earcam\ncheck image + camera-specific placeholder\nhotspot EXIF retained on MORA\nno hotspot return message yet",
     fillcolor="#991b1b",
     color="#fca5a5"
   ];
@@ -126,7 +132,8 @@ digraph CATIA {
   chdk -> transform [color="#facc15"];
   aicam -> transform [color="#fb923c"];
   lwircam -> transform [color="#2dd4bf"];
-  transform -> exif [color="#d8b4fe"];
+  transform -> mock_hotspots [color="#d8b4fe"];
+  mock_hotspots -> exif [color="#2dd4bf"];
   exif -> final [color="#f9a8d4"];
   final -> soda [color="#bef264"];
 }

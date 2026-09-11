@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Drive CATIA over the local PTY bridge: targeted EARcam shoots, then a stop.
 
-Prints the decoded MORA_EAR_RESULT. Used for desk tests without a flight controller.
+Prints the decoded CATIA_EAR_RESULT. Used for desk tests without a flight controller.
 """
 import argparse
 import struct
@@ -11,10 +11,10 @@ import time
 import serial  # pyserial
 
 STX = 0x99
-MORA_SHOOT_TARGETED = 5
-MORA_STOP_TARGETED = 6
-MORA_EAR_RESULT = 7
-MORA_CAMERA_EARCAM = 4
+CATIA_SHOOT_TARGETED = 5
+CATIA_STOP_TARGETED = 6
+CATIA_EAR_RESULT = 7
+CATIA_CAMERA_EARCAM = 4
 
 
 def frame(msg_id: int, payload: bytes) -> bytes:
@@ -59,7 +59,7 @@ def read_result(port, timeout_s):
                 break
             msg = bytes(buf[:length])
             del buf[:length]
-            if msg[2] == MORA_EAR_RESULT and length == 32 + 5:
+            if msg[2] == CATIA_EAR_RESULT and length == 32 + 5:
                 fields = struct.unpack("<8i", msg[3:3 + 32])
                 return fields
     return None
@@ -82,14 +82,14 @@ def main():
             east = step * 0.5 if strip % 2 == 0 else 25.0 - step * 0.5
             lat = lat0 + north / 6378137.0 * 57.29577951308232
             lon = lon0 + east / (6378137.0 * 0.7261) * 57.29577951308232
-            port.write(frame(MORA_SHOOT_TARGETED,
-                             shot_payload(nr, lat, lon, 272.0, 12.0, MORA_CAMERA_EARCAM)))
+            port.write(frame(CATIA_SHOOT_TARGETED,
+                             shot_payload(nr, lat, lon, 272.0, 12.0, CATIA_CAMERA_EARCAM)))
             nr += 1
             time.sleep(args.period)
-    port.write(frame(MORA_STOP_TARGETED, struct.pack("<i", MORA_CAMERA_EARCAM)))
+    port.write(frame(CATIA_STOP_TARGETED, struct.pack("<i", CATIA_CAMERA_EARCAM)))
     result = read_result(port, 5.0)
     if result is None:
-        print("no MORA_EAR_RESULT received", file=sys.stderr)
+        print("no CATIA_EAR_RESULT received", file=sys.stderr)
         return 1
     status, lat, lon, agl_mm, alt_mm, level_cdb, conf, n = result
     print(f"EAR_RESULT status={status} lat={lat/1e7:.7f} lon={lon/1e7:.7f} "

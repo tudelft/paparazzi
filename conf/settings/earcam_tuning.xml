@@ -1,0 +1,11 @@
+<!DOCTYPE settings SYSTEM "settings.dtd">
+<settings>
+  <dl_settings>
+    <dl_settings name="earcam_tuning">
+      <include header="modules/digital_cam/earcam_ctrl"/>
+      <dl_setting max="2" min="0.05" step="0.05" var="earcam_period_s" shortname="ear_period" unit="s"/>
+      <dl_setting max="1" min="0" step="1" var="earcam_quiet_only" shortname="quiet_only"/>
+      <dl_setting max="5" min="0" step="0.1" var="earcam_quiet_delay_s" shortname="quiet_delay" unit="s"/>
+    </dl_settings>
+  </dl_settings>
+</settings>
