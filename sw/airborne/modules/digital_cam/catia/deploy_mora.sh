@@ -73,10 +73,11 @@ rsync --archive --human-readable --info=progress2 --chmod=F644 \
   "$MORA_SSH_TARGET:$stage/"
 
 echo "MORA CATIA: validating and activating staged release"
-if ! ssh "$MORA_SSH_TARGET" "bash '$stage/deploy_mora_remote.sh' '$MORA_INSTALL_DIR' '$stage'"; then
+if ! ssh "$MORA_SSH_TARGET" "if [[ -f /home/air/pass.txt ]]; then sudo -S -v < /home/air/pass.txt 2>/dev/null || true; elif [[ -f \$HOME/pass.txt ]]; then sudo -S -v < \$HOME/pass.txt 2>/dev/null || true; fi; bash '$stage/deploy_mora_remote.sh' '$MORA_INSTALL_DIR' '$stage'"; then
   echo "deploy_mora.sh: activation failed; inspect rollback output and $stage/backup" >&2
   ssh "$MORA_SSH_TARGET" \
-    "sudo -n systemctl --no-pager --full status catia.service || true; \
+    "if [[ -f /home/air/pass.txt ]]; then sudo -S -v < /home/air/pass.txt 2>/dev/null || true; elif [[ -f \$HOME/pass.txt ]]; then sudo -S -v < \$HOME/pass.txt 2>/dev/null || true; fi; \
+     sudo -n systemctl --no-pager --full status catia.service || true; \
      sudo -n journalctl --no-pager -u catia.service -n 50 || true"
   exit 1
 fi

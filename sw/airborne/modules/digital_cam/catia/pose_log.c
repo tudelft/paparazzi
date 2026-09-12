@@ -2,6 +2,7 @@
 #include "pose_log.h"
 #include "protocol.h"
 #include "boot_id.h"
+#include "path_utils.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -176,6 +177,10 @@ int pose_log_start(const char *directory)
     return -1;
   }
   char path[PATH_MAX];
+  char resolved_dir[PATH_MAX];
+  const char *target_dir = catia_resolve_path(directory, resolved_dir, sizeof(resolved_dir));
+  catia_ensure_directory(target_dir);
+
   catia_boot_id(boot_id);
   char stamp[32];
   struct tm utc;
@@ -185,13 +190,13 @@ int pose_log_start(const char *directory)
     errno = EINVAL;
     return -1;
   }
-  int length = snprintf(path, sizeof(path), "%s/pose-%s-XXXXXX.csv", directory, stamp);
+  int length = snprintf(path, sizeof(path), "%s/pose-%s-XXXXXX.csv", target_dir, stamp);
   if (length < 0 || (size_t)length >= sizeof(path)) {
     pthread_mutex_unlock(&mutex);
     errno = ENAMETOOLONG;
     return -1;
   }
-  int directory_fd = open(directory, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+  int directory_fd = open(target_dir, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
   if (directory_fd < 0) {
     log_error = errno;
     pthread_mutex_unlock(&mutex);

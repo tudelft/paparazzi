@@ -2,8 +2,10 @@
 
 A fixed-hardware implementation plan for the Talon, Tiny1-C, M10N and MORA.
 
-[Back to CATIA](index.html) | [Calibration guide](lwir-calibration.html) |
-[Rulebook, Table 8](../Rulebook_IMAV2026_V4-1.pdf#page=35)
+[Documentation Hub](index.html) | [Camera Pipeline](catia_camera_pipeline.html) |
+[AI Camera](raspberry_pi_ai_camera.html) | [LWIR Calibration](lwir-calibration.html) |
+[EARcam Guide](earcam-loudest-spot-explained.html) | [EARcam Data Flow](earcam-dataflow.html) |
+[Mission 2 Plan](mission2-score-first.html)
 
 ## Quick 'n Dirty Checklist
 
@@ -290,7 +292,7 @@ checks solely to make a timing statistic look better.
 The next evidence component is now implemented: an opt-in 10 Hz timestamped FC
 pose stream, a bounded CATIA CSV logger on MORA, and monotonic request/frame-arrival times
 in image EXIF with the same boot identity. The usual four-second shot interval
-is unchanged. See [pose and image timing evidence](index.html#pose-and-image-timing-evidence)
+is unchanged. See [pose and image timing evidence](catia_camera_pipeline.html#pose-and-image-timing-evidence)
 for enabling, buffer requirements, units, loss counters and SD-card retrieval.
 An opt-in request/reply exchange now maps FC sample times to bounded MORA
 intervals in schema-2 CSV. It does not synchronize camera exposures or feed
@@ -303,7 +305,7 @@ No evidence currently establishes variable Tiny1-C integration time. First
 collect the bench/baseline evidence above. A mode-specific effective lag and
 pose interpolation are later candidates if the measured error requires them;
 do not assume zero sensor latency. See the
-[investigation and prediction model](index.html#lwir-integration-and-effective-lag).
+[investigation and prediction model](catia_camera_pipeline.html#lwir-integration-and-effective-lag).
 
 For GNSS, distinguish dimensionless HDOP from a horizontal-accuracy estimate in
 metres. Use existing M10N data and independent reference measurements. Never

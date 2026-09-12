@@ -35,6 +35,7 @@
 #include "protocol.h"
 #include "pose_log.h"
 #include "socket.h"
+#include "path_utils.h"
 
 #define MAX_FILENAME 512
 #define MAX_PROCESSING_THREADS 8
@@ -136,6 +137,15 @@ static bool local_mode;
 static enum camera_backend_type requested_camera_backend = CAMERA_BACKEND_UNSELECTED;
 static struct camera_backend camera;
 static bool camera_initialized[4];
+static bool camera_unavailable[4];
+static bool camera_warned[4];
+/** Real MORA hardware has shown the Tiny1-C USB connection can drop and recover within
+ * a few seconds on its own (unrelated to CATIA). Requiring several consecutive failures,
+ * not just one, before treating LWIR as unavailable for the rest of the run avoids a
+ * single badly-timed probe or shot permanently losing the camera for an otherwise-healthy
+ * flight. */
+#define LWIR_MAX_CONSECUTIVE_FAILURES 3
+static int lwir_consecutive_failures;
 static bool local_capture_only;
 static const char *camera_source_image;
 static bool local_bridge_requested;
@@ -149,11 +159,15 @@ static bool debug_enabled;
 static bool test_capture_enabled;
 static bool earcam_requested;
 static bool earcam_active;
+static bool earcam_unavailable;
 static int optical_camera_id = CATIA_CAMERA_ALL;
 static uint64_t serial_receive_monotonic_us;
 static struct clock_alignment fc_clock;
 static bool clock_probes_enabled;
-static const char *pose_log_dir;
+#ifndef CATIA_POSE_LOG_DIR
+#define CATIA_POSE_LOG_DIR NULL
+#endif
+static const char *pose_log_dir = CATIA_POSE_LOG_DIR;
 static bool motion_compensation_enabled;
 static uint64_t next_clock_probe_us, clock_probe_count, clock_reply_count, clock_rejected_count;
 
@@ -460,7 +474,13 @@ int main(int argc, char *argv[])
     stop_local_serial_bridge();
     return -1;
   }
-  socket_init(1);
+  if (socket_init(1) != 0) {
+    close(fd);
+    if (earcam_active) ear_cam_pipe_deinit();
+    cameras_deinit();
+    stop_local_serial_bridge();
+    return 1;
+  }
   if (serial_tx_start(fd) != 0) {
     fprintf(stderr, "CATIA:\tunable to initialize nonblocking UART output: %s\n", strerror(errno));
     close(fd);
@@ -484,6 +504,21 @@ int main(int argc, char *argv[])
   image_count = 0;
   shooting_count = 0;
   shooting_thread_count = 0;
+
+  // The Tiny1-C shows a short unstable ("wiggly") image right after power-on, once per
+  // power-on, whether or not LWIR ends up used for a shot. Probing it once here, while
+  // still on the ground, lets that transient pass in advance: the actual capture (whether
+  // LWIR is the default backend or only selected later through a runtime camera mask)
+  // then opens an already-past-that-transient sensor. The probe opens the camera, waits,
+  // and closes it again; it saves nothing and does not touch the active backend selection.
+  // Failure here is not fatal: CATIA continues normally either way.
+  if (!test_mode && !local_mode) {
+    printf("CATIA:\tprobing the LWIR sensor once to clear its power-on \"wiggly\" image\n");
+    if (lwir_cam_pipe_warmup() != 0) {
+      fprintf(stderr, "CATIA:\tLWIR sensor not accessible or warmup failed; will still try on the first shot\n");
+      ++lwir_consecutive_failures;
+    }
+  }
 
   puts(CATIA_BUILD_VERSION);
   printf("Started OK\n");
@@ -856,16 +891,20 @@ static void handle_received_message(void)
            shoot->data.course / ANGLE_BFP_SCALE * RAD_TO_DEG);
 
     bool wants_ear = (camera_mask & CATIA_CAMERA_MASK_EAR) != 0;
-    if (wants_ear && !earcam_active) {
+    if (wants_ear && !earcam_active && !earcam_unavailable) {
       earcam_active = ear_cam_pipe_init(NULL) == 0;
+      if (!earcam_active) {
+        earcam_unavailable = true;
+        fprintf(stderr, "CATIA:\tEARcam not available; continuing without it for this run\n");
+      }
     }
     if (wants_ear && earcam_active) {
       // Geotagging is a memory copy; do it inline so no worker slot is consumed.
       if (ear_cam_pipe_record(shoot) == 0 && debug_enabled) {
         printf("CATIA-%d DEBUG:\tearcam sample recorded\n", shoot->data.nr);
       }
-    } else if (wants_ear) {
-      fprintf(stderr, "CATIA-%d:\tearcam requested but not active\n", shoot->data.nr);
+    } else if (wants_ear && debug_enabled) {
+      printf("CATIA-%d DEBUG:\tearcam requested but not active\n", shoot->data.nr);
     }
     if ((camera_mask & (CATIA_CAMERA_MASK_CHDK | CATIA_CAMERA_MASK_AICAM | CATIA_CAMERA_MASK_LWIR)) != 0) {
       start_shoot_worker(shoot, (uint8_t)camera_mask);
@@ -902,11 +941,33 @@ static int camera_prepare(int camera_id)
   if (camera_backend_select(type, test_capture_enabled) != 0) return -1;
   optical_camera_id = camera_id;
   if (camera_initialized[camera_id]) return 0;
-  if (camera.init(camera_source_image) != 0) {
-    camera.deinit();
-    fprintf(stderr, "CATIA:\tunable to initialize %s for camera id %d\n", camera.name, camera_id);
+  if (camera_id == CATIA_CAMERA_LWIRCAM && camera_unavailable[camera_id]) {
+    /** LWIR's init can block for tens of seconds spawning its persistent server; once it
+     * has failed LWIR_MAX_CONSECUTIVE_FAILURES times in a row, skip retrying every shot so
+     * other selected cameras are not delayed by it. Cheaper backends below still retry
+     * every time so a transient failure can recover. */
+    if (debug_enabled) {
+      printf("CATIA DEBUG:\tLWIR camera remains unavailable this run\n");
+    }
     return -1;
   }
+  if (camera.init(camera_source_image) != 0) {
+    camera.deinit();
+    if (camera_id == CATIA_CAMERA_LWIRCAM
+        && ++lwir_consecutive_failures >= LWIR_MAX_CONSECUTIVE_FAILURES) {
+      camera_unavailable[camera_id] = true;
+    }
+    if (!camera_warned[camera_id]) {
+      camera_warned[camera_id] = true;
+      fprintf(stderr, "CATIA:\t%s (camera id %d) not available; continuing without it\n",
+              camera.name, camera_id);
+    } else if (debug_enabled) {
+      printf("CATIA DEBUG:\t%s (camera id %d) still not available\n", camera.name, camera_id);
+    }
+    return -1;
+  }
+  camera_warned[camera_id] = false;
+  if (camera_id == CATIA_CAMERA_LWIRCAM) lwir_consecutive_failures = 0;
   camera_initialized[camera_id] = true;
   printf("CATIA:\tactive camera backend: %s (id %d)\n", camera.name, optical_camera_id);
   return 0;
@@ -1227,17 +1288,20 @@ static int camera_backend_select(enum camera_backend_type type, bool test_mode)
 static int chdk_backend_init(const char *source_image)
 {
   (void)source_image;
-  if (mkdir(CATIA_CHDK_PHOTO_DIR, 0755) != 0 && errno != EEXIST) {
+  char resolved_dir[PATH_MAX];
+  const char *photo_dir = catia_resolve_path(CATIA_CHDK_PHOTO_DIR, resolved_dir, sizeof(resolved_dir));
+
+  if (catia_ensure_directory(photo_dir) != 0) {
     fprintf(stderr, "CATIA:\tfailed to create CHDK photo directory %s: %s\n",
-            CATIA_CHDK_PHOTO_DIR, strerror(errno));
+            photo_dir, strerror(errno));
     return -1;
   }
   struct stat directory_status;
-  if (stat(CATIA_CHDK_PHOTO_DIR, &directory_status) != 0
+  if (stat(photo_dir, &directory_status) != 0
       || !S_ISDIR(directory_status.st_mode)
-      || access(CATIA_CHDK_PHOTO_DIR, W_OK) != 0) {
+      || access(photo_dir, W_OK) != 0) {
     fprintf(stderr, "CATIA:\tCHDK photo directory is not writable: %s\n",
-            CATIA_CHDK_PHOTO_DIR);
+            photo_dir);
     return -1;
   }
   return chdk_pipe_init();
@@ -1256,8 +1320,11 @@ static int chdk_backend_shoot(char *filename, size_t filename_size, int image_nu
     return -1;
   }
 
+  char resolved_dir[PATH_MAX];
+  const char *photo_dir = catia_resolve_path(CATIA_CHDK_PHOTO_DIR, resolved_dir, sizeof(resolved_dir));
+
   int length = snprintf(filename, filename_size, "%s/c%06d.jpg",
-                        CATIA_CHDK_PHOTO_DIR, image_number);
+                        photo_dir, image_number);
   if (length < 0 || (size_t)length >= filename_size) {
     filename[0] = '\0';
     return -1;

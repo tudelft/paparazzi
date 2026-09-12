@@ -5,6 +5,7 @@
 #include "capture_timing.h"
 
 int lwir_cam_pipe_init(const char *unused);
+int lwir_cam_pipe_warmup(void);
 void lwir_cam_pipe_set_native_raw(int enabled);
 int lwir_cam_pipe_set_calibration(const char *path);
 int lwir_cam_pipe_process_mock(char *filename);

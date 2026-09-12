@@ -1,4 +1,5 @@
 #include "local_pipe.h"
+#include "path_utils.h"
 
 #include <dirent.h>
 #include <errno.h>
@@ -47,7 +48,8 @@ int local_pipe_init(const char *mock_image)
 
   source_image = mock_image;
   test_photo_directory[0] = '\0';
-  printf("LOCAL_PIPE:\tphoto directory: %s\n", CATIA_LOCAL_PHOTO_DIR);
+  char resolved_dir[PATH_MAX];
+  printf("LOCAL_PIPE:\tphoto directory: %s\n", catia_resolve_path(CATIA_LOCAL_PHOTO_DIR, resolved_dir, sizeof(resolved_dir)));
   return 0;
 }
 
@@ -74,22 +76,25 @@ int local_pipe_test_init(const char *mock_image)
   source_image = NULL;
   printf("LOCAL_PIPE:\ttest photo directory: %s (%d image%s)\n",
          test_photo_directory, photo_count, photo_count == 1 ? "" : "s");
-  printf("LOCAL_PIPE:\tphoto directory: %s\n", CATIA_LOCAL_PHOTO_DIR);
+  char resolved_dir[PATH_MAX];
+  printf("LOCAL_PIPE:\tphoto directory: %s\n", catia_resolve_path(CATIA_LOCAL_PHOTO_DIR, resolved_dir, sizeof(resolved_dir)));
   return 0;
 }
 
 static int prepare_photo_directory(void)
 {
-  if (mkdir(CATIA_LOCAL_PHOTO_DIR, 0755) != 0 && errno != EEXIST) {
+  char resolved_dir[PATH_MAX];
+  const char *photo_dir = catia_resolve_path(CATIA_LOCAL_PHOTO_DIR, resolved_dir, sizeof(resolved_dir));
+  if (catia_ensure_directory(photo_dir) != 0) {
     fprintf(stderr, "LOCAL_PIPE:\tfailed to create photo directory %s: %s\n",
-            CATIA_LOCAL_PHOTO_DIR, strerror(errno));
+            photo_dir, strerror(errno));
     return -1;
   }
 
   struct stat directory_status;
-  if (stat(CATIA_LOCAL_PHOTO_DIR, &directory_status) != 0 || !S_ISDIR(directory_status.st_mode)
-      || access(CATIA_LOCAL_PHOTO_DIR, W_OK) != 0) {
-    fprintf(stderr, "LOCAL_PIPE:\tphoto directory is not writable: %s\n", CATIA_LOCAL_PHOTO_DIR);
+  if (stat(photo_dir, &directory_status) != 0 || !S_ISDIR(directory_status.st_mode)
+      || access(photo_dir, W_OK) != 0) {
+    fprintf(stderr, "LOCAL_PIPE:\tphoto directory is not writable: %s\n", photo_dir);
     return -1;
   }
   return 0;
@@ -112,8 +117,10 @@ int local_pipe_shoot(char *filename, size_t filename_size, int image_number)
     printf("LOCAL_PIPE:\tselected test image: %s\n", current_source);
   }
 
+  char resolved_dir[PATH_MAX];
+  const char *photo_dir = catia_resolve_path(CATIA_LOCAL_PHOTO_DIR, resolved_dir, sizeof(resolved_dir));
   int length = snprintf(filename, filename_size, "%s/m%06d.jpg",
-                        CATIA_LOCAL_PHOTO_DIR, image_number);
+                        photo_dir, image_number);
   if (length < 0 || (size_t)length >= filename_size) {
     return -1;
   }

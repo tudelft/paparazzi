@@ -13,10 +13,13 @@
     <waypoint name="MOB" x="137.0" y="-11.6"/>
     <waypoint name="S1" x="-119.2" y="69.6"/>
     <waypoint name="S2" x="274.4" y="209.5"/>
-    <waypoint alt="315.0" name="AF" x="177.4" y="45.1"/>
-    <waypoint alt="295.0" name="TD" x="28.8" y="57.0"/>
     <waypoint name="_BASELEG" x="168.8" y="-13.8"/>
     <waypoint name="CLIMB" x="-114.5" y="162.3"/>
+    <!-- MotionSCOUT position to be found and re-positioned by the system -->
+    <waypoint name="MSCOUT" x="-54.0" y="62.0"/>
+    <!-- Autoland -->
+    <waypoint alt="315.0" name="AF" x="177.4" y="45.1"/>
+    <waypoint alt="295.0" name="TD" x="28.8" y="57.0"/>
   </waypoints>
   <exceptions>
     <!--exception cond="datalink_time @GT 22" deroute="Standby"/-->
@@ -27,7 +30,7 @@
       <while cond="!GpsFixValid()"/>
     </block>
     <block name="Geo init">
-      <while cond="LessThan(NavBlockTime(), 5)"/>
+      <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="NavSetGroundReferenceHere()"/>
     </block>
     <block name="Holding point">

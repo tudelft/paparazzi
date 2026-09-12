@@ -4,20 +4,21 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="CATIA camera pipeline setup, testing, capture, EXIF, and SODA guide">
-  <title>CATIA Camera Pipeline Guide</title>
+  <title>CATIA Camera Pipeline</title>
   <style>
 :root {
   color-scheme: light;
-  --ink: #14213d;
-  --muted: #53627a;
-  --paper: #f7f9fc;
+  --ink: #111111;
+  --muted: #595959;
+  --paper: #ffffff;
   --surface: #ffffff;
-  --line: #d8e0ea;
-  --cyan: #007f8b;
-  --green: #237a45;
-  --amber: #a85c00;
-  --code: #101827;
-  --code-ink: #dce8f5;
+  --line: #dedede;
+  --yellow: #ffdd00;
+  --link: #806600;
+  --soft: #f5f5f5;
+  --black: #000000;
+  --code: #111111;
+  --code-ink: #ffffff;
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
@@ -25,58 +26,102 @@ body {
   margin: 0;
   color: var(--ink);
   background:
-    linear-gradient(90deg, rgba(0, 127, 139, 0.045) 1px, transparent 1px),
-    linear-gradient(rgba(0, 127, 139, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.018) 1px, transparent 1px),
+    linear-gradient(rgba(0, 0, 0, 0.018) 1px, transparent 1px),
     var(--paper);
   background-size: 28px 28px;
   font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
   line-height: 1.65;
 }
-a { color: var(--cyan); }
+a { color: var(--link); text-underline-offset: 0.2em; }
+a:hover { color: var(--ink); text-decoration-thickness: 2px; }
+a:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; }
+::selection { color: var(--black); background: var(--yellow); }
 code, pre { font-family: "IBM Plex Mono", "Liberation Mono", monospace; }
-.masthead { color: white; background: #11243c; border-bottom: 5px solid #20b6bb; }
+.masthead { color: var(--surface); background: var(--black); border-bottom: 5px solid var(--yellow); }
 .masthead-inner {
   width: min(1180px, calc(100% - 40px));
   margin: 0 auto;
-  padding: 48px 0 38px;
+  padding: 32px 0 34px;
+}
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+.site-nav-link {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.site-nav-link:hover, .site-nav-link:focus-visible {
+  background: var(--yellow);
+  color: var(--black);
+}
+.site-nav-link.active {
+  background: var(--yellow);
+  color: var(--black);
 }
 .eyebrow {
   margin: 0 0 8px;
-  color: #78e3df;
+  color: var(--yellow);
   font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0;
   text-transform: uppercase;
 }
-.masthead h1 { margin: 0; color: white; font-size: clamp(2.25rem, 7vw, 4.7rem); }
-.lede { max-width: 760px; margin: 14px 0 0; color: #cfdae8; font-size: 1.12rem; }
+.masthead h1 { margin: 0; color: var(--surface); font-size: 2.75rem; overflow-wrap: anywhere; }
+.lede { max-width: 760px; margin: 12px 0 0; color: #dedede; font-size: 1.08rem; }
 .layout {
   display: grid;
-  grid-template-columns: 250px minmax(0, 850px);
+  grid-template-columns: 260px minmax(0, 850px);
   gap: 48px;
   width: min(1180px, calc(100% - 40px));
   margin: 0 auto;
   padding: 38px 0 80px;
 }
-nav { position: sticky; top: 24px; align-self: start; }
-nav strong {
+nav { position: sticky; top: 24px; align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; }
+.nav-section { margin-bottom: 26px; }
+.nav-section strong {
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   color: var(--muted);
   font-size: 0.78rem;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
-nav ul { margin: 0; padding: 0; list-style: none; }
-.toc > ul > li > a { display: none; }
-.toc ul ul { display: block; margin: 0; padding: 0; list-style: none; }
-nav a {
+.guide-nav, .toc ul { margin: 0; padding: 0; list-style: none; }
+.guide-nav li, .toc li { margin: 0; padding: 0; }
+.guide-nav a, .toc a {
   display: block;
-  padding: 8px 12px;
+  padding: 6px 12px;
   border-left: 2px solid var(--line);
   color: var(--ink);
+  font-size: 0.88rem;
   text-decoration: none;
 }
-nav a:hover { border-color: var(--cyan); color: var(--cyan); background: white; }
+.guide-nav a:hover, .toc a:hover, .guide-nav a:focus-visible, .toc a:focus-visible {
+  border-color: var(--yellow);
+  color: var(--link);
+  background: var(--soft);
+}
+.guide-nav a.active {
+  border-left: 3px solid var(--yellow);
+  color: var(--black);
+  background: var(--soft);
+  font-weight: 700;
+}
+.toc > ul > li > a { display: none; }
+.toc ul ul { display: block; margin: 0; padding: 0; list-style: none; }
 main { min-width: 0; overflow-wrap: anywhere; }
 main > h1 { display: none; }
 h1, h2, h3 { line-height: 1.18; letter-spacing: 0; }
@@ -93,41 +138,41 @@ p { margin: 10px 0 16px; }
 blockquote {
   margin: 18px 0;
   padding: 14px 18px;
-  border-left: 4px solid var(--amber);
-  background: #fff7e8;
+  border-left: 4px solid var(--yellow);
+  background: var(--soft);
 }
-blockquote:first-of-type { border-color: var(--cyan); background: #edf8f8; }
 img {
   display: block;
   max-width: 100%;
   height: auto;
   margin: 28px auto 48px;
-  border: 1px solid #1a334f;
-  background: #07111f;
+  border: 1px solid var(--line);
+  background: var(--surface);
 }
 pre {
   overflow-x: auto;
   margin: 14px 0 20px;
   padding: 16px 18px;
-  border-left: 4px solid #20b6bb;
+  border-left: 4px solid var(--yellow);
   color: var(--code-ink);
   background: var(--code);
   font-size: 0.9rem;
   line-height: 1.55;
 }
-code:not(pre code) { padding: 0.12em 0.34em; color: #8c3142; background: #f0e9ec; }
-table { width: 100%; border-collapse: collapse; margin: 18px 0 26px; background: white; }
+code:not(pre code) { padding: 0.12em 0.34em; color: var(--ink); background: var(--soft); }
+a code:not(pre code) { color: inherit; }
+table { width: 100%; border-collapse: collapse; margin: 18px 0 26px; background: var(--surface); }
 th, td { padding: 11px 13px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
-th { color: white; background: #233a56; }
-tbody tr:nth-child(even) { background: #f4f7fa; }
+th { color: var(--black); background: var(--yellow); }
+tbody tr:nth-child(even) { background: var(--soft); }
 ul, ol { padding-left: 24px; }
-hr { border: 0; border-top: 2px solid var(--line); }
-footer { padding: 25px 20px; color: #ccd8e6; background: #11243c; text-align: center; }
+hr { border: 0; border-top: 2px solid var(--line); margin: 32px 0; }
+footer { padding: 25px 20px; color: var(--surface); background: var(--black); border-top: 3px solid var(--yellow); text-align: center; }
 @media (max-width: 820px) {
   .layout { grid-template-columns: 1fr; gap: 24px; }
-  nav { position: static; }
+  nav { position: static; max-height: none; }
   .toc > ul > li > ul { display: grid; grid-template-columns: repeat(2, 1fr); }
-  .masthead-inner { padding-top: 34px; }
+  .masthead-inner { padding-top: 28px; }
 }
 @media (max-width: 520px) {
   .layout, .masthead-inner { width: min(100% - 24px, 1180px); }
@@ -140,17 +185,40 @@ footer { padding: 25px 20px; color: #ccd8e6; background: #11243c; text-align: ce
 <body>
   <header class="masthead">
     <div class="masthead-inner">
+      <nav class="site-nav" aria-label="Main Navigation">
+        <a href="index.html" class="site-nav-link">Documentation Hub</a>
+      <a href="catia_camera_pipeline.html" class="site-nav-link active">Camera Pipeline</a>
+      <a href="raspberry_pi_ai_camera.html" class="site-nav-link">AI Camera (IMX500)</a>
+      <a href="lwir-calibration.html" class="site-nav-link">LWIR Calibration</a>
+      <a href="earcam-loudest-spot-explained.html" class="site-nav-link">EARcam Guide</a>
+      <a href="earcam-dataflow.html" class="site-nav-link">EARcam Data Flow</a>
+      <a href="mission2-score-first.html" class="site-nav-link">Mission 2 Plan</a>
+      </nav>
       <p class="eyebrow">Paparazzi UAV / MORA / SODA</p>
       <h1>CATIA Camera Pipeline</h1>
-      <p class="lede">From a flight-triggered shot to a georeferenced JPEG and image-analysis result. Start locally, then move to CHDK or Raspberry Pi camera hardware.</p>
+      <p class="lede">From a flight-triggered shot to a georeferenced JPEG and image-analysis result. Complete technical guide to MORA deployment, camera backends, EXIF geotagging, and SODA.</p>
     </div>
   </header>
   <div class="layout">
-    <nav aria-label="Guide sections">
-      <strong>On this page</strong>
-      <div class="toc">
+    <nav aria-label="Guide navigation">
+      <div class="nav-section">
+        <strong>All Guides</strong>
+        <ul class="guide-nav">
+          <li><a href="index.html" class="">Documentation Hub</a></li>
+        <li><a href="catia_camera_pipeline.html" class="active">Camera Pipeline</a></li>
+        <li><a href="raspberry_pi_ai_camera.html" class="">AI Camera (IMX500)</a></li>
+        <li><a href="lwir-calibration.html" class="">LWIR Calibration</a></li>
+        <li><a href="earcam-loudest-spot-explained.html" class="">EARcam Guide</a></li>
+        <li><a href="earcam-dataflow.html" class="">EARcam Data Flow</a></li>
+        <li><a href="mission2-score-first.html" class="">Mission 2 Plan</a></li>
+        </ul>
+      </div>
+      <div class="nav-section">
+        <strong>On this page</strong>
+        <div class="toc">
 <ul>
 <li><a href="#catia-camera-pipeline">CATIA Camera Pipeline</a><ul>
+<li><a href="#deploy-to-mora">Deploy to MORA</a></li>
 <li><a href="#start-here-local-simulation">Start Here: Local Simulation</a></li>
 <li><a href="#start-here-physical-desk-test-with-mora">Start Here: Physical Desk Test With MORA</a></li>
 <li><a href="#choose-a-camera">Choose a Camera</a></li>
@@ -167,19 +235,342 @@ footer { padding: 25px 20px; color: #ccd8e6; background: #11243c; text-align: ce
 </ul>
 </div>
 
+      </div>
     </nav>
     <main><h1 id="catia-camera-pipeline">CATIA Camera Pipeline</h1>
-<p><strong>CATIA in full the Camera Application Triggering Image Analysis</strong> application runing on &gt; a companion board which has a camera connected. As soon as CATIA receives a 'take photo now' command  from the Flightcontroller , camera obtains a JPEG image of current view, adds flight metadata like attitude and more to the EXIF data in the image  &gt; and passes the finished image to SODA. for more image data extraction
-.</p>
+<p><strong>CATIA (Camera Application Triggering Image Analysis)</strong> runs on the MORA
+companion board. It receives camera commands from the flight controller,
+captures images, adds flight metadata to EXIF, and passes images to SODA for
+analysis.</p>
+<p><strong>Deploying a board? Start with <a href="#deploy-to-mora">Deploy to MORA</a>.</strong>
+For hardware checks after deployment, continue with the
+<a href="#start-here-physical-desk-test-with-mora">physical desk test</a>.
+For development without a board, use <a href="#start-here-local-simulation">local simulation</a>.</p>
 <p><strong>Doc Maintainers:</strong> edit this <code>README.md</code>, <code>catia-flow.dot</code>, or
 <code>desk-test-setup.svg</code>, then run <code>./update-documentation.sh</code>. The rendered PNGs,
 flow SVG, and HTML page are generated files.</p>
 <p><img alt="CATIA capture and processing flow" src="catia-flow.png"></p>
-<p><a href="index.html">Open the standalone HTML guide</a></p>
-<p><a href="lwir-calibration.html">LWIR calibration workshop guide</a>: ordinary materials,
-lens fitting, mounting alignment and independent checks.</p>
-<p><a href="mission2-score-first.html">Mission 2: maximize points, keep the airframe</a>:
-fixed hardware, software-first improvements and offline score/accuracy assessment.</p>
+<p><a href="index.html">Documentation Hub</a> |
+<a href="raspberry_pi_ai_camera.html">AI Camera</a> |
+<a href="lwir-calibration.html">LWIR Calibration</a> |
+<a href="earcam-loudest-spot-explained.html">EARcam Guide</a> |
+<a href="earcam-dataflow.html">EARcam Data Flow</a> |
+<a href="mission2-score-first.html">Mission 2 Plan</a></p>
+<h2 id="deploy-to-mora">Deploy to MORA</h2>
+<p>This is the complete deployment procedure. Commands below run on the
+<strong>development PC from the Paparazzi repository root</strong>, unless marked otherwise.
+The default board is <code>air@theatre</code>; substitute your SSH destination consistently.
+Deploy only while the aircraft is disarmed and on the bench: activation stops
+and restarts the camera service.</p>
+<h3 id="1-know-what-is-installed">1. Know what is installed</h3>
+<p>The supported installation directory is <strong><code>/home/air/digital_cam</code></strong>. The supplied
+systemd unit requires this path and the <code>air</code> account; changing only the script's
+destination directory is not supported.</p>
+<table>
+<thead>
+<tr>
+<th>Built on the PC</th>
+<th>Installed on MORA</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>catia-arm64</code></td>
+<td><code>catia</code></td>
+<td>UART protocol, capture coordination and metadata</td>
+</tr>
+<tr>
+<td><code>soda-arm64</code></td>
+<td><code>soda</code></td>
+<td>Image analysis</td>
+</tr>
+<tr>
+<td><code>lwircam-arm64</code></td>
+<td><code>lwircam</code></td>
+<td>Tiny 1-C thermal camera</td>
+</tr>
+<tr>
+<td><code>earcam-arm64</code></td>
+<td><code>earcam</code></td>
+<td>Acoustic capture and detection</td>
+</tr>
+<tr>
+<td>Visible and thermal mock JPEGs</td>
+<td><code>mock_image_01.jpg</code>, <code>mock_lwir_01.jpg</code></td>
+<td>Hardware-free checks</td>
+</tr>
+<tr>
+<td><code>catia.service</code></td>
+<td>Runtime copy and <code>/etc/systemd/system/catia.service</code></td>
+<td>Boot startup</td>
+</tr>
+<tr>
+<td><code>99-tiny1c.rules</code></td>
+<td>Runtime copy and <code>/etc/udev/rules.d/99-tiny1c.rules</code></td>
+<td>USB permissions</td>
+</tr>
+</tbody>
+</table>
+<p>AIcam and CHDK are compiled into CATIA, not separate executables. Raspberry Pi
+camera support also needs <code>rpicam-still</code> installed on MORA. CHDK needs the external
+control script configured in <code>chdk_pipe.c</code>. Deployment does not install these
+external tools, flash flight-controller firmware, configure the board OS/UART,
+or copy this manual. It does not remove photos or EARcam logs.</p>
+<p>The supplied service starts <strong>LWIRcam and EARcam</strong>, with EARcam band
+<code>2400,3200</code> Hz. It does not enable AIcam or CHDK. Review <code>catia.service</code> before
+deploying; deployment replaces the main unit, while existing systemd drop-ins
+can still override it. The default service requires the Tiny 1-C and a working
+<code>/dev/serial0</code> for startup. A missing microphone is reported but is not fatal.</p>
+<h3 id="2-prepare-the-pc-and-board-once">2. Prepare the PC and board once</h3>
+<p>PC requirements: GNU Make, C/C++ compilers, CMake, <code>pkg-config</code>, <code>file</code>, SSH,
+<code>rsync</code>, GNU AArch64 C/C++ compilers, <code>readelf</code>, <code>strip</code>, and native plus ARM64
+ALSA development files. On Debian/Ubuntu, the cross-compiler packages are
+<code>gcc-aarch64-linux-gnu</code> and <code>g++-aarch64-linux-gnu</code>. ALSA development packages
+are <code>libasound2-dev</code> and <code>libasound2-dev:arm64</code> with the appropriate multiarch
+repositories configured. A separate sysroot can instead use <code>ARM64_SYSROOT</code>
+and <code>ARM64_PKG_CONFIG_LIBDIR</code>.</p>
+<p>MORA requirements: a <strong>64-bit ARM Linux userspace</strong>, Bash, <code>flock</code>, systemd,
+udev, <code>rsync</code>, <code>pgrep</code>, ARM64 <code>libasound.so.2</code>, and an <code>air</code> account with
+<code>dialout</code> and <code>plugdev</code> membership. ALSA utilities provide <code>amixer</code> for microphone
+gain setup. The account needs writable installation storage and sudo permission
+for the deployment helper's installation, backup, systemd, and udev commands.
+Passwordless sudo is optional: for password-protected accounts, authenticate
+with <code>sudo -v</code> and run the staged helper in the same interactive SSH terminal
+as shown in step 4. Never put a sudo password into a script or chat.</p>
+<h4 id="get-the-os-to-work-with-the-uart-port">Get the OS to work with the UART port</h4>
+<p>On the Raspberry Pi Zero 2 W MORA (<code>theatre</code>), disable Bluetooth and dedicate
+the full UART to CATIA. Wi-Fi remains enabled. This is a one-time board setup,
+not something to repeat for every application deployment.</p>
+<p>Connect from the development PC:</p>
+<pre><code class="language-sh">ssh air@theatre
+</code></pre>
+<p>Run the following steps <strong>on MORA</strong>. Enter sudo passwords directly in that
+terminal.</p>
+<ol>
+<li>Open the boot configuration:</li>
+</ol>
+<p><code>sh
+   sudo nano /boot/firmware/config.txt</code></p>
+<p>Under the existing <code>[all]</code> section, add or update these settings:</p>
+<p><code>ini
+   enable_uart=1
+   dtoverlay=disable-bt</code></p>
+<p>NOTE: Remove <code>dtoverlay=miniuart-bt</code> if present; it is the alternative setup that
+   retains Bluetooth. Do not leave both overlays enabled. Save and exit.</p>
+<ol>
+<li>Disable the Bluetooth services:</li>
+</ol>
+<p><code>sh
+   sudo systemctl disable --now hciuart.service bluetooth.service</code></p>
+<p>If either service is absent, skip that service and disable the one that
+   exists. An absent Bluetooth service does not prevent UART setup.</p>
+<ol>
+<li>Configure the serial port:</li>
+</ol>
+<p><code>sh
+   sudo raspi-config</code></p>
+<p>Choose <strong>Interface Options &gt; Serial Port</strong>. Set <strong>Login shell over serial</strong>
+   to <strong>No</strong> and <strong>Serial hardware enabled</strong> to <strong>Yes</strong>, then finish.</p>
+<ol>
+<li>Reboot to apply the configuration:</li>
+</ol>
+<p><code>sh
+   sudo reboot</code></p>
+<p>The SSH connection closes. Once MORA is reachable again, reconnect from
+   the PC with <code>ssh air@theatre</code>.</p>
+<ol>
+<li>Verify the devices on MORA:</li>
+</ol>
+<p><code>sh
+   ls -l /dev/serial0 /dev/ttyAMA0</code></p>
+<p>Expected mapping for this board configuration:</p>
+<p><code>text
+   /dev/serial0 -&gt; ttyAMA0</code></p>
+<p>Confirm that <code>/dev/ttyAMA0</code> is a character device accessible to <code>air</code>
+   through its <code>dialout</code> group. Do not create a manual symlink to compensate
+   for missing OS configuration.</p>
+<p>MORA TX remains <strong>GPIO14, physical pin 8</strong>; RX remains <strong>GPIO15, physical pin 10</strong>.
+No PC-side FTDI configuration change is needed. Cross TX/RX, use a common
+ground and <strong>3.3 V UART logic</strong>, and configure both ends for <strong>115200 baud</strong>.
+See the desk-test wiring below for power and camera connections.</p>
+<p>Related board-setup reference:
+<a href="https://www.openuas.org/intranet/webapps/pmwiki/index.php?n=Howto.Getyourraspberrypiosfullysetup#_toc">OpenUAS Raspberry Pi OS setup</a>.</p>
+<h4 id="check-board-readiness">Check board readiness</h4>
+<p>Check the target before building:</p>
+<pre><code class="language-sh">ssh -o BatchMode=yes -o ConnectTimeout=10 air@theatre \
+   'hostname; uname -m; id; ls -l /dev/serial0; df -h /home/air'
+ssh -o BatchMode=yes air@theatre \
+   'sudo -n systemctl show catia.service -p LoadState -p ActiveState -p UnitFileState'
+</code></pre>
+<p>Expected architecture: <code>aarch64</code>. <code>LoadState=not-found</code> is normal on a new
+board. A <code>sudo: a password is required</code> response means you need the interactive
+activation procedure below, not a sudoers change. Missing UART must be fixed
+before activation; uploading and mock validation can happen first. Failed SSH
+authentication or lack of sudo authorization must be resolved. Inspect existing overrides with
+<code>ssh air@theatre 'systemctl cat catia.service'</code> on an already configured board.
+Do not deploy over a manually launched CATIA, LWIRcam, or EARcam process.</p>
+<h3 id="3-build-and-validate-the-current-sources">3. Build and validate the current sources</h3>
+<p>For a normal update, the deployment command in step 4 incrementally rebuilds
+all four ARM64 release executables from the current working tree. It does not
+fetch source changes or require a commit.</p>
+<p>For an explicitly fresh rebuild of every native and ARM64 program and bundled
+build output, stop any local development runs, then execute:</p>
+<pre><code class="language-sh">make -C sw/airborne/modules/digital_cam/catia clean
+make -C sw/airborne/modules/digital_cam/catia -j32 all
+bash sw/airborne/modules/digital_cam/catia/tests/build_layout_test.sh
+bash sw/airborne/modules/digital_cam/catia/tests/deploy_upload_test.sh
+bash sw/airborne/modules/digital_cam/catia/tests/deploy_mora_test.sh
+</code></pre>
+<p>Cleaning removes local executables and build caches, not source files, board
+files, photos, or logs. Rebuilding bundled OpenCV can take substantially longer
+than an incremental update. Lower <code>-j32</code> on machines with less RAM/CPU capacity.
+The tests check architecture/runtime paths and exercise upload/rollback logic
+without contacting hardware. They do not prove physical camera capture.</p>
+<h3 id="4-deploy-and-activate">4. Deploy and activate</h3>
+<pre><code class="language-sh">BUILD_JOBS=32 sw/airborne/modules/digital_cam/catia/deploy_mora.sh air@theatre
+</code></pre>
+<p>Use this top-level script for the complete family, not the separate EARcam-only
+deployment helper. No manual <code>scp</code>, renaming, or separate service installation
+is needed. Native PC executables are preserved by the deployment command.</p>
+<p>The script builds optimized, stripped ARM64 binaries, runs native EARcam tests,
+checks binary architecture/debug sections, and uploads to a unique directory
+such as <code>/home/air/digital_cam/.deploy.XXXXXXXX</code>. On MORA it then:</p>
+<ol>
+<li>Locks deployment and runs staged EARcam self-tests and LWIR mock processing.</li>
+<li>Records prior service state and backs up files, the unit, and the USB rule.</li>
+<li>Stops the old service and refuses unmanaged camera processes.</li>
+<li>Installs programs and fixtures, validates the unit, and reloads systemd/udev.</li>
+<li>Configures microphone gain when available, enables boot startup, and starts CATIA.</li>
+<li>Requires the service to be enabled, active, and running before reporting success.</li>
+</ol>
+<p>Success ends with <code>MORA CATIA: deployment complete</code>. Keep the printed
+<code>.deploy.XXXXXXXX/backup</code> path until the board has passed the checks below.
+This is initial startup validation, not proof of sustained operation or capture.</p>
+<h4 id="when-sudo-requires-your-password">When sudo requires your password</h4>
+<p>The upload does not need sudo. If automatic activation stops with
+<code>sudo: a password is required</code>, use the staging path printed by that deployment;
+do not rebuild or upload again just to authenticate. Connect from the PC:</p>
+<pre><code class="language-sh">ssh air@theatre
+</code></pre>
+<p>Then run these commands <strong>on MORA in that same terminal</strong>, replacing
+<code>.deploy.XXXXXXXX</code> with the exact directory printed by your upload:</p>
+<pre><code class="language-sh">stage=/home/air/digital_cam/.deploy.XXXXXXXX
+test -s &quot;$stage/deploy_mora_remote.sh&quot; &amp;&amp; sudo -v &amp;&amp; \
+   bash &quot;$stage/deploy_mora_remote.sh&quot; /home/air/digital_cam &quot;$stage&quot;
+</code></pre>
+<p>Enter the password only at the terminal's sudo prompt. <code>sudo -v</code> authorizes
+the helper's subsequent <code>sudo -n</code> calls in this terminal; authentication in a
+different SSH session does not necessarily carry over. Wait until the UART and
+Tiny 1-C are ready before activation. This runs the same validation, backup,
+installation, startup, and rollback procedure as automatic deployment. Continue
+with step 5 afterward. No passwordless-sudo configuration is required.</p>
+<p><strong>Exact example: release staged on 11 September 2026.</strong> For that upload only,
+after <code>/dev/serial0</code> works and Tiny 1-C is connected, connect with
+<code>ssh air@theatre</code>, then run on MORA:</p>
+<pre><code class="language-sh">sudo -v
+bash /home/air/digital_cam/.deploy.nsYYiABi/deploy_mora_remote.sh \
+   /home/air/digital_cam \
+   /home/air/digital_cam/.deploy.nsYYiABi
+</code></pre>
+<p>This installs the staged CATIA, SODA, LWIRcam, and EARcam release and starts
+CATIA. Check the result in the same terminal:</p>
+<pre><code class="language-sh">systemctl --no-pager --full status catia.service
+</code></pre>
+<p>For later uploads, use their newly printed staging directory instead of
+<code>.deploy.nsYYiABi</code>. Uploading alone does not install or activate a release.</p>
+<h3 id="5-verify-the-installed-release">5. Verify the installed release</h3>
+<pre><code class="language-sh">ssh air@theatre \
+   'systemctl show catia.service -p ActiveState -p SubState -p UnitFileState -p NRestarts -p ExecStart'
+ssh air@theatre 'journalctl --no-pager -u catia.service -n 80'
+sha256sum sw/airborne/modules/digital_cam/catia/{catia,soda,lwircam,earcam}-arm64
+ssh air@theatre \
+   'cd /home/air/digital_cam &amp;&amp; sha256sum catia soda lwircam earcam'
+</code></pre>
+<p>The four hashes must match pairwise despite the filename suffix difference.
+Expect <code>ActiveState=active</code>, <code>SubState=running</code>, and <code>UnitFileState=enabled</code>.
+Repeat the status check after a real capture; increasing <code>NRestarts</code> indicates
+failure even if a snapshot briefly says active. Review the actual <code>ExecStart</code>
+for unexpected overrides. Follow logs with:</p>
+<pre><code class="language-sh">ssh air@theatre 'journalctl -fu catia.service'
+</code></pre>
+<p>Trigger a photo from the flight controller or NPS, inspect the newly written
+file in <code>/home/air/Pictures</code>, and confirm successful metadata and SODA
+processing. Use the <a href="#start-here-physical-desk-test-with-mora">desk-test procedure</a>
+to isolate UART and individual cameras. A successful mock test is not a hardware
+camera test. Upgrade MORA to this mask-capable protocol before operating newly
+built flight-controller firmware that sends <code>CATIA_SHOOT_MASK</code>.</p>
+<h3 id="6-maintenance-and-failure-recovery">6. Maintenance and failure recovery</h3>
+<p>The service owns the UART and Tiny 1-C exclusively. Before any foreground test:</p>
+<pre><code class="language-sh">ssh air@theatre 'sudo -n systemctl stop catia.service'
+ssh -t air@theatre \
+   'exec /home/air/digital_cam/catia --debug --mocktransform --test'
+</code></pre>
+<p>Stop the foreground process with <code>Ctrl+C</code>, then restore normal operation:</p>
+<pre><code class="language-sh">ssh air@theatre 'sudo -n systemctl start catia.service'
+ssh air@theatre 'systemctl --no-pager --full status catia.service'
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SSH fails</td>
+<td>Check hostname/network/key login; do not disable host-key checking.</td>
+</tr>
+<tr>
+<td><code>sudo -n</code> needs a password</td>
+<td>Use the same-terminal <code>sudo -v</code> activation procedure in step 4.</td>
+</tr>
+<tr>
+<td>User is not authorized for sudo</td>
+<td>Have the board administrator grant the needed installation permissions.</td>
+</tr>
+<tr>
+<td>Missing <code>/dev/serial0</code></td>
+<td>Configure the board UART and remove the serial console; verify device permissions.</td>
+</tr>
+<tr>
+<td>EARcam loader error</td>
+<td>Install the matching ARM64 ALSA runtime on the board.</td>
+</tr>
+<tr>
+<td>Unmanaged camera process</td>
+<td>Stop that foreground run deliberately, then retry deployment.</td>
+</tr>
+<tr>
+<td>Tiny 1-C startup failure</td>
+<td>Check USB power, enumeration, rule/group permissions, and exclusive ownership.</td>
+</tr>
+<tr>
+<td>Active but no photos</td>
+<td>Check selected backends, camera mask, UART RX logs, and flight-controller triggering.</td>
+</tr>
+<tr>
+<td>Repeated restarts</td>
+<td>Inspect the journal and startup dependencies; do not treat <code>active</code> alone as healthy.</td>
+</tr>
+</tbody>
+</table>
+<p>For handled activation failures, the helper attempts to stop the new service,
+restore backed-up files and prior enablement, and restart the old service only
+if it was previously active. It reports rollback failures. On a first install
+there is no old release to restore. An unmanaged process leaves CATIA stopped
+to avoid hardware contention. Masked or unusual service states are rejected.</p>
+<p>After an interrupted SSH session, power loss, or failed rollback, inspect the
+journal, actual service state, and retained staging/backup directory before
+retrying. Installation is not an atomic multi-file transaction. Backups use
+numeric entries corresponding to the <code>destinations</code> array in
+<code>deploy_mora_remote.sh</code>; preserve the whole staging directory and its helper
+when recovering. Do not blindly copy numbered files into the runtime directory.
+Remove old staging directories deliberately only after validating the release.</p>
+<p>To intentionally take CATIA out of service across reboots, use
+<code>sudo -n systemctl disable --now catia.service</code> on MORA. Restore boot operation
+with <code>sudo -n systemctl enable --now catia.service</code>.</p>
 <h2 id="start-here-local-simulation">Start Here: Local Simulation</h2>
 <p>This is the simplest way to verify the complete chain without camera hardware.
 Run these commands from the Paparazzi repository root.</p>
@@ -296,6 +687,9 @@ created.</p>
 <p>Use this setup to test the deployed CATIA binary on, for example, a Raspberry Pi Zero 2 W
 while simulation runs on a local PC. The USB-to-UART link carries the same CATIA camera
 messages used by the aircraft.</p>
+<p>First complete <a href="#deploy-to-mora">Deploy to MORA</a>. <strong>Stop <code>catia.service</code> before
+the foreground commands below</strong> using step 6 of that guide; otherwise two
+processes compete for the same UART/camera. Restart the service after testing.</p>
 <h3 id="naming-catia-service-mora-board">Naming: CATIA service, MORA board</h3>
 <p><strong>MORA</strong> (Magic Onboard Recognition Apparatus) is the companion compute board with
 one or more cameras. <strong>CATIA</strong> is the camera service running on that board or, for
@@ -345,7 +739,7 @@ Shooting: EXIF metadata added
 Shooting: soda return 0 ...
 </code></pre>
 <p>Inspect the generated images from another laptop terminal:</p>
-<pre><code class="language-sh">ssh air@theatre 'ls -lh /home/air/digital_cam/photos/m*.jpg'
+<pre><code class="language-sh">ssh air@theatre 'ls -lh /home/air/Pictures/m*.jpg'
 </code></pre>
 <h3 id="3-second-run-raspberry-pi-camera">3. Second run: Raspberry Pi camera</h3>
 <p>Stop the mock-image run with <code>Ctrl+C</code>, then start CATIA with the physical camera:</p>
@@ -353,7 +747,7 @@ Shooting: soda return 0 ...
    'exec /home/air/digital_cam/catia --aicam --debug'
 </code></pre>
 <p>Trigger another <code>DC_SHOOT</code>. Physical-camera images are written as
-<code>/home/air/digital_cam/photos/aNNNNNN.jpg</code> before EXIF and SODA processing
+<code>/home/air/Pictures/aNNNNNN.jpg</code> before EXIF and SODA processing
 completes.</p>
 <h3 id="4-third-run-tiny-1-c-lwir-camera">4. Third run: Tiny 1-C LWIR camera</h3>
 <p>Connect the Tiny 1-C USB camera and start CATIA with the LWIR backend:</p>
@@ -362,12 +756,12 @@ completes.</p>
 </code></pre>
 <p>Trigger <code>DC_SHOOT</code> again. CATIA starts the deployed <code>lwircam</code> executable in
 one-shot mode, waits for a usable thermal frame, and writes a numbered JPEG as
-<code>/home/air/digital_cam/photos/lNNNNNN.jpg</code>. CATIA then inserts the same flight
+<code>/home/air/Pictures/lNNNNNN.jpg</code>. CATIA then inserts the same flight
 EXIF metadata used by the other camera backends and invokes SODA.</p>
 <p>A successful capture includes these diagnostics:</p>
 <pre><code class="language-text">CATIA-N: requesting image from lwircam backend
 selected camera index=0 vid=0bda pid=5840 name=USB Camera
-LWIR CAPTURE: saved /home/air/digital_cam/photos/l00000N.jpg (256x192)
+LWIR CAPTURE: saved /home/air/Pictures/l00000N.jpg (256x192)
 CATIA-N: Shooting: EXIF metadata added
 CATIA-N: Shooting: soda return 0 ...
 </code></pre>
@@ -1282,88 +1676,11 @@ directory:</p>
    MORA_INSTALL_DIR=/opt/catia
 </code></pre>
 <h4 id="build-and-deploy-with-one-command">Build and deploy with one command</h4>
-<p><code>deploy_mora.sh</code> automates an incremental ARM64 release build and transfers CATIA,
-SODA, LWIRcam, EARcam, and both mock images into a unique staging directory
-with <code>rsync</code>. The thermal fixture comes from <code>lwircam/mock_lwir_01.jpg</code>, which
-contains the embedded synthetic temperature layer. Its defaults are
-<code>air@theatre</code> and <code>/home/air/digital_cam</code>:</p>
-<pre><code class="language-sh">sw/airborne/modules/digital_cam/catia/deploy_mora.sh
-</code></pre>
-<p>Before using the script, verify that public-key login works without a password
-prompt:</p>
-<pre><code class="language-sh">ssh air@theatre true
-</code></pre>
-<p>The development computer needs <code>make</code>, <code>file</code>, <code>ssh</code>, <code>rsync</code>, and the AArch64
-C/C++ compiler, <code>readelf</code>, and <code>strip</code> tools. The script stops before transfer
-if a required command is missing, any executable is not AArch64, a binary is
-not stripped, any debug section remains, or an unmanaged CATIA or LWIR server
-is still running. This avoids replacing a live executable or competing for the
-Tiny 1-C.</p>
-<p>MORA needs Bash, <code>flock</code>, systemd, udev, <code>rsync</code>, <code>pgrep</code>, noninteractive
-<code>sudo -n</code> permission for installation/service commands, and the ARM64 ALSA
-runtime (<code>libasound.so.2</code>) used by EARcam. Its <code>air</code> user must have write access
-to <code>/home/air/digital_cam</code> and the service's <code>dialout</code> and <code>plugdev</code> groups.
-The build host also needs native and ARM64 ALSA development files and
-<code>pkg-config</code> for the EARcam build/tests.</p>
-<p>The remote <code>deploy_mora_remote.sh</code> helper locks deployment, runs the staged
-EARcam self-test and LWIR mock processing, and aborts on either failure before
-stopping the service. It records the old service's active/enabled states and
-backs up all replaced runtime files, the systemd unit, and the udev rule.
-It requires a successful stop and an inactive state before replacing files;
-an unmanaged camera process aborts deployment. It then installs the staged
-files, validates the unit, reloads udev/systemd, and enables and starts CATIA.
-Success requires <code>enabled</code>, <code>active</code>, and <code>SubState=running</code> after startup.
-This checks initial readiness, not long-term service health.</p>
-<p>If activation fails, the helper stops the new service, restores the backed-up
-files and prior enablement, and restarts the old service only if it was active
-before deployment. It refuses masked or unusual prior enablement states rather
-than guessing how to restore them. An unmanaged process leaves CATIA stopped
-to avoid competing for hardware. Failed rollback is reported; the backup is
-retained under the printed <code>.deploy.XXXXXXXX/backup</code> directory. Staging and
-backups are retained after success too; remove old directories deliberately
-after confirming the release. This is rollback on handled errors, not an
-atomic multi-file update or protection against power loss/SIGKILL. If the SSH
-connection is lost, inspect MORA's journal and retained backup before retrying.</p>
-<p>The script builds and strips only the <code>*-arm64</code> release executables, then
-uploads each under its unsuffixed runtime name. It does not clean or replace
-native executables, so laptop testing can continue after deployment.
-No photos or EARcam logs are removed by deployment or rollback.</p>
-<p>Run the local, hardware-free deployment regression without SSH or privileges:</p>
-<pre><code class="language-sh">bash sw/airborne/modules/digital_cam/catia/tests/deploy_mora_test.sh
-</code></pre>
-<p>Supply a different SSH destination as the first argument. The systemd unit uses
-the fixed canonical installation directory <code>/home/air/digital_cam</code>, so the
-optional second argument must have that value:</p>
-<pre><code class="language-sh">sw/airborne/modules/digital_cam/catia/deploy_mora.sh \
-   air@other-mora /home/air/digital_cam
-</code></pre>
-<p>Set <code>BUILD_JOBS</code> to limit parallel compilation when needed:</p>
-<pre><code class="language-sh">BUILD_JOBS=4 sw/airborne/modules/digital_cam/catia/deploy_mora.sh
-</code></pre>
-<p>The deployed CATIA binary uses <code>/dev/serial0</code> by default and embeds paths below
-the selected installation directory. The script creates the shared <code>photos</code>
-directory. The system-level <code>catia.service</code> runs as the unprivileged <code>air</code>
-user with <code>dialout</code> and <code>plugdev</code> access. It uses absolute paths, starts at
-<code>multi-user.target</code>, and retries every three seconds without a start limit when
-the serial device, USB camera, or another startup dependency is temporarily
-unavailable. systemd marks it active only after CATIA has initialized both the
-persistent LWIR capture server and <code>/dev/serial0</code>.</p>
-<p>Inspect the service and follow its journal with:</p>
-<pre><code class="language-sh">ssh air@theatre 'systemctl status catia.service'
-ssh air@theatre 'journalctl -fu catia.service'
-</code></pre>
-<p>CATIA and standalone <code>lwircam</code> runs require exclusive Tiny 1-C ownership. Stop
-the service for maintenance or a manual test, and restart it afterward:</p>
-<pre><code class="language-sh">ssh air@theatre 'sudo systemctl stop catia.service'
-ssh air@theatre \
-   '/home/air/digital_cam/catia --debug --mocktransform --test'
-ssh air@theatre 'sudo systemctl restart catia.service'
-</code></pre>
-<p>Disable automatic boot startup only when intentionally taking CATIA out of
-service:</p>
-<pre><code class="language-sh">ssh air@theatre 'sudo systemctl disable --now catia.service'
-ssh air@theatre 'sudo systemctl enable --now catia.service'
-</code></pre>
+<p>Use the single <a href="#deploy-to-mora">Deploy to MORA</a> procedure near the top of this
+manual for prerequisites, clean rebuilds, installation, release verification,
+service maintenance, and rollback. That procedure uses <code>deploy_mora.sh</code> to
+install the complete ARM64 family, not just CATIA.</p>
+<h3 id="local-lwir-mock-processing">Local LWIR Mock Processing</h3>
 <p>Test locally without a camera, from the CATIA directory:</p>
 <pre><code class="language-sh">make -j32 lwircam
 ./lwircam-native --mock-image lwircam/mock_lwir_01.jpg --output /tmp/lwir-opencv.jpg
@@ -1995,11 +2312,15 @@ codec remains self-contained and cross-compiles reliably. A future switch to
 libjpeg-turbo should build it as a proper separate library rather than compile
 its source files ad hoc.</p>
 <h2 id="output-locations">Output Locations</h2>
+<p>On MORA (ARM64 deployment), photos are saved to <code>~/Pictures/</code> (<code>/home/air/Pictures</code>)
+and EARcam acoustic session logs plus debug data are saved to <code>~/usher_debug_data/</code> (<code>/home/air/usher_debug_data</code>).
+In local development, output defaults to <code>photos/</code> and <code>earlogs/</code> beside CATIA.</p>
 <table>
 <thead>
 <tr>
 <th>Source</th>
-<th>Default output</th>
+<th>Development PC</th>
+<th>MORA board</th>
 <th>Filename example</th>
 </tr>
 </thead>
@@ -2007,27 +2328,44 @@ its source files ad hoc.</p>
 <tr>
 <td>Local or <code>--test</code></td>
 <td><code>catia/photos/</code></td>
+<td><code>~/Pictures/</code></td>
 <td><code>m000006.jpg</code></td>
 </tr>
 <tr>
 <td>AI camera</td>
 <td><code>catia/photos/</code></td>
+<td><code>~/Pictures/</code></td>
 <td><code>a000006.jpg</code></td>
 </tr>
 <tr>
 <td>LWIR camera</td>
 <td><code>catia/photos/</code></td>
+<td><code>~/Pictures/</code></td>
 <td><code>l000006.jpg</code></td>
 </tr>
 <tr>
 <td>CHDK</td>
 <td><code>catia/photos/</code></td>
+<td><code>~/Pictures/</code></td>
 <td><code>c000006.jpg</code></td>
 </tr>
 <tr>
-<td>EARcam</td>
+<td>EARcam photo</td>
+<td><code>catia/photos/</code></td>
+<td><code>~/Pictures/</code></td>
+<td><code>e000006.jpg</code></td>
+</tr>
+<tr>
+<td>EARcam log</td>
 <td><code>catia/earlogs/</code></td>
+<td><code>~/usher_debug_data/</code></td>
 <td><code>ear_20260907_213330.csv</code></td>
+</tr>
+<tr>
+<td>Pose debug log</td>
+<td><code>--pose-log DIR</code></td>
+<td><code>~/usher_debug_data/</code></td>
+<td><code>pose-20260912T...-XXXXXX.csv</code></td>
 </tr>
 </tbody>
 </table>
@@ -2041,7 +2379,8 @@ its source files ad hoc.</p>
    CATIA_LWIR_CAM_COMMAND=/opt/catia/lwircam \
    CATIA_EAR_CAM_COMMAND=/opt/catia/earcam \
    CATIA_EAR_CAM_DEVICE=auto \
-   CATIA_EAR_CAM_LOG_DIR=/data/earlogs
+   CATIA_EAR_CAM_LOG_DIR=/data/earlogs \
+   CATIA_POSE_LOG_DIR=/data/usher_debug_data
 </code></pre>
 <h2 id="command-reference">Command Reference</h2>
 <p>All behavior is steered by command-line options. CATIA and its sub-applications
@@ -2275,8 +2614,8 @@ run this from the <code>documentation</code> directory:</p>
 </code></pre>
 <p>The script validates its dependencies, renders <code>catia-flow.png</code> and
 <code>catia-flow.svg</code> with Graphviz, composites <code>thelaptopscreen.png</code> into the
-Inkscape-rendered <code>desk-test-setup.png</code>, and rebuilds <code>index.html</code> from this
-Markdown file. It then checks that every generated file is nonempty.</p>
+Inkscape-rendered <code>desk-test-setup.png</code>, and rebuilds all HTML pages and graphics
+into the <code>html/</code> directory. It then checks that every generated file is nonempty.</p>
 <p>Required tools:</p>
 <ul>
 <li>Graphviz <code>dot</code>;</li>
@@ -2285,8 +2624,7 @@ Markdown file. It then checks that every generated file is nonempty.</p>
 <li>Python 3;</li>
 <li>Python package <code>Markdown</code> (<code>python3 -m pip install Markdown</code>).</li>
 </ul>
-<p>Do not edit <code>index.html</code>, <code>catia-flow.png</code>, <code>catia-flow.svg</code>, or
-<code>desk-test-setup.png</code> directly; the next documentation update replaces them.</p></main>
+<p>Do not edit files inside <code>html/</code> directly; the next documentation update replaces them.</p></main>
   </div>
   <footer>CATIA documentation / Paparazzi UAV</footer>
 </body>

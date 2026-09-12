@@ -2,7 +2,10 @@
 
 A workshop guide for the Tiny1-C, CATIA and a fixed, downward-looking camera.
 
-[Open the illustrated HTML guide](lwir-calibration.html) | [Back to CATIA](index.html)
+[Documentation Hub](index.html) | [Camera Pipeline](catia_camera_pipeline.html) |
+[AI Camera](raspberry_pi_ai_camera.html) | [LWIR Calibration](lwir-calibration.html) |
+[EARcam Guide](earcam-loudest-spot-explained.html) | [EARcam Data Flow](earcam-dataflow.html) |
+[Mission 2 Plan](mission2-score-first.html)
 
 > **The goal:** turn a hotspot pixel into a trustworthy camera direction.
 > You can measure the lens and mounting with a flat homemade target, a tape
@@ -518,7 +521,7 @@ available; reserve bounded forward prediction for cases where later samples
 are missing. A 20 ms residual timing error at 15 m/s contributes 0.30 m before
 rotation effects, so perfect exposure timestamps are not a prerequisite if
 the measured total error stays inside the mission budget. See the
-[effective-lag model](index.html#lwir-integration-and-effective-lag).
+[effective-lag model](catia_camera_pipeline.html#lwir-integration-and-effective-lag).
 
 Before relying on accurate moving-aircraft GPS, validate either exposure
 timestamps or an effective-lag estimate and its uncertainty. Neither the lag
@@ -584,7 +587,7 @@ straightforward instead of starting from memory.
 
 - [OpenCV camera calibration tutorial](https://docs.opencv.org/4.x/dc/dbb/tutorial_py_calibration.html): internal corners, multiple views, camera matrix and distortion.
 - [OpenCV pose estimation](https://docs.opencv.org/4.x/d5/d1f/calib3d_solvePnP.html): object-to-camera pose convention.
-- [CATIA geolocation implementation guide](index.html#hotspot-gps-coordinates-and-center-temperatures): metadata, calibration keys and runtime limitations.
+- [CATIA geolocation implementation guide](catia_camera_pipeline.html#hotspot-gps-coordinates-and-center-temperatures): metadata, calibration keys and runtime limitations.
 
 The thermal-board construction is a practical workshop approach, not a
 manufacturer-certified calibration target. Photo counts and pixel-error bands

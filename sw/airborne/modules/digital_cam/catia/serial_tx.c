@@ -62,6 +62,7 @@ void serial_tx_stop(void)
 {
   pthread_mutex_lock(&transmit_mutex);
   output_fd = -1;
+  output_error = 0;
   head = count = 0;
   pthread_mutex_unlock(&transmit_mutex);
 }
@@ -134,7 +135,11 @@ int serial_tx_flush(void)
 bool serial_tx_pending(void)
 {
   pthread_mutex_lock(&transmit_mutex);
-  bool result = count > 0 && output_fd >= 0 && output_error == 0;
+  /** Once set, output_error never clears itself; also report pending when it is set
+   * (even with an empty queue) so the caller's poll loop keeps asking for POLLOUT and
+   * promptly calls serial_tx_flush(), which surfaces the failure instead of leaving
+   * UART output silently and permanently stuck. */
+  bool result = output_fd >= 0 && (count > 0 || output_error != 0);
   pthread_mutex_unlock(&transmit_mutex);
   return result;
 }

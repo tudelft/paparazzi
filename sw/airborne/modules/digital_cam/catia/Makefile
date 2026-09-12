@@ -9,6 +9,8 @@ BUILD_DIR = .build
 OUTPUT_SUFFIX ?=
 CROSS_COMPILE ?= aarch64-linux-gnu-
 MORA_INSTALL_DIR ?= /home/air/digital_cam
+MORA_PHOTO_DIR ?= /home/air/Pictures
+MORA_DEBUG_DIR ?= /home/air/usher_debug_data
 ARM64_SYSROOT ?=
 ARM64_PKG_CONFIG_LIBDIR ?= $(ARM64_SYSROOT)/usr/lib/aarch64-linux-gnu/pkgconfig:$(ARM64_SYSROOT)/usr/share/pkgconfig
 CATIA_OUTPUT = catia$(OUTPUT_SUFFIX)
@@ -28,6 +30,7 @@ CATIA_EAR_CAM_COMMAND ?= $(CURDIR)/earcam-native
 CATIA_EAR_CAM_DEVICE ?= auto
 CATIA_EAR_CAM_LOG_DIR ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/earlogs
 CATIA_EAR_CAM_PHOTO_DIR ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/photos
+CATIA_POSE_LOG_DIR ?=
 NEAR_HORIZON_CASE_BLACK ?= 0
 NEAR_HORIZON_ROLL_DEG ?= 75.0
 NEAR_HORIZON_PITCH_DEG ?= 75.0
@@ -55,6 +58,7 @@ CFLAGS = $(OPTFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined \
 	-DCATIA_EAR_CAM_DEVICE='"$(CATIA_EAR_CAM_DEVICE)"' \
 	-DCATIA_EAR_CAM_LOG_DIR='"$(CATIA_EAR_CAM_LOG_DIR)"' \
 	-DCATIA_EAR_CAM_PHOTO_DIR='"$(CATIA_EAR_CAM_PHOTO_DIR)"' \
+	$(if $(CATIA_POSE_LOG_DIR),-DCATIA_POSE_LOG_DIR='"$(CATIA_POSE_LOG_DIR)"') \
 	-Dnear_horizon_case_black=$(NEAR_HORIZON_CASE_BLACK) \
 	-Dnear_horizon_roll_deg=$(NEAR_HORIZON_ROLL_DEG) \
 	-Dnear_horizon_pitch_deg=$(NEAR_HORIZON_PITCH_DEG) \
@@ -78,7 +82,7 @@ CFILES = ai_cam_pipe.c \
 	 socket.c \
 	 pose_log.c \
 	 protocol.c
-HFILES = $(CFILES:.c=.h) version.h
+HFILES = $(CFILES:.c=.h) version.h path_utils.h
 PROJECT_CFILES = $(CFILES) catia.c
 PROJECT_OBJECTS = $(addprefix $(BUILD_DIR)/project/,$(PROJECT_CFILES:.c=.o))
 LIBEXIF_CFILES = $(addprefix $(LIBEXIF)/, \
@@ -112,14 +116,15 @@ arm64:
 	  CATIA_SERIAL_DEVICE=/dev/serial0 \
 	  CATIA_MOCK_IMAGE='$(MORA_INSTALL_DIR)/mock_image_01.jpg' \
 	  CATIA_SODA='$(MORA_INSTALL_DIR)/soda' \
-	  CATIA_LOCAL_PHOTO_DIR='$(MORA_INSTALL_DIR)/photos' \
-	  CATIA_AI_CAM_PHOTO_DIR='$(MORA_INSTALL_DIR)/photos' \
-	  CATIA_LWIR_CAM_PHOTO_DIR='$(MORA_INSTALL_DIR)/photos' \
+	  CATIA_LOCAL_PHOTO_DIR='$(MORA_PHOTO_DIR)' \
+	  CATIA_AI_CAM_PHOTO_DIR='$(MORA_PHOTO_DIR)' \
+	  CATIA_LWIR_CAM_PHOTO_DIR='$(MORA_PHOTO_DIR)' \
 	  CATIA_LWIR_CAM_COMMAND='$(MORA_INSTALL_DIR)/lwircam' \
-	  CATIA_CHDK_PHOTO_DIR='$(MORA_INSTALL_DIR)/photos' \
+	  CATIA_CHDK_PHOTO_DIR='$(MORA_PHOTO_DIR)' \
 	  CATIA_EAR_CAM_COMMAND='$(MORA_INSTALL_DIR)/earcam' \
-	  CATIA_EAR_CAM_LOG_DIR='$(MORA_INSTALL_DIR)/earlogs' \
-	  CATIA_EAR_CAM_PHOTO_DIR='$(MORA_INSTALL_DIR)/photos'
+	  CATIA_EAR_CAM_LOG_DIR='$(MORA_DEBUG_DIR)' \
+	  CATIA_EAR_CAM_PHOTO_DIR='$(MORA_PHOTO_DIR)' \
+	  CATIA_POSE_LOG_DIR='$(MORA_DEBUG_DIR)'
 	$(CROSS_COMPILE)strip --strip-all catia-arm64 soda-arm64 lwircam-arm64 earcam-arm64
 
 $(CATIA_OUTPUT): $(PROJECT_OBJECTS) $(LIBEXIF_OBJECTS) $(LIBJPEG_OBJECTS)
@@ -162,6 +167,7 @@ $(CONFIG_STAMP): FORCE
 	  'CATIA_EAR_CAM_DEVICE=$(CATIA_EAR_CAM_DEVICE)' \
 	  'CATIA_EAR_CAM_LOG_DIR=$(CATIA_EAR_CAM_LOG_DIR)' \
 	  'CATIA_EAR_CAM_PHOTO_DIR=$(CATIA_EAR_CAM_PHOTO_DIR)' \
+	  'CATIA_POSE_LOG_DIR=$(CATIA_POSE_LOG_DIR)' \
 	  'NEAR_HORIZON_CASE_BLACK=$(NEAR_HORIZON_CASE_BLACK)' \
 	  'NEAR_HORIZON_ROLL_DEG=$(NEAR_HORIZON_ROLL_DEG)' \
 	  'NEAR_HORIZON_PITCH_DEG=$(NEAR_HORIZON_PITCH_DEG)' \

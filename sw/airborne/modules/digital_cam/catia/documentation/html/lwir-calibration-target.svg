@@ -1,0 +1,127 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 620" width="880" height="620">
+  <title>Build squares. Count inner corners.</title>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L7,3 Z" fill="#222222" />
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="880" height="620" fill="#ffffff" stroke="#dedede" stroke-width="2" />
+  <rect x="32" y="32" width="6" height="54" fill="#ca8a04" stroke="none" stroke-width="2" />
+  <text x="54" y="54" fill="#111111" font-size="26" font-family="DejaVu Sans" font-weight="bold">Build squares. Count inner corners.</text>
+  <text x="54" y="83" fill="#555555" font-size="16" font-family="DejaVu Sans" font-weight="normal">Construction schematic / dimensions come from your ruler</text>
+  <rect x="56.0" y="126.0" width="432" height="384" fill="#d1d5db" stroke="#111111" stroke-width="2" />
+  <rect x="80" y="150" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="128" y="150" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="176" y="150" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="224" y="150" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="272" y="150" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="320" y="150" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="368" y="150" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="416" y="150" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="80" y="198" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="128" y="198" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="176" y="198" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="224" y="198" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="272" y="198" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="320" y="198" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="368" y="198" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="416" y="198" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="80" y="246" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="128" y="246" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="176" y="246" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="224" y="246" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="272" y="246" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="320" y="246" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="368" y="246" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="416" y="246" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="80" y="294" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="128" y="294" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="176" y="294" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="224" y="294" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="272" y="294" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="320" y="294" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="368" y="294" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="416" y="294" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="80" y="342" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="128" y="342" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="176" y="342" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="224" y="342" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="272" y="342" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="320" y="342" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="368" y="342" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="416" y="342" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="80" y="390" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="128" y="390" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="176" y="390" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="224" y="390" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="272" y="390" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="320" y="390" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="368" y="390" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="416" y="390" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="80" y="438" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="128" y="438" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="176" y="438" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="224" y="438" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="272" y="438" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="320" y="438" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <rect x="368" y="438" width="48" height="48" fill="#1f2937" stroke="none" stroke-width="2" />
+  <rect x="416" y="438" width="48" height="48" fill="#f3f4f6" stroke="none" stroke-width="2" />
+  <circle cx="128" cy="198" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="176" cy="198" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="224" cy="198" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="272" cy="198" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="320" cy="198" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="368" cy="198" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="416" cy="198" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="128" cy="246" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="176" cy="246" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="224" cy="246" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="272" cy="246" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="320" cy="246" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="368" cy="246" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="416" cy="246" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="128" cy="294" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="176" cy="294" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="224" cy="294" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="272" cy="294" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="320" cy="294" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="368" cy="294" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="416" cy="294" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="128" cy="342" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="176" cy="342" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="224" cy="342" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="272" cy="342" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="320" cy="342" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="368" cy="342" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="416" cy="342" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="128" cy="390" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="176" cy="390" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="224" cy="390" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="272" cy="390" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="320" cy="390" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="368" cy="390" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="416" cy="390" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="128" cy="438" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="176" cy="438" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="224" cy="438" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="272" cy="438" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="320" cy="438" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="368" cy="438" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <circle cx="416" cy="438" r="5" fill="#facc15" stroke="#854d0e" stroke-width="1.5" />
+  <text x="530" y="170" fill="#111111" font-size="26" font-family="DejaVu Sans" font-weight="bold">8 x 7 squares</text>
+  <text x="530" y="205" fill="#d97706" font-size="23" font-family="DejaVu Sans" font-weight="bold">7 x 6 inner corners</text>
+  <rect x="530" y="237" width="24" height="24" fill="#1f2937" stroke="none" stroke-width="2" />
+  <text x="569" y="256" fill="#111111" font-size="19" font-family="DejaVu Sans" font-weight="normal">Thin matte tape</text>
+  <rect x="530" y="277" width="24" height="24" fill="#f3f4f6" stroke="#111111" stroke-width="1.5" />
+  <text x="569" y="296" fill="#111111" font-size="19" font-family="DejaVu Sans" font-weight="normal">Smooth foil</text>
+  <text x="530" y="347" fill="#111111" font-size="18" font-family="DejaVu Sans" font-weight="normal">Dots show crossings.</text>
+  <text x="530" y="375" fill="#555555" font-size="17" font-family="DejaVu Sans" font-weight="normal">Do not add dots to the target.</text>
+  <text x="530" y="420" fill="#111111" font-size="18" font-family="DejaVu Sans" font-weight="normal">Flat backing, clean edges,</text>
+  <text x="530" y="447" fill="#111111" font-size="18" font-family="DejaVu Sans" font-weight="normal">uniform border, no overlaps.</text>
+  <line x1="80" y1="530" x2="320" y2="530" stroke="#222222" stroke-width="3" />
+  <line x1="80" y1="518" x2="80" y2="542" stroke="#222222" stroke-width="3" />
+  <line x1="320" y1="518" x2="320" y2="542" stroke="#222222" stroke-width="3" />
+  <text x="80" y="570" fill="#111111" font-size="19" font-family="DejaVu Sans" font-weight="bold">5 pitches = 250 mm gives 50 mm per square</text>
+  <text x="80" y="599" fill="#555555" font-size="16" font-family="DejaVu Sans" font-weight="normal">Example only. Measure both directions on the finished board.</text>
+</svg>

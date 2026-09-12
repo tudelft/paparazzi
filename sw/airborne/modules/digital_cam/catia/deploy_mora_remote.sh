@@ -10,6 +10,12 @@ stopped=false
 was_active=false
 was_enabled=false
 
+if [[ -f /home/air/pass.txt ]]; then
+  sudo -S -v < /home/air/pass.txt 2>/dev/null || true
+elif [[ -f "${HOME:-}/pass.txt" ]]; then
+  sudo -S -v < "${HOME:-}/pass.txt" 2>/dev/null || true
+fi
+
 exec 9>"$install_dir/.deploy.lock"
 flock -n 9 || { echo 'Another CATIA deployment is in progress' >&2; exit 1; }
 
@@ -98,7 +104,7 @@ else
   [[ $result -eq 1 ]] || exit "$result"
 fi
 changed=true
-mkdir -p "$install_dir/photos" "$install_dir/earlogs"
+mkdir -p "$install_dir/photos" "$install_dir/earlogs" "${HOME:-/home/air}/Pictures" "${HOME:-/home/air}/usher_debug_data"
 for name in catia soda lwircam earcam; do install -m 0755 "$stage/$name" "$install_dir/$name"; done
 for name in mock_image_01.jpg mock_lwir_01.jpg catia.service 99-tiny1c.rules; do
   install -m 0644 "$stage/$name" "$install_dir/$name"

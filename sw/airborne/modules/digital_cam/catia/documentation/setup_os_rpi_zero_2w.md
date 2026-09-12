@@ -1,6 +1,5 @@
 !Getting you OS ready from scratch
 
-
 !First make sure you router is setu so it can accepp the connection request from RPI
 
 WPA2 (NOT WPA2 with SHA256) and NO TKIP bit 
@@ -136,26 +135,47 @@ Make it an AccessPoint
 
 https://raspberrytips.com/access-point-setup-raspberry-pi/
 
-Headless ssid and paas change
+#Headless ssid and pass change
 
 Method 1: The Pre-configured NetworkManager File (Headless Fix)If you cannot plug the Pi into a monitor and keyboard, you can write a NetworkManager configuration file directly onto the SD card's boot partition. [1] (https://github.com/raspberrypi/trixie-feedback/issues/61)Safely remove the SD card from your Pi and plug it into your computer.Open the partition named bootfs (or boot).Create a new folder named conf inside the root of the boot partition if it doesn't already exist.Inside that conf folder, create a new file named wlan0 (with no file extension, or your operating system may require you to name it wlan0.nmconnection).Paste the following configuration, replacing YOUR_SSID and YOUR_PASSWORD with your actual network details:
 
-[connection]
-id=Preconfigured-WiFi
-type=wifi
-interface-name=wlan0
+ [connection]
+ id=Preconfigured-WiFi
+ type=wifi
+ interface-name=wlan0
 
-[wifi]
-mode=infrastructure
-ssid=YOUR_SSID
+ [wifi]
+ mode=infrastructure
+ ssid=YOUR_SSID
 
-[wifi-security]
-auth-alg=open
-key-mgmt=wpa-psk
-psk=YOUR_PASSWORD
+ [wifi-security]
+ auth-alg=open
+ key-mgmt=wpa-psk
+ psk=YOUR_PASSWORD
 
-[ipv4]
-method=auto
+ [ipv4]
+ method=auto
 
-[ipv6]
-method=auto
+ [ipv6]
+ method=auto
+
+
+----
+#Get OS to work with UART
+
+On MORA (theatre), disable Bluetooth and dedicate the full UART to CATIA
+
+Open and edit the boot configuration:
+
+ sudo nano /boot/firmware/config.txt
+
+Under [all], add:
+
+ enable_uart=1
+ dtoverlay=disable-bt
+
+Then run sudo raspi-config → Interface Options → Serial Port:
+
+Serial login shell: No
+Serial hardware: Yes
+Reboot, then check:

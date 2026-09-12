@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="IMX500 camera setup, rpicam commands, inference demos and CATIA integration">
+  <title>Raspberry Pi AI Camera</title>
+  <style>
+:root {
+  color-scheme: light;
+  --ink: #111111;
+  --muted: #595959;
+  --paper: #ffffff;
+  --surface: #ffffff;
+  --line: #dedede;
+  --yellow: #ffdd00;
+  --link: #806600;
+  --soft: #f5f5f5;
+  --black: #000000;
+  --code: #111111;
+  --code-ink: #ffffff;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.018) 1px, transparent 1px),
+    linear-gradient(rgba(0, 0, 0, 0.018) 1px, transparent 1px),
+    var(--paper);
+  background-size: 28px 28px;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  line-height: 1.65;
+}
+a { color: var(--link); text-underline-offset: 0.2em; }
+a:hover { color: var(--ink); text-decoration-thickness: 2px; }
+a:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; }
+::selection { color: var(--black); background: var(--yellow); }
+code, pre { font-family: "IBM Plex Mono", "Liberation Mono", monospace; }
+.masthead { color: var(--surface); background: var(--black); border-bottom: 5px solid var(--yellow); }
+.masthead-inner {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 32px 0 34px;
+}
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+.site-nav-link {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.site-nav-link:hover, .site-nav-link:focus-visible {
+  background: var(--yellow);
+  color: var(--black);
+}
+.site-nav-link.active {
+  background: var(--yellow);
+  color: var(--black);
+}
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--yellow);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.masthead h1 { margin: 0; color: var(--surface); font-size: 2.75rem; overflow-wrap: anywhere; }
+.lede { max-width: 760px; margin: 12px 0 0; color: #dedede; font-size: 1.08rem; }
+.layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 850px);
+  gap: 48px;
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 38px 0 80px;
+}
+nav { position: sticky; top: 24px; align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; }
+.nav-section { margin-bottom: 26px; }
+.nav-section strong {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.guide-nav, .toc ul { margin: 0; padding: 0; list-style: none; }
+.guide-nav li, .toc li { margin: 0; padding: 0; }
+.guide-nav a, .toc a {
+  display: block;
+  padding: 6px 12px;
+  border-left: 2px solid var(--line);
+  color: var(--ink);
+  font-size: 0.88rem;
+  text-decoration: none;
+}
+.guide-nav a:hover, .toc a:hover, .guide-nav a:focus-visible, .toc a:focus-visible {
+  border-color: var(--yellow);
+  color: var(--link);
+  background: var(--soft);
+}
+.guide-nav a.active {
+  border-left: 3px solid var(--yellow);
+  color: var(--black);
+  background: var(--soft);
+  font-weight: 700;
+}
+.toc > ul > li > a { display: none; }
+.toc ul ul { display: block; margin: 0; padding: 0; list-style: none; }
+main { min-width: 0; overflow-wrap: anywhere; }
+main > h1 { display: none; }
+h1, h2, h3 { line-height: 1.18; letter-spacing: 0; }
+h2 {
+  margin: 54px 0 16px;
+  padding-bottom: 9px;
+  border-bottom: 2px solid var(--line);
+  font-size: 1.75rem;
+  scroll-margin-top: 24px;
+}
+main > h2:first-of-type { margin-top: 0; }
+h3 { margin: 30px 0 10px; font-size: 1.18rem; scroll-margin-top: 24px; }
+p { margin: 10px 0 16px; }
+blockquote {
+  margin: 18px 0;
+  padding: 14px 18px;
+  border-left: 4px solid var(--yellow);
+  background: var(--soft);
+}
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 28px auto 48px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+pre {
+  overflow-x: auto;
+  margin: 14px 0 20px;
+  padding: 16px 18px;
+  border-left: 4px solid var(--yellow);
+  color: var(--code-ink);
+  background: var(--code);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+code:not(pre code) { padding: 0.12em 0.34em; color: var(--ink); background: var(--soft); }
+a code:not(pre code) { color: inherit; }
+table { width: 100%; border-collapse: collapse; margin: 18px 0 26px; background: var(--surface); }
+th, td { padding: 11px 13px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { color: var(--black); background: var(--yellow); }
+tbody tr:nth-child(even) { background: var(--soft); }
+ul, ol { padding-left: 24px; }
+hr { border: 0; border-top: 2px solid var(--line); margin: 32px 0; }
+footer { padding: 25px 20px; color: var(--surface); background: var(--black); border-top: 3px solid var(--yellow); text-align: center; }
+@media (max-width: 820px) {
+  .layout { grid-template-columns: 1fr; gap: 24px; }
+  nav { position: static; max-height: none; }
+  .toc > ul > li > ul { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .masthead-inner { padding-top: 28px; }
+}
+@media (max-width: 520px) {
+  .layout, .masthead-inner { width: min(100% - 24px, 1180px); }
+  .toc > ul > li > ul { grid-template-columns: 1fr; }
+  .masthead h1 { font-size: 2.25rem; }
+  th, td { padding: 8px; }
+}
+</style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <nav class="site-nav" aria-label="Main Navigation">
+        <a href="index.html" class="site-nav-link">Documentation Hub</a>
+      <a href="catia_camera_pipeline.html" class="site-nav-link">Camera Pipeline</a>
+      <a href="raspberry_pi_ai_camera.html" class="site-nav-link active">AI Camera (IMX500)</a>
+      <a href="lwir-calibration.html" class="site-nav-link">LWIR Calibration</a>
+      <a href="earcam-loudest-spot-explained.html" class="site-nav-link">EARcam Guide</a>
+      <a href="earcam-dataflow.html" class="site-nav-link">EARcam Data Flow</a>
+      <a href="mission2-score-first.html" class="site-nav-link">Mission 2 Plan</a>
+      </nav>
+      <p class="eyebrow">Paparazzi UAV / MORA / SODA</p>
+      <h1>Raspberry Pi AI Camera</h1>
+      <p class="lede">Connect and test the Raspberry Pi AI Camera, then integrate optical capture with CATIA on MORA.</p>
+    </div>
+  </header>
+  <div class="layout">
+    <nav aria-label="Guide navigation">
+      <div class="nav-section">
+        <strong>All Guides</strong>
+        <ul class="guide-nav">
+          <li><a href="index.html" class="">Documentation Hub</a></li>
+        <li><a href="catia_camera_pipeline.html" class="">Camera Pipeline</a></li>
+        <li><a href="raspberry_pi_ai_camera.html" class="active">AI Camera (IMX500)</a></li>
+        <li><a href="lwir-calibration.html" class="">LWIR Calibration</a></li>
+        <li><a href="earcam-loudest-spot-explained.html" class="">EARcam Guide</a></li>
+        <li><a href="earcam-dataflow.html" class="">EARcam Data Flow</a></li>
+        <li><a href="mission2-score-first.html" class="">Mission 2 Plan</a></li>
+        </ul>
+      </div>
+      <div class="nav-section">
+        <strong>On this page</strong>
+        <div class="toc">
+<ul>
+<li><a href="#raspberry-pi-ai-camera">Raspberry Pi AI Camera</a><ul>
+<li><a href="#hardware-and-connections">Hardware and Connections</a></li>
+<li><a href="#install-the-camera-software">Install the Camera Software</a></li>
+<li><a href="#verify-detection-and-capture">Verify Detection and Capture</a></li>
+<li><a href="#run-imx500-inference-demos">Run IMX500 Inference Demos</a></li>
+<li><a href="#camera-application-reference">Camera Application Reference</a></li>
+<li><a href="#parameters-and-why-they-matter">Parameters and Why They Matter</a></li>
+<li><a href="#picamera2-programming">Picamera2 Programming</a></li>
+<li><a href="#use-with-catia-on-mora">Use With CATIA on MORA</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+<li><a href="#sources-and-regeneration">Sources and Regeneration</a></li>
+<li><a href="#backup">Backup</a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+      </div>
+    </nav>
+    <main><h1 id="raspberry-pi-ai-camera">Raspberry Pi AI Camera</h1>
+<p>Setup, camera commands, and MORA integration for the Sony IMX500-based
+Raspberry Pi AI Camera.</p>
+<p><a href="index.html">Documentation Hub</a> | <a href="catia_camera_pipeline.html">Camera Pipeline</a> |
+<a href="raspberry_pi_ai_camera.html">AI Camera</a> | <a href="lwir-calibration.html">LWIR Calibration</a> |
+<a href="earcam-loudest-spot-explained.html">EARcam Guide</a> | <a href="earcam-dataflow.html">EARcam Data Flow</a> |
+<a href="mission2-score-first.html">Mission 2 Plan</a></p>
+<h2 id="hardware-and-connections">Hardware and Connections</h2>
+<p>The AI Camera uses a 12.3-megapixel Sony IMX500 sensor with on-sensor inference,
+a CSI connection, and a quoted 78.3-degree field of view. It is not the USB
+Tiny 1-C thermal camera, and it is not an external AI accelerator board.</p>
+<p>Power the Raspberry Pi off before attaching or removing the ribbon cable.
+Use the correct camera cable for the board's connector size. Seat it squarely
+and close the connector latch without forcing it. Do not assume similarly
+shaped CSI and DSI sockets have the same purpose on every Pi model.</p>
+<table>
+<thead>
+<tr>
+<th>Board</th>
+<th>Connection guidance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Raspberry Pi 5</td>
+<td>Either supported camera/display connector can be used for a camera. Use its matching cable.</td>
+</tr>
+<tr>
+<td>Raspberry Pi Zero family</td>
+<td>Use the smaller camera connector and a Zero-compatible ribbon cable.</td>
+</tr>
+<tr>
+<td>Earlier full-size Raspberry Pi boards</td>
+<td>Use the dedicated CSI camera connector.</td>
+</tr>
+<tr>
+<td>Compute Module</td>
+<td>Follow the carrier-board camera connector and routing documentation.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="install-the-camera-software">Install the Camera Software</h2>
+<p>Run these commands <strong>on the MORA</strong>, not on the development PC.
+Use a current supported Raspberry Pi OS image and check the installed version:</p>
+<pre><code class="language-sh">cat /etc/os-release
+</code></pre>
+<p>OK install The AI Camera tools and some optional extra like FFMPeg</p>
+<pre><code class="language-sh">sudo apt update
+sudo apt install -y imx500-all 
+sudo apt install -y ffmpeg gstreamer1.0-x gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly imagemagick libimage-exiftool-perl
+sudo reboot
+</code></pre>
+<p>Do NOT perform a "upgrade" "full-upgrade" or "rpi-update" since this will make your camera NOT WORK anymore!
+It is very well that this is fixed by some kind soul, but at moment of writing 20260912 it is broken.</p>
+<p>Better still even lock you current working kernel, Find the kernelname to lock via the dpkg method and use uname -a to see which one is currently in use: in this case linux-image-6.18.34+rpt-rpi-v</p>
+<pre><code class="language-sh">dpkg -l 'linux-image-*'
+uname -a
+sudo apt-mark hold linux-image-6.18.34+rpt-rpi-v8
+</code></pre>
+<p>Review the package-manager changes before confirming. upgrade is a
+board-maintenance operation, not part of CATIA's binary deployment.
+Reconnect after reboot. If <code>imx500-all</code> is unavailable, check the OS release and its
+Raspberry Pi package repositories rather than installing unrelated drivers.</p>
+<p>Modern Raspberry Pi OS uses the <code>rpicam-*</code> application names. The source also
+contains older <code>libcamera-*</code> examples for Bullseye; this guide uses the modern
+names. Installing the camera packages does not enable IMX500 inference in CATIA.</p>
+<h2 id="verify-detection-and-capture">Verify Detection and Capture</h2>
+<p>Stop other programs using the CSI camera before testing. On an installed MORA,
+follow the <a href="catia_camera_pipeline.html#deploy-to-mora">CATIA maintenance procedure</a> to stop the
+service first. Do not run two camera clients concurrently.</p>
+<p>Thus login via</p>
+<pre><code class="language-sh">ssh air@theatre
+</code></pre>
+<p>Then in the shell test if your RPI camera hardware is recognized</p>
+<pre><code class="language-sh">rpicam-hello --version
+rpicam-hello --list-cameras
+</code></pre>
+<p>Look for the IMX500 in the detected-camera list. Use the reported camera index
+and supported modes, not the IMX219 or IMX477 example values in generic guides.</p>
+<p>For an SSH-only bench test on ORA, capture a JPEG without opening a preview via:</p>
+<pre><code class="language-sh">rpicam-still --nopreview --timeout 2000 --output ai-camera-test.jpg
+ls -lh ai-camera-test.jpg
+</code></pre>
+<p>Copy the file to your local PC with rsync via this line on your LOCAL PC, not the MORA</p>
+<pre><code class="language-sh"> rsync -av --ignore-existing --info=progress2  air@theatre:/home/air/i-camera-test.jpg .
+
+
+Inspect the actual image as well as the process exit status. A nonempty file
+alone does not prove correct focus, exposure, or mounting orientation.
+For multiple cameras, select an index explicitly, for example:
+
+```sh
+rpicam-hello --camera 0 -t 0
+</code></pre>
+<h2 id="run-imx500-inference-demos">Run IMX500 Inference Demos</h2>
+<p>These are standalone Raspberry Pi camera demonstrations from the source, not
+CATIA flight-controller commands. Confirm the referenced JSON files exist in
+the installed camera assets. Preview examples expect a usable display session;
+add <code>--nopreview</code> for headless video recording.</p>
+<h3 id="object-detection-preview">Object Detection Preview</h3>
+<pre><code class="language-sh">rpicam-hello -t 0s \
+  --post-process-file /usr/share/rpi-camera-assets/imx500_mobilenet_ssd.json \
+  --viewfinder-width 1920 --viewfinder-height 1080 --framerate 30
+</code></pre>
+<h3 id="record-object-detection-video">Record Object Detection Video</h3>
+<pre><code class="language-sh">rpicam-vid -t 10s -o output.264 \
+  --post-process-file /usr/share/rpi-camera-assets/imx500_mobilenet_ssd.json \
+  --width 1920 --height 1080 --framerate 30
+</code></pre>
+<h3 id="pose-detection-preview">Pose Detection Preview</h3>
+<pre><code class="language-sh">rpicam-hello -t 0s \
+  --post-process-file /usr/share/rpi-camera-assets/imx500_posenet.json \
+  --viewfinder-width 1920 --viewfinder-height 1080 --framerate 30
+</code></pre>
+<p>The JSON selects the model/post-processing pipeline. These example resolutions
+and frame rates are requests, not measured performance guarantees for a Pi Zero
+2 W. Check actual throughput and memory use on the intended board.</p>
+<h2 id="camera-application-reference">Camera Application Reference</h2>
+<table>
+<thead>
+<tr>
+<th>Application</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rpicam-hello</code></td>
+<td>Check camera operation and view a preview.</td>
+</tr>
+<tr>
+<td><code>rpicam-jpeg</code></td>
+<td>Capture a JPEG with a small command-line interface.</td>
+</tr>
+<tr>
+<td><code>rpicam-still</code></td>
+<td>Still capture with more encoding and raw-image options; used by CATIA AIcam.</td>
+</tr>
+<tr>
+<td><code>rpicam-vid</code></td>
+<td>Record or stream encoded video.</td>
+</tr>
+<tr>
+<td><code>rpicam-raw</code></td>
+<td>Record sensor Bayer frames without a normal image container.</td>
+</tr>
+<tr>
+<td><code>rpicam-detect</code></td>
+<td>Optional host-side TensorFlow Lite detection application; distinct from IMX500 inference demos.</td>
+</tr>
+</tbody>
+</table>
+<p>Use each installed program's <code>--help</code> to check available options. Features and
+encoders depend on the installed version and board. Do not assume optional
+<code>rpicam-detect</code> is included in the default OS installation.</p>
+<h3 id="still-images-and-exposure">Still Images and Exposure</h3>
+<pre><code class="language-sh">rpicam-jpeg -o test.jpg -t 2000 --width 640 --height 480
+rpicam-jpeg -o manual-exposure.jpg --shutter 20000 --gain 1.5
+rpicam-jpeg -o darker.jpg --ev -0.5
+rpicam-still -e png -o test.png
+rpicam-still --raw --output test.jpg
+</code></pre>
+<p><code>--shutter</code> is in microseconds: 20000 means 20 ms. Exposure must fit the selected
+sensor mode and frame duration. Gain can increase noise; higher brightness is
+not evidence of improved image quality. <code>--ev</code> changes the automatic exposure
+target rather than specifying a fixed shutter time.</p>
+<p>The encoding option selects the still-image format, not merely the filename
+extension. <code>--raw</code> requests a Bayer DNG alongside the processed image. Raw RGB
+or YUV output and <code>rpicam-raw</code> streams are different: they need external format
+and dimension information and are not automatically DNG files.</p>
+<h3 id="video-and-network-streaming">Video and Network Streaming</h3>
+<pre><code class="language-sh">rpicam-vid -t 10s -o test.h264
+rpicam-vid -t 10000 --codec mjpeg -o test.mjpeg
+rpicam-raw -t 2000 -o test.raw
+</code></pre>
+<p>An H.264 elementary stream is not an MP4 container. Container and libav support
+vary with the installed build. Raw capture can consume substantial storage and
+write bandwidth; check free space before running it.</p>
+<p>The source also describes UDP, TCP, and RTSP streaming. A TCP example for a
+trusted bench network is:</p>
+<pre><code class="language-sh">rpicam-vid --nopreview -t 0 --inline --listen -o tcp://0.0.0.0:8888
+</code></pre>
+<p>On the viewing PC, replace <code>MORA_IP</code> with the board's address:</p>
+<pre><code class="language-sh">ffplay tcp://MORA_IP:8888 -fflags nobuffer -flags low_delay -framedrop
+</code></pre>
+<p>This listener has no authentication or encryption. Do not expose it to an
+untrusted network. The source's high-frame-rate and overclocking examples are
+not IMX500/MORA performance recommendations; leave board clocks unchanged for
+initial validation.</p>
+<h2 id="parameters-and-why-they-matter">Parameters and Why They Matter</h2>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Use and benefit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--help</code>, <code>--version</code></td>
+<td>Establish which syntax and software version you are testing.</td>
+</tr>
+<tr>
+<td><code>--list-cameras</code>, <code>--camera INDEX</code></td>
+<td>Find sensors and select the intended one.</td>
+</tr>
+<tr>
+<td><code>--timeout</code>, <code>-t</code></td>
+<td>Control preview settling or recording duration; zero runs continuously where supported.</td>
+</tr>
+<tr>
+<td><code>--nopreview</code></td>
+<td>Avoid a display requirement for SSH/headless operation.</td>
+</tr>
+<tr>
+<td><code>--preview</code>, <code>--fullscreen</code>, <code>--qt-preview</code></td>
+<td>Choose preview layout/backend; these do not set captured-image resolution.</td>
+</tr>
+<tr>
+<td><code>--width</code>, <code>--height</code></td>
+<td>Set still/video output dimensions.</td>
+</tr>
+<tr>
+<td><code>--viewfinder-width</code>, <code>--viewfinder-height</code></td>
+<td>Set preview-stream dimensions separately.</td>
+</tr>
+<tr>
+<td><code>--mode</code>, <code>--viewfinder-mode</code></td>
+<td>Request sensor readout modes; inspect <code>--list-cameras</code> first.</td>
+</tr>
+<tr>
+<td><code>--lores-width</code>, <code>--lores-height</code></td>
+<td>Request a smaller stream for supported analysis pipelines.</td>
+</tr>
+<tr>
+<td><code>--post-process-file</code></td>
+<td>Select a processing pipeline such as the IMX500 demos.</td>
+</tr>
+<tr>
+<td><code>--shutter</code>, <code>--gain</code>, <code>--ev</code></td>
+<td>Trade exposure time, gain, noise, and motion blur.</td>
+</tr>
+<tr>
+<td><code>--metering</code>, <code>--exposure</code></td>
+<td>Adjust automatic exposure's measurement/profile.</td>
+</tr>
+<tr>
+<td><code>--awb</code>, <code>--awbgains</code></td>
+<td>Choose automatic white balance or fixed red/blue gains.</td>
+</tr>
+<tr>
+<td><code>--brightness</code>, <code>--contrast</code>, <code>--saturation</code>, <code>--sharpness</code></td>
+<td>Adjust appearance; excessive processing can obscure useful detail.</td>
+</tr>
+<tr>
+<td><code>--denoise</code></td>
+<td>Trade noise reduction against detail and processing throughput.</td>
+</tr>
+<tr>
+<td><code>--tuning-file</code></td>
+<td>Override sensor/module tuning; do not reuse another sensor's tuning blindly.</td>
+</tr>
+<tr>
+<td><code>--hflip</code>, <code>--vflip</code>, <code>--rotation</code></td>
+<td>Change image orientation; keep geometric calibration consistent.</td>
+</tr>
+<tr>
+<td><code>--roi</code></td>
+<td>Crop using normalized <code>x,y,width,height</code>, for example <code>0.25,0.25,0.5,0.5</code>.</td>
+</tr>
+<tr>
+<td><code>--hdr</code></td>
+<td>Request HDR only where the sensor/platform supports it.</td>
+</tr>
+<tr>
+<td><code>--info-text</code>, <code>--verbose</code></td>
+<td>Display capture metadata or detailed diagnostics.</td>
+</tr>
+<tr>
+<td><code>--config</code></td>
+<td>Load camera-application options from a file for repeatable standalone tests.</td>
+</tr>
+</tbody>
+</table>
+<p>The source's autofocus controls apply only to cameras exposing autofocus,
+such as Camera Module 3. The AI Camera has manually adjustable focus; do not
+expect <code>--autofocus-mode</code> or <code>--lens-position</code> to actuate its lens.</p>
+<h2 id="picamera2-programming">Picamera2 Programming</h2>
+<p>Picamera2 is the Raspberry Pi Python camera interface. Install it through the
+OS package manager to match the system camera stack:</p>
+<pre><code class="language-sh">sudo apt install python3-picamera2
+</code></pre>
+<p>For API examples, consult the
+<a href="https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf">Picamera2 manual</a>.
+The source covers preview, still capture, video, and camera configuration.
+Important distinctions when developing a separate application:</p>
+<ul>
+<li>Preview, still, and video configurations choose different buffer and stream defaults.</li>
+<li><code>main</code>, <code>lores</code>, and <code>raw</code> streams have different purposes and supported formats.</li>
+<li>More buffers can absorb scheduling delays but use additional memory.</li>
+<li>Queued frames may predate a capture request; <code>queue=False</code> changes this behavior,
+  but does not by itself synchronize exposure with flight-controller pose.</li>
+<li>Preview-only transformations and capture transformations are not interchangeable.</li>
+<li>GUI preview backends need a display; headless capture does not.</li>
+<li>USB camera support is limited and does not replace the Tiny 1-C SDK integration.</li>
+</ul>
+<p>Picamera2 is not a required runtime dependency of CATIA's <code>rpicam-still</code> backend.</p>
+<h2 id="use-with-catia-on-mora">Use With CATIA on MORA</h2>
+<p>This section is project-specific guidance, separate from the Waveshare wiki.
+First pass the standalone JPEG test. Then follow the
+<a href="catia_camera_pipeline.html#deploy-to-mora">MORA deployment guide</a>.</p>
+<p>CATIA's AIcam backend invokes <code>rpicam-still</code> to acquire photos. The supplied
+service currently selects LWIRcam and EARcam; installing an AI Camera does not
+automatically change that selection. For a controlled foreground test, stop
+the installed service and start AIcam:</p>
+<pre><code class="language-sh">sudo systemctl stop catia.service
+/home/air/digital_cam/catia --aicam --debug
+</code></pre>
+<p>Run this on MORA with its FC UART connected. Trigger <code>DC_SHOOT</code> from the flight
+controller or NPS and select AIcam in the camera mask (bit 1, mask value <code>2</code>).
+Inspect <code>photos/aNNNNNN.jpg</code>, EXIF processing, and SODA results. After stopping
+the foreground run with <code>Ctrl+C</code>, restore the configured service:</p>
+<pre><code class="language-sh">sudo systemctl start catia.service
+</code></pre>
+<p>This tests optical capture, not IMX500 neural-network result ingestion. The
+standalone detection demos above do not establish that CATIA consumes their
+bounding boxes, classifications, or poses. Do not run them alongside CATIA.</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>No camera listed</td>
+<td>Power off, reseat the correct ribbon, verify the connector and OS/IMX500 packages.</td>
+</tr>
+<tr>
+<td>Preview fails over SSH</td>
+<td>Use <code>--nopreview</code> for capture; a normal SSH shell is not a display session.</td>
+</tr>
+<tr>
+<td>Camera busy</td>
+<td>Stop CATIA and other camera applications before a standalone test.</td>
+</tr>
+<tr>
+<td>Inference asset missing</td>
+<td>Check <code>imx500-all</code> and the paths in <code>/usr/share/rpi-camera-assets</code>.</td>
+</tr>
+<tr>
+<td>Image is blurred</td>
+<td>Adjust physical focus, inspect exposure time, and test with a stationary target.</td>
+</tr>
+<tr>
+<td>Low frame rate</td>
+<td>Check requested sensor mode, processing, memory, power, and storage throughput.</td>
+</tr>
+<tr>
+<td>CLI photo works but CATIA does not</td>
+<td>Check selected backend/mask, <code>rpicam-still</code> availability, UART messages, and CATIA logs.</td>
+</tr>
+</tbody>
+</table>
+<p>No physical AI Camera test was performed when this document was added.</p>
+<h2 id="sources-and-regeneration">Sources and Regeneration</h2>
+<ul>
+<li><a href="https://www.raspberrypi.com/documentation/computers/camera_software.html">Raspberry Pi camera software</a></li>
+<li><a href="https://www.raspberrypi.com/documentation/accessories/camera.html">Raspberry Pi camera hardware</a></li>
+<li><a href="https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf">Picamera2 manual</a></li>
+</ul>
+<p>Edit <code>raspberry_pi_ai_camera.md</code>, then run from the Paparazzi repository root:</p>
+<pre><code class="language-sh">make -C sw/airborne/modules/digital_cam/catia documentation
+</code></pre>
+<p>This regenerates <code>raspberry_pi_ai_camera.html</code> from the local Markdown alongside
+the other guides. Do not edit the generated HTML.
+Regeneration does not overwrite this Markdown.</p>
+<h2 id="backup">Backup</h2>
+<p>Now you have a working OS, it is a good time to backup the SD to an compressed img file via a script found in CATIA "tools" directory</p>
+<pre><code class="language-sh">sudo ./fast_sd_restore.sh mora_os_backup.img.xz /dev/sdX
+</code></pre>
+<p>Where /dev/sdX needs to be your real device e.g. "/dev/sda" of the source SD card device</p>
+<h3 id="restore">Restore</h3>
+<p>And in case you need to restore the whole ready prepared SD to e.g another SD via a script found in CATIA "tools" directory</p>
+<pre><code class="language-sh">sudo ./fast_sd_restore_and_expand_CAREFULL.sh mora_os_backup.img.xz /dev/sdX
+</code></pre>
+<p>Where /dev/sdX needs to be your real device e.g. "/dev/sda" of the target SD card device</p>
+<p>May the Force be with you...</p></main>
+  </div>
+  <footer>CATIA documentation / Paparazzi UAV</footer>
+</body>
+</html>

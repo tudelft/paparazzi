@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Overview and portal to the CATIA camera pipeline, MORA companion computer deployment, AI &amp; thermal camera drivers, acoustic localization, and mission operations.">
+  <title>CATIA Documentation Hub</title>
+  <style>
+:root {
+  color-scheme: light;
+  --ink: #111111;
+  --muted: #595959;
+  --paper: #ffffff;
+  --surface: #ffffff;
+  --line: #dedede;
+  --yellow: #ffdd00;
+  --link: #806600;
+  --soft: #f5f5f5;
+  --black: #000000;
+  --code: #111111;
+  --code-ink: #ffffff;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.018) 1px, transparent 1px),
+    linear-gradient(rgba(0, 0, 0, 0.018) 1px, transparent 1px),
+    var(--paper);
+  background-size: 28px 28px;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  line-height: 1.65;
+}
+a { color: var(--link); text-underline-offset: 0.2em; }
+a:hover { color: var(--ink); text-decoration-thickness: 2px; }
+a:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; }
+::selection { color: var(--black); background: var(--yellow); }
+code, pre { font-family: "IBM Plex Mono", "Liberation Mono", monospace; }
+.masthead { color: var(--surface); background: var(--black); border-bottom: 5px solid var(--yellow); }
+.masthead-inner {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 32px 0 34px;
+}
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+.site-nav-link {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.site-nav-link:hover, .site-nav-link:focus-visible {
+  background: var(--yellow);
+  color: var(--black);
+}
+.site-nav-link.active {
+  background: var(--yellow);
+  color: var(--black);
+}
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--yellow);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.masthead h1 { margin: 0; color: var(--surface); font-size: 2.75rem; overflow-wrap: anywhere; }
+.lede { max-width: 760px; margin: 12px 0 0; color: #dedede; font-size: 1.08rem; }
+.layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 850px);
+  gap: 48px;
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 38px 0 80px;
+}
+nav { position: sticky; top: 24px; align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; }
+.nav-section { margin-bottom: 26px; }
+.nav-section strong {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.guide-nav, .toc ul { margin: 0; padding: 0; list-style: none; }
+.guide-nav li, .toc li { margin: 0; padding: 0; }
+.guide-nav a, .toc a {
+  display: block;
+  padding: 6px 12px;
+  border-left: 2px solid var(--line);
+  color: var(--ink);
+  font-size: 0.88rem;
+  text-decoration: none;
+}
+.guide-nav a:hover, .toc a:hover, .guide-nav a:focus-visible, .toc a:focus-visible {
+  border-color: var(--yellow);
+  color: var(--link);
+  background: var(--soft);
+}
+.guide-nav a.active {
+  border-left: 3px solid var(--yellow);
+  color: var(--black);
+  background: var(--soft);
+  font-weight: 700;
+}
+.toc > ul > li > a { display: none; }
+.toc ul ul { display: block; margin: 0; padding: 0; list-style: none; }
+main { min-width: 0; overflow-wrap: anywhere; }
+main > h1 { display: none; }
+h1, h2, h3 { line-height: 1.18; letter-spacing: 0; }
+h2 {
+  margin: 54px 0 16px;
+  padding-bottom: 9px;
+  border-bottom: 2px solid var(--line);
+  font-size: 1.75rem;
+  scroll-margin-top: 24px;
+}
+main > h2:first-of-type { margin-top: 0; }
+h3 { margin: 30px 0 10px; font-size: 1.18rem; scroll-margin-top: 24px; }
+p { margin: 10px 0 16px; }
+blockquote {
+  margin: 18px 0;
+  padding: 14px 18px;
+  border-left: 4px solid var(--yellow);
+  background: var(--soft);
+}
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 28px auto 48px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+pre {
+  overflow-x: auto;
+  margin: 14px 0 20px;
+  padding: 16px 18px;
+  border-left: 4px solid var(--yellow);
+  color: var(--code-ink);
+  background: var(--code);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+code:not(pre code) { padding: 0.12em 0.34em; color: var(--ink); background: var(--soft); }
+a code:not(pre code) { color: inherit; }
+table { width: 100%; border-collapse: collapse; margin: 18px 0 26px; background: var(--surface); }
+th, td { padding: 11px 13px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { color: var(--black); background: var(--yellow); }
+tbody tr:nth-child(even) { background: var(--soft); }
+ul, ol { padding-left: 24px; }
+hr { border: 0; border-top: 2px solid var(--line); margin: 32px 0; }
+footer { padding: 25px 20px; color: var(--surface); background: var(--black); border-top: 3px solid var(--yellow); text-align: center; }
+@media (max-width: 820px) {
+  .layout { grid-template-columns: 1fr; gap: 24px; }
+  nav { position: static; max-height: none; }
+  .toc > ul > li > ul { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .masthead-inner { padding-top: 28px; }
+}
+@media (max-width: 520px) {
+  .layout, .masthead-inner { width: min(100% - 24px, 1180px); }
+  .toc > ul > li > ul { grid-template-columns: 1fr; }
+  .masthead h1 { font-size: 2.25rem; }
+  th, td { padding: 8px; }
+}
+</style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <nav class="site-nav" aria-label="Main Navigation">
+        <a href="index.html" class="site-nav-link active">Documentation Hub</a>
+      <a href="catia_camera_pipeline.html" class="site-nav-link">Camera Pipeline</a>
+      <a href="raspberry_pi_ai_camera.html" class="site-nav-link">AI Camera (IMX500)</a>
+      <a href="lwir-calibration.html" class="site-nav-link">LWIR Calibration</a>
+      <a href="earcam-loudest-spot-explained.html" class="site-nav-link">EARcam Guide</a>
+      <a href="earcam-dataflow.html" class="site-nav-link">EARcam Data Flow</a>
+      <a href="mission2-score-first.html" class="site-nav-link">Mission 2 Plan</a>
+      </nav>
+      <p class="eyebrow">Paparazzi UAV / MORA / SODA</p>
+      <h1>CATIA Documentation Hub</h1>
+      <p class="lede">Documentation portal for CATIA, MORA companion systems, and onboard sensor payloads.</p>
+    </div>
+  </header>
+  <div class="layout">
+    <nav aria-label="Guide navigation">
+      <div class="nav-section">
+        <strong>All Guides</strong>
+        <ul class="guide-nav">
+          <li><a href="index.html" class="active">Documentation Hub</a></li>
+        <li><a href="catia_camera_pipeline.html" class="">Camera Pipeline</a></li>
+        <li><a href="raspberry_pi_ai_camera.html" class="">AI Camera (IMX500)</a></li>
+        <li><a href="lwir-calibration.html" class="">LWIR Calibration</a></li>
+        <li><a href="earcam-loudest-spot-explained.html" class="">EARcam Guide</a></li>
+        <li><a href="earcam-dataflow.html" class="">EARcam Data Flow</a></li>
+        <li><a href="mission2-score-first.html" class="">Mission 2 Plan</a></li>
+        </ul>
+      </div>
+      <div class="nav-section">
+        <strong>On this page</strong>
+        <div class="toc">
+<ul>
+<li><a href="#catia-companion-systems-documentation-hub">CATIA &amp; Companion Systems Documentation Hub</a><ul>
+<li><a href="#documentation-guides">Documentation Guides</a></li>
+<li><a href="#system-architecture">System Architecture</a></li>
+<li><a href="#quick-reference-common-operations">Quick Reference: Common Operations</a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+      </div>
+    </nav>
+    <main><h1 id="catia-companion-systems-documentation-hub">CATIA &amp; Companion Systems Documentation Hub</h1>
+<p>Welcome to the documentation portal for <strong>CATIA</strong> (Camera Application
+Triggering Image Analysis) and associated onboard vision, acoustic, and thermal
+subsystems for Paparazzi UAV.</p>
+<p><a href="catia_camera_pipeline.html">Camera Pipeline</a> |
+<a href="raspberry_pi_ai_camera.html">AI Camera</a> |
+<a href="lwir-calibration.html">LWIR Calibration</a> |
+<a href="earcam-loudest-spot-explained.html">EARcam Guide</a> |
+<a href="earcam-dataflow.html">EARcam Data Flow</a> |
+<a href="mission2-score-first.html">Mission 2 Plan</a></p>
+<hr>
+<h2 id="documentation-guides">Documentation Guides</h2>
+<p>Explore the detailed technical guides for each subsystem:</p>
+<h3 id="core-architecture-deployment">Core Architecture &amp; Deployment</h3>
+<ul>
+<li><strong><a href="catia_camera_pipeline.html">CATIA Camera Pipeline</a></strong>
+  The comprehensive primary manual. Details the end-to-end capture pipeline,
+  serial communication protocol, trigger dispatching, EXIF metadata geotagging,
+  SODA image analysis, and automated one-command deployment to MORA.</li>
+<li><a href="catia_camera_pipeline.html#deploy-to-mora">Automated Deployment to MORA</a></li>
+<li><a href="catia_camera_pipeline.html#start-here-physical-desk-test-with-mora">Physical Desk Test Setup</a></li>
+<li><a href="catia_camera_pipeline.html#start-here-local-simulation">Local Simulation &amp; Development</a></li>
+<li><a href="catia_camera_pipeline.html#camera-selection-and-mask-control">Camera Selection &amp; 8-Bit Masks</a></li>
+<li><a href="catia_camera_pipeline.html#pose-stream-and-clock-synchronization">Pose Streaming &amp; Clock Handshake</a></li>
+</ul>
+<h3 id="optical-thermal-imaging">Optical &amp; Thermal Imaging</h3>
+<ul>
+<li><strong><a href="raspberry_pi_ai_camera.html">Raspberry Pi AI Camera (Sony IMX500)</a></strong>
+  Hardware connections, software installation (<code>imx500-all</code>), <code>rpicam-*</code> tools,
+  on-sensor neural network inference demos (MobileNet SSD, PoseNet), and
+  integration with CATIA's <code>rpicam-still</code> backend on MORA.</li>
+<li><a href="raspberry_pi_ai_camera.html#hardware-and-connections">CSI Ribbon Wiring &amp; Orientation</a></li>
+<li><a href="raspberry_pi_ai_camera.html#run-imx500-inference-demos">Testing Commands &amp; Demos</a></li>
+<li><a href="raspberry_pi_ai_camera.html#parameters-and-why-they-matter">Camera Parameter Reference</a></li>
+<li>
+<p><a href="raspberry_pi_ai_camera.html#backup">OS Image Backup &amp; Restore Tools</a></p>
+</li>
+<li>
+<p><strong><a href="lwir-calibration.html">LWIR Thermal Camera Calibration</a></strong>
+  Step-by-step workshop procedure for calibrating the Tiny 1-C thermal camera.
+  Covers thermal target construction with foil/matte tape, multi-pose lens
+  distortion fitting with OpenCV, body mounting alignment, and verification.</p>
+</li>
+<li><a href="lwir-calibration.html#2-make-a-sharp-thermal-target">Thermal Target Construction</a></li>
+<li><a href="lwir-calibration.html#3-measure-the-lens">Multi-View Lens Calibration</a></li>
+<li><a href="lwir-calibration.html#4-align-the-camera-to-the-aircraft">Aircraft Mounting Alignment</a></li>
+<li><a href="lwir-calibration.html#5-take-a-useful-set-of-photos">Verification &amp; Error Checks</a></li>
+</ul>
+<h3 id="acoustic-search-localization">Acoustic Search &amp; Localization</h3>
+<ul>
+<li><strong><a href="earcam-loudest-spot-explained.html">EARcam Explained: Acoustic Localization</a></strong>
+  Conceptual and algorithmic guide on finding the loudest spot on the ground
+  using a single USB microphone on a moving fixed-wing aircraft. Explains
+  motionSCOUT alarm detection, inverse-square loudness modeling, and flight search
+  patterns (lawnmower survey + star refinement).</li>
+<li><a href="earcam-loudest-spot-explained.html#why-one-simple-usb-microphone-was-chosen">Why One Simple USB Microphone</a></li>
+<li><a href="earcam-loudest-spot-explained.html#how-far-the-microphone-can-hear">Acoustic Detection Physics</a></li>
+<li><a href="earcam-loudest-spot-explained.html#how-the-loudest-spot-is-computed-from-many-readings">Loudest-Spot Solver Algorithm</a></li>
+<li>
+<p><a href="earcam-loudest-spot-explained.html#the-flight-search-pattern">Autonomous Flight Search Patterns</a></p>
+</li>
+<li>
+<p><strong><a href="earcam-dataflow.html">EARcam Position &amp; Sound Data Flow</a></strong>
+  Deep dive into the real-time data flow between the flight controller and
+  MORA. Covers UART framing, 50 ms loudness window sampling, geotagged ring
+  buffering, and <code>&lt; 1 ms</code> solver execution.</p>
+</li>
+<li><a href="earcam-dataflow.html#synchronization-overview">Synchronization Overview</a></li>
+<li><a href="earcam-dataflow.html#data-flow-pipeline">Data Flow Pipeline</a></li>
+<li><a href="earcam-dataflow.html#sample-field-origins">Sample Field Origins &amp; Logging</a></li>
+<li><a href="earcam-dataflow.html#ground-tools-and-replay">Ground Replay Tools</a></li>
+</ul>
+<h3 id="flight-operations-scoring">Flight Operations &amp; Scoring</h3>
+<ul>
+<li><strong><a href="mission2-score-first.html">Mission 2: Maximize Points, Keep The Airframe</a></strong>
+  Competition flight strategy and software-first accuracy assessment for IMAV
+  2026 Mission 2. Focuses on safe fixed-wing operations, thermal candidate
+  scoring, WGS84 ground-truth verification, and offline assessment scripts.</li>
+<li><a href="mission2-score-first.html#quick-n-dirty-checklist">Quick 'n Dirty Checklist</a></li>
+<li><a href="mission2-score-first.html#why-the-first-mission-2-attempt-should-be-software-first">Mission 2 Scoring Breakdown</a></li>
+<li><a href="mission2-score-first.html#how-to-check-the-first-trial-truth-and-evidence">Hotspot Verification Protocol</a></li>
+<li><a href="mission2-score-first.html#offline-assessment-tool">Offline Assessment Tool (<code>mission2_assess.py</code>)</a></li>
+</ul>
+<hr>
+<h2 id="system-architecture">System Architecture</h2>
+<pre><code class="language-text"> +-------------------------------------------------------+
+ |               PAPARAZZI FLIGHT CONTROLLER             |
+ |  - Navigation &amp; Guidance (ETECS / Flight Plan)        |
+ |  - Digital Cam UART Module (dc_periodic / RC Trigger) |
+ +---------------------------+---------------------------+
+                             | UART (115200 baud)
+                             v
+ +-------------------------------------------------------+
+ |                  MORA COMPANION BOARD                 |
+ |                                                       |
+ |  +-------------------------------------------------+  |
+ |  |                     CATIA                       |  |
+ |  |  - Protocol Decoder &amp; Trigger Dispatcher        |  |
+ |  |  - EXIF Geotagging &amp; Flight Pose Insertion      |  |
+ |  |  - Acoustic Sample Ring Buffer &amp; Solver         |  |
+ |  +-------+----------------+---------------+--------+  |
+ |          |                |               |           |
+ |          v                v               v           |
+ |    +-----------+    +-----------+   +-----------+     |
+ |    |   AIcam   |    |  LWIRcam  |   |  EARcam   |     |
+ |    | (IMX500)  |    | (Tiny1-C) |   |  (ALSA)   |     |
+ |    +-----+-----+    +-----+-----+   +-----+-----+     |
+ |          |                |               |           |
+ |          +----------------+---------------+           |
+ |                           v                           |
+ |  +-------------------------------------------------+  |
+ |  |             SODA (Image Analytics)              |  |
+ |  |  - Photo Output:  ~/Pictures/                   |  |
+ |  |  - Logs / Debug:  ~/usher_debug_data/           |  |
+ |  +-------------------------------------------------+  |
+ +-------------------------------------------------------+
+</code></pre>
+<hr>
+<h2 id="quick-reference-common-operations">Quick Reference: Common Operations</h2>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Command</th>
+<th>Reference</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Deploy to MORA</strong></td>
+<td><code>BUILD_JOBS=32 sw/airborne/modules/digital_cam/catia/deploy_mora.sh air@theatre</code></td>
+<td><a href="catia_camera_pipeline.html#deploy-to-mora">Deployment Guide</a></td>
+</tr>
+<tr>
+<td><strong>Check MORA Service</strong></td>
+<td><code>ssh air@theatre 'systemctl status catia.service'</code></td>
+<td><a href="catia_camera_pipeline.html#5-verify-the-installed-release">Service Status</a></td>
+</tr>
+<tr>
+<td><strong>Live Logs on MORA</strong></td>
+<td><code>ssh air@theatre 'journalctl -fu catia.service'</code></td>
+<td><a href="catia_camera_pipeline.html#5-verify-the-installed-release">Live Logs</a></td>
+</tr>
+<tr>
+<td><strong>Local Demo (No Hardware)</strong></td>
+<td><code>sw/airborne/modules/digital_cam/catia/run_local_demo.sh</code></td>
+<td><a href="catia_camera_pipeline.html#start-here-local-simulation">Local Simulation</a></td>
+</tr>
+<tr>
+<td><strong>Build Full Stack</strong></td>
+<td><code>make -C sw/airborne/modules/digital_cam/catia -j32 all</code></td>
+<td><a href="catia_camera_pipeline.html#1-build-catia">Build Instructions</a></td>
+</tr>
+<tr>
+<td><strong>Run Test Suite</strong></td>
+<td><code>bash sw/airborne/modules/digital_cam/catia/tests/build_layout_test.sh</code></td>
+<td><a href="catia_camera_pipeline.html#3-build-and-validate-the-current-sources">Validation Tests</a></td>
+</tr>
+<tr>
+<td><strong>Rebuild Documentation</strong></td>
+<td><code>make -C sw/airborne/modules/digital_cam/catia documentation</code></td>
+<td><a href="catia_camera_pipeline.html#documentation-generation">Docs Generator</a></td>
+</tr>
+</tbody>
+</table></main>
+  </div>
+  <footer>CATIA documentation / Paparazzi UAV</footer>
+</body>
+</html>

@@ -4,6 +4,11 @@ command_name=${0##*/}
 printf '%s %s\n' "$command_name" "$*" >> "$TEST_STATE/commands"
 case "$command_name" in
   sudo)
+    if [[ "${1:-}" == -S && "${2:-}" == -v ]]; then
+      exit 0
+    elif [[ "${1:-}" == -v ]]; then
+      exit 0
+    fi
     [[ "$1" == -n ]]
     shift
     exec "$@"

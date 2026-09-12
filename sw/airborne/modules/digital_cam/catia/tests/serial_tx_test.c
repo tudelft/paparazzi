@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include "../serial_tx.c"
 #include <assert.h>
+#include <signal.h>
 #include <stdio.h>
 #include <sys/socket.h>
 
@@ -103,12 +104,23 @@ int main(void)
   assert(read(sockets[1], empty, sizeof(empty)) == 5);
   for (size_t index = 0; index < sizeof(empty); ++index) parse_catia(&transport, empty[index]);
   assert(transport.msg_received && transport.payload_len == 0 && transport.error == 0);
+
+  /** A permanent write error (peer gone) must not go unnoticed forever: the caller's
+   * poll loop relies on serial_tx_pending() to know when to call serial_tx_flush()
+   * again, and that flush is what surfaces the failure so the process can recover. */
+  assert(close(sockets[1]) == 0);
+  signal(SIGPIPE, SIG_IGN);
+  assert(serial_tx_send(CATIA_STATUS, payload, CATIA_STATUS_MSG_SIZE) == -1);
+  assert(serial_tx_pending());
+  assert(serial_tx_flush() == -1);
+  assert(serial_tx_pending());
+
   serial_tx_stop();
   assert(serial_tx_send(1, NULL, 0) == -1 && errno == ENOTCONN);
-  assert(close(sockets[0]) == 0 && close(sockets[1]) == 0);
+  assert(close(sockets[0]) == 0);
   assert(pipe(sockets) == 0);
   assert(serial_tx_start(sockets[1]) == -1 && errno == EINVAL);
   close(sockets[0]);
   close(sockets[1]);
-  puts("UART queue: overload, idle-only probes, fragmented writes, EAGAIN/EINTR and packet order passed");
+  puts("UART queue: overload, idle-only probes, fragmented writes, EAGAIN/EINTR, packet order and stuck-error recovery signaling passed");
 }

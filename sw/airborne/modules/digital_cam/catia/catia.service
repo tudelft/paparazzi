@@ -1,6 +1,6 @@
 [Unit]
 Description=CATIA MORA selectable camera service
-Documentation=file:/home/air/digital_cam/documentation/index.html
+Documentation=file:/home/air/digital_cam/documentation/html/index.html
 After=local-fs.target systemd-udevd.service
 RequiresMountsFor=/home/air/digital_cam
 StartLimitIntervalSec=0

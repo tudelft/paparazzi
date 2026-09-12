@@ -28,6 +28,7 @@
 
 #include "dc_shoot_rc.h"
 #include "modules/radio_control/radio_control.h"
+#include "generated/modules.h"
 #include "dc.h"
 
 #ifndef DC_RADIO_SHOOT
@@ -38,17 +39,17 @@
 
 void dc_shoot_rc_periodic(void)
 {
-  static uint8_t rd_shoot = 0;
-  static uint8_t rd_num = 0;
+  static uint8_t ticks_until_shot = 0;
 
-  if ((rd_shoot == 0) && (radio_control_get(DC_RADIO_SHOOT) > DC_RADIO_SHOOT_THRESHOLD)) {
+  if (radio_control.status != RC_OK ||
+      radio_control_get(DC_RADIO_SHOOT) <= DC_RADIO_SHOOT_THRESHOLD) {
+    ticks_until_shot = 0;
+    return;
+  }
+
+  if (ticks_until_shot == 0) {
     dc_send_command(DC_SHOOT);
-    rd_shoot = 1;
+    ticks_until_shot = 4;
   }
-  if ((rd_shoot == 1) && (rd_num < 4)) {
-    rd_num = rd_num + 1;
-  } else {
-    rd_num = 0;
-    rd_shoot = 0;
-  }
+  ticks_until_shot--;
 }

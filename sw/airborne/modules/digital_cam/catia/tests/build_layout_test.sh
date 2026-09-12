@@ -29,6 +29,8 @@ grep -q ' T ai_cam_pipe_shoot$' <<< "$symbols"
 grep -q ' T chdk_pipe_shoot$' <<< "$symbols"
 strings "$root/catia-arm64" | grep -Fx '/home/air/digital_cam/lwircam'
 strings "$root/catia-arm64" | grep -Fx '/home/air/digital_cam/earcam'
+strings "$root/catia-arm64" | grep -Fx '/home/air/Pictures'
+strings "$root/catia-arm64" | grep -Fx '/home/air/usher_debug_data'
 strings "$root/catia" | grep -Fx "$root/lwircam-native"
 strings "$root/catia" | grep -Fx "$root/earcam-native"
 printf 'Dual-architecture build layout tests passed\n'

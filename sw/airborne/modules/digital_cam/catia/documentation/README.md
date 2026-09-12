@@ -1,21 +1,354 @@
 # CATIA Camera Pipeline
 
- **CATIA in full the Camera Application Triggering Image Analysis** application runing on > a companion board which has a camera connected. As soon as CATIA receives a 'take photo now' command  from the Flightcontroller , camera obtains a JPEG image of current view, adds flight metadata like attitude and more to the EXIF data in the image  > and passes the finished image to SODA. for more image data extraction
-.
+**CATIA (Camera Application Triggering Image Analysis)** runs on the MORA
+companion board. It receives camera commands from the flight controller,
+captures images, adds flight metadata to EXIF, and passes images to SODA for
+analysis.
+
+**Deploying a board? Start with [Deploy to MORA](#deploy-to-mora).**
+For hardware checks after deployment, continue with the
+[physical desk test](#start-here-physical-desk-test-with-mora).
+For development without a board, use [local simulation](#start-here-local-simulation).
 
 **Doc Maintainers:** edit this `README.md`, `catia-flow.dot`, or
 `desk-test-setup.svg`, then run `./update-documentation.sh`. The rendered PNGs,
 flow SVG, and HTML page are generated files.
 
-![CATIA capture and processing flow](catia-flow.png)
+![CATIA capture and processing flow](html/catia-flow.png)
 
-[Open the standalone HTML guide](index.html)
+[Documentation Hub](html/index.html) |
+[Camera Pipeline](html/catia_camera_pipeline.html) |
+[AI Camera](html/raspberry_pi_ai_camera.html) |
+[LWIR Calibration](html/lwir-calibration.html) |
+[EARcam Guide](html/earcam-loudest-spot-explained.html) |
+[EARcam Data Flow](html/earcam-dataflow.html) |
+[Mission 2 Plan](html/mission2-score-first.html)
 
-[LWIR calibration workshop guide](lwir-calibration.html): ordinary materials,
-lens fitting, mounting alignment and independent checks.
+## Deploy to MORA
 
-[Mission 2: maximize points, keep the airframe](mission2-score-first.html):
-fixed hardware, software-first improvements and offline score/accuracy assessment.
+This is the complete deployment procedure. Commands below run on the
+**development PC from the Paparazzi repository root**, unless marked otherwise.
+The default board is `air@theatre`; substitute your SSH destination consistently.
+Deploy only while the aircraft is disarmed and on the bench: activation stops
+and restarts the camera service.
+
+### 1. Know what is installed
+
+The supported installation directory is **`/home/air/digital_cam`**. The supplied
+systemd unit requires this path and the `air` account; changing only the script's
+destination directory is not supported.
+
+| Built on the PC | Installed on MORA | Purpose |
+| --- | --- | --- |
+| `catia-arm64` | `catia` | UART protocol, capture coordination and metadata |
+| `soda-arm64` | `soda` | Image analysis |
+| `lwircam-arm64` | `lwircam` | Tiny 1-C thermal camera |
+| `earcam-arm64` | `earcam` | Acoustic capture and detection |
+| Visible and thermal mock JPEGs | `mock_image_01.jpg`, `mock_lwir_01.jpg` | Hardware-free checks |
+| `catia.service` | Runtime copy and `/etc/systemd/system/catia.service` | Boot startup |
+| `99-tiny1c.rules` | Runtime copy and `/etc/udev/rules.d/99-tiny1c.rules` | USB permissions |
+
+AIcam and CHDK are compiled into CATIA, not separate executables. Raspberry Pi
+camera support also needs `rpicam-still` installed on MORA. CHDK needs the external
+control script configured in `chdk_pipe.c`. Deployment does not install these
+external tools, flash flight-controller firmware, configure the board OS/UART,
+or copy this manual. It does not remove photos or EARcam logs.
+
+The supplied service starts **LWIRcam and EARcam**, with EARcam band
+`2400,3200` Hz. It does not enable AIcam or CHDK. Review `catia.service` before
+deploying; deployment replaces the main unit, while existing systemd drop-ins
+can still override it. The default service requires the Tiny 1-C and a working
+`/dev/serial0` for startup. A missing microphone is reported but is not fatal.
+
+### 2. Prepare the PC and board once
+
+PC requirements: GNU Make, C/C++ compilers, CMake, `pkg-config`, `file`, SSH,
+`rsync`, GNU AArch64 C/C++ compilers, `readelf`, `strip`, and native plus ARM64
+ALSA development files. On Debian/Ubuntu, the cross-compiler packages are
+`gcc-aarch64-linux-gnu` and `g++-aarch64-linux-gnu`. ALSA development packages
+are `libasound2-dev` and `libasound2-dev:arm64` with the appropriate multiarch
+repositories configured. A separate sysroot can instead use `ARM64_SYSROOT`
+and `ARM64_PKG_CONFIG_LIBDIR`.
+
+MORA requirements: a **64-bit ARM Linux userspace**, Bash, `flock`, systemd,
+udev, `rsync`, `pgrep`, ARM64 `libasound.so.2`, and an `air` account with
+`dialout` and `plugdev` membership. ALSA utilities provide `amixer` for microphone
+gain setup. The account needs writable installation storage and sudo permission
+for the deployment helper's installation, backup, systemd, and udev commands.
+Passwordless sudo is optional: for password-protected accounts, authenticate
+with `sudo -v` and run the staged helper in the same interactive SSH terminal
+as shown in step 4. Never put a sudo password into a script or chat.
+
+#### Get the OS to work with the UART port
+
+On the Raspberry Pi Zero 2 W MORA (`theatre`), disable Bluetooth and dedicate
+the full UART to CATIA. Wi-Fi remains enabled. This is a one-time board setup,
+not something to repeat for every application deployment.
+
+Connect from the development PC:
+
+```sh
+ssh air@theatre
+```
+
+Run the following steps **on MORA**. Enter sudo passwords directly in that
+terminal.
+
+1. Open the boot configuration:
+
+   ```sh
+   sudo nano /boot/firmware/config.txt
+   ```
+
+   Under the existing `[all]` section, add or update these settings:
+
+   ```ini
+   enable_uart=1
+   dtoverlay=disable-bt
+   ```
+
+   NOTE: Remove `dtoverlay=miniuart-bt` if present; it is the alternative setup that
+   retains Bluetooth. Do not leave both overlays enabled. Save and exit.
+
+1. Disable the Bluetooth services:
+
+   ```sh
+   sudo systemctl disable --now hciuart.service bluetooth.service
+   ```
+
+   If either service is absent, skip that service and disable the one that
+   exists. An absent Bluetooth service does not prevent UART setup.
+
+1. Configure the serial port:
+
+   ```sh
+   sudo raspi-config
+   ```
+
+   Choose **Interface Options > Serial Port**. Set **Login shell over serial**
+   to **No** and **Serial hardware enabled** to **Yes**, then finish.
+
+1. Reboot to apply the configuration:
+
+   ```sh
+   sudo reboot
+   ```
+
+   The SSH connection closes. Once MORA is reachable again, reconnect from
+   the PC with `ssh air@theatre`.
+
+1. Verify the devices on MORA:
+
+   ```sh
+   ls -l /dev/serial0 /dev/ttyAMA0
+   ```
+
+   Expected mapping for this board configuration:
+
+   ```text
+   /dev/serial0 -> ttyAMA0
+   ```
+
+   Confirm that `/dev/ttyAMA0` is a character device accessible to `air`
+   through its `dialout` group. Do not create a manual symlink to compensate
+   for missing OS configuration.
+
+MORA TX remains **GPIO14, physical pin 8**; RX remains **GPIO15, physical pin 10**.
+No PC-side FTDI configuration change is needed. Cross TX/RX, use a common
+ground and **3.3 V UART logic**, and configure both ends for **115200 baud**.
+See the desk-test wiring below for power and camera connections.
+
+Related board-setup reference:
+[OpenUAS Raspberry Pi OS setup](https://www.openuas.org/intranet/webapps/pmwiki/index.php?n=Howto.Getyourraspberrypiosfullysetup#_toc).
+
+#### Check board readiness
+
+Check the target before building:
+
+```sh
+ssh -o BatchMode=yes -o ConnectTimeout=10 air@theatre \
+   'hostname; uname -m; id; ls -l /dev/serial0; df -h /home/air'
+ssh -o BatchMode=yes air@theatre \
+   'sudo -n systemctl show catia.service -p LoadState -p ActiveState -p UnitFileState'
+```
+
+Expected architecture: `aarch64`. `LoadState=not-found` is normal on a new
+board. A `sudo: a password is required` response means you need the interactive
+activation procedure below, not a sudoers change. Missing UART must be fixed
+before activation; uploading and mock validation can happen first. Failed SSH
+authentication or lack of sudo authorization must be resolved. Inspect existing overrides with
+`ssh air@theatre 'systemctl cat catia.service'` on an already configured board.
+Do not deploy over a manually launched CATIA, LWIRcam, or EARcam process.
+
+### 3. Build and validate the current sources
+
+For a normal update, the deployment command in step 4 incrementally rebuilds
+all four ARM64 release executables from the current working tree. It does not
+fetch source changes or require a commit.
+
+For an explicitly fresh rebuild of every native and ARM64 program and bundled
+build output, stop any local development runs, then execute:
+
+```sh
+make -C sw/airborne/modules/digital_cam/catia clean
+make -C sw/airborne/modules/digital_cam/catia -j32 all
+bash sw/airborne/modules/digital_cam/catia/tests/build_layout_test.sh
+bash sw/airborne/modules/digital_cam/catia/tests/deploy_upload_test.sh
+bash sw/airborne/modules/digital_cam/catia/tests/deploy_mora_test.sh
+```
+
+Cleaning removes local executables and build caches, not source files, board
+files, photos, or logs. Rebuilding bundled OpenCV can take substantially longer
+than an incremental update. Lower `-j32` on machines with less RAM/CPU capacity.
+The tests check architecture/runtime paths and exercise upload/rollback logic
+without contacting hardware. They do not prove physical camera capture.
+
+### 4. Deploy and activate
+
+```sh
+BUILD_JOBS=32 sw/airborne/modules/digital_cam/catia/deploy_mora.sh air@theatre
+```
+
+Use this top-level script for the complete family, not the separate EARcam-only
+deployment helper. No manual `scp`, renaming, or separate service installation
+is needed. Native PC executables are preserved by the deployment command.
+
+The script builds optimized, stripped ARM64 binaries, runs native EARcam tests,
+checks binary architecture/debug sections, and uploads to a unique directory
+such as `/home/air/digital_cam/.deploy.XXXXXXXX`. On MORA it then:
+
+1. Locks deployment and runs staged EARcam self-tests and LWIR mock processing.
+2. Records prior service state and backs up files, the unit, and the USB rule.
+3. Stops the old service and refuses unmanaged camera processes.
+4. Installs programs and fixtures, validates the unit, and reloads systemd/udev.
+5. Configures microphone gain when available, enables boot startup, and starts CATIA.
+6. Requires the service to be enabled, active, and running before reporting success.
+
+Success ends with `MORA CATIA: deployment complete`. Keep the printed
+`.deploy.XXXXXXXX/backup` path until the board has passed the checks below.
+This is initial startup validation, not proof of sustained operation or capture.
+
+#### When sudo requires your password
+
+The upload does not need sudo. If automatic activation stops with
+`sudo: a password is required`, use the staging path printed by that deployment;
+do not rebuild or upload again just to authenticate. Connect from the PC:
+
+```sh
+ssh air@theatre
+```
+
+Then run these commands **on MORA in that same terminal**, replacing
+`.deploy.XXXXXXXX` with the exact directory printed by your upload:
+
+```sh
+stage=/home/air/digital_cam/.deploy.XXXXXXXX
+test -s "$stage/deploy_mora_remote.sh" && sudo -v && \
+   bash "$stage/deploy_mora_remote.sh" /home/air/digital_cam "$stage"
+```
+
+Enter the password only at the terminal's sudo prompt. `sudo -v` authorizes
+the helper's subsequent `sudo -n` calls in this terminal; authentication in a
+different SSH session does not necessarily carry over. Wait until the UART and
+Tiny 1-C are ready before activation. This runs the same validation, backup,
+installation, startup, and rollback procedure as automatic deployment. Continue
+with step 5 afterward. No passwordless-sudo configuration is required.
+
+**Exact example: release staged on 11 September 2026.** For that upload only,
+after `/dev/serial0` works and Tiny 1-C is connected, connect with
+`ssh air@theatre`, then run on MORA:
+
+```sh
+sudo -v
+bash /home/air/digital_cam/.deploy.nsYYiABi/deploy_mora_remote.sh \
+   /home/air/digital_cam \
+   /home/air/digital_cam/.deploy.nsYYiABi
+```
+
+This installs the staged CATIA, SODA, LWIRcam, and EARcam release and starts
+CATIA. Check the result in the same terminal:
+
+```sh
+systemctl --no-pager --full status catia.service
+```
+
+For later uploads, use their newly printed staging directory instead of
+`.deploy.nsYYiABi`. Uploading alone does not install or activate a release.
+
+### 5. Verify the installed release
+
+```sh
+ssh air@theatre \
+   'systemctl show catia.service -p ActiveState -p SubState -p UnitFileState -p NRestarts -p ExecStart'
+ssh air@theatre 'journalctl --no-pager -u catia.service -n 80'
+sha256sum sw/airborne/modules/digital_cam/catia/{catia,soda,lwircam,earcam}-arm64
+ssh air@theatre \
+   'cd /home/air/digital_cam && sha256sum catia soda lwircam earcam'
+```
+
+The four hashes must match pairwise despite the filename suffix difference.
+Expect `ActiveState=active`, `SubState=running`, and `UnitFileState=enabled`.
+Repeat the status check after a real capture; increasing `NRestarts` indicates
+failure even if a snapshot briefly says active. Review the actual `ExecStart`
+for unexpected overrides. Follow logs with:
+
+```sh
+ssh air@theatre 'journalctl -fu catia.service'
+```
+
+Trigger a photo from the flight controller or NPS, inspect the newly written
+file in `/home/air/Pictures`, and confirm successful metadata and SODA
+processing. Use the [desk-test procedure](#start-here-physical-desk-test-with-mora)
+to isolate UART and individual cameras. A successful mock test is not a hardware
+camera test. Upgrade MORA to this mask-capable protocol before operating newly
+built flight-controller firmware that sends `CATIA_SHOOT_MASK`.
+
+### 6. Maintenance and failure recovery
+
+The service owns the UART and Tiny 1-C exclusively. Before any foreground test:
+
+```sh
+ssh air@theatre 'sudo -n systemctl stop catia.service'
+ssh -t air@theatre \
+   'exec /home/air/digital_cam/catia --debug --mocktransform --test'
+```
+
+Stop the foreground process with `Ctrl+C`, then restore normal operation:
+
+```sh
+ssh air@theatre 'sudo -n systemctl start catia.service'
+ssh air@theatre 'systemctl --no-pager --full status catia.service'
+```
+
+| Symptom | Action |
+| --- | --- |
+| SSH fails | Check hostname/network/key login; do not disable host-key checking. |
+| `sudo -n` needs a password | Use the same-terminal `sudo -v` activation procedure in step 4. |
+| User is not authorized for sudo | Have the board administrator grant the needed installation permissions. |
+| Missing `/dev/serial0` | Configure the board UART and remove the serial console; verify device permissions. |
+| EARcam loader error | Install the matching ARM64 ALSA runtime on the board. |
+| Unmanaged camera process | Stop that foreground run deliberately, then retry deployment. |
+| Tiny 1-C startup failure | Check USB power, enumeration, rule/group permissions, and exclusive ownership. |
+| Active but no photos | Check selected backends, camera mask, UART RX logs, and flight-controller triggering. |
+| Repeated restarts | Inspect the journal and startup dependencies; do not treat `active` alone as healthy. |
+
+For handled activation failures, the helper attempts to stop the new service,
+restore backed-up files and prior enablement, and restart the old service only
+if it was previously active. It reports rollback failures. On a first install
+there is no old release to restore. An unmanaged process leaves CATIA stopped
+to avoid hardware contention. Masked or unusual service states are rejected.
+
+After an interrupted SSH session, power loss, or failed rollback, inspect the
+journal, actual service state, and retained staging/backup directory before
+retrying. Installation is not an atomic multi-file transaction. Backups use
+numeric entries corresponding to the `destinations` array in
+`deploy_mora_remote.sh`; preserve the whole staging directory and its helper
+when recovering. Do not blindly copy numbered files into the runtime directory.
+Remove old staging directories deliberately only after validating the release.
+
+To intentionally take CATIA out of service across reboots, use
+`sudo -n systemctl disable --now catia.service` on MORA. Restore boot operation
+with `sudo -n systemctl enable --now catia.service`.
 
 ## Start Here: Local Simulation
 
@@ -141,6 +474,10 @@ Use this setup to test the deployed CATIA binary on, for example, a Raspberry Pi
 while simulation runs on a local PC. The USB-to-UART link carries the same CATIA camera
 messages used by the aircraft.
 
+First complete [Deploy to MORA](#deploy-to-mora). **Stop `catia.service` before
+the foreground commands below** using step 6 of that guide; otherwise two
+processes compete for the same UART/camera. Restart the service after testing.
+
 ### Naming: CATIA service, MORA board
 
 **MORA** (Magic Onboard Recognition Apparatus) is the companion compute board with
@@ -207,7 +544,7 @@ Shooting: soda return 0 ...
 Inspect the generated images from another laptop terminal:
 
 ```sh
-ssh air@theatre 'ls -lh /home/air/digital_cam/photos/m*.jpg'
+ssh air@theatre 'ls -lh /home/air/Pictures/m*.jpg'
 ```
 
 ### 3. Second run: Raspberry Pi camera
@@ -220,7 +557,7 @@ ssh -t air@theatre \
 ```
 
 Trigger another `DC_SHOOT`. Physical-camera images are written as
-`/home/air/digital_cam/photos/aNNNNNN.jpg` before EXIF and SODA processing
+`/home/air/Pictures/aNNNNNN.jpg` before EXIF and SODA processing
 completes.
 
 ### 4. Third run: Tiny 1-C LWIR camera
@@ -234,7 +571,7 @@ ssh -t air@theatre \
 
 Trigger `DC_SHOOT` again. CATIA starts the deployed `lwircam` executable in
 one-shot mode, waits for a usable thermal frame, and writes a numbered JPEG as
-`/home/air/digital_cam/photos/lNNNNNN.jpg`. CATIA then inserts the same flight
+`/home/air/Pictures/lNNNNNN.jpg`. CATIA then inserts the same flight
 EXIF metadata used by the other camera backends and invokes SODA.
 
 A successful capture includes these diagnostics:
@@ -242,7 +579,7 @@ A successful capture includes these diagnostics:
 ```text
 CATIA-N: requesting image from lwircam backend
 selected camera index=0 vid=0bda pid=5840 name=USB Camera
-LWIR CAPTURE: saved /home/air/digital_cam/photos/l00000N.jpg (256x192)
+LWIR CAPTURE: saved /home/air/Pictures/l00000N.jpg (256x192)
 CATIA-N: Shooting: EXIF metadata added
 CATIA-N: Shooting: soda return 0 ...
 ```
@@ -1056,7 +1393,11 @@ encodes the image.** The default result is `photos/a%06d.jpg`.
 `lwir_cam_pipe_shoot()` uses `posix_spawn()` to execute the configured LWIR
 LWIRcam with `--capture --output <filename>`. The application owns USB acquisition,
 startup-frame rejection, YUYV-to-RGB conversion, and initial JPEG encoding.
-The default result is `photos/l%06d.jpg`.
+The default result is `photos/l%06d.jpg`. Post-capture hotspot geolocation is
+requested from that **same already-running** process over its existing stdin/stdout
+pipe (a `GEO:<path>` line), not by spawning a second LWIRcam per shot; a fresh
+process is spawned only as a fallback when no persistent server is running
+(`--test`/mock captures).
 
 ### CHDK camera
 
@@ -1130,117 +1471,12 @@ make -C sw/airborne/modules/digital_cam/catia -j"$(nproc)" arm64 \
 
 #### Build and deploy with one command
 
-`deploy_mora.sh` automates an incremental ARM64 release build and transfers CATIA,
-SODA, LWIRcam, EARcam, and both mock images into a unique staging directory
-with `rsync`. The thermal fixture comes from `lwircam/mock_lwir_01.jpg`, which
-contains the embedded synthetic temperature layer. Its defaults are
-`air@theatre` and `/home/air/digital_cam`:
+Use the single [Deploy to MORA](#deploy-to-mora) procedure near the top of this
+manual for prerequisites, clean rebuilds, installation, release verification,
+service maintenance, and rollback. That procedure uses `deploy_mora.sh` to
+install the complete ARM64 family, not just CATIA.
 
-```sh
-sw/airborne/modules/digital_cam/catia/deploy_mora.sh
-```
-
-Before using the script, verify that public-key login works without a password
-prompt:
-
-```sh
-ssh air@theatre true
-```
-
-The development computer needs `make`, `file`, `ssh`, `rsync`, and the AArch64
-C/C++ compiler, `readelf`, and `strip` tools. The script stops before transfer
-if a required command is missing, any executable is not AArch64, a binary is
-not stripped, any debug section remains, or an unmanaged CATIA or LWIR server
-is still running. This avoids replacing a live executable or competing for the
-Tiny 1-C.
-
-MORA needs Bash, `flock`, systemd, udev, `rsync`, `pgrep`, noninteractive
-`sudo -n` permission for installation/service commands, and the ARM64 ALSA
-runtime (`libasound.so.2`) used by EARcam. Its `air` user must have write access
-to `/home/air/digital_cam` and the service's `dialout` and `plugdev` groups.
-The build host also needs native and ARM64 ALSA development files and
-`pkg-config` for the EARcam build/tests.
-
-The remote `deploy_mora_remote.sh` helper locks deployment, runs the staged
-EARcam self-test and LWIR mock processing, and aborts on either failure before
-stopping the service. It records the old service's active/enabled states and
-backs up all replaced runtime files, the systemd unit, and the udev rule.
-It requires a successful stop and an inactive state before replacing files;
-an unmanaged camera process aborts deployment. It then installs the staged
-files, validates the unit, reloads udev/systemd, and enables and starts CATIA.
-Success requires `enabled`, `active`, and `SubState=running` after startup.
-This checks initial readiness, not long-term service health.
-
-If activation fails, the helper stops the new service, restores the backed-up
-files and prior enablement, and restarts the old service only if it was active
-before deployment. It refuses masked or unusual prior enablement states rather
-than guessing how to restore them. An unmanaged process leaves CATIA stopped
-to avoid competing for hardware. Failed rollback is reported; the backup is
-retained under the printed `.deploy.XXXXXXXX/backup` directory. Staging and
-backups are retained after success too; remove old directories deliberately
-after confirming the release. This is rollback on handled errors, not an
-atomic multi-file update or protection against power loss/SIGKILL. If the SSH
-connection is lost, inspect MORA's journal and retained backup before retrying.
-
-The script builds and strips only the `*-arm64` release executables, then
-uploads each under its unsuffixed runtime name. It does not clean or replace
-native executables, so laptop testing can continue after deployment.
-No photos or EARcam logs are removed by deployment or rollback.
-
-Run the local, hardware-free deployment regression without SSH or privileges:
-
-```sh
-bash sw/airborne/modules/digital_cam/catia/tests/deploy_mora_test.sh
-```
-
-Supply a different SSH destination as the first argument. The systemd unit uses
-the fixed canonical installation directory `/home/air/digital_cam`, so the
-optional second argument must have that value:
-
-```sh
-sw/airborne/modules/digital_cam/catia/deploy_mora.sh \
-   air@other-mora /home/air/digital_cam
-```
-
-Set `BUILD_JOBS` to limit parallel compilation when needed:
-
-```sh
-BUILD_JOBS=4 sw/airborne/modules/digital_cam/catia/deploy_mora.sh
-```
-
-The deployed CATIA binary uses `/dev/serial0` by default and embeds paths below
-the selected installation directory. The script creates the shared `photos`
-directory. The system-level `catia.service` runs as the unprivileged `air`
-user with `dialout` and `plugdev` access. It uses absolute paths, starts at
-`multi-user.target`, and retries every three seconds without a start limit when
-the serial device, USB camera, or another startup dependency is temporarily
-unavailable. systemd marks it active only after CATIA has initialized both the
-persistent LWIR capture server and `/dev/serial0`.
-
-Inspect the service and follow its journal with:
-
-```sh
-ssh air@theatre 'systemctl status catia.service'
-ssh air@theatre 'journalctl -fu catia.service'
-```
-
-CATIA and standalone `lwircam` runs require exclusive Tiny 1-C ownership. Stop
-the service for maintenance or a manual test, and restart it afterward:
-
-```sh
-ssh air@theatre 'sudo systemctl stop catia.service'
-ssh air@theatre \
-   '/home/air/digital_cam/catia --debug --mocktransform --test'
-ssh air@theatre 'sudo systemctl restart catia.service'
-```
-
-Disable automatic boot startup only when intentionally taking CATIA out of
-service:
-
-```sh
-ssh air@theatre 'sudo systemctl disable --now catia.service'
-ssh air@theatre 'sudo systemctl enable --now catia.service'
-```
+### Local LWIR Mock Processing
 
 Test locally without a camera, from the CATIA directory:
 
@@ -1878,13 +2114,19 @@ its source files ad hoc.
 
 ## Output Locations
 
-| Source | Default output | Filename example |
-| --- | --- | --- |
-| Local or `--test` | `catia/photos/` | `m000006.jpg` |
-| AI camera | `catia/photos/` | `a000006.jpg` |
-| LWIR camera | `catia/photos/` | `l000006.jpg` |
-| CHDK | `catia/photos/` | `c000006.jpg` |
-| EARcam | `catia/earlogs/` | `ear_20260907_213330.csv` |
+On MORA (ARM64 deployment), photos are saved to `~/Pictures/` (`/home/air/Pictures`)
+and EARcam acoustic session logs plus debug data are saved to `~/usher_debug_data/` (`/home/air/usher_debug_data`).
+In local development, output defaults to `photos/` and `earlogs/` beside CATIA.
+
+| Source | Development PC | MORA board | Filename example |
+| --- | --- | --- | --- |
+| Local or `--test` | `catia/photos/` | `~/Pictures/` | `m000006.jpg` |
+| AI camera | `catia/photos/` | `~/Pictures/` | `a000006.jpg` |
+| LWIR camera | `catia/photos/` | `~/Pictures/` | `l000006.jpg` |
+| CHDK | `catia/photos/` | `~/Pictures/` | `c000006.jpg` |
+| EARcam photo | `catia/photos/` | `~/Pictures/` | `e000006.jpg` |
+| EARcam log | `catia/earlogs/` | `~/usher_debug_data/` | `ear_20260907_213330.csv` |
+| Pose debug log | `--pose-log DIR` | `~/usher_debug_data/` | `pose-20260912T...-XXXXXX.csv` |
 
 Change paths or the camera command at build time:
 
@@ -1898,7 +2140,8 @@ make -C sw/airborne/modules/digital_cam/catia \
    CATIA_LWIR_CAM_COMMAND=/opt/catia/lwircam \
    CATIA_EAR_CAM_COMMAND=/opt/catia/earcam \
    CATIA_EAR_CAM_DEVICE=auto \
-   CATIA_EAR_CAM_LOG_DIR=/data/earlogs
+   CATIA_EAR_CAM_LOG_DIR=/data/earlogs \
+   CATIA_POSE_LOG_DIR=/data/usher_debug_data
 ```
 
 ## Command Reference
@@ -1936,6 +2179,129 @@ described by its `ExecStart` line.
 Defaults are deliberately the safe, lean choice: no extra files, no extra UART
 traffic, no unvalidated corrections. Every option above only *adds* behavior.
 
+One behavior is not a flag because it always applies: at every startup (outside
+`--test`/`--local`), CATIA briefly opens the LWIR sensor, waits past its
+power-on "wiggly" image, and closes it again, before printing `Started OK`.
+The Tiny1-C only shows that unstable image once, right after power-on, not on
+every later open; probing it once here, while still on the ground, means
+neither the first in-flight LWIR shot nor a later runtime camera-mask switch
+to LWIR ever has to wait it out. Nothing is saved by the probe, and a missing
+or failed sensor does not stop CATIA from starting or running its other
+backends. See [LWIRcam's `--warmup`](#3-capture-and-mock-modes) for the
+underlying mechanism.
+
+### Missing-Camera Resilience
+
+A camera being physically absent or failing to initialize never stops CATIA
+or the other selected cameras. If a flight plan selects a mask with several
+cameras (for example AICam and LWIR) and one of them is not connected to MORA,
+the flight still progresses: the missing camera is skipped and the rest are
+captured and saved normally.
+
+The strategy is **warn once, not on every shot**:
+
+- **LWIR** has the most expensive failure mode, since its init spawns a
+  persistent server and can take up to 30 seconds to give up. The startup
+  probe above already catches most absences before any shot is requested.
+  Real MORA hardware has shown the Tiny1-C's USB connection can drop and
+  recover on its own within a few seconds, so one failed attempt does not
+  immediately give up: LWIR is marked unavailable for the rest of that CATIA
+  run only after `LWIR_MAX_CONSECUTIVE_FAILURES` (3) consecutive failures,
+  whether from the startup probe or a shot's own attempt. A success at any
+  point resets that count. Once the threshold is reached, later shots skip
+  LWIR immediately instead of repeating the slow attempt. Restart CATIA (its
+  systemd unit does this automatically on a crash) to try again after
+  reconnecting the sensor.
+- **CHDK and AICam** have a cheap, fast init, so CATIA keeps retrying them on
+  every shot that selects them; this lets a transient issue (for example a
+  camera reconnected mid-flight) recover on its own. Only the first failure in
+  a row is logged; identical repeated failures are silent unless `--debug` is
+  set.
+- **EARcam** is attempted once, the same way; a missing microphone or a
+  missing `earcam` binary is logged once and not retried every shot. A
+  microphone that is present but momentarily has no fresh sample is a
+  separate, already rate-limited condition (at most one warning per second),
+  not a failed-camera warning.
+
+### LWIR Mid-Flight Stream Recovery
+
+`camera_initialized` only records that the persistent LWIR server was started
+successfully; it does not mean the server is still alive right now. On real
+MORA hardware, the Tiny1-C's USB connection can briefly re-enumerate on its
+own while otherwise idle between shots (observed in the kernel log as a plain
+`USB disconnect` immediately followed by re-enumeration as a new device,
+unrelated to power/undervoltage). The already-running server's stream then
+silently stops delivering frames; it notices this itself and exits once its
+frame-freshness deadline elapses, closing its pipe.
+
+If a shot is requested before or during that detection, `lwir_cam_pipe_shoot()`
+does not simply fail it. It first tries the existing connection; if that write
+or reply fails for any reason, it resets the connection and makes **one bounded
+respawn-and-retry** attempt (a fresh `ir_camera_open()`, which naturally picks
+up the camera under its new USB identity) before giving up on that shot. This
+was verified against a fake server that dies right after answering one request
+(`make -C tests` equivalent: `tests/lwir_shoot_recovery_test.sh`) and against
+the real mid-air-style disconnect on MORA: the shot that hit the dead
+connection recovered and still produced a photo, without needing to wait for
+the next trigger.
+
+To keep this bounded, an active request's own wait for a stable frame is capped
+at 6 seconds (`kRequestFrameTimeoutSeconds` in `lwircam/lwircam.cpp`), separate
+from the general 20-second ceiling used only during the initial camera open. A
+shot that still fails after the retry is handled the same way as any other
+LWIR failure: `camera_initialized` is cleared, and the *next* shot's own
+`camera_prepare()` either succeeds (transient issue resolved) or, if the sensor
+is genuinely gone, is what engages the sticky "not available this run" state
+described above.
+
+In every case, the per-shot fallback message ("camera requested but not
+active") is `--debug`-only, not a routine stderr line.
+
+### Long-Running Robustness
+
+CATIA and its sub-applications are meant to run unattended for days. A pass
+through the code with that specific goal (not security) found and fixed a
+few gaps where a single transient failure could otherwise degrade the whole
+run silently, or block it, instead of recovering:
+
+- **UART output could get stuck forever.** `serial_tx.c` remembers a write
+  failure so it can be reported consistently, but nothing ever cleared it
+  again on its own; every later `CATIA_STATUS`/`CATIA_EAR_RESULT`/image-buffer
+  send would then silently fail for the rest of the run without CATIA's main
+  loop ever noticing. `serial_tx_pending()` now also reports "pending" while
+  an error is stuck (even with an empty queue), so the main loop keeps calling
+  `serial_tx_flush()`, which surfaces the failure and lets the existing
+  restart-on-exit recovery (`systemd`'s `Restart=always`) take over quickly
+  instead of running on with dead UART output indefinitely. `serial_tx_stop()`
+  also now clears that stuck error itself, so a later `serial_tx_start()` on a
+  freshly reopened device is never affected by it.
+- **A hung `rpicam-still` could freeze the whole capture pipeline.**
+  `ai_cam_pipe_shoot()` previously waited for the AICam subprocess with a plain
+  blocking `waitpid()` and no timeout. If that process ever hangs (a stuck
+  camera driver, for example), the worker thread handling that shot blocks
+  forever; if this happens on every AICam trigger, all worker slots eventually
+  fill with the same hang and every camera stops taking pictures. The wait is
+  now bounded (`CATIA_AI_CAM_TIMEOUT_SECONDS`, default 30s): a process that
+  does not exit in time is killed and reaped, and that one shot fails fast
+  instead of stalling everything after it.
+- **A failed local socket bind could orphan already-running camera/EARcam
+  processes.** `socket_init()` used to call `exit(1)` directly on failure,
+  which skipped the normal cleanup path and could leave an already-spawned
+  persistent LWIR server or EARcam server running as an orphaned process,
+  still holding the camera/microphone open and blocking a clean restart. It
+  now returns an error instead, and CATIA performs the same cleanup
+  (`ear_cam_pipe_deinit()`, `cameras_deinit()`, `stop_local_serial_bridge()`)
+  as every other startup failure before exiting.
+
+These are covered by `tests/serial_tx_test.sh` (via `clock_alignment_test.sh`),
+`tests/aicam_prefix_test.sh` (the new hang-timeout case), and the existing
+startup/cleanup tests. Worker threads are always `pthread_detach()`ed
+(`start_shoot_worker()`), the SODA and EARcam child processes are always
+`waitpid()`-ed on every path, and the EARcam reconnect loop
+(`restart_server_if_dead()`) always joins its reader thread and reaps its
+child before starting a replacement — verified by reading, not assumed;
+these were already correct and needed no change.
+
 ### Sub-Application Parameters
 
 CATIA starts these helpers itself and passes the matching options, so you
@@ -1949,8 +2315,9 @@ normally only configure CATIA. Run them directly for bench work and analysis.
 | `--capture-server` | Keep the stream warm, read output paths from stdin | The sensor needs warm-up and stable frames; reusing one process is what makes ~4 s shot intervals possible |
 | `--bare` | Compatibility flag | Capture is already unfiltered; retained so existing commands keep working |
 | `--native-raw` | Save `FILE.raw` instead of embedding temperatures in the JPEG | What CATIA's `--lwir-raw` selects; keeps the exact combined sensor frame for calibration evidence |
+| `--warmup` | Open the camera, wait past its power-on "wiggly" image, then close it; saves nothing | What CATIA runs unconditionally at startup; also usable standalone on the bench |
 | `--geolocate FILE` | Write hotspot GPS and temperature into an existing shot's EXIF | The single detection pass that produces the mission result; separate so a photo can be re-analyzed later with a better calibration |
-| `--calibration FILE` | Camera YAML for `--geolocate` | Same purpose as CATIA's `--lwir-calibration`; an explicit path makes the analysis reproducible |
+| `--calibration FILE` | Camera YAML for `--geolocate`, or for `--capture-server` to also answer `GEO:FILE` requests on its existing stdin pipe | Same purpose as CATIA's `--lwir-calibration`; letting the running server do this analysis avoids spawning a new LWIRcam process for every shot |
 | `--mock-image FILE` / `--mock-layer FILE` | Process a JPEG with a synthetic temperature layer | Hardware-free testing of detection and EXIF handling |
 | `--help` / `--version` | Print help or build version | Verifies the deployed binary |
 
@@ -2003,6 +2370,16 @@ order:
 8. `EXIF metadata added` confirms metadata insertion.
 9. `soda return 0` confirms analysis completed successfully.
 
+### A camera is missing but the flight still ran
+
+This is the intended behavior, not a bug: see
+[Missing-Camera Resilience](#missing-camera-resilience). Check the log once,
+near where that camera was first requested, for its one-time
+`not available; continuing without it` (or, for LWIR, the startup probe's
+`LWIR sensor not accessible or warmup failed`) message. Re-run with `--debug`
+if you need to confirm every subsequent shot is still skipping it silently
+rather than failing in some other way.
+
 Enable the same diagnostics for a non-local command by adding `--debug`:
 
 ```sh
@@ -2048,8 +2425,8 @@ run this from the `documentation` directory:
 
 The script validates its dependencies, renders `catia-flow.png` and
 `catia-flow.svg` with Graphviz, composites `thelaptopscreen.png` into the
-Inkscape-rendered `desk-test-setup.png`, and rebuilds `index.html` from this
-Markdown file. It then checks that every generated file is nonempty.
+Inkscape-rendered `desk-test-setup.png`, and rebuilds all HTML pages and graphics
+into the `html/` directory. It then checks that every generated file is nonempty.
 
 Required tools:
 
@@ -2059,5 +2436,4 @@ Required tools:
 - Python 3;
 - Python package `Markdown` (`python3 -m pip install Markdown`).
 
-Do not edit `index.html`, `catia-flow.png`, `catia-flow.svg`, or
-`desk-test-setup.png` directly; the next documentation update replaces them.
+Do not edit files inside `html/` directly; the next documentation update replaces them.

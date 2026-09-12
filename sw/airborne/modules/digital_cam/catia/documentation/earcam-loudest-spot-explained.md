@@ -7,8 +7,10 @@ the way it is, how far a plain USB microphone can realistically hear an MSA
 motionSCOUT alarm, and step by step what the software does to turn thousands
 of noisy sound readings into one position on the map.
 
-The companion [README](README.md) describes how to build, run and test the
-system. This document explains the reasoning behind it.
+[Documentation Hub](index.html) | [Camera Pipeline](catia_camera_pipeline.html) |
+[AI Camera](raspberry_pi_ai_camera.html) | [LWIR Calibration](lwir-calibration.html) |
+[EARcam Guide](earcam-loudest-spot-explained.html) | [EARcam Data Flow](earcam-dataflow.html) |
+[Mission 2 Plan](mission2-score-first.html)
 
 ## The task in one sentence
 
@@ -251,7 +253,8 @@ safe and getting the flat top problem under control.
    turn radii before it.
 8. Fly the drop run.
 
-The data flow between autopilot, CATIA and `earcam` is drawn in
+The data flow between autopilot, CATIA and `earcam` is described in detail in
+[EARcam Data Flow](earcam-dataflow.html) and illustrated in
 [earcam-dataflow.png](earcam-dataflow.png).
 
 ### Coarse survey

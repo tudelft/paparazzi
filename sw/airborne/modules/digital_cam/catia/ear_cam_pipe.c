@@ -3,6 +3,7 @@
 
 #include "ear_cam_pipe.h"
 #include "ear_heatmap.h"
+#include "path_utils.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -311,16 +312,19 @@ static void stop_server(void)
 
 static int open_session_log(void)
 {
-  if (mkdir(CATIA_EAR_CAM_LOG_DIR, 0755) != 0 && errno != EEXIST) {
+  char resolved_log[PATH_MAX];
+  const char *log_dir = catia_resolve_path(CATIA_EAR_CAM_LOG_DIR, resolved_log, sizeof(resolved_log));
+
+  if (catia_ensure_directory(log_dir) != 0) {
     fprintf(stderr, "EAR_CAM_PIPE:\tfailed to create %s: %s\n",
-            CATIA_EAR_CAM_LOG_DIR, strerror(errno));
+            log_dir, strerror(errno));
     return -1;
   }
   time_t now = time(NULL);
   struct tm stamp;
   localtime_r(&now, &stamp);
   int length = snprintf(session_log_path, sizeof(session_log_path),
-                        "%s/ear_%04d%02d%02d_%02d%02d%02d.csv", CATIA_EAR_CAM_LOG_DIR,
+                        "%s/ear_%04d%02d%02d_%02d%02d%02d.csv", log_dir,
                         stamp.tm_year + 1900, stamp.tm_mon + 1, stamp.tm_mday,
                         stamp.tm_hour, stamp.tm_min, stamp.tm_sec);
   if (length < 0 || (size_t)length >= sizeof(session_log_path)) {
@@ -601,11 +605,15 @@ int ear_cam_pipe_render(const struct ear_loudest_spot *result, char *filename, s
   if (session == NULL || session_count == 0) {
     return -1;
   }
-  if (mkdir(CATIA_EAR_CAM_PHOTO_DIR, 0755) != 0 && errno != EEXIST) {
-    fprintf(stderr, "EAR_CAM_PIPE:\tfailed to create %s: %s\n", CATIA_EAR_CAM_PHOTO_DIR, strerror(errno));
+
+  char resolved_photo[PATH_MAX];
+  const char *photo_dir = catia_resolve_path(CATIA_EAR_CAM_PHOTO_DIR, resolved_photo, sizeof(resolved_photo));
+
+  if (catia_ensure_directory(photo_dir) != 0) {
+    fprintf(stderr, "EAR_CAM_PIPE:\tfailed to create %s: %s\n", photo_dir, strerror(errno));
     return -1;
   }
-  int length = snprintf(filename, filename_size, "%s/e%06d.jpg", CATIA_EAR_CAM_PHOTO_DIR,
+  int length = snprintf(filename, filename_size, "%s/e%06d.jpg", photo_dir,
                         ear_cam_pipe_last_shot_nr());
   if (length < 0 || (size_t)length >= filename_size) {
     filename[0] = '\0';
@@ -619,7 +627,7 @@ int ear_cam_pipe_render(const struct ear_loudest_spot *result, char *filename, s
   }
   // Undecorated field alongside, for ear_heatmap_overlay.py on the ground.
   char field[512];
-  length = snprintf(field, sizeof(field), "%s/e%06d_field.jpg", CATIA_EAR_CAM_PHOTO_DIR,
+  length = snprintf(field, sizeof(field), "%s/e%06d_field.jpg", photo_dir,
                     ear_cam_pipe_last_shot_nr());
   if (length > 0 && (size_t)length < sizeof(field)) {
     ear_heatmap_write_field(field, session, session_count, result);

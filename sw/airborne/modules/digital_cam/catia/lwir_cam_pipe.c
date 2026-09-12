@@ -1,4 +1,5 @@
 #include "lwir_cam_pipe.h"
+#include "path_utils.h"
 
 #include <errno.h>
 #include <stdlib.h>
@@ -170,22 +171,48 @@ static void stop_capture_server(void)
   capture_server_pid = -1;
 }
 
+/** Send one line request to the running server and wait for its reply. On any
+ * failure (broken pipe, dead process, or a timed-out/erroring reply) the server
+ * state is fully reset so a caller's retry starts with a clean respawn instead of
+ * repeatedly hitting the same stale, already-dead connection. */
+static int send_request_and_wait(const char *request, size_t request_size, int timeout_ms)
+{
+  size_t sent = 0;
+  while (sent < request_size) {
+    ssize_t written = write(capture_server_input, request + sent, request_size - sent);
+    if (written > 0) {
+      sent += (size_t)written;
+    } else if (written < 0 && errno != EINTR) {
+      fprintf(stderr, "LWIR_CAM_PIPE:\tfailed to send request: %s\n", strerror(errno));
+      stop_capture_server();
+      return -1;
+    }
+  }
+  if (read_server_status("LWIR_SERVER_OK", timeout_ms) != 0) {
+    stop_capture_server();
+    return -1;
+  }
+  return 0;
+}
+
 int lwir_cam_pipe_init(const char *unused)
 {
   (void)unused;
+  char resolved_dir[PATH_MAX];
+  const char *photo_dir = catia_resolve_path(CATIA_LWIR_CAM_PHOTO_DIR, resolved_dir, sizeof(resolved_dir));
 
-  if (mkdir(CATIA_LWIR_CAM_PHOTO_DIR, 0755) != 0 && errno != EEXIST) {
+  if (catia_ensure_directory(photo_dir) != 0) {
     fprintf(stderr, "LWIR_CAM_PIPE:\tfailed to create photo directory %s: %s\n",
-            CATIA_LWIR_CAM_PHOTO_DIR, strerror(errno));
+            photo_dir, strerror(errno));
     return -1;
   }
 
   struct stat directory_status;
-  if (stat(CATIA_LWIR_CAM_PHOTO_DIR, &directory_status) != 0
+  if (stat(photo_dir, &directory_status) != 0
       || !S_ISDIR(directory_status.st_mode)
-      || access(CATIA_LWIR_CAM_PHOTO_DIR, W_OK) != 0) {
+      || access(photo_dir, W_OK) != 0) {
     fprintf(stderr, "LWIR_CAM_PIPE:\tphoto directory is not writable: %s\n",
-            CATIA_LWIR_CAM_PHOTO_DIR);
+            photo_dir);
     return -1;
   }
   if (access(CATIA_LWIR_CAM_COMMAND, X_OK) != 0) {
@@ -216,12 +243,16 @@ int lwir_cam_pipe_init(const char *unused)
     return -1;
   }
 
-  char *arguments[5];
+  char *arguments[7];
   size_t count = 0;
   arguments[count++] = (char *)CATIA_LWIR_CAM_COMMAND;
   arguments[count++] = (char *)"--capture-server";
   arguments[count++] = (char *)"--bare";
   if (native_raw_enabled) arguments[count++] = (char *)"--native-raw";
+  if (calibration_path != NULL) {
+    arguments[count++] = (char *)"--calibration";
+    arguments[count++] = (char *)calibration_path;
+  }
   arguments[count] = NULL;
   int spawn_result = posix_spawn(&capture_server_pid, CATIA_LWIR_CAM_COMMAND,
                                  &actions, NULL, arguments, environ);
@@ -245,8 +276,45 @@ int lwir_cam_pipe_init(const char *unused)
   }
 
   printf("LWIR_CAM_PIPE:\tcapture command: %s\n", CATIA_LWIR_CAM_COMMAND);
-  printf("LWIR_CAM_PIPE:\tphoto directory: %s\n", CATIA_LWIR_CAM_PHOTO_DIR);
+  printf("LWIR_CAM_PIPE:\tphoto directory: %s\n", photo_dir);
   printf("LWIR_CAM_PIPE:\tpersistent capture server ready\n");
+  return 0;
+}
+
+int lwir_cam_pipe_warmup(void)
+{
+  /** Open the sensor once, wait past its power-on "wiggly" image, then close it
+   * again. Runs regardless of whether LWIR ends up selected for a shot, so a
+   * later real open (persistent server or standalone capture) never has to
+   * absorb that transient inline. Failure here is not fatal to CATIA. */
+  if (access(CATIA_LWIR_CAM_COMMAND, X_OK) != 0) {
+    fprintf(stderr, "LWIR_CAM_PIPE:\twarmup skipped, command is not executable: %s: %s\n",
+            CATIA_LWIR_CAM_COMMAND, strerror(errno));
+    return -1;
+  }
+
+  char *const arguments[] = {
+    (char *)CATIA_LWIR_CAM_COMMAND,
+    (char *)"--warmup",
+    NULL
+  };
+  pid_t warmup_pid;
+  int spawn_result = posix_spawn(&warmup_pid, CATIA_LWIR_CAM_COMMAND,
+                                 NULL, NULL, arguments, environ);
+  if (spawn_result != 0) {
+    fprintf(stderr, "LWIR_CAM_PIPE:\tfailed to start warmup: %s\n", strerror(spawn_result));
+    return -1;
+  }
+
+  int status;
+  pid_t wait_result;
+  do {
+    wait_result = waitpid(warmup_pid, &status, 0);
+  } while (wait_result < 0 && errno == EINTR);
+  if (wait_result < 0 || !WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+    fprintf(stderr, "LWIR_CAM_PIPE:\tsensor not accessible or warmup failed\n");
+    return -1;
+  }
   return 0;
 }
 
@@ -301,7 +369,26 @@ int lwir_cam_pipe_process_mock(char *filename)
 
 int lwir_cam_pipe_geolocate(char *filename)
 {
-  return process_image(filename, 1);
+  if (filename == NULL || filename[0] == '\0') {
+    return -1;
+  }
+  if (capture_server_pid < 0 || capture_server_input < 0 || capture_server_output < 0) {
+    /** No persistent server running (test/mock mode): fall back to a one-off process. */
+    return process_image(filename, 1);
+  }
+
+  /** Reuse the already-running, already-warmed-up server for analysis instead of
+   * spawning a fresh lwircam process for every shot. */
+  char request[PATH_MAX + 8];
+  int request_size = snprintf(request, sizeof(request), "GEO:%s\n", filename);
+  if (request_size < 0 || (size_t)request_size >= sizeof(request)) {
+    return -1;
+  }
+  if (send_request_and_wait(request, (size_t)request_size, 8000) != 0) {
+    fprintf(stderr, "LWIR_CAM_PIPE:\tcapture server failed to geolocate %s\n", filename);
+    return -1;
+  }
+  return 0;
 }
 
 int lwir_cam_pipe_shoot(char *filename, size_t filename_size, int image_number)
@@ -312,8 +399,11 @@ int lwir_cam_pipe_shoot(char *filename, size_t filename_size, int image_number)
     return -1;
   }
 
+  char resolved_dir[PATH_MAX];
+  const char *photo_dir = catia_resolve_path(CATIA_LWIR_CAM_PHOTO_DIR, resolved_dir, sizeof(resolved_dir));
+
   int length = snprintf(filename, filename_size, "%s/l%06d.jpg",
-                        CATIA_LWIR_CAM_PHOTO_DIR, image_number);
+                        photo_dir, image_number);
   if (length < 0 || (size_t)length >= filename_size) {
     filename[0] = '\0';
     return -1;
@@ -325,49 +415,47 @@ int lwir_cam_pipe_shoot(char *filename, size_t filename_size, int image_number)
     return -1;
   }
 
-  if (capture_server_pid < 0 || capture_server_input < 0 || capture_server_output < 0) {
-    fprintf(stderr, "LWIR_CAM_PIPE:\tcapture server is unavailable\n");
-    filename[0] = '\0';
-    return -1;
-  }
+  /** A mid-flight USB re-enumeration can silently kill the persistent server between
+   * shots even though it was already marked initialized. Give this shot one bounded
+   * chance to recover (respawn + retry) instead of losing it outright; if the sensor
+   * is genuinely gone, camera_prepare()'s own init attempt on the next shot is what
+   * stops further retries from then on. */
+  for (int attempt = 0; attempt < 2; ++attempt) {
+    if (capture_server_pid < 0 || capture_server_input < 0 || capture_server_output < 0) {
+      if (attempt > 0) {
+        fprintf(stderr, "LWIR_CAM_PIPE:\tcapture server died; restarting for one retry\n");
+      }
+      if (lwir_cam_pipe_init(NULL) != 0) {
+        break;
+      }
+    }
 
-  char request[PATH_MAX + 2];
-  int request_size = snprintf(request, sizeof(request), "%s\n", filename);
-  if (request_size < 0 || (size_t)request_size >= sizeof(request)) {
-    filename[0] = '\0';
-    return -1;
-  }
-  size_t sent = 0;
-  while (sent < (size_t)request_size) {
-    ssize_t written = write(capture_server_input, request + sent,
-                            (size_t)request_size - sent);
-    if (written > 0) {
-      sent += (size_t)written;
-    } else if (written < 0 && errno != EINTR) {
-      fprintf(stderr, "LWIR_CAM_PIPE:\tfailed to request capture: %s\n", strerror(errno));
-      stop_capture_server();
+    char request[PATH_MAX + 2];
+    int request_size = snprintf(request, sizeof(request), "%s\n", filename);
+    if (request_size < 0 || (size_t)request_size >= sizeof(request)) {
       filename[0] = '\0';
       return -1;
     }
-  }
-  if (read_server_status("LWIR_SERVER_OK", 21000) != 0) {
-    fprintf(stderr, "LWIR_CAM_PIPE:\tcapture server failed to save %s\n", filename);
-    unlink(filename);
-    filename[0] = '\0';
-    return -1;
+    if (send_request_and_wait(request, (size_t)request_size, 8000) != 0) {
+      fprintf(stderr, "LWIR_CAM_PIPE:\tcapture server failed to save %s\n", filename);
+      continue;
+    }
+
+    struct stat image_status;
+    if (stat(filename, &image_status) != 0 || !S_ISREG(image_status.st_mode)
+        || image_status.st_size == 0) {
+      fprintf(stderr, "LWIR_CAM_PIPE:\t%s did not create a valid image at %s\n",
+              CATIA_LWIR_CAM_COMMAND, filename);
+      unlink(filename);
+      filename[0] = '\0';
+      return -1;
+    }
+    return 0;
   }
 
-  struct stat image_status;
-  if (stat(filename, &image_status) != 0 || !S_ISREG(image_status.st_mode)
-      || image_status.st_size == 0) {
-    fprintf(stderr, "LWIR_CAM_PIPE:\t%s did not create a valid image at %s\n",
-            CATIA_LWIR_CAM_COMMAND, filename);
-    unlink(filename);
-    filename[0] = '\0';
-    return -1;
-  }
-
-  return 0;
+  unlink(filename);
+  filename[0] = '\0';
+  return -1;
 }
 
 void lwir_cam_pipe_deinit(void)

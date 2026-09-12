@@ -6,7 +6,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <stdlib.h>
 #include <string.h>
 #include "socket.h"
 
@@ -16,12 +15,12 @@
 static int socket_fd;
 static struct sockaddr_in socket_server;
 
-void socket_init(int is_server)
+int socket_init(int is_server)
 {
   // Initialize socket
   if ((socket_fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
     perror("Socket: socket");
-    exit(1);
+    return -1;
   }
 
   bzero(&socket_server, sizeof(socket_server));
@@ -33,9 +32,12 @@ void socket_init(int is_server)
   if (is_server) {
     if (bind(socket_fd, (struct sockaddr *)&socket_server, sizeof(socket_server)) != 0) {
       perror("Socket: bind");
-      exit(1);
+      close(socket_fd);
+      socket_fd = -1;
+      return -1;
     }
   }
+  return 0;
 }
 
 int socket_get_fd(void)

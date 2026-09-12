@@ -1,16 +1,16 @@
 digraph CATIA {
   graph [
     rankdir=TB,
-    bgcolor="#07111f",
-    pad="0.3",
-    nodesep="0.3",
-    ranksep="0.48",
-    fontname="DejaVu Sans",
+    bgcolor="#ffffff",
+    pad="0.4",
+    nodesep="0.38",
+    ranksep="0.55",
+    fontname="DejaVu Sans Bold",
     label="CATIA  |  From flight event to analyzed image",
     labelloc="t",
     labeljust="c",
-    fontsize=22,
-    fontcolor="#f8fafc",
+    fontsize=26,
+    fontcolor="#111111",
     splines=ortho
   ];
 
@@ -18,74 +18,80 @@ digraph CATIA {
     shape=rect,
     style="rounded,filled",
     fontname="DejaVu Sans",
-    fontsize=10.5,
-    fontcolor="#f8fafc",
-    color="#475569",
-    penwidth=1.6,
-    margin="0.18,0.12"
+    fontsize=15,
+    fontcolor="#111111",
+    color="#111111",
+    penwidth=2.2,
+    margin="0.25,0.16"
   ];
 
   edge [
-    fontname="DejaVu Sans",
-    fontsize=9,
-    fontcolor="#cbd5e1",
-    color="#64748b",
-    penwidth=1.6,
-    arrowsize=0.75
+    fontname="DejaVu Sans Bold",
+    fontsize=13,
+    fontcolor="#111111",
+    color="#111111",
+    penwidth=2.4,
+    arrowsize=1.0
   ];
 
   shot [
     label="1  PAPARAZZI SHOT\nindex + GPS + altitude\nroll + pitch + yaw + speed + course",
-    fillcolor="#164e63",
-    color="#22d3ee"
+    fillcolor="#fef9c3",
+    color="#ca8a04",
+    fontname="DejaVu Sans Bold"
   ];
 
   transport [
-    label="2  CATIA TRANSPORT\nreal serial device  or  local PTY bridge",
-    fillcolor="#1e3a5f",
-    color="#60a5fa"
+    label="2  CATIA TRANSPORT\nreal serial device (/dev/serial0) or local PTY bridge",
+    fillcolor="#f1f5f9",
+    color="#475569"
   ];
 
   dispatcher [
-    label="3  CATIA DISPATCHER\nchoose transport, camera, and test options",
-    fillcolor="#312e81",
-    color="#a5b4fc",
-    penwidth=2.2
+    label="3  CATIA DISPATCHER\nchoose transport, camera backend, and test options",
+    fillcolor="#ffedd5",
+    color="#ea580c",
+    penwidth=2.8,
+    fontname="DejaVu Sans Bold"
   ];
 
   subgraph cluster_capture {
     label="4  OBTAIN ONE JPEG";
     labelloc="t";
-    fontsize=12;
+    fontsize=17;
     fontname="DejaVu Sans Bold";
-    fontcolor="#dbeafe";
-    color="#334155";
-    fillcolor="#0b1728";
+    fontcolor="#111111";
+    color="#ca8a04";
+    fillcolor="#fefce8";
     style="rounded,filled";
-    margin=16;
+    margin=20;
 
     local [
       label="LOCAL / TEST\nselect testphotos/*.jpg\nor --mock-image\ncopy to photos/m%06d.jpg",
-      fillcolor="#14532d",
-      color="#4ade80"
+      fillcolor="#dcfce7",
+      color="#16a34a",
+      penwidth=2.2
     ];
 
     chdk [
       label="CHDK\ncamera capture + download\nmove to photos/c%06d.jpg",
-      fillcolor="#713f12",
-      color="#facc15"
+      fillcolor="#fef08a",
+      color="#ca8a04",
+      penwidth=2.2
     ];
 
     aicam [
       label="AI CAMERA\nrpicam-still captures + encodes\nphotos/a%06d.jpg",
-      fillcolor="#7c2d12",
-      color="#fb923c"
+      fillcolor="#fed7aa",
+      color="#ea580c",
+      penwidth=2.2
     ];
 
     lwircam [
       label="LWIR CAMERA\nTiny 1-C lwircam --capture-server\nreject startup frames\nphotos/l%06d.jpg + hotspot JSON",
-      fillcolor="#134e4a",
-      color="#2dd4bf"
+      fillcolor="#e0f2fe",
+      color="#0284c7",
+      penwidth=2.2
     ];
 
     {rank=same; local; chdk; aicam; lwircam;}
@@ -93,47 +99,53 @@ digraph CATIA {
 
   transform [
     label="5  OPTIONAL TEST TRANSFORM\n--mocktransform\nroll + pitch + yaw perspective\nauto FOV + borderless cover crop\nnear horizon: synth terrain or black\nvendored IJG libjpeg\nblur factor logged, not applied",
-    fillcolor="#581c87",
-    color="#d8b4fe"
+    fillcolor="#f3e8ff",
+    color="#9333ea",
+    penwidth=2.2
   ];
 
   exif [
     label="6  EXIF METADATA\nGPS + altitude + attitude\nspeed + course + raw CATIA shot\nLWIR: hotspot GPS + center temperature\ncalibration required for coordinates",
-    fillcolor="#831843",
-    color="#f9a8d4"
+    fillcolor="#fce7f3",
+    color="#db2777",
+    penwidth=2.2,
+    fontname="DejaVu Sans Bold"
   ];
 
   mock_hotspots [
     label="LWIR TEST ONLY\nlwircam --mock-image\nembedded temperature plane\nsource EXIF/XMP retained",
-    fillcolor="#134e4a",
-    color="#2dd4bf"
+    fillcolor="#e0f2fe",
+    color="#0284c7",
+    penwidth=2.2
   ];
 
   final [
     label="7  FINAL JPEG\natomic replacement complete\nnever expose a partial rewrite",
-    fillcolor="#3f6212",
-    color="#bef264",
-    penwidth=2.2
+    fillcolor="#fef08a",
+    color="#111111",
+    penwidth=3.0,
+    fontname="DejaVu Sans Bold"
   ];
 
   soda [
     label="8  SODA HAND-OFF\n--aicam / --chdkcam / --lwircam / --earcam\ncheck image + camera-specific placeholder\nhotspot EXIF retained on MORA\nno hotspot return message yet",
-    fillcolor="#991b1b",
-    color="#fca5a5"
+    fillcolor="#fee2e2",
+    color="#dc2626",
+    penwidth=2.2
   ];
 
   shot -> transport;
   transport -> dispatcher;
-  dispatcher -> local [color="#4ade80"];
-  dispatcher -> chdk [color="#facc15"];
-  dispatcher -> aicam [color="#fb923c"];
-  dispatcher -> lwircam [color="#2dd4bf"];
-  local -> transform [color="#4ade80"];
-  chdk -> transform [color="#facc15"];
-  aicam -> transform [color="#fb923c"];
-  lwircam -> transform [color="#2dd4bf"];
-  transform -> mock_hotspots [color="#d8b4fe"];
-  mock_hotspots -> exif [color="#2dd4bf"];
-  exif -> final [color="#f9a8d4"];
-  final -> soda [color="#bef264"];
+  dispatcher -> local [color="#16a34a"];
+  dispatcher -> chdk [color="#ca8a04"];
+  dispatcher -> aicam [color="#ea580c"];
+  dispatcher -> lwircam [color="#0284c7"];
+  local -> transform [color="#16a34a"];
+  chdk -> transform [color="#ca8a04"];
+  aicam -> transform [color="#ea580c"];
+  lwircam -> transform [color="#0284c7"];
+  transform -> mock_hotspots [color="#9333ea"];
+  mock_hotspots -> exif [color="#0284c7"];
+  exif -> final [color="#db2777"];
+  final -> soda [color="#111111"];
 }

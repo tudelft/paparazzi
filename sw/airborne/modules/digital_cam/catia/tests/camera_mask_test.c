@@ -20,7 +20,7 @@
 static const char *fixture;
 static unsigned captures[5], inits[5], failures;
 static unsigned soda_calls[5];
-static bool fail_chdk, fail_ai;
+static bool fail_chdk, fail_ai, fail_lwir;
 static int32_t capture_numbers[128];
 static size_t capture_count;
 static pthread_mutex_t gate_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -29,7 +29,7 @@ static bool hold_capture;
 
 int test_chdk_init(void) { ++inits[1]; return fail_chdk ? -1 : 0; }
 int test_ai_init(const char *source) { (void)source; ++inits[2]; return 0; }
-int test_lwir_init(const char *source) { (void)source; ++inits[3]; return 0; }
+int test_lwir_init(const char *source) { (void)source; ++inits[3]; return fail_lwir ? -1 : 0; }
 int test_ear_init(const char *source) { (void)source; ++inits[4]; return 0; }
 void test_chdk_deinit(void) {}
 void test_ai_deinit(void) {}
@@ -170,6 +170,32 @@ int main(int argc, char **argv)
   assert(captures[1] == 5 && captures[2] == 6 && captures[3] == 7 && captures[4] == 7);
   assert(camera_initialized[CATIA_CAMERA_AICAM]);
   assert(inits[CATIA_CAMERA_AICAM] == ai_initializations + 1);
+
+  // A truly-unavailable LWIR camera must be warned about and, only after several
+  // consecutive failures (real hardware can drop and recover within seconds, so one
+  // bad attempt must not permanently lose it), skipped on later shots without being
+  // retried (with its slow persistent-server spawn) on every one; other selected
+  // cameras must keep capturing throughout.
+  cameras_deinit();
+  fail_lwir = true;
+  unsigned lwir_inits_before = inits[CATIA_CAMERA_LWIRCAM];
+  unsigned ai_captures_before = captures[CATIA_CAMERA_AICAM];
+  for (int number = 11; number < 11 + LWIR_MAX_CONSECUTIVE_FAILURES; ++number) {
+    send_shot(CATIA_SHOOT_MASK, 6, number, false); // AICAM + LWIR
+    wait_captures();
+  }
+  assert(inits[CATIA_CAMERA_LWIRCAM] == lwir_inits_before + LWIR_MAX_CONSECUTIVE_FAILURES);
+  assert(camera_unavailable[CATIA_CAMERA_LWIRCAM]);
+  assert(!camera_initialized[CATIA_CAMERA_LWIRCAM]);
+  assert(captures[CATIA_CAMERA_AICAM] == ai_captures_before + LWIR_MAX_CONSECUTIVE_FAILURES);
+  send_shot(CATIA_SHOOT_MASK, 6, 20, false);
+  wait_captures();
+  assert(inits[CATIA_CAMERA_LWIRCAM] == lwir_inits_before + LWIR_MAX_CONSECUTIVE_FAILURES);
+  assert(captures[CATIA_CAMERA_AICAM] == ai_captures_before + LWIR_MAX_CONSECUTIVE_FAILURES + 1);
+  puts("LWIR camera unavailable: warned and skipped only after repeated failures; AICAM keeps shooting");
+  fail_lwir = false;
+  camera_unavailable[CATIA_CAMERA_LWIRCAM] = false;
+  cameras_deinit();
 
   const struct {
     uint8_t mask;
