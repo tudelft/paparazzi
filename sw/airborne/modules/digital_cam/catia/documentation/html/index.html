@@ -193,6 +193,7 @@ footer { padding: 25px 20px; color: var(--surface); background: var(--black); bo
       <a href="earcam-loudest-spot-explained.html" class="site-nav-link">EARcam Guide</a>
       <a href="earcam-dataflow.html" class="site-nav-link">EARcam Data Flow</a>
       <a href="mission2-score-first.html" class="site-nav-link">Mission 2 Plan</a>
+      <a href="precision-landing-flight-test.html" class="site-nav-link">Precision Landing</a>
       </nav>
       <p class="eyebrow">Paparazzi UAV / MORA / SODA</p>
       <h1>CATIA Documentation Hub</h1>
@@ -211,6 +212,7 @@ footer { padding: 25px 20px; color: var(--surface); background: var(--black); bo
         <li><a href="earcam-loudest-spot-explained.html" class="">EARcam Guide</a></li>
         <li><a href="earcam-dataflow.html" class="">EARcam Data Flow</a></li>
         <li><a href="mission2-score-first.html" class="">Mission 2 Plan</a></li>
+        <li><a href="precision-landing-flight-test.html" class="">Precision Landing</a></li>
         </ul>
       </div>
       <div class="nav-section">
@@ -237,7 +239,8 @@ subsystems for Paparazzi UAV.</p>
 <a href="lwir-calibration.html">LWIR Calibration</a> |
 <a href="earcam-loudest-spot-explained.html">EARcam Guide</a> |
 <a href="earcam-dataflow.html">EARcam Data Flow</a> |
-<a href="mission2-score-first.html">Mission 2 Plan</a></p>
+<a href="mission2-score-first.html">Mission 2 Plan</a> |
+<a href="precision-landing-flight-test.html">Precision Landing</a></p>
 <hr>
 <h2 id="documentation-guides">Documentation Guides</h2>
 <p>Explore the detailed technical guides for each subsystem:</p>
@@ -250,8 +253,8 @@ subsystems for Paparazzi UAV.</p>
 <li><a href="catia_camera_pipeline.html#deploy-to-mora">Automated Deployment to MORA</a></li>
 <li><a href="catia_camera_pipeline.html#start-here-physical-desk-test-with-mora">Physical Desk Test Setup</a></li>
 <li><a href="catia_camera_pipeline.html#start-here-local-simulation">Local Simulation &amp; Development</a></li>
-<li><a href="catia_camera_pipeline.html#camera-selection-and-mask-control">Camera Selection &amp; 8-Bit Masks</a></li>
-<li><a href="catia_camera_pipeline.html#pose-stream-and-clock-synchronization">Pose Streaming &amp; Clock Handshake</a></li>
+<li><a href="catia_camera_pipeline.html#choose-a-camera">Camera Selection &amp; 8-Bit Masks</a></li>
+<li><a href="catia_camera_pipeline.html#pose-and-image-timing-evidence">Pose Streaming &amp; Clock Handshake</a></li>
 </ul>
 <h3 id="optical-thermal-imaging">Optical &amp; Thermal Imaging</h3>
 <ul>
@@ -271,10 +274,10 @@ subsystems for Paparazzi UAV.</p>
   Covers thermal target construction with foil/matte tape, multi-pose lens
   distortion fitting with OpenCV, body mounting alignment, and verification.</p>
 </li>
-<li><a href="lwir-calibration.html#2-make-a-sharp-thermal-target">Thermal Target Construction</a></li>
-<li><a href="lwir-calibration.html#3-measure-the-lens">Multi-View Lens Calibration</a></li>
-<li><a href="lwir-calibration.html#4-align-the-camera-to-the-aircraft">Aircraft Mounting Alignment</a></li>
-<li><a href="lwir-calibration.html#5-take-a-useful-set-of-photos">Verification &amp; Error Checks</a></li>
+<li><a href="lwir-calibration.html#3-make-a-target-the-camera-can-see">Thermal Target Construction</a></li>
+<li><a href="lwir-calibration.html#6-fit-the-lens-on-the-laptop">Multi-View Lens Calibration</a></li>
+<li><a href="lwir-calibration.html#7-measure-the-mounting-without-guessing">Aircraft Mounting Alignment</a></li>
+<li><a href="lwir-calibration.html#8-check-distances-before-checking-gps">Verification &amp; Error Checks</a></li>
 </ul>
 <h3 id="acoustic-search-localization">Acoustic Search &amp; Localization</h3>
 <ul>
@@ -284,10 +287,10 @@ subsystems for Paparazzi UAV.</p>
   motionSCOUT alarm detection, inverse-square loudness modeling, and flight search
   patterns (lawnmower survey + star refinement).</li>
 <li><a href="earcam-loudest-spot-explained.html#why-one-simple-usb-microphone-was-chosen">Why One Simple USB Microphone</a></li>
-<li><a href="earcam-loudest-spot-explained.html#how-far-the-microphone-can-hear">Acoustic Detection Physics</a></li>
-<li><a href="earcam-loudest-spot-explained.html#how-the-loudest-spot-is-computed-from-many-readings">Loudest-Spot Solver Algorithm</a></li>
+<li><a href="earcam-loudest-spot-explained.html#how-sound-behaves-in-plain-terms">Acoustic Detection Physics</a></li>
+<li><a href="earcam-loudest-spot-explained.html#turning-readings-into-one-position">Loudest-Spot Solver Algorithm</a></li>
 <li>
-<p><a href="earcam-loudest-spot-explained.html#the-flight-search-pattern">Autonomous Flight Search Patterns</a></p>
+<p><a href="earcam-loudest-spot-explained.html#the-flight-pattern">Autonomous Flight Search Patterns</a></p>
 </li>
 <li>
 <p><strong><a href="earcam-dataflow.html">EARcam Position &amp; Sound Data Flow</a></strong>
@@ -307,9 +310,22 @@ subsystems for Paparazzi UAV.</p>
   2026 Mission 2. Focuses on safe fixed-wing operations, thermal candidate
   scoring, WGS84 ground-truth verification, and offline assessment scripts.</li>
 <li><a href="mission2-score-first.html#quick-n-dirty-checklist">Quick 'n Dirty Checklist</a></li>
-<li><a href="mission2-score-first.html#why-the-first-mission-2-attempt-should-be-software-first">Mission 2 Scoring Breakdown</a></li>
-<li><a href="mission2-score-first.html#how-to-check-the-first-trial-truth-and-evidence">Hotspot Verification Protocol</a></li>
-<li><a href="mission2-score-first.html#offline-assessment-tool">Offline Assessment Tool (<code>mission2_assess.py</code>)</a></li>
+<li><a href="mission2-score-first.html#what-earns-points">Mission 2 Scoring Breakdown</a></li>
+<li><a href="mission2-score-first.html#first-accuracy-baseline">Hotspot Verification Protocol</a></li>
+<li>
+<p><a href="mission2-score-first.html#offline-assessment-tool">Offline Assessment Tool (<code>mission2_assess.py</code>)</a></p>
+</li>
+<li>
+<p><strong><a href="precision-landing-flight-test.html">Adam and EasyStar 3 Precision Landing Flight Test</a></strong>
+  Staged verification and aircraft-specific tuning campaign for autonomous
+  first contact inside the IMAV2026 fixed-wing 20 x 3 m precision box. Covers
+  simulated rangefinder, crow characterization, crosswind prediction,
+  touchdown attitude, abort/retry behavior, and competition readiness evidence.</p>
+</li>
+<li><a href="precision-landing-flight-test.html#system-under-test">System and Controller</a></li>
+<li><a href="precision-landing-flight-test.html#phase-0-software-and-geometry-verification">Detailed Test Phases</a></li>
+<li><a href="precision-landing-flight-test.html#phase-9-parameter-tuning">Parameter Tuning</a></li>
+<li><a href="precision-landing-flight-test.html#competition-readiness-gate">Competition Readiness</a></li>
 </ul>
 <hr>
 <h2 id="system-architecture">System Architecture</h2>
@@ -389,7 +405,7 @@ subsystems for Paparazzi UAV.</p>
 <tr>
 <td><strong>Rebuild Documentation</strong></td>
 <td><code>make -C sw/airborne/modules/digital_cam/catia documentation</code></td>
-<td><a href="catia_camera_pipeline.html#documentation-generation">Docs Generator</a></td>
+<td><a href="catia_camera_pipeline.html#regenerate-the-diagram">Docs Generator</a></td>
 </tr>
 </tbody>
 </table></main>

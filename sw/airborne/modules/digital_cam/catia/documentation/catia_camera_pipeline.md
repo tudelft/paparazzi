@@ -2077,6 +2077,12 @@ make -C sw/airborne/modules/digital_cam/catia -j"$(nproc)"
 - accepted camera triggers queue instead of being discarded while a save finishes;
 - the attitude warp advances its projective coordinates across each scanline;
 - bilinear coordinates and weights are calculated once for all RGB channels;
+- LWIR server and CHDK protocol replies are read through small buffers rather
+   than one poll/read syscall pair per response byte;
+- LWIR JPEG encoding uses standard precomputed Huffman tables instead of
+   recomputing image-specific tables for every frame;
+- EARcam precomputes its Hann analysis window once per reporting interval,
+   removing per-sample cosine and division work from the 57-bin DSP loop;
 - CATIA drains serial input in chunks instead of one byte per millisecond;
 - `poll()` sleeps until serial or UDP work arrives, reducing idle CPU use;
 - SODA starts directly with `posix_spawnp()` instead of through a shell;

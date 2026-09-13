@@ -8,4 +8,6 @@ for command in /nonexistent/catia-chdk /usr/bin/false; do
     "$root/tests/chdk_failure_test.c" "$root/chdk_pipe.c" -o "$output/test"
   "$output/test"
 done
+gcc -std=gnu11 -Wall -Wextra -Werror "$root/tests/chdk_buffered_read_test.c" -o "$output/buffered"
+"$output/buffered"
 printf '%s\n' 'Missing and failed CHDK commands are nonfatal and retryable'

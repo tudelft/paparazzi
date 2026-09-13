@@ -46,4 +46,20 @@ int main(void)
   assert(!capture_times.callback_arrival && capture_times.callback_sequence == 0);
   check_response("LWIR_SERVER_OK\n", -1);
   assert(!capture_timing_valid(&capture_times));
+
+  /* The buffered reader must carry any bytes read past the matched line over to the
+   * next call, exactly as the byte-at-a-time reader used to, instead of discarding or
+   * re-reading them from a (possibly now-different) descriptor. */
+  status_buffer_size = status_buffer_pos = 0;
+  int descriptors[2];
+  assert(pipe(descriptors) == 0);
+  const char *combined = "LWIR_SERVER_READY\nEXTRA_LINE\n";
+  assert(write(descriptors[1], combined, strlen(combined)) == (ssize_t)strlen(combined));
+  close(descriptors[1]);
+  capture_server_output = descriptors[0];
+  assert(read_server_status("LWIR_SERVER_READY", 100) == 0);
+  assert(read_server_status("EXTRA_LINE", 100) == 0);
+  close(descriptors[0]);
+  capture_server_output = -1;
+  status_buffer_size = status_buffer_pos = 0;
 }

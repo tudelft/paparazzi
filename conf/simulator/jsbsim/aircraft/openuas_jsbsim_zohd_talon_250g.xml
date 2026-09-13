@@ -344,6 +344,17 @@
             </aerosurface_scale>
         </channel>
 
+        <channel name="Spoileron Brake">
+            <summer name="Spoileron Brake Command">
+                <input>-fcs/brake-cmd-norm</input>
+                <clipto>
+                    <min>0</min>
+                    <max>1</max>
+                </clipto>
+                <output>fcs/speedbrake-pos-norm</output>
+            </summer>
+        </channel>
+
     </flight_control>
 
     <!-- **********************************************************************
@@ -359,6 +370,7 @@
         Expressed in LBS versus axial airspeed u (fps).
         ********************************************************************** -->
     <external_reactions>
+        <property value="0">fcs/brake-cmd-norm</property>
         <property>fcs/throttle-lag</property>
 
         <force name="prop-thrust" frame="BODY" unit="LBS">
@@ -421,6 +433,17 @@
                              1.5700   1.3000
                         </tableData>
                     </table>
+                </product>
+            </function>
+            <!-- Provisional symmetric spoileron model. Replace these
+                 coefficients with high-altitude brake-pulse measurements. -->
+            <function name="aero/coefficient/CD_spoileron">
+                <description>Drag due to symmetric upward ailerons</description>
+                <product>
+                    <property>aero/qbar-psf</property>
+                    <property>metrics/Sw-sqft</property>
+                    <property>fcs/speedbrake-pos-norm</property>
+                    <value>0.10</value>
                 </product>
             </function>
             <function name="aero/coefficient/CDi">
@@ -490,6 +513,15 @@
                              0.9000   0.5500
                         </tableData>
                     </table>
+                </product>
+            </function>
+            <function name="aero/coefficient/CL_spoileron">
+                <description>Lift loss due to symmetric upward ailerons</description>
+                <product>
+                    <property>aero/qbar-psf</property>
+                    <property>metrics/Sw-sqft</property>
+                    <property>fcs/speedbrake-pos-norm</property>
+                    <value>-0.15</value>
                 </product>
             </function>
             <function name="aero/coefficient/CLde">

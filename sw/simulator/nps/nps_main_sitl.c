@@ -28,7 +28,7 @@
 
 #include "nps_main.h"
 #include "nps_fdm.h"
-
+#include "autopilot.h"
 
 
 
@@ -49,7 +49,12 @@ int main(int argc, char **argv)
 }
 
 
-void nps_update_launch_from_dl(uint8_t value __attribute__((unused))) {}
+void nps_update_launch_from_dl(uint8_t value)
+{
+  nps_autopilot.launch = value;
+  autopilot.launch = value;
+  printf("Launch value=%u\n", value);
+}
 
 
 void nps_radio_and_autopilot_init(void)

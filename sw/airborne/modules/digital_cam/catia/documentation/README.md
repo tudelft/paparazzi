@@ -22,7 +22,8 @@ flow SVG, and HTML page are generated files.
 [LWIR Calibration](html/lwir-calibration.html) |
 [EARcam Guide](html/earcam-loudest-spot-explained.html) |
 [EARcam Data Flow](html/earcam-dataflow.html) |
-[Mission 2 Plan](html/mission2-score-first.html)
+[Mission 2 Plan](html/mission2-score-first.html) |
+[Precision Landing](html/precision-landing-flight-test.html)
 
 ## Deploy to MORA
 
@@ -2187,7 +2188,7 @@ every later open; probing it once here, while still on the ground, means
 neither the first in-flight LWIR shot nor a later runtime camera-mask switch
 to LWIR ever has to wait it out. Nothing is saved by the probe, and a missing
 or failed sensor does not stop CATIA from starting or running its other
-backends. See [LWIRcam's `--warmup`](#3-capture-and-mock-modes) for the
+backends. See [LWIRcam's `--warmup`](#sub-application-parameters) for the
 underlying mechanism.
 
 ### Missing-Camera Resilience
@@ -2301,6 +2302,67 @@ startup/cleanup tests. Worker threads are always `pthread_detach()`ed
 (`restart_server_if_dead()`) always joins its reader thread and reaps its
 child before starting a replacement — verified by reading, not assumed;
 these were already correct and needed no change.
+
+### Speed / Performance
+
+After the robustness pass, a separate pass looked specifically for "low
+hanging fruit" speed improvements in CATIA and its `earcam`/`lwircam`
+sub-applications, with a hard constraint: never trade robustness for speed.
+Three changes were made, all behavior-preserving and covered by tests:
+
+- **LWIR status replies were read one byte at a time.** `lwir_cam_pipe.c`'s
+   `read_server_status()` used to call `poll()` and then `read(fd, &ch, 1)`
+   for every single character of every line the persistent LWIR capture
+   server sends back (readiness, timing, OK/ERROR replies). That is one
+   `poll()` and one `read()` syscall pair per byte. It now reads into a small
+   internal buffer (`status_buffer[512]`) and only calls `poll()`/`read()`
+   again once that buffer is exhausted, parsing lines out of memory the rest
+   of the time — typically 1-3 syscalls per reply instead of 100+. The exact
+   same line parsing and the same "sliding" timeout behavior (reset whenever
+   new data arrives) are preserved; the buffer is reset whenever the
+   persistent server is stopped so no stale bytes can leak into a later
+   respawned connection. Covered by `tests/capture_timing_test.c`'s new
+   cross-call buffering test plus all existing LWIR pipe tests.
+- **CHDK status replies had the same one-byte-at-a-time pattern.**
+   `chdk_pipe.c`'s `read_character()` (used by `wait_for_img()`/
+   `wait_for_cmd()` to parse CHDK's command-prompt protocol) got the same
+   fix: a small internal buffer (`chdk_read_buffer[256]`) that is refilled
+   with one `read()` per `poll()`-confirmed-ready event instead of one
+   `read()` per byte. The absolute deadline semantics are unchanged (the same
+   fixed deadline is just checked less often, only when the buffer needs
+   refilling). The buffer is reset in `chdk_pipe_deinit()`. Covered by a new
+   `tests/chdk_buffered_read_test.c`, which drives the exact hash-counted
+   filename-echo parsing through a real pipe to prove multi-character
+   responses are still parsed identically.
+- **JPEG encoding did more work than needed for every LWIR image.**
+   `lwircam/display.cpp` had `encoder.optimize_coding` set to `TRUE`, which
+   makes libjpeg compute image-specific optimal Huffman tables for every
+   frame — extra CPU work on every single capture. It is now `FALSE` (the
+   library's standard, precomputed Huffman tables), which is meaningfully
+   faster to encode at the cost of a somewhat larger JPEG file. Pixel data,
+   quality (`kJpegQuality`), and sampling are completely unaffected. Verified
+   via `test-capture-server-lifecycle`, `geolocation_exif_test.sh`, and
+   `lwir_integration_test.sh` (byte-for-byte pixel/temperature checks all
+   still pass; only file size differs).
+
+`ear_cam_pipe.c`'s reader thread and `earcam.c`'s `--server` stdin command
+reader were both checked for the same byte-at-a-time pattern and found to
+already read in chunks (`read(fd, chunk, sizeof(chunk))`) with only
+in-memory line assembly afterward — no change needed there.
+
+The EARcam DSP loop now precomputes the Hann analysis window once for each
+reporting interval. Previously every audio sample evaluated `cos()` and a
+division before updating the 57 tone bins. The sample values and window
+formula are unchanged; only that repeated arithmetic is moved out of the
+hot loop. The built-in motionSCOUT self-test passes with the optimized path.
+
+The remaining LWIR graphics work was reviewed separately. The optional
+OpenCV/ffplay preview path is not used by the shot pipeline. The shot path
+does require YUV422-to-BGR conversion before JPEG encoding, so removing that
+conversion would change the captured image rather than provide a safe speed
+gain. Full-frame mailbox copies and frame-structure checks are also retained:
+they protect the producer/consumer ownership boundary and reject malformed
+USB frames, respectively. Removing either would trade robustness for speed.
 
 ### Sub-Application Parameters
 

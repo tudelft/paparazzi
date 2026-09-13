@@ -29,6 +29,10 @@ const char *setup =
   "lua props=require(\"propcase\");print(\"SetupScript\");set_prop(props.ISO_MODE,3200);set_prop(props.FLASH_MODE,2);set_prop(props.RESOLUTION,0);set_prop(props.DATE_STAMP,0);set_prop(props.AF_ASSIST_BEAM,0);set_prop(props.QUALITY,0);print(\"Ready\");\n";
 
 static int fo = -1, fi = -1;
+/** Buffered reassembly for read_character(): avoids one poll()+read() syscall pair
+ * per byte of every CHDK response. */
+static char chdk_read_buffer[256];
+static size_t chdk_read_buffer_size, chdk_read_buffer_pos;
 static pid_t camera_pid = -1;
 static int write_command(const char *command, size_t length);
 static int make_deadline(struct timespec *deadline, int timeout_seconds);
@@ -104,6 +108,7 @@ int chdk_pipe_init(void)
  */
 void chdk_pipe_deinit(void)
 {
+  chdk_read_buffer_size = chdk_read_buffer_pos = 0;
   if (camera_pid > 0) {
     kill(camera_pid, SIGKILL);
     while (waitpid(camera_pid, NULL, 0) < 0 && errno == EINTR) {}
@@ -169,22 +174,30 @@ static int milliseconds_until(const struct timespec *deadline)
 
 static int read_character(char *character, const struct timespec *deadline)
 {
-  struct pollfd descriptor = {.fd = fo, .events = POLLIN, .revents = 0};
-  int result;
-  do {
-    int timeout = milliseconds_until(deadline);
-    if (timeout <= 0) {
+  if (chdk_read_buffer_pos == chdk_read_buffer_size) {
+    struct pollfd descriptor = {.fd = fo, .events = POLLIN, .revents = 0};
+    int result;
+    do {
+      int timeout = milliseconds_until(deadline);
+      if (timeout <= 0) {
+        return -1;
+      }
+      result = poll(&descriptor, 1, timeout);
+    } while (result < 0 && errno == EINTR);
+    if (result <= 0 || (descriptor.revents & (POLLERR | POLLHUP | POLLNVAL)) != 0) {
       return -1;
     }
-    result = poll(&descriptor, 1, timeout);
-  } while (result < 0 && errno == EINTR);
-  if (result <= 0 || (descriptor.revents & (POLLERR | POLLHUP | POLLNVAL)) != 0) {
-    return -1;
+    do {
+      result = (int)read(fo, chdk_read_buffer, sizeof(chdk_read_buffer));
+    } while (result < 0 && errno == EINTR);
+    if (result <= 0) {
+      return -1;
+    }
+    chdk_read_buffer_size = (size_t)result;
+    chdk_read_buffer_pos = 0;
   }
-  do {
-    result = (int)read(fo, character, 1);
-  } while (result < 0 && errno == EINTR);
-  return result == 1 ? 0 : -1;
+  *character = chdk_read_buffer[chdk_read_buffer_pos++];
+  return 0;
 }
 
 static int wait_for_img(char *filename, int timeout_seconds)

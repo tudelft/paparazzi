@@ -218,13 +218,18 @@ void nps_fdm_run_step(bool launch __attribute__((unused)), double *commands, int
 {
 
 #ifdef NPS_JSBSIM_LAUNCHSPEED
-  static bool already_launched = FALSE;
+  static bool launch_was_true = FALSE;
 
-  if (launch && !already_launched) {
+  if (launch && !launch_was_true) {
     printf("Launching with speed of %.1f m/s!\n", (float)NPS_JSBSIM_LAUNCHSPEED);
+#ifdef NPS_JSBSIM_LAUNCH_HEIGHT
+    FDMExec->GetIC()->SetAltitudeAGLFtIC(FeetOfMeters(NPS_JSBSIM_LAUNCH_HEIGHT));
+#endif
     FDMExec->GetIC()->SetUBodyFpsIC(FeetOfMeters(NPS_JSBSIM_LAUNCHSPEED));
     FDMExec->RunIC();
-    already_launched = TRUE;
+    launch_was_true = TRUE;
+  } else if (!launch) {
+    launch_was_true = FALSE;
   }
 #endif
 
@@ -267,7 +272,32 @@ void nps_fdm_run_step(bool launch __attribute__((unused)), double *commands, int
   FDMExec->Setdt(fdm.curr_dt);
   int i;
   for (i = 0; i < num_steps; i++) {
+#if NPS_JSBSIM_CONTACT_LOG
+    static bool contact_log_armed = false;
+    contact_log_armed |= launch && fdm.agl > 10.0;
+    const double impact_speed = MetersOfFeet(FDMExec->GetPropagate()->GetVel().Magnitude(1, 2));
+    const double impact_sink = MetersOfFeet(FDMExec->GetPropagate()->GetVel()(3));
+#endif
     FDMExec->Run();
+#if NPS_JSBSIM_CONTACT_LOG
+    if (contact_log_armed) {
+      FGGroundReactions *contacts = FDMExec->GetGroundReactions();
+      for (int contact_index = 0; contact_index < contacts->GetNumGearUnits(); contact_index++) {
+        if (contacts->GetGearUnit(contact_index)->GetWOW()) {
+          fetch_state();
+          printf("NPS_LANDING_CONTACT {\"time\":%.6f,\"east\":%.6f,\"north\":%.6f,"
+                 "\"altitude\":%.6f,\"groundspeed\":%.6f,\"sink\":%.6f,\"pitch\":%.6f,"
+                 "\"roll\":%.6f,\"contact_index\":%d}\n",
+                 fdm.time, fdm.ltpprz_pos.y, fdm.ltpprz_pos.x, -fdm.ltpprz_pos.z,
+                 impact_speed, impact_sink, DegOfRad(fdm.ltp_to_body_eulers.theta),
+                 DegOfRad(fdm.ltp_to_body_eulers.phi), contact_index);
+          fflush(stdout);
+          contact_log_armed = false;
+          break;
+        }
+      }
+    }
+#endif
   }
 
   fetch_state();

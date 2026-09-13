@@ -124,7 +124,8 @@
         <define name="RANGEFINDER_I2C_MEDIAN_SIZE" value="5"/>
         <define name="RANGEFINDER_I2C_MIN_RANGE" value="0.005" unit="m"/>
         <define name="RANGEFINDER_I2C_MAX_RANGE" value="8.0" unit="m"/><!-- For e.g. VB22A Theoretically 20m at 90% reflectivity in daylight real useful range ~ 8m upto 0m-->
-        <define name="RANGEFINDER_I2C_OFFSET" value="0.0" unit="m"/>
+        <!-- Sensor is centered in body X/Y and sits 4 mm above the belly contact plane. -->
+        <define name="RANGEFINDER_I2C_OFFSET" value="0.004" unit="m"/>
         <define name="RANGEFINDER_I2C_SCALE" value="0.001"/><!-- Since VB22A sensor is set to emit in millimeters per default-->
         <define name="RANGEFINDER_I2C_READ_MODE_SINGLE" value="0x00"/><!-- Specifically to read for a VB22A sensor -->
         <!-- <define name="RANGEFINDER_I2C_SYNC_SEND" value="TRUE"/> --><!-- Only enable while debugging via fast connetion, NOT mesh -->
@@ -217,6 +218,16 @@
       <module name="imu" type="nps"/>
       <module name="gps" type="sim"/>
       <define name="USE_NPS_AIRSPEED"/>
+       <!-- NPS "sonar" is the simulated downward rangefinder. -->
+       <define name="USE_SONAR"/>
+       <define name="NPS_SONAR_DT" value="0.01"/>
+       <define name="NPS_SONAR_NOISE_STD_DEV" value="0.005"/>
+       <!-- JSBSim AGL is referenced near CG; the centered sensor is about
+         2.5 in above the interpolated belly contact plane. -->
+       <define name="NPS_SONAR_OFFSET" value="-0.0635"/>
+       <define name="NPS_SONAR_MIN_DIST" value="0.005"/>
+       <define name="NPS_SONAR_MAX_DIST" value="8.0"/>
+      <define name="SENSOR_SYNC_SEND_SONAR"/>
       <!--
       <define name="USE_NPS_AIRSPEED"/>
       <define name="USE_NPS_AOA"/>
@@ -356,6 +367,7 @@
     <define name="RADIO_MANUALLIGHT" value="RADIO_AUX2"/>
     <define name="RADIO_HATCH" value="RADIO_AUX3"/>
     <define name="RADIO_MANUALSHUTTER" value="RADIO_AUX2"/>
+    <define name="RADIO_BRAKE" value="RADIO_AUX4"/>
 
     <!-- For relative localization and minimal inter-aircraft communication, use this UWB Swarm module 
     together with the appropriate code running on the MCU of the attached UWB MiniTag PCB -->
@@ -412,6 +424,7 @@
     <set command="ROLL"         value="@ROLL"/>
     <set command="PITCH"        value="@PITCH"/>
     <set command="YAW"          value="@YAW"/>    
+    <set command="BRAKE"        value="@BRAKE"/>
     <set command="ACTIVELIGHTS" value="@MANUALLIGHT"/>
     <set command="HATCH"        value="@HATCH"/>
     <set command="SHUTTER"      value="@MANUALSHUTTER"/> 
@@ -429,6 +442,7 @@
     <axis name="ROLL" failsafe_value="500"/>
     <axis name="PITCH" failsafe_value="-700"/>
     <axis name="YAW" failsafe_value="0"/>
+    <axis name="BRAKE" failsafe_value="0"/>
     <axis name="ACTIVELIGHTS" failsafe_value="9600"/>
     <axis name="HATCH" failsafe_value="-9600"/>
     <axis name="SHUTTER" failsafe_value="-9600"/>
@@ -459,7 +473,9 @@
   <section name="MIXER">
     <define name="ASSIST_ROLL_WITH_RUDDER" value="0.0"/>
     <define name="AILERON_DIFF" value="0.3"/>
-    <define name="BRAKEGAIN" value="0.0"/><!-- Optional gain for (spoileron) braking mix with elevator -->
+    <define name="BRAKE_ENABLED_SLOWDOWN_FACTOR_EXTEND" value="80"/>
+    <define name="BRAKE_ENABLED_SLOWDOWN_FACTOR_RETRACT" value="420"/>
+    <define name="BRAKE_MAX_PCT" value="0.70f"/>
   </section>
 
   <command_laws>
@@ -470,11 +486,13 @@
     <let var="gyro_active" value="(1 > AP_MODE ? 0 : 1)"/><!-- yes a bit puzzling is it ;)-->
     <let var="gyro_yaw" value="$gyro_active * (stateGetBodyRates_i()->r)"/>
     <let var="yaw_ctrl_sgl" value="@YAW - ($k_rudder_gyro * ($gyro_yaw)) - @ROLL * ASSIST_ROLL_WITH_RUDDER"/>
-    <let var="aileron" value="@ROLL+(BRAKEGAIN*SPOILERON_BRAKE_FULL)"/>
+    <let var="brake_value_nofilt" value="Clip(-@BRAKE, 0, MAX_PPRZ)"/>
+    <ratelimit var="brake_value" value="$brake_value_nofilt" rate_min="-BRAKE_ENABLED_SLOWDOWN_FACTOR_RETRACT" rate_max="BRAKE_ENABLED_SLOWDOWN_FACTOR_EXTEND"/>
+    <let var="crowbrake" value="$brake_value * BRAKE_MAX_PCT"/>
     <set servo="S_THROTTLE" value="@THROTTLE"/>
-    <set servo="S_AILERON_LEFT" value="$aileron"/>
-    <set servo="S_AILERON_RIGHT" value="$aileron"/>
-    <set servo="S_ELEVATOR" value="@PITCH+(-BRAKEGAIN*SPOILERON_BRAKE_FULL)"/>
+    <set servo="S_AILERON_LEFT" value="@ROLL-$crowbrake"/>
+    <set servo="S_AILERON_RIGHT" value="@ROLL+$crowbrake"/>
+    <set servo="S_ELEVATOR" value="@PITCH"/>
     <set servo="S_RUDDER" value="$yaw_ctrl_sgl"/>
     <!-- <set servo="S_LIGHT" value="((autopilot.mode == AP_MODE_AUTO2) ? MAX_PPRZ : @ACTIVELIGHTS)"/> -->
     <set servo="S_LIGHT" value="((autopilot.mode == AP_MODE_AUTO2) ? MIN_PPRZ : MIN_PPRZ)"/><!-- Switched off Temporary while desktests debug it is annoying-->
@@ -642,9 +660,10 @@
   </section>
 
   <section name="AGL" prefix="AGL_DIST_SONAR_">
-    <define name="ID" value="RANGEFINDER_I2C_SENDER_ID"/>
+    <!-- Accept the VB22A on hardware and AGL_SONAR_NPS_ID in simulation. -->
+    <define name="ID" value="ABI_BROADCAST"/>
     <define name="MAX_RANGE" value="$(RANGEFINDER_I2C_MAX_RANGE)/2" unit="m"/><!-- For AGL -->
-    <define name="MIN_RANGE" value="$(RANGEFINDER_I2C_MIN_RANGE)+0.7" unit="m"/><!-- For AGL -->
+    <define name="MIN_RANGE" value="$(RANGEFINDER_I2C_MIN_RANGE)" unit="m"/>
     <define name="FILTER" value="0.1"/>
   </section>
 
@@ -849,6 +868,18 @@
     <define name="TARGET_SPEED" value="GLIDE_AIRSPEED+1" unit="m/s"/>
   </section>
 
+  <section name="PRECISION_LANDING" prefix="PRECISION_LANDING_">
+    <define name="MIN_AIRSPEED" value="7.0" unit="m/s"/>
+    <define name="BRAKE_GAIN" value="0.05"/>
+    <define name="APPROACH_AIRSPEED" value="9.0" unit="m/s"/>
+    <define name="FINAL_HEIGHT" value="17.0" unit="m"/>
+    <define name="BRAKE_AGL" value="3.5" unit="m"/>
+    <define name="FLARE_AGL" value="1.2" unit="m"/>
+    <define name="AIM_BEFORE_TD" value="6.0" unit="m"/>
+    <define name="TOUCHDOWN_PITCH" value="4.0"/><!-- Flight-plan variable is in degrees. -->
+    <define name="FLARE_BRAKE" value="0.65"/>
+  </section>
+
   <!-- 
   <section name="DIGITAL_CAMERA" prefix="DC_">
     <define name="AUTOSHOOT_PERIOD" value="1.5" unit="sec"/>
@@ -884,11 +915,12 @@
 
   <section name="SIMULATOR" prefix="NPS_">
     <define name="JSBSIM_LAUNCHSPEED" value="10.0"/>
+    <define name="JSBSIM_LAUNCH_HEIGHT" value="1.6" unit="m"/>
     <!-- <define name="JSBSIM_MODEL" value="YardStik" type="string"/> -->
     <define name="JSBSIM_MODEL" value="openuas_jsbsim_multiplex_easystar3" type="string"/>
     <!-- <define name="JSBSIM_MODEL" value="AGGIEAIR/minion" type="string"/> -->
-    <define name="COMMANDS_NB" value="4"/>
-    <define name="ACTUATOR_NAMES" value="throttle-cmd-norm, aileron-cmd-norm, elevator-cmd-norm, rudder-cmd-norm" type="string[]"/>
+    <define name="COMMANDS_NB" value="5"/>
+    <define name="ACTUATOR_NAMES" value="throttle-cmd-norm, aileron-cmd-norm, elevator-cmd-norm, rudder-cmd-norm, brake-cmd-norm" type="string[]"/>
     <define name="BYPASS_AHRS" value="TRUE"/>
     <define name="BYPASS_INS" value="TRUE"/>
 

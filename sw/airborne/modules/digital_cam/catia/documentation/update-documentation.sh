@@ -75,7 +75,7 @@ for generated_file in "$HTML_DIR/catia-flow.svg" "$HTML_DIR/catia-flow.png" \
                       "$HTML_DIR/index.html" "$HTML_DIR/catia_camera_pipeline.html" \
                       "$HTML_DIR/earcam-loudest-spot-explained.html" "$HTML_DIR/earcam-dataflow.html" \
                       "$HTML_DIR/lwir-calibration.html" "$HTML_DIR/mission2-score-first.html" \
-                      "$HTML_DIR/raspberry_pi_ai_camera.html" \
+                      "$HTML_DIR/raspberry_pi_ai_camera.html" "$HTML_DIR/precision-landing-flight-test.html" \
                       "$HTML_DIR/lwir-calibration-workflow.png" "$HTML_DIR/lwir-calibration-workflow.svg" \
                       "$HTML_DIR/lwir-calibration-target.png" "$HTML_DIR/lwir-calibration-target.svg" \
                       "$HTML_DIR/lwir-calibration-coverage.png" "$HTML_DIR/lwir-calibration-coverage.svg" \
@@ -87,4 +87,4 @@ for generated_file in "$HTML_DIR/catia-flow.svg" "$HTML_DIR/catia-flow.png" \
   fi
 done
 
-echo "CATIA documentation updated: Hub, Camera Pipeline, EARcam, EARcam dataflow, LWIR calibration, Mission 2 and Raspberry Pi AI Camera guides in $HTML_DIR"
+echo "CATIA documentation updated: Hub, Camera Pipeline, EARcam, EARcam dataflow, LWIR calibration, Mission 2, Precision Landing and Raspberry Pi AI Camera guides in $HTML_DIR"

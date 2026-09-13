@@ -1,0 +1,1203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Staged validation and tuning plan for Adam and EasyStar 3 autonomous IMAV2026 fixed-wing precision landing">
+  <title>Adam and EasyStar 3 Precision Landing Flight Test</title>
+  <style>
+:root {
+  color-scheme: light;
+  --ink: #111111;
+  --muted: #595959;
+  --paper: #ffffff;
+  --surface: #ffffff;
+  --line: #dedede;
+  --yellow: #ffdd00;
+  --link: #806600;
+  --soft: #f5f5f5;
+  --black: #000000;
+  --code: #111111;
+  --code-ink: #ffffff;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.018) 1px, transparent 1px),
+    linear-gradient(rgba(0, 0, 0, 0.018) 1px, transparent 1px),
+    var(--paper);
+  background-size: 28px 28px;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  line-height: 1.65;
+}
+a { color: var(--link); text-underline-offset: 0.2em; }
+a:hover { color: var(--ink); text-decoration-thickness: 2px; }
+a:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; }
+::selection { color: var(--black); background: var(--yellow); }
+code, pre { font-family: "IBM Plex Mono", "Liberation Mono", monospace; }
+.masthead { color: var(--surface); background: var(--black); border-bottom: 5px solid var(--yellow); }
+.masthead-inner {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 32px 0 34px;
+}
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+.site-nav-link {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.site-nav-link:hover, .site-nav-link:focus-visible {
+  background: var(--yellow);
+  color: var(--black);
+}
+.site-nav-link.active {
+  background: var(--yellow);
+  color: var(--black);
+}
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--yellow);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.masthead h1 { margin: 0; color: var(--surface); font-size: 2.75rem; overflow-wrap: anywhere; }
+.lede { max-width: 760px; margin: 12px 0 0; color: #dedede; font-size: 1.08rem; }
+.layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 850px);
+  gap: 48px;
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 38px 0 80px;
+}
+nav { position: sticky; top: 24px; align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; }
+.nav-section { margin-bottom: 26px; }
+.nav-section strong {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.guide-nav, .toc ul { margin: 0; padding: 0; list-style: none; }
+.guide-nav li, .toc li { margin: 0; padding: 0; }
+.guide-nav a, .toc a {
+  display: block;
+  padding: 6px 12px;
+  border-left: 2px solid var(--line);
+  color: var(--ink);
+  font-size: 0.88rem;
+  text-decoration: none;
+}
+.guide-nav a:hover, .toc a:hover, .guide-nav a:focus-visible, .toc a:focus-visible {
+  border-color: var(--yellow);
+  color: var(--link);
+  background: var(--soft);
+}
+.guide-nav a.active {
+  border-left: 3px solid var(--yellow);
+  color: var(--black);
+  background: var(--soft);
+  font-weight: 700;
+}
+.toc > ul > li > a { display: none; }
+.toc ul ul { display: block; margin: 0; padding: 0; list-style: none; }
+main { min-width: 0; overflow-wrap: anywhere; }
+main > h1 { display: none; }
+h1, h2, h3 { line-height: 1.18; letter-spacing: 0; }
+h2 {
+  margin: 54px 0 16px;
+  padding-bottom: 9px;
+  border-bottom: 2px solid var(--line);
+  font-size: 1.75rem;
+  scroll-margin-top: 24px;
+}
+main > h2:first-of-type { margin-top: 0; }
+h3 { margin: 30px 0 10px; font-size: 1.18rem; scroll-margin-top: 24px; }
+p { margin: 10px 0 16px; }
+blockquote {
+  margin: 18px 0;
+  padding: 14px 18px;
+  border-left: 4px solid var(--yellow);
+  background: var(--soft);
+}
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 28px auto 48px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+pre {
+  overflow-x: auto;
+  margin: 14px 0 20px;
+  padding: 16px 18px;
+  border-left: 4px solid var(--yellow);
+  color: var(--code-ink);
+  background: var(--code);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+code:not(pre code) { padding: 0.12em 0.34em; color: var(--ink); background: var(--soft); }
+a code:not(pre code) { color: inherit; }
+table { width: 100%; border-collapse: collapse; margin: 18px 0 26px; background: var(--surface); }
+th, td { padding: 11px 13px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { color: var(--black); background: var(--yellow); }
+tbody tr:nth-child(even) { background: var(--soft); }
+ul, ol { padding-left: 24px; }
+hr { border: 0; border-top: 2px solid var(--line); margin: 32px 0; }
+footer { padding: 25px 20px; color: var(--surface); background: var(--black); border-top: 3px solid var(--yellow); text-align: center; }
+@media (max-width: 820px) {
+  .layout { grid-template-columns: 1fr; gap: 24px; }
+  nav { position: static; max-height: none; }
+  .toc > ul > li > ul { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .masthead-inner { padding-top: 28px; }
+}
+@media (max-width: 520px) {
+  .layout, .masthead-inner { width: min(100% - 24px, 1180px); }
+  .toc > ul > li > ul { grid-template-columns: 1fr; }
+  .masthead h1 { font-size: 2.25rem; }
+  th, td { padding: 8px; }
+}
+</style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <nav class="site-nav" aria-label="Main Navigation">
+        <a href="index.html" class="site-nav-link">Documentation Hub</a>
+      <a href="catia_camera_pipeline.html" class="site-nav-link">Camera Pipeline</a>
+      <a href="raspberry_pi_ai_camera.html" class="site-nav-link">AI Camera (IMX500)</a>
+      <a href="lwir-calibration.html" class="site-nav-link">LWIR Calibration</a>
+      <a href="earcam-loudest-spot-explained.html" class="site-nav-link">EARcam Guide</a>
+      <a href="earcam-dataflow.html" class="site-nav-link">EARcam Data Flow</a>
+      <a href="mission2-score-first.html" class="site-nav-link">Mission 2 Plan</a>
+      <a href="precision-landing-flight-test.html" class="site-nav-link active">Precision Landing</a>
+      </nav>
+      <p class="eyebrow">Paparazzi UAV / MORA / SODA</p>
+      <h1>Adam and EasyStar 3 Precision Landing Flight Test</h1>
+      <p class="lede">Validate every sensor and control layer, then tune repeatable first contact inside the 20 by 3 metre precision box.</p>
+    </div>
+  </header>
+  <div class="layout">
+    <nav aria-label="Guide navigation">
+      <div class="nav-section">
+        <strong>All Guides</strong>
+        <ul class="guide-nav">
+          <li><a href="index.html" class="">Documentation Hub</a></li>
+        <li><a href="catia_camera_pipeline.html" class="">Camera Pipeline</a></li>
+        <li><a href="raspberry_pi_ai_camera.html" class="">AI Camera (IMX500)</a></li>
+        <li><a href="lwir-calibration.html" class="">LWIR Calibration</a></li>
+        <li><a href="earcam-loudest-spot-explained.html" class="">EARcam Guide</a></li>
+        <li><a href="earcam-dataflow.html" class="">EARcam Data Flow</a></li>
+        <li><a href="mission2-score-first.html" class="">Mission 2 Plan</a></li>
+        <li><a href="precision-landing-flight-test.html" class="active">Precision Landing</a></li>
+        </ul>
+      </div>
+      <div class="nav-section">
+        <strong>On this page</strong>
+        <div class="toc">
+<ul>
+<li><a href="#adam-and-easystar-3-precision-landing-flight-test-plan">Adam and EasyStar 3 Precision Landing Flight-Test Plan</a><ul>
+<li><a href="#software-validation-status-2026-09-13">Software validation status, 2026-09-13</a></li>
+<li><a href="#objective-scoring-geometry-system-under-test">Objective, Scoring Geometry, &amp; System under Test</a></li>
+<li><a href="#part-i-option-a-minimal-express-flight-test-plan-time-critical-protocol">Part I: Option A — Minimal Express Flight-Test Plan (Time-Critical Protocol)</a></li>
+<li><a href="#part-ii-option-b-comprehensive-staged-validation-plan-full-engineering-protocol">Part II: Option B — Comprehensive Staged Validation Plan (Full Engineering Protocol)</a></li>
+<li><a href="#phase-0-software-and-geometry-verification">Phase 0: Software and geometry verification</a></li>
+<li><a href="#phase-1-propeller-off-actuator-inspection">Phase 1: Propeller-off actuator inspection</a></li>
+<li><a href="#phase-2-static-vb22a-characterization-over-sand">Phase 2: Static VB22A characterization over sand</a></li>
+<li><a href="#phase-3-gnss-airspeed-and-reference-checks">Phase 3: GNSS, airspeed, and reference checks</a></li>
+<li><a href="#phase-4-nps-rangefinder-and-state-machine-test">Phase 4: NPS rangefinder and state-machine test</a></li>
+<li><a href="#phase-5-high-altitude-crow-characterization">Phase 5: High-altitude crow characterization</a></li>
+<li><a href="#phase-6-approach-only-flight-tests">Phase 6: Approach-only flight tests</a></li>
+<li><a href="#phase-7-range-acquisition-and-brake-approaches">Phase 7: Range-acquisition and brake approaches</a></li>
+<li><a href="#phase-8-long-field-automatic-landings">Phase 8: Long-field automatic landings</a></li>
+<li><a href="#phase-9-parameter-tuning-matrix">Phase 9: Parameter tuning matrix</a></li>
+<li><a href="#phase-10-wind-envelope-expansion">Phase 10: Wind envelope expansion</a></li>
+<li><a href="#abort-and-retry-state-machine-logic">Abort and retry state-machine logic</a></li>
+<li><a href="#flight-test-record-template">Flight-test record template</a></li>
+<li><a href="#competition-readiness-gate">Competition readiness gate</a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+      </div>
+    </nav>
+    <main><h1 id="adam-and-easystar-3-precision-landing-flight-test-plan">Adam and EasyStar 3 Precision Landing Flight-Test Plan</h1>
+<p>This guide validates and tunes the autonomous precision landing developed for
+the ZOHD Talon 250G aircraft <strong>Adam</strong> and the Multiplex <strong>EasyStar 3</strong>.</p>
+<p>To accommodate varying field conditions, team schedules, and competition constraints, this document provides <strong>two separate, complete flight-test plans</strong>:</p>
+<ul>
+<li><strong>Part I: Option A — Minimal Express Test Plan (Time-Critical Protocol)</strong>: A 4-step execution path designed for emergency field deployment when less than 30–45 minutes total remain before a flight window or competition deadline. It focuses exclusively on mandatory safety checks, simple geometry setup, one high-pass verification, and direct touchdown scoring.</li>
+<li><strong>Part II: Option B — Comprehensive Staged Validation Plan (Full Engineering Protocol)</strong>: An 11-phase in-depth validation campaign (Phase 0 through Phase 10) for systematic sensor calibration, aerodynamic characterization, safety state-machine verification, parameter tuning, and wind envelope expansion when full testing time is available.</li>
+</ul>
+<hr>
+<h2 id="software-validation-status-2026-09-13">Software validation status, 2026-09-13</h2>
+<p>This is a <strong>simulation-tested development baseline, not flight or competition clearance</strong>. Both aircraft complete the autonomous approach and land inside the 20 x 3 m box in the tested calm-air cases. The controller, telemetry, test plan, and reusable NPS harness are implemented in <a href="sw/airborne/modules/nav/precision_landing.c">sw/airborne/modules/nav/precision_landing.c</a> and <a href="sw/simulator/nps/nps_fixedwing_tuning.py">sw/simulator/nps/nps_fixedwing_tuning.py</a>. M10 absolute position error, surveyed TD accuracy, real crow aerodynamics, sand contact, and sensor outages still require the staged flight tests below. The available evidence does not establish a probability of success or an operational wind envelope.</p>
+<p>Representative first-contact measurements from the saved simulation runs:</p>
+<table>
+<thead>
+<tr>
+<th>Aircraft / run under <code>var/nps_precision_landing/</code></th>
+<th style="text-align: right;">Along TD (m)</th>
+<th style="text-align: right;">Across (m)</th>
+<th style="text-align: right;">Sink (m/s)</th>
+<th style="text-align: right;">Pitch (deg)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Adam, final source <code>adam_release_check</code></td>
+<td style="text-align: right;">+1.60</td>
+<td style="text-align: right;">+1.06</td>
+<td style="text-align: right;">1.22</td>
+<td style="text-align: right;">+0.90</td>
+</tr>
+<tr>
+<td>EasyStar, final source <code>easystar_release_check</code></td>
+<td style="text-align: right;">+4.09</td>
+<td style="text-align: right;">+0.77</td>
+<td style="text-align: right;">0.70</td>
+<td style="text-align: right;">+3.73</td>
+</tr>
+<tr>
+<td>Adam, <code>adam_final_repeat</code></td>
+<td style="text-align: right;">+1.55</td>
+<td style="text-align: right;">+1.06</td>
+<td style="text-align: right;">1.23</td>
+<td style="text-align: right;">+0.88</td>
+</tr>
+<tr>
+<td>Adam, <code>adam_crosswind1</code></td>
+<td style="text-align: right;">+1.33</td>
+<td style="text-align: right;">+1.01</td>
+<td style="text-align: right;">1.24</td>
+<td style="text-align: right;">+0.82</td>
+</tr>
+<tr>
+<td>EasyStar, <code>easystar_baseline_final</code></td>
+<td style="text-align: right;">+4.09</td>
+<td style="text-align: right;">+0.77</td>
+<td style="text-align: right;">0.71</td>
+<td style="text-align: right;">+3.71</td>
+</tr>
+<tr>
+<td>EasyStar, <code>easystar_repeat_final</code></td>
+<td style="text-align: right;">+4.09</td>
+<td style="text-align: right;">+0.77</td>
+<td style="text-align: right;">0.71</td>
+<td style="text-align: right;">+3.71</td>
+</tr>
+<tr>
+<td>EasyStar, <code>easystar_crosswind1</code></td>
+<td style="text-align: right;">+4.24</td>
+<td style="text-align: right;">+0.61</td>
+<td style="text-align: right;">0.72</td>
+<td style="text-align: right;">+3.69</td>
+</tr>
+</tbody>
+</table>
+<p>Positive along-track error means beyond <code>TD</code>. Crosswind cases used the simulator wind setting of 1 m/s at 0 degrees. One earlier 2 m/s, 90-degree wind case landed +9.36 m along and +1.07 m across: inside the official box but outside the retained longitudinal margin. Do not interpret this as tailwind approval. Identical repeated results can reflect deterministic simulation, not independent real-world trials. Adam's roughly 1.2 m/s contact sink remains a particular bench/flight-validation concern.</p>
+<p>The separate <code>easystar_reject_verified</code> run rejected an unsuitable 7.5 m/s, 10 m final-height configuration and climbed above 25 m without contact. Host tests in <a href="tests/modules/test_precision_landing_controller.c">tests/modules/test_precision_landing_controller.c</a> and <a href="sw/simulator/nps/test_fixedwing_landing.py">sw/simulator/nps/test_fixedwing_landing.py</a> exercise the actual controller for stale/future AGL timestamps, sensor-height handover, low/invalid airspeed, invalid state, degenerate final, prediction rejection, maximum-brake overshoot, retry reset, and brake cleanup. They do not replace flight validation of these failure cases.</p>
+<p>First-contact positions are the <strong>aircraft CG position at the first JSBSim structural contact</strong>, not the footprint of the belly contact point. The log captures contact at the physics timestep, including wingtip contacts; scoring acceptance requires one of the two belly contacts in these two models. The harness requires this log for a successful precision-landing run. A height crossing alone is insufficient because it can be a sample after a bounce. Provisional contact gates are finite data, sink 0-1.5 m/s, absolute bank at most 8 degrees, and pitch 0-15 degrees; these are development gates, not proven airframe structural limits. Internal-margin results are reported separately.</p>
+<h3 id="reproduce-the-tests">Reproduce the tests</h3>
+<p>From the Paparazzi repository root, build each aircraft with its own telemetry UDP pair. A separate Ivy bus alone does <strong>not</strong> isolate telemetry ports.</p>
+<pre><code class="language-sh">make -f Makefile.ac AIRCRAFT=Adam_Precision_Landing_Test \
+  CONF_XML=conf/userconf/OPENUAS/openuas_precision_landing_test_conf.xml \
+  MODEM_PORT_OUT=42258 MODEM_PORT_IN=42259 \
+  USER_CFLAGS=-DNPS_JSBSIM_CONTACT_LOG=1 nps.compile
+
+make -f Makefile.ac AIRCRAFT=Easystar_3_Precision_Landing_Test \
+  CONF_XML=conf/userconf/OPENUAS/openuas_easystar3_precision_landing_test_conf.xml \
+  MODEM_PORT_OUT=42270 MODEM_PORT_IN=42271 \
+  USER_CFLAGS=-DNPS_JSBSIM_CONTACT_LOG=1 nps.compile
+
+python3 sw/simulator/nps/nps_fixedwing_tuning.py \
+  --aircraft Adam_Precision_Landing_Test --ac-id 129 --scenario precision-landing \
+  --settle-seconds 20 --measure-seconds 4 --bus 127.255.255.255:2166 \
+  --udp-port 42258 --udp-uplink-port 42259 --output-dir var/nps_precision_landing/adam_new
+
+python3 sw/simulator/nps/nps_fixedwing_tuning.py \
+  --aircraft Easystar_3_Precision_Landing_Test --ac-id 135 --scenario precision-landing \
+  --settle-seconds 20 --measure-seconds 4 --bus 127.255.255.255:2165 \
+  --udp-port 42270 --udp-uplink-port 42271 --output-dir var/nps_precision_landing/easystar_new
+</code></pre>
+<p>Use a new output directory per run. <code>--setting NAME=VALUE</code> supports controlled parameter trials; <code>--wind-speed</code> and <code>--wind-direction</code> set simulator wind. To reproduce rejection, add <code>--setting landing_airspeed=7.5 --setting final_height=10 --expect-go-around</code> to the EasyStar command. Do not lower the harness's 20 m climb gate to make a failed launch pass. Both models launch at 1.6 m and 10 m/s without a fabricated vertical throw. The flight plan converts the radian-valued <code>TAKEOFF_PITCH_ANGLE</code> to degrees before the flight-plan generator applies its normal degree-to-radian conversion.</p>
+<p>The generator can retain a stale settings header when flight-plan variables change. If a known variable is absent, mark only the corresponding generated <a href="var/aircrafts/Adam_Precision_Landing_Test/nps/generated/settings.h">var/aircrafts/Adam_Precision_Landing_Test/nps/generated/settings.h</a> or <a href="var/aircrafts/Easystar_3_Precision_Landing_Test/nps/generated/settings.h">var/aircrafts/Easystar_3_Precision_Landing_Test/nps/generated/settings.h</a> older (for example with <code>touch -d '1970-01-02'</code>) and rebuild. The harness rejects unsupported settings before starting processes. Never reset the source harness to solve a build issue.</p>
+<pre><code class="language-sh">python3 -m unittest discover -s sw/simulator/nps -p test_fixedwing_landing.py -v
+gcc -std=c11 -Wall -Wextra -Werror \
+  -Itests/modules/precision_landing_stubs -Isw/airborne -Isw/include \
+  tests/modules/test_precision_landing_controller.c \
+  sw/airborne/modules/nav/precision_landing.c -lm -o /tmp/test_precision_landing_controller
+/tmp/test_precision_landing_controller
+</code></pre>
+<p>Both <code>ap</code> hardware targets have also built successfully. The isolated test entries use the high-rate <a href="conf/telemetry/OPENUAS/openuas_nps_fixedwing_tuning.xml">conf/telemetry/OPENUAS/openuas_nps_fixedwing_tuning.xml</a> telemetry profile; do not deploy that profile on a bandwidth-limited radio without a link budget.</p>
+<h3 id="landing-telemetry">Landing telemetry</h3>
+<p>The test profile schedules <code>SONAR</code> at 20 Hz and <code>DEBUG_VECT</code> at 10 Hz. The landing module registers the sender; a schedule entry without a sender does not publish data. Vector name <code>precision_landing</code> has these float fields, in order: autopilot uptime (s), filtered AGL (m), filtered sink (m/s), remaining along-track distance (m), cross-track error (m), predicted longitudinal error (m), predicted cross-track error (m), brake fraction, AGL-fresh flag, abort flag, and commit-flare flag. Prediction fields are held once final is exited; use <code>NAVIGATION</code> block/stage to interpret them. <code>COMMANDS</code> records the actual brake demand, including flare. Test CSV column <code>airspeed</code> is historical naming for the NPS ground-velocity magnitude; use <code>measured_airspeed</code> for the pitot value. UDP device and ports belong to modem configuration, not the message schedule.</p>
+<hr>
+<h2 id="objective-scoring-geometry-system-under-test">Objective, Scoring Geometry, &amp; System under Test</h2>
+<p>IMAV2026 section 5.2.1 defines two fixed-wing landing areas:</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Area</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Precision landing</td>
+<td>20 x 3 m</td>
+<td>2 points</td>
+</tr>
+<tr>
+<td>Landing zone</td>
+<td>50 x 5 m</td>
+<td>1 point</td>
+</tr>
+<tr>
+<td>Outside both areas</td>
+<td>Outside 50 x 5 m</td>
+<td>0 points</td>
+</tr>
+</tbody>
+</table>
+<p>The rulebook does not specify an abort, go-around, or retry limit. It requires fully autonomous flight, safe return to the designated landing area, and work within the shared 30-minute slot. The test plan allows two automatic retries after the initial approach. Confirm with the organizers that an autonomous retry is accepted before competition day.</p>
+<p>The waypoint <code>TD</code> marks the center of the 20 x 3 m precision box. The initial predicted first-contact aim is 6 m before <code>TD</code>, which is 4 m inside the entry edge and leaves 16 m for flare float. The controller rejects recoverably bad predictions outside these internal limits:</p>
+<table>
+<thead>
+<tr>
+<th>Axis</th>
+<th style="text-align: right;">Controller limit</th>
+<th style="text-align: right;">Official half-size</th>
+<th style="text-align: right;">Retained margin</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Along final</td>
+<td style="text-align: right;">8.0 m from <code>TD</code></td>
+<td style="text-align: right;">10.0 m</td>
+<td style="text-align: right;">2.0 m</td>
+</tr>
+<tr>
+<td>Across final</td>
+<td style="text-align: right;">1.2 m from centerline</td>
+<td style="text-align: right;">1.5 m</td>
+<td style="text-align: right;">0.3 m</td>
+</tr>
+</tbody>
+</table>
+<p>The scored quantity should be recorded as the first belly contact position. Both foam aircraft have no landing gear and little expected rollout on sand, but final rest position should also be recorded until competition judging practice is confirmed.</p>
+<h3 id="system-under-test">System under test</h3>
+<p>Use one of these isolated aircraft entries with the shared flight plan <a href="conf/flight_plans/TUDELFT/tudelft_imav2026_o_test_pricise_landing.xml">conf/flight_plans/TUDELFT/tudelft_imav2026_o_test_pricise_landing.xml</a>:</p>
+<table>
+<thead>
+<tr>
+<th>Aircraft</th>
+<th>Test configuration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Adam</td>
+<td><a href="conf/userconf/OPENUAS/openuas_precision_landing_test_conf.xml">conf/userconf/OPENUAS/openuas_precision_landing_test_conf.xml</a></td>
+</tr>
+<tr>
+<td>EasyStar 3</td>
+<td><a href="conf/userconf/OPENUAS/openuas_easystar3_precision_landing_test_conf.xml">conf/userconf/OPENUAS/openuas_easystar3_precision_landing_test_conf.xml</a></td>
+</tr>
+</tbody>
+</table>
+<p>Competition aircraft bindings are intentionally unchanged.</p>
+<p>The landing system assigns one clear role to each available capability:</p>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Landing role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>u-blox M10, 13 Hz, three constellations, SBAS, Airborne &lt;1g</td>
+<td>Position and ground-velocity projection along and across final</td>
+</tr>
+<tr>
+<td>SDP33 airspeed</td>
+<td>Maintain stall margin and reject an unsafe low-energy approach</td>
+</tr>
+<tr>
+<td>DPS310 plus IMU/GNSS vertical fusion</td>
+<td>Glide control above rangefinder range and fallback commit-height estimate</td>
+</tr>
+<tr>
+<td>VB22A, 100 Hz</td>
+<td>Primary 4-to-0 m height and range-derived sink rate</td>
+</tr>
+<tr>
+<td>Tuned ETECS</td>
+<td>Hold the geometric glide and approach airspeed</td>
+</tr>
+<tr>
+<td>Aileron crow</td>
+<td>Proportional drag when predicted touchdown would pass the aim point</td>
+</tr>
+<tr>
+<td>Flight-plan logic</td>
+<td>Flare, bounded go-around retries, and live tuning variables</td>
+</tr>
+</tbody>
+</table>
+<p>The VB22A is centered in body X and Y on both aircraft. Its sensor plane is 0.004 m above the belly contact plane; <code>RANGEFINDER_I2C_OFFSET=0.004</code> converts its reading to belly clearance. No horizontal lever-arm correction is required. Rotation compensation remains enabled.</p>
+<h3 id="controller-behavior-dual-band-braking">Controller behavior &amp; Dual-Band Braking</h3>
+<p>During final, the controller projects GNSS ground velocity onto the AF-to-TD axis. This naturally handles crab: nose heading may differ from runway heading, but only motion along the runway advances the touchdown estimate. Cross-track velocity predicts lateral drift at contact.</p>
+<p>Using filtered AGL height $h$, filtered range-derived sink rate $v_z$, remaining along-track distance $d$, along-track groundspeed $v_a$, current cross-track error $c$, and cross-track groundspeed $v_c$:</p>
+<p>$$
+t_{contact} = \frac{h}{\max(v_z, 0.25)}
+$$</p>
+<p>$$
+e_{long} = d - v_a t_{contact}
+$$</p>
+<p>$$
+e_{cross} = c - v_c t_{contact}
+$$</p>
+<p>Negative $e_{long}$ predicts touchdown beyond <code>TD</code>; positive values predict a short touchdown. Crow is proportional to predicted travel beyond the selected upstream aim point. It is rate-limited and capped by each airframe's mixer.</p>
+<p>Both simulation baselines use a 17 m final height and 9 m/s approach airspeed. The AF-to-TD route uses existing glide/energy guidance, with vertical aim shifted upstream by <code>aim_before_td</code> without moving <code>TD</code>. Above the precision decision band, excess height relative to this path commands at most 50% brake demand using the fused navigation state. In the final decision band, fresh VB22A AGL and range rate drive prediction. Range-rate initialization uses fused vertical speed and resets after measurement gaps. Flare kills throttle and limits bank to 8 degrees. Actual mixer travel caps remain aircraft-specific.</p>
+<h3 id="configuration-baseline">Configuration baseline</h3>
+<p>Do not optimize several values at once. Start every new test campaign from this baseline and record every departure:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th style="text-align: right;">Adam</th>
+<th style="text-align: right;">EasyStar 3</th>
+<th style="text-align: right;">Allowed test range</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>landing_airspeed</code></td>
+<td style="text-align: right;">9.0 m/s</td>
+<td style="text-align: right;">9.0 m/s</td>
+<td style="text-align: right;">7.0-12.0 m/s</td>
+<td>Tested simulation approach, not flight-certified speed</td>
+</tr>
+<tr>
+<td><code>final_height</code></td>
+<td style="text-align: right;">17.0 m</td>
+<td style="text-align: right;">17.0 m</td>
+<td style="text-align: right;">10.0-25.0 m</td>
+<td>Energy-controlled path over the 149 m final</td>
+</tr>
+<tr>
+<td><code>brake_agl</code></td>
+<td style="text-align: right;">3.5 m</td>
+<td style="text-align: right;">3.5 m</td>
+<td style="text-align: right;">2.5-4.0 m</td>
+<td>Highest AGL where predictive crow may engage</td>
+</tr>
+<tr>
+<td><code>flare_agl</code></td>
+<td style="text-align: right;">2.0 m</td>
+<td style="text-align: right;">1.2 m</td>
+<td style="text-align: right;">0.5-2.5 m</td>
+<td>Start of fixed-pitch flare</td>
+</tr>
+<tr>
+<td><code>aim_before_td</code></td>
+<td style="text-align: right;">6.0 m</td>
+<td style="text-align: right;">6.0 m</td>
+<td style="text-align: right;">2.0-7.0 m</td>
+<td>First-contact target before box center</td>
+</tr>
+<tr>
+<td><code>touchdown_pitch</code></td>
+<td style="text-align: right;">4.0 deg</td>
+<td style="text-align: right;">4.0 deg</td>
+<td style="text-align: right;">-5.0 to 10.0 deg</td>
+<td>Commanded flare pitch; measured contact pitch differs</td>
+</tr>
+<tr>
+<td><code>flare_brake</code></td>
+<td style="text-align: right;">0.30</td>
+<td style="text-align: right;">0.65</td>
+<td style="text-align: right;">0.0-0.75</td>
+<td>Flare demand before mixer cap</td>
+</tr>
+<tr>
+<td><code>landing_max_retries</code></td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0-5</td>
+<td>Automatic retries after the initial attempt</td>
+</tr>
+<tr>
+<td>Crow mixer cap</td>
+<td style="text-align: right;">75%</td>
+<td style="text-align: right;">70%</td>
+<td style="text-align: right;">Build-time</td>
+<td>Preserve roll authority</td>
+</tr>
+<tr>
+<td>Predictor brake gain</td>
+<td style="text-align: right;">0.08</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">Build-time</td>
+<td>Initial response; replace from flight data</td>
+</tr>
+<tr>
+<td>Flare bank limit</td>
+<td style="text-align: right;">8 deg</td>
+<td style="text-align: right;">8 deg</td>
+<td style="text-align: right;">Build-time</td>
+<td>Correct drift without wingtip strike risk</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="part-i-option-a-minimal-express-flight-test-plan-time-critical-protocol">Part I: Option A — Minimal Express Flight-Test Plan (Time-Critical Protocol)</h2>
+<p>Use Option A <strong>only</strong> when total available testing time before competition or flight window is restricted to 30–45 minutes. It skips multi-speed aerodynamic characterization and long-field parameter sweeps, reducing field operations to four essential steps that maximize safety while providing an autonomous landing result.</p>
+<pre><code class="language-mermaid">graph TD
+    Step1[Step 1: Bench &amp; Rangefinder Sanity Check &lt;br/&gt; 5 min] --&gt; Step2[Step 2: Field Survey &amp; Alignment &lt;br/&gt; 5 min]
+    Step2 --&gt; Step3[Step 3: High-Altitude Approach &amp; Go-Around Test &lt;br/&gt; 10 min]
+    Step3 --&gt; Step4[Step 4: Rapid Autonomous Landing Attempts &lt;br/&gt; 15 min]
+    Step4 --&gt; Decision{Box Score &amp; Safety Check}
+    Decision --&gt;|Inside 20x3m Box| Lock[Lock Settings &amp; Deploy]
+    Decision --&gt;|Outside Box / Unsafe| Adjust[1-Step Setting Adjustment or Manual Abort]
+</code></pre>
+<hr>
+<h3 id="step-1-pre-flight-hardware-servos-rangefinder-sanity-5-minutes">Step 1: Pre-Flight Hardware, Servos, &amp; Rangefinder Sanity (5 minutes)</h3>
+<ol>
+<li><strong>Power-On &amp; Control Check</strong>:
+   - Remove propeller or restrain aircraft securely.
+   - Power radio and avionics. Verify control surfaces respond correctly in <code>MANUAL</code>, <code>AUTO1</code>, and <code>AUTO2</code>.
+   - Verify motor kill switch (<code>autopilot.kill_throttle = 1</code>) immediately disarms throttle in all modes.</li>
+<li><strong>Crow Brake Bench Test</strong>:
+   - Trigger block <code>Crow brake bench test</code> from GCS (or select via settings).
+   - Observe 3-second extension: both ailerons must move <strong>upward</strong> together.
+   - While crow is extended, apply manual roll input: verify differential travel remains for roll control (at least 25% remaining travel).</li>
+<li><strong>Rangefinder Quick Readout</strong>:
+   - Move hand or flat surface in front of the downward Surertech VB22A sensor (0.2 m to 3.0 m).
+   - Confirm <code>sonar_distance</code> on GCS or telemetry updates continuously with correct distance.</li>
+</ol>
+<p><strong>Pass Criteria</strong>: Motors disarm, crow moves ailerons up without ruddervator coupling, roll control remains active during full crow, and rangefinder reads distance smoothly.</p>
+<hr>
+<h3 id="step-2-field-survey-waypoints-wind-alignment-5-minutes">Step 2: Field Survey, Waypoints, &amp; Wind Alignment (5 minutes)</h3>
+<ol>
+<li><strong>Precision Box Layout</strong>:
+   - Lay out the 20 x 3 m precision landing box and outer 50 x 5 m landing zone into wind.
+   - Mark center waypoint <code>TD</code> (Touchdown) at exact box center $(0, 0)$.</li>
+<li><strong>Approach Fix (AF) Setup</strong>:
+   - Position <code>AF</code> (Approach Fix) ~149 m directly upstream along the runway centerline into wind.
+   - Set <code>AF</code> altitude to 17.0 m above ground level (<code>ground_alt + 17.0</code>).</li>
+<li><strong>Safety Pilot Briefing</strong>:
+   - Assign safety pilot with manual takeover switch.
+   - Establish hard manual takeover triggers: lateral drift &gt; 1.2 m from centerline, pitch attitude &gt; 15° or &lt; -10°, or airspeed dropping below 8.2 m/s (Adam) / 7.0 m/s (EasyStar).</li>
+</ol>
+<hr>
+<h3 id="step-3-high-altitude-approach-go-around-verification-10-minutes">Step 3: High-Altitude Approach &amp; Go-Around Verification (10 minutes)</h3>
+<ol>
+<li><strong>Launch</strong>: Hand-launch aircraft at full throttle into wind (<code>Takeoff</code> block). Airspeed reaches ~10 m/s.</li>
+<li><strong>Approach Intercept</strong>: Select <code>Land Right AF-TD</code> or <code>Land Left AF-TD</code>. Aircraft enters baseleg and aligns with AF-to-TD centerline.</li>
+<li><strong>Forced High Go-Around</strong>:
+   - As aircraft passes <code>AF</code> at 17 m and begins descent, verify <code>precision_landing</code> telemetry updates (<code>remaining_m</code>, <code>predicted_error_m</code>).
+   - Allow descent to ~5 m AGL, then switch to <code>Standby</code> or command <code>go-around</code> from GCS.
+   - Verify aircraft immediately retracts crow, applies full throttle, climbs straight along final heading to 25 m AGL, and enters standby circle.</li>
+</ol>
+<p><strong>Pass Criteria</strong>: Aircraft tracks final centerline within 1.0 m, rangefinder acquires at 4 m AGL, and manual/commanded go-around smoothly aborts descent without stall or wing drop.</p>
+<hr>
+<h3 id="step-4-rapid-autonomous-precision-landing-attempts-15-minutes">Step 4: Rapid Autonomous Precision Landing Attempts (15 minutes)</h3>
+<ol>
+<li><strong>Attempt 1</strong>:
+   - Relaunch or command <code>Land Right AF-TD</code> from standby circle.
+   - Allow autonomous approach, predictive crow braking (below 3.5 m AGL), and fixed-pitch flare (below 2.0 m Adam / 1.2 m EasyStar).
+   - Safety pilot monitors flight path; takes manual control if hard limit is breached.
+   - Record first belly contact location relative to <code>TD</code>.</li>
+<li><strong>Attempt 2</strong>:
+   - Repeat approach and record second touchdown location.</li>
+<li><strong>Express Decision Matrix</strong>:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Measured First Contact</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Inside 20 x 3 m box</strong> (both attempts)</td>
+<td><strong>SUCCESS</strong>: Lock settings, preserve logs, ready for competition.</td>
+</tr>
+<tr>
+<td><strong>Long overshoot</strong> (&gt; +10 m past <code>TD</code>)</td>
+<td>Increase <code>aim_before_td</code> by 1.0 m (max 7.0 m) or increase <code>flare_brake</code> by 0.10. Re-test once.</td>
+</tr>
+<tr>
+<td><strong>Short contact</strong> (&gt; -10 m before <code>TD</code>)</td>
+<td>Decrease <code>aim_before_td</code> by 1.0 m or lower <code>flare_agl</code> by 0.2 m. Re-test once.</td>
+</tr>
+<tr>
+<td><strong>Lateral drift</strong> (&gt; 1.5 m off centerline)</td>
+<td>Re-align <code>AF</code> to exact current wind vector. Check magnetometer/course alignment.</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="part-ii-option-b-comprehensive-staged-validation-plan-full-engineering-protocol">Part II: Option B — Comprehensive Staged Validation Plan (Full Engineering Protocol)</h2>
+<p>Use Option B when a full multi-session or 1–2 day testing campaign is available. This plan systematically isolates each sensor, actuator, aerodynamic, and algorithmic layer before committing to touchdown.</p>
+<h3 id="required-test-equipment-and-records">Required test equipment and records</h3>
+<p>Bring:</p>
+<ul>
+<li>propeller removal tools and a restraint for actuator tests;</li>
+<li>tape measure, straight line, stakes, and visible markers for 20 x 3 m and 50 x 5 m rectangles;</li>
+<li>at least four surveyed reference marks, including both precision-box edges and <code>TD</code>;</li>
+<li>a phone or camera recording perpendicular to the touchdown line;</li>
+<li>charged flight and transmitter batteries;</li>
+<li>SD logging enabled when practical;</li>
+<li>a flight-test sheet for weather, parameters, results, and anomalies.</li>
+</ul>
+<p>Log at minimum:</p>
+<ul>
+<li>GNSS position, velocity, fix, satellites, and ground speed;</li>
+<li>fused altitude and vertical speed;</li>
+<li>raw and filtered rangefinder distance;</li>
+<li>measured and commanded airspeed;</li>
+<li>attitude, desired attitude, and actuator commands;</li>
+<li>throttle and brake command;</li>
+<li><code>precision_landing_remaining_m</code>;</li>
+<li><code>precision_landing_cross_track_m</code>;</li>
+<li><code>precision_landing_predicted_cross_track_m</code>;</li>
+<li><code>precision_landing_predicted_error_m</code>;</li>
+<li><code>precision_landing_brake_fraction</code>;</li>
+<li>abort, flare-commit, block, stage, and retry state.</li>
+</ul>
+<p>For every flight, preserve the exact airframe, flight plan, settings, log, and weather note together. Do not compare landings from undocumented parameter sets.</p>
+<hr>
+<h2 id="phase-0-software-and-geometry-verification">Phase 0: Software and geometry verification</h2>
+<h3 id="phase-0-procedure">Phase 0 procedure</h3>
+<ol>
+<li>Build the selected hardware target. Use the EasyStar aircraft and configuration names for EasyStar tests:</li>
+</ol>
+<p><code>sh
+   make -f Makefile.ac \
+     AIRCRAFT=Adam_Precision_Landing_Test \
+     CONF_XML=conf/userconf/OPENUAS/openuas_precision_landing_test_conf.xml \
+     ap.compile</code></p>
+<ol start="2">
+<li>Build NPS:</li>
+</ol>
+<p><code>sh
+   make -f Makefile.ac \
+     AIRCRAFT=Adam_Precision_Landing_Test \
+     CONF_XML=conf/userconf/OPENUAS/openuas_precision_landing_test_conf.xml \
+     nps.compile</code></p>
+<ol start="3">
+<li>Run the projection tests:</li>
+</ol>
+<p><code>sh
+   gcc -std=c11 -Wall -Wextra -Werror \
+     -Isw/airborne -Isw/include \
+     sw/airborne/modules/nav/test_precision_landing.c \
+     -lm -o /tmp/test_precision_landing
+   /tmp/test_precision_landing</code></p>
+<ol start="4">
+<li>Confirm <code>TD</code> is the surveyed center of the intended test rectangle.</li>
+<li>Confirm AF-to-TD is aligned with the intended landing direction and wind.</li>
+<li>Confirm AF is approximately 149 m from TD and has the aircraft-specific height from the baseline table.</li>
+</ol>
+<h3 id="phase-0-pass-criteria">Phase 0 pass criteria</h3>
+<ul>
+<li>AP and NPS builds complete without errors or warnings.</li>
+<li>Projection tests return exit status zero.</li>
+<li><code>TD</code> survey uncertainty is substantially smaller than the 0.3 m retained lateral margin; otherwise increase the internal margin or improve surveying.</li>
+<li>The final has no obstacle and enough overrun space for early tests.</li>
+</ul>
+<hr>
+<h2 id="phase-1-propeller-off-actuator-inspection">Phase 1: Propeller-off actuator inspection</h2>
+<h3 id="phase-1-procedure">Phase 1 procedure</h3>
+<ol>
+<li>Remove the propeller and power the selected aircraft normally.</li>
+<li>Confirm control surfaces are neutral in MANUAL and AUTO modes.</li>
+<li>Select <code>Crow brake bench test</code> once.</li>
+<li>Observe the complete three-second extension and retraction.</li>
+<li>While crow is extended, command small left and right roll inputs in an appropriate bench mode and verify differential authority remains.</li>
+<li>Repeat five cycles while listening for servo binding and watching current.</li>
+</ol>
+<h3 id="phase-1-pass-criteria">Phase 1 pass criteria</h3>
+<ul>
+<li>Both ailerons move upward for positive brake demand.</li>
+<li>Travel is symmetric within visible/measured linkage tolerance.</li>
+<li>Extension and retraction are smooth; no surface snaps to its stop.</li>
+<li>At full crow, at least 25% command range remains for roll correction.</li>
+<li>Ruddervators remain responsive and do not move from brake command alone.</li>
+<li>No servo buzz, linkage flex, overheating, or excessive current occurs.</li>
+</ul>
+<h3 id="stop-conditions">Stop conditions</h3>
+<p>Stop immediately for reversed motion, binding, asymmetric travel, excessive current, or unexpected ruddervator movement. Correct mechanics or mixer signs before any powered test.</p>
+<hr>
+<h2 id="phase-2-static-vb22a-characterization-over-sand">Phase 2: Static VB22A characterization over sand</h2>
+<p>Use representative dry and, if relevant, damp competition-like sand.</p>
+<h3 id="phase-2-procedure">Phase 2 procedure</h3>
+<ol>
+<li>Hold the aircraft level at measured belly clearances of 4.0, 3.0, 2.0, 1.5, 1.0, 0.5, 0.2, 0.1, and 0.02 m.</li>
+<li>Record at least 10 seconds at every height.</li>
+<li>Repeat at +10 and -10 degrees pitch and roll to validate cosine correction.</li>
+<li>Move smoothly from 4 m to contact at approximately 0.5, 1.0, and 1.5 m/s.</li>
+<li>Repeat in direct sunlight and with the expected landing-area texture.</li>
+</ol>
+<h3 id="measurements">Measurements</h3>
+<p>For each height calculate mean error, standard deviation, maximum excursion, dropout percentage, and update interval. For moving tests compare differentiated range rate with the imposed descent rate.</p>
+<h3 id="phase-2-pass-criteria">Phase 2 pass criteria</h3>
+<ul>
+<li>Valid data remains continuous from 4 m to the belly contact plane.</li>
+<li>Mean corrected AGL error is within 0.03 m.</li>
+<li>95% of samples are within 0.05 m.</li>
+<li>No stale interval exceeds 0.25 s.</li>
+<li>Filtered range rate has the correct sign and no sustained error above 0.2 m/s during constant-rate motion.</li>
+</ul>
+<p>If the sensor is more accurate than these limits, retain the measurements and tighten later acceptance bands only after flight vibration is included.</p>
+<hr>
+<h2 id="phase-3-gnss-airspeed-and-reference-checks">Phase 3: GNSS, airspeed, and reference checks</h2>
+<h3 id="m10-verification">M10 verification</h3>
+<p>Before flight, confirm in u-center or a recorded configuration dump. Adam's known configuration is:</p>
+<ul>
+<li>navigation rate: 13 Hz;</li>
+<li>three constellations enabled;</li>
+<li>SBAS enabled;</li>
+<li>dynamic model: Airborne &lt;1g;</li>
+<li>UART4 and receiver baud: 460800;</li>
+<li>no unexpected fallback to a lower update rate.</li>
+</ul>
+<p>Verify EasyStar 3 independently; its airframe notes currently state approximately 17 Hz with three constellations and SBAS. Do not silently assume it has Adam's 13 Hz profile.</p>
+<p>With the selected aircraft stationary on <code>TD</code>, log at least five minutes. Calculate horizontal position spread and velocity noise. Repeat after moving to AF and back to TD.</p>
+<h3 id="sdp33-verification">SDP33 verification</h3>
+<p>With motor off and pitot sheltered from wind, confirm plausible near-zero pressure without forcing a field zero in ambient wind. During a straight pass, confirm valid airspeed through the entire 8.2-12 m/s landing range.</p>
+<h3 id="phase-3-pass-criteria">Phase 3 pass criteria</h3>
+<ul>
+<li>GNSS fix remains valid and reported velocity does not show persistent lateral motion while stationary.</li>
+<li>Surveyed <code>TD</code> lies within the observed GNSS error budget plus the controller's 0.3 m lateral margin. If not, the 3 m scoring width cannot be guaranteed from standalone GNSS and the internal limit must not be relaxed to hide it.</li>
+<li>SDP33 remains valid with no zero values or dropouts during the approach-speed pass.</li>
+<li>Fused altitude changes smoothly and agrees with rangefinder trend through 4 m AGL.</li>
+</ul>
+<hr>
+<h2 id="phase-4-nps-rangefinder-and-state-machine-test">Phase 4: NPS rangefinder and state-machine test</h2>
+<p>Paparazzi NPS simulates the historical <code>sonar</code> sensor from JSBSim terrain AGL. Both targets use 100 Hz, 5 mm Gaussian noise, and 0.005-8 m limits. Adam uses a -0.02794 m CG-to-rear-belly correction; EasyStar 3 uses -0.0635 m. The AGL consumer accepts the simulated sender through ABI broadcast.</p>
+<h3 id="required-scenarios">Required scenarios</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Input</th>
+<th>Expected result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nominal</td>
+<td>Zero wind, centered final</td>
+<td>Range acquisition and flare at aircraft-specific settings</td>
+</tr>
+<tr>
+<td>Headwind</td>
+<td>Reduced along-track groundspeed</td>
+<td>Prediction moves short; crow reduces or remains off</td>
+</tr>
+<tr>
+<td>Tailwind</td>
+<td>Increased along-track groundspeed</td>
+<td>Prediction moves long; crow demand increases</td>
+</tr>
+<tr>
+<td>Crosswind</td>
+<td>Lateral ground velocity</td>
+<td>Predicted cross-track reflects drift, not crab heading</td>
+</tr>
+<tr>
+<td>Recoverable miss</td>
+<td>Predicted miss outside limits above 2.5 m</td>
+<td>Automatic go-around</td>
+</tr>
+<tr>
+<td>Late AGL loss</td>
+<td>Loss at/below 2.5 m fused height</td>
+<td>Commit to flare, no powered go-around</td>
+</tr>
+<tr>
+<td>Early AGL loss</td>
+<td>Loss in decision band above 2.5 m</td>
+<td>Automatic go-around</td>
+</tr>
+<tr>
+<td>GNSS loss</td>
+<td>Loss above 2.5 m fused height</td>
+<td>Automatic go-around</td>
+</tr>
+<tr>
+<td>Retry exhaustion</td>
+<td>Three rejected approaches at default setting</td>
+<td>Two retries, then Standby</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="phase-5-high-altitude-crow-characterization">Phase 5: High-altitude crow characterization</h2>
+<p>Perform this phase in calm conditions at an altitude that permits immediate retraction and recovery. Do not combine it with a landing.</p>
+<h3 id="phase-5-procedure">Phase 5 procedure</h3>
+<ol>
+<li>Stabilize straight and level at the aircraft's baseline landing airspeed with clean surfaces.</li>
+<li>Record at least 10 seconds of baseline airspeed, sink rate, pitch, and power.</li>
+<li>Apply approximately 25% brake for three seconds, retract, and recover.</li>
+<li>Repeat at 50%, then 75%, only if the previous step is stable.</li>
+<li>Repeat each setting at least three times.</li>
+<li>Repeat at 10 and 11 m/s if sufficient altitude and control margin remain.</li>
+</ol>
+<h3 id="derive">Derive</h3>
+<ul>
+<li>brake-command to achieved surface deflection;</li>
+<li>transient pitch moment and steady pitch-control demand;</li>
+<li>change in sink rate at constant airspeed;</li>
+<li>deceleration after throttle reduction;</li>
+<li>remaining roll-control authority;</li>
+<li>extension and retraction time constants.</li>
+</ul>
+<h3 id="phase-5-pass-criteria">Phase 5 pass criteria</h3>
+<ul>
+<li>No divergent pitch, roll, or Dutch-roll response.</li>
+<li>Airspeed remains above the aircraft-specific minimum throughout each pulse: 8.2 m/s for Adam and 7.0 m/s for EasyStar 3.</li>
+<li>Roll response remains adequate at maximum tested brake.</li>
+<li>Retraction restores clean-flight trim without a dangerous balloon.</li>
+<li>Repeated pulses produce consistent sink and deceleration within 15%.</li>
+</ul>
+<p>Use these measurements to add crow aerodynamics to JSBSim and select the first flight <code>BRAKE_GAIN</code>. Do not add fixed ruddervator brake compensation until the measured pitch moment establishes its sign and magnitude.</p>
+<hr>
+<h2 id="phase-6-approach-only-flight-tests">Phase 6: Approach-only flight tests</h2>
+<p>Fly the exact AF-to-TD approach but command go-around no lower than 8 m AGL. Crow remains disabled because the VB22A control window has not yet been entered.</p>
+<h3 id="test-matrix">Test matrix</h3>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Wind</th>
+<th style="text-align: right;">Airspeed</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A1-A3</td>
+<td>Calm</td>
+<td style="text-align: right;">Aircraft baseline</td>
+<td>Centerline and glide repeatability</td>
+</tr>
+<tr>
+<td>A4-A6</td>
+<td>Light crosswind</td>
+<td style="text-align: right;">Aircraft baseline</td>
+<td>Crab and predicted lateral drift</td>
+</tr>
+<tr>
+<td>A7-A9</td>
+<td>Light headwind</td>
+<td style="text-align: right;">Aircraft baseline</td>
+<td>Along-track prediction sensitivity</td>
+</tr>
+</tbody>
+</table>
+<h3 id="phase-6-pass-criteria">Phase 6 pass criteria</h3>
+<ul>
+<li>At 8 m AGL, cross-track error is below 1.0 m on every accepted approach.</li>
+<li>Airspeed remains above the aircraft-specific minimum and within 1.0 m/s of its commanded baseline.</li>
+<li>No persistent roll oscillation or saturation occurs.</li>
+<li>AF intercept settles before descent and does not overshoot centerline.</li>
+<li>Predicted error changes in the physically correct direction with wind.</li>
+</ul>
+<p>Reject the approach geometry or course tuning before proceeding if three consecutive approaches cannot meet these limits.</p>
+<hr>
+<h2 id="phase-7-range-acquisition-and-brake-approaches">Phase 7: Range-acquisition and brake approaches</h2>
+<p>Use a long unobstructed strip. Configure the plan to go around before flare for the first runs, or have the safety pilot ready to intervene under the approved test procedure.</p>
+<h3 id="phase-7-procedure">Phase 7 procedure</h3>
+<ol>
+<li>Fly three clean approaches through 4 m AGL to verify range acquisition.</li>
+<li>Enable 25% maximum effective crow and fly three approaches.</li>
+<li>Compare predicted touchdown before brake, after brake, and at the go-around gate.</li>
+<li>Increase maximum effective crow only after stable results.</li>
+<li>Test one light crosswind direction at a time.</li>
+</ol>
+<h3 id="phase-7-pass-criteria">Phase 7 pass criteria</h3>
+<ul>
+<li>AGL is fresh before <code>brake_agl</code> on every accepted approach.</li>
+<li>Range-derived sink rate agrees with fused vertical speed within 0.3 m/s once settled.</li>
+<li>Brake demand is smooth and changes predicted touchdown toward the aim point.</li>
+<li>Crow does not drive airspeed below 8.2 m/s.</li>
+<li>Predicted lateral contact remains within 1.2 m.</li>
+<li>Go-around retracts crow before climb demand and restores normal roll limit.</li>
+</ul>
+<hr>
+<h2 id="phase-8-long-field-automatic-landings">Phase 8: Long-field automatic landings</h2>
+<p>Begin with calm wind and a landing area much larger than the scoring zone. Mark the virtual 20 x 3 m and 50 x 5 m boxes but do not place obstacles at their edges.</p>
+<h3 id="per-run-procedure">Per-run procedure</h3>
+<ol>
+<li>Record wind speed/direction, surface state, battery voltage, and parameters.</li>
+<li>Survey or verify <code>TD</code>.</li>
+<li>Start logging before takeoff.</li>
+<li>Select the desired left/right autonomous landing once.</li>
+<li>Do not manually alter the approach unless required for safety.</li>
+<li>Mark first belly contact and final rest position before moving the aircraft.</li>
+<li>Measure along-track and cross-track error relative to <code>TD</code>.</li>
+<li>Record whether an automatic retry occurred and why.</li>
+<li>Inspect belly, propeller, control surfaces, pitot, and rangefinder.</li>
+</ol>
+<h3 id="advancement-gates">Advancement gates</h3>
+<p>Advance only after at least five consecutive landings satisfy all of:</p>
+<ul>
+<li>first contact inside 20 x 3 m;</li>
+<li>absolute cross-track error no more than 1.0 m;</li>
+<li>airspeed never below the aircraft-specific minimum before flare;</li>
+<li>no manual intervention;</li>
+<li>no uncontrolled bounce, wingtip strike, or excessive pitch impact;</li>
+<li>no unexplained AGL, GNSS, or airspeed dropout;</li>
+<li>automatic retry behavior matches the logged rejection reason.</li>
+</ul>
+<h3 id="touchdown-pitch-experiment">Touchdown-pitch experiment</h3>
+<p>Only after five level-contact landings pass, compare <code>touchdown_pitch</code> values of 0, 2, and 4 degrees. Run at least three landings per value in comparable wind. A slight nose-up flare command is recommended for these foam belly landers with elevated pusher propellers to:</p>
+<ul>
+<li>reduce longitudinal touchdown spread or flare float;</li>
+<li>decrease measured sink rate at contact;</li>
+<li>prevent nose digging, bounce, or pitch oscillation;</li>
+<li>preserve the same lateral acceptance rate.</li>
+</ul>
+<hr>
+<h2 id="phase-9-parameter-tuning-matrix">Phase 9: Parameter tuning matrix</h2>
+<p>Change one parameter family per test set and retain at least three repeats.</p>
+<h3 id="long-or-floating-touchdown">Long or floating touchdown</h3>
+<p>In order:</p>
+<ol>
+<li>Increase <code>aim_before_td</code> in 0.5 m steps, no higher than 7 m.</li>
+<li>If prediction remains long before flare, raise <code>brake_agl</code> by 0.25 m.</li>
+<li>If crow is effective but too weak, increase <code>BRAKE_GAIN</code> conservatively after high-altitude characterization.</li>
+<li>If touchdown prediction is correct but flare floats, lower <code>flare_agl</code> by 0.1-0.2 m.</li>
+</ol>
+<h3 id="short-touchdown">Short touchdown</h3>
+<p>In order:</p>
+<ol>
+<li>Decrease <code>aim_before_td</code> by 0.5 m.</li>
+<li>Lower <code>brake_agl</code> by 0.25 m.</li>
+<li>Reduce <code>BRAKE_GAIN</code> if brake remains active despite a short trend.</li>
+<li>Raise <code>flare_agl</code> only if sink arrest, not energy, caused the short contact.</li>
+</ol>
+<h3 id="lateral-miss">Lateral miss</h3>
+<ol>
+<li>Verify surveyed <code>TD</code>, AF alignment, and M10 repeatability.</li>
+<li>Compare current and predicted cross-track errors. A growing predicted error indicates unresolved crosswind drift; heading/crab alone is not an error.</li>
+<li>Inspect course-loop saturation and roll response before changing gains.</li>
+<li>Improve final alignment or course control; do not simply widen the 1.2 m gate beyond the scoring box.</li>
+</ol>
+<h3 id="hard-touchdown">Hard touchdown</h3>
+<ol>
+<li>Compare range-derived sink rate at flare with pitch response.</li>
+<li>Raise <code>flare_agl</code> in 0.1 m steps if pitch response is too late.</li>
+<li>Reduce crow near flare if sink cannot be arrested.</li>
+<li>Do not reduce approach airspeed below the aircraft-specific minimum to soften impact.</li>
+</ol>
+<hr>
+<h2 id="phase-10-wind-envelope-expansion">Phase 10: Wind envelope expansion</h2>
+<p>Expand only after calm-air repeatability. Test separate headwind and crosswind components because total wind speed alone does not describe landing risk.</p>
+<p>For each wind bin, require at least five accepted approaches and report mean, standard deviation, and worst-case touchdown error:</p>
+<table>
+<thead>
+<tr>
+<th>Bin</th>
+<th style="text-align: right;">Headwind component</th>
+<th style="text-align: right;">Crosswind component</th>
+<th>Required evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>W0</td>
+<td style="text-align: right;">0-2 m/s</td>
+<td style="text-align: right;">0-1 m/s</td>
+<td>Baseline repeatability</td>
+</tr>
+<tr>
+<td>W1</td>
+<td style="text-align: right;">2-4 m/s</td>
+<td style="text-align: right;">0-2 m/s</td>
+<td>Groundspeed prediction and crab</td>
+</tr>
+<tr>
+<td>W2</td>
+<td style="text-align: right;">0-4 m/s</td>
+<td style="text-align: right;">2-3 m/s</td>
+<td>Lateral convergence and 8 deg flare bank cap</td>
+</tr>
+<tr>
+<td>W3</td>
+<td style="text-align: right;">Site-specific</td>
+<td style="text-align: right;">Site-specific</td>
+<td>Only after W0-W2 pass</td>
+</tr>
+</tbody>
+</table>
+<p>Set the operational competition wind limit from evidence, not the strongest single successful landing. Stop expanding when any safety or scoring gate fails.</p>
+<hr>
+<h2 id="abort-and-retry-state-machine-logic">Abort and retry state-machine logic</h2>
+<p>In the precision decision band (above 2.5 m and at/below <code>brake_agl</code>), the controller rejects an approach for:</p>
+<ul>
+<li>invalid or low airspeed;</li>
+<li>predicted lateral contact outside 1.2 m persisting for 0.2 s;</li>
+<li>predicted short contact beyond 8 m persisting for 0.2 s;</li>
+<li>predicted overshoot beyond 8 m while approach brake demand is at least 95% of its controller maximum, persisting for 0.2 s;</li>
+<li>inadequate forward progress;</li>
+<li>rangefinder loss when fused height also requires the close-range decision.</li>
+</ul>
+<p>Above this band, fused height and vertical speed support bounded braking; lack of AGL does not alone trigger rejection. At/below 2.5 m fused height, AGL loss commits to flare rather than a low powered turn. GNSS loss is checked throughout final with the same 2.5 m commit-height rule. These fallback heights depend on altitude-reference accuracy and need fault-injection flight validation. A go-around retracts crow, restores normal bank limits and nominal airspeed, climbs on the final heading to 25 m before turning back, rejoins the baseleg, and retries at most twice. Controller state is reset on final entry, before exceptions run. Passing TD while still high goes around, not straight into flare. Leaving final or flare clears crow and restores the bank limit. After commit, flare braking is a fixed tested demand, not a closed-loop touchdown predictor; do not treat the provisional stall/energy protection as a validated flare envelope.</p>
+<p>The safety pilot may always intervene to prevent injury or damage. Record that intervention because competition scoring may apply the manual autonomy factor.</p>
+<hr>
+<h2 id="flight-test-record-template">Flight-test record template</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Date/time and pilot</td>
+<td></td>
+</tr>
+<tr>
+<td>Aircraft</td>
+<td></td>
+</tr>
+<tr>
+<td>Airframe/configuration revision</td>
+<td></td>
+</tr>
+<tr>
+<td>Log name</td>
+<td></td>
+</tr>
+<tr>
+<td>Surface and moisture</td>
+<td></td>
+</tr>
+<tr>
+<td>Wind mean/gust/direction</td>
+<td></td>
+</tr>
+<tr>
+<td>M10 rate/constellations/SBAS/model</td>
+<td></td>
+</tr>
+<tr>
+<td><code>landing_airspeed</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>brake_agl</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>flare_agl</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>aim_before_td</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>touchdown_pitch</code></td>
+<td></td>
+</tr>
+<tr>
+<td>Maximum brake fraction reached</td>
+<td></td>
+</tr>
+<tr>
+<td>AGL acquired height</td>
+<td></td>
+</tr>
+<tr>
+<td>AGL dropout count/max duration</td>
+<td></td>
+</tr>
+<tr>
+<td>Airspeed minimum before flare</td>
+<td></td>
+</tr>
+<tr>
+<td>Predicted error at flare, longitudinal/lateral</td>
+<td></td>
+</tr>
+<tr>
+<td>First-contact error, longitudinal/lateral</td>
+<td></td>
+</tr>
+<tr>
+<td>Final-rest error, longitudinal/lateral</td>
+<td></td>
+</tr>
+<tr>
+<td>Retry count and reason</td>
+<td></td>
+</tr>
+<tr>
+<td>Manual intervention</td>
+<td></td>
+</tr>
+<tr>
+<td>Damage or anomaly</td>
+<td></td>
+</tr>
+<tr>
+<td>Pass/fail and next single change</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="competition-readiness-gate">Competition readiness gate</h2>
+<p>The landing is ready for competition integration only when all are true:</p>
+<ul>
+<li>crow bench and high-altitude tests pass;</li>
+<li>VB22A passes static and moving sand tests from 4 m to contact;</li>
+<li>at least ten consecutive autonomous landings are inside 20 x 3 m;</li>
+<li>the worst lateral first-contact error is at most 1.2 m;</li>
+<li>at least five of those landings cover the approved crosswind envelope;</li>
+<li>automatic abort/retry is demonstrated for GNSS, AGL, airspeed, and predicted boundary failures;</li>
+<li>no parameter has been changed since the validating test set;</li>
+<li>organizer interpretation of autonomous retry and judged contact/rest position is recorded;</li>
+<li>battery reserve supports the initial approach plus configured retries.</li>
+</ul>
+<p>Only after this gate should the isolated test plan be integrated into the competition mission configuration.</p></main>
+  </div>
+  <footer>CATIA documentation / Paparazzi UAV</footer>
+</body>
+</html>

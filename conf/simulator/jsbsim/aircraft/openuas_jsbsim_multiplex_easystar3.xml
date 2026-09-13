@@ -51,7 +51,7 @@
     </mass_balance>
 
     <ground_reactions>
-        <contact type="BUMP" name="BELLY_SKID_FRONT">
+        <contact type="STRUCTURE" name="BELLY_SKID_FRONT">
             <location unit="IN">
                 <x>  8.00 </x>
                 <y>  0.00 </y>
@@ -62,7 +62,7 @@
             <spring_coeff unit="LBS/FT"> 20.0 </spring_coeff>
             <damping_coeff unit="LBS/FT/SEC"> 0.5 </damping_coeff>
         </contact>
-        <contact type="BUMP" name="BELLY_SKID_AFT">
+        <contact type="STRUCTURE" name="BELLY_SKID_AFT">
             <location unit="IN">
                 <x> 22.00 </x>
                 <y>  0.00 </y>
@@ -73,7 +73,7 @@
             <spring_coeff unit="LBS/FT"> 20.0 </spring_coeff>
             <damping_coeff unit="LBS/FT/SEC"> 0.5 </damping_coeff>
         </contact>
-        <contact type="BUMP" name="LEFT_WINGTIP">
+        <contact type="STRUCTURE" name="LEFT_WINGTIP">
             <location unit="IN">
                 <x> 14.50 </x>
                 <y>-26.89 </y>
@@ -84,7 +84,7 @@
             <spring_coeff unit="LBS/FT"> 10.0 </spring_coeff>
             <damping_coeff unit="LBS/FT/SEC"> 0.3 </damping_coeff>
         </contact>
-        <contact type="BUMP" name="RIGHT_WINGTIP">
+        <contact type="STRUCTURE" name="RIGHT_WINGTIP">
             <location unit="IN">
                 <x> 14.50 </x>
                 <y> 26.89 </y>
@@ -120,6 +120,7 @@
                     <pitch> -4.0 </pitch>
                     <yaw>    0.0 </yaw>
                 </orient>
+                <sense> -1 </sense>
                 <p_factor> 0.0 </p_factor>
             </thruster>
         </engine>
@@ -226,6 +227,17 @@
                 <output> fcs/rudder-pos-rad </output>
             </aerosurface_scale>
         </channel>
+
+        <channel name="Spoileron Brake">
+            <summer name="Spoileron Brake Command">
+                <input> -fcs/brake-cmd-norm </input>
+                <clipto>
+                    <min> 0.0 </min>
+                    <max> 1.0 </max>
+                </clipto>
+                <output> fcs/speedbrake-pos-norm </output>
+            </summer>
+        </channel>
     </flight_control>
 
     <!-- Real thrust: applied as external force because JSBSim's propeller
@@ -233,6 +245,7 @@
          Table: Roxxy 2830 1100KV + 7x6 folding prop on 3S, ~1.2 lbf static,
          zero thrust near prop pitch speed (~31 m/s). -->
     <external_reactions>
+        <property value="0">fcs/brake-cmd-norm</property>
         <property>fcs/throttle-lag</property>
 
         <force name="prop-thrust" frame="BODY" unit="LBS">
@@ -277,6 +290,17 @@
                     <value> 0.032 </value>
                 </product>
             </function>
+            <!-- Provisional symmetric spoileron model. Replace these
+                 coefficients with high-altitude brake-pulse measurements. -->
+            <function name="aero/coefficient/CD_spoileron">
+                <description>Drag due to symmetric upward ailerons</description>
+                <product>
+                    <property> aero/qbar-psf </property>
+                    <property> metrics/Sw-sqft </property>
+                    <property> fcs/speedbrake-pos-norm </property>
+                    <value> 0.10 </value>
+                </product>
+            </function>
             <function name="aero/coefficient/CDi">
                 <description>Induced Drag</description>
                 <product>
@@ -307,6 +331,15 @@
                              0.9000   0.5500
                         </tableData>
                     </table>
+                </product>
+            </function>
+            <function name="aero/coefficient/CL_spoileron">
+                <description>Lift loss due to symmetric upward ailerons</description>
+                <product>
+                    <property> aero/qbar-psf </property>
+                    <property> metrics/Sw-sqft </property>
+                    <property> fcs/speedbrake-pos-norm </property>
+                    <value> -0.15 </value>
                 </product>
             </function>
         </axis>

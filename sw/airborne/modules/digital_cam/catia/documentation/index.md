@@ -9,7 +9,8 @@ subsystems for Paparazzi UAV.
 [LWIR Calibration](lwir-calibration.html) |
 [EARcam Guide](earcam-loudest-spot-explained.html) |
 [EARcam Data Flow](earcam-dataflow.html) |
-[Mission 2 Plan](mission2-score-first.html)
+[Mission 2 Plan](mission2-score-first.html) |
+[Precision Landing](precision-landing-flight-test.html)
 
 ---
 
@@ -26,8 +27,8 @@ Explore the detailed technical guides for each subsystem:
   - [Automated Deployment to MORA](catia_camera_pipeline.html#deploy-to-mora)
   - [Physical Desk Test Setup](catia_camera_pipeline.html#start-here-physical-desk-test-with-mora)
   - [Local Simulation & Development](catia_camera_pipeline.html#start-here-local-simulation)
-  - [Camera Selection & 8-Bit Masks](catia_camera_pipeline.html#camera-selection-and-mask-control)
-  - [Pose Streaming & Clock Handshake](catia_camera_pipeline.html#pose-stream-and-clock-synchronization)
+  - [Camera Selection & 8-Bit Masks](catia_camera_pipeline.html#choose-a-camera)
+  - [Pose Streaming & Clock Handshake](catia_camera_pipeline.html#pose-and-image-timing-evidence)
 
 ### Optical & Thermal Imaging
 
@@ -44,10 +45,10 @@ Explore the detailed technical guides for each subsystem:
   Step-by-step workshop procedure for calibrating the Tiny 1-C thermal camera.
   Covers thermal target construction with foil/matte tape, multi-pose lens
   distortion fitting with OpenCV, body mounting alignment, and verification.
-  - [Thermal Target Construction](lwir-calibration.html#2-make-a-sharp-thermal-target)
-  - [Multi-View Lens Calibration](lwir-calibration.html#3-measure-the-lens)
-  - [Aircraft Mounting Alignment](lwir-calibration.html#4-align-the-camera-to-the-aircraft)
-  - [Verification & Error Checks](lwir-calibration.html#5-take-a-useful-set-of-photos)
+  - [Thermal Target Construction](lwir-calibration.html#3-make-a-target-the-camera-can-see)
+  - [Multi-View Lens Calibration](lwir-calibration.html#6-fit-the-lens-on-the-laptop)
+  - [Aircraft Mounting Alignment](lwir-calibration.html#7-measure-the-mounting-without-guessing)
+  - [Verification & Error Checks](lwir-calibration.html#8-check-distances-before-checking-gps)
 
 ### Acoustic Search & Localization
 
@@ -57,9 +58,9 @@ Explore the detailed technical guides for each subsystem:
   motionSCOUT alarm detection, inverse-square loudness modeling, and flight search
   patterns (lawnmower survey + star refinement).
   - [Why One Simple USB Microphone](earcam-loudest-spot-explained.html#why-one-simple-usb-microphone-was-chosen)
-  - [Acoustic Detection Physics](earcam-loudest-spot-explained.html#how-far-the-microphone-can-hear)
-  - [Loudest-Spot Solver Algorithm](earcam-loudest-spot-explained.html#how-the-loudest-spot-is-computed-from-many-readings)
-  - [Autonomous Flight Search Patterns](earcam-loudest-spot-explained.html#the-flight-search-pattern)
+  - [Acoustic Detection Physics](earcam-loudest-spot-explained.html#how-sound-behaves-in-plain-terms)
+  - [Loudest-Spot Solver Algorithm](earcam-loudest-spot-explained.html#turning-readings-into-one-position)
+  - [Autonomous Flight Search Patterns](earcam-loudest-spot-explained.html#the-flight-pattern)
 
 - **[EARcam Position & Sound Data Flow](earcam-dataflow.html)**
   Deep dive into the real-time data flow between the flight controller and
@@ -77,9 +78,19 @@ Explore the detailed technical guides for each subsystem:
   2026 Mission 2. Focuses on safe fixed-wing operations, thermal candidate
   scoring, WGS84 ground-truth verification, and offline assessment scripts.
   - [Quick 'n Dirty Checklist](mission2-score-first.html#quick-n-dirty-checklist)
-  - [Mission 2 Scoring Breakdown](mission2-score-first.html#why-the-first-mission-2-attempt-should-be-software-first)
-  - [Hotspot Verification Protocol](mission2-score-first.html#how-to-check-the-first-trial-truth-and-evidence)
+  - [Mission 2 Scoring Breakdown](mission2-score-first.html#what-earns-points)
+  - [Hotspot Verification Protocol](mission2-score-first.html#first-accuracy-baseline)
   - [Offline Assessment Tool (`mission2_assess.py`)](mission2-score-first.html#offline-assessment-tool)
+
+- **[Adam and EasyStar 3 Precision Landing Flight Test](precision-landing-flight-test.html)**
+  Staged verification and aircraft-specific tuning campaign for autonomous
+  first contact inside the IMAV2026 fixed-wing 20 x 3 m precision box. Covers
+  simulated rangefinder, crow characterization, crosswind prediction,
+  touchdown attitude, abort/retry behavior, and competition readiness evidence.
+  - [System and Controller](precision-landing-flight-test.html#system-under-test)
+  - [Detailed Test Phases](precision-landing-flight-test.html#phase-0-software-and-geometry-verification)
+  - [Parameter Tuning](precision-landing-flight-test.html#phase-9-parameter-tuning)
+  - [Competition Readiness](precision-landing-flight-test.html#competition-readiness-gate)
 
 ---
 
@@ -131,4 +142,4 @@ Explore the detailed technical guides for each subsystem:
 | **Local Demo (No Hardware)** | `sw/airborne/modules/digital_cam/catia/run_local_demo.sh` | [Local Simulation](catia_camera_pipeline.html#start-here-local-simulation) |
 | **Build Full Stack** | `make -C sw/airborne/modules/digital_cam/catia -j32 all` | [Build Instructions](catia_camera_pipeline.html#1-build-catia) |
 | **Run Test Suite** | `bash sw/airborne/modules/digital_cam/catia/tests/build_layout_test.sh` | [Validation Tests](catia_camera_pipeline.html#3-build-and-validate-the-current-sources) |
-| **Rebuild Documentation** | `make -C sw/airborne/modules/digital_cam/catia documentation` | [Docs Generator](catia_camera_pipeline.html#documentation-generation) |
+| **Rebuild Documentation** | `make -C sw/airborne/modules/digital_cam/catia documentation` | [Docs Generator](catia_camera_pipeline.html#regenerate-the-diagram) |

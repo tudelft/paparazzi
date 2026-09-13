@@ -28,6 +28,11 @@ extern char **environ;
 static pid_t capture_server_pid = -1;
 static int capture_server_input = -1;
 static int capture_server_output = -1;
+/** Buffered reassembly for read_server_status(): avoids one poll()+read() syscall
+ * pair per byte, which otherwise adds up to hundreds of syscalls per response line
+ * set on every single shot. */
+static char status_buffer[512];
+static size_t status_buffer_size, status_buffer_pos;
 static double capture_delay_s = -1;
 static struct capture_timing capture_times;
 static bool native_raw_enabled;
@@ -87,24 +92,28 @@ static int read_server_status(const char *expected, int timeout_ms)
   char line[256];
   size_t line_size = 0;
 
-  while (capture_server_output >= 0) {
-    struct pollfd descriptor = {capture_server_output, POLLIN, 0};
-    int poll_result;
-    do {
-      poll_result = poll(&descriptor, 1, timeout_ms);
-    } while (poll_result < 0 && errno == EINTR);
-    if (poll_result <= 0) {
-      return -1;
+  for (;;) {
+    if (status_buffer_pos == status_buffer_size) {
+      if (capture_server_output < 0) return -1;
+      struct pollfd descriptor = {capture_server_output, POLLIN, 0};
+      int poll_result;
+      do {
+        poll_result = poll(&descriptor, 1, timeout_ms);
+      } while (poll_result < 0 && errno == EINTR);
+      if (poll_result <= 0) {
+        return -1;
+      }
+      ssize_t bytes_read;
+      do {
+        bytes_read = read(capture_server_output, status_buffer, sizeof(status_buffer));
+      } while (bytes_read < 0 && errno == EINTR);
+      if (bytes_read <= 0) {
+        return -1;
+      }
+      status_buffer_size = (size_t)bytes_read;
+      status_buffer_pos = 0;
     }
-
-    char character;
-    ssize_t bytes_read;
-    do {
-      bytes_read = read(capture_server_output, &character, 1);
-    } while (bytes_read < 0 && errno == EINTR);
-    if (bytes_read != 1) {
-      return -1;
-    }
+    char character = status_buffer[status_buffer_pos++];
     if (character != '\n' && line_size + 1 < sizeof(line)) {
       line[line_size++] = character;
       continue;
@@ -140,11 +149,11 @@ static int read_server_status(const char *expected, int timeout_ms)
     }
     line_size = 0;
   }
-  return -1;
 }
 
 static void stop_capture_server(void)
 {
+  status_buffer_size = status_buffer_pos = 0;
   if (capture_server_input >= 0) {
     close(capture_server_input);
     capture_server_input = -1;

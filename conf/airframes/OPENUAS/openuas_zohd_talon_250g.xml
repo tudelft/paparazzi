@@ -154,7 +154,8 @@
         <define name="RANGEFINDER_I2C_MEDIAN_SIZE" value="5"/>
         <define name="RANGEFINDER_I2C_MIN_RANGE" value="0.005" unit="m"/>
         <define name="RANGEFINDER_I2C_MAX_RANGE" value="8.0" unit="m"/><!-- For e.g. VB22A Theoretically 20m at 90% reflectivity in daylight real useful range ~ 8m upto 0m-->
-        <define name="RANGEFINDER_I2C_OFFSET" value="0.0" unit="m"/>
+        <!-- Sensor is centered in body X/Y and sits 4 mm above the belly contact plane. -->
+        <define name="RANGEFINDER_I2C_OFFSET" value="0.004" unit="m"/>
         <define name="RANGEFINDER_I2C_SCALE" value="0.001"/><!-- Since VB22A sensor is set to emit in millimeters per default-->
         <define name="RANGEFINDER_I2C_READ_MODE_SINGLE" value="0x00"/><!-- Specifically to read for a VB22A sensor -->
         <!-- <define name="RANGEFINDER_I2C_SYNC_SEND" value="TRUE"/> --><!-- Only enable while debugging via fast connetion, NOT mesh -->
@@ -297,6 +298,16 @@
       <!-- <module name="gps" type="sim"/> -->
       <define name="USE_NPS_AIRSPEED"/>
       <define name="USE_AIRSPEED" value="TRUE"/>
+      <!-- NPS "sonar" is the simulated downward rangefinder. -->
+      <define name="USE_SONAR"/>
+      <define name="NPS_SONAR_DT" value="0.01"/>
+      <define name="NPS_SONAR_NOISE_STD_DEV" value="0.005"/>
+       <!-- JSBSim AGL is referenced near CG; the centered sensor is at the
+         rear belly contact plane, approximately 1.1 in below it. -->
+       <define name="NPS_SONAR_OFFSET" value="-0.02794"/>
+      <define name="NPS_SONAR_MIN_DIST" value="0.005"/>
+      <define name="NPS_SONAR_MAX_DIST" value="8.0"/>
+      <define name="SENSOR_SYNC_SEND_SONAR"/>
       <!-- <module name="udp"/> -->
        <!--<module name="uart"/>--><!-- TODO: Exteral HITL PC debugging e.g a photocam trigger etc -->
     </target>
@@ -471,6 +482,8 @@
     <define name="SERVO_BRAKE_FULL" value="MIN_PPRZ"/>
     <define name="SERVO_HATCH_OPEN" value="0"/>
     <define name="SERVO_HATCH_CLOSED" value="MIN_PPRZ"/>
+    <define name="AirbrakesOff()" value="(commands[COMMAND_BRAKE]=0)"/>
+    <define name="AirbrakesOn()" value="(commands[COMMAND_BRAKE]=SERVO_BRAKE_FULL)"/>
     <define name="ThrottleHigh()" value="(commands[COMMAND_THROTTLE]>MAX_PPRZ/2)"/>
     <define name="SPOILERON_BRAKE_FULL" value="MIN_PPRZ"/>
     <define name="FLAPERON_BRAKE_FULL" value="MAX_PPRZ"/>
@@ -527,18 +540,12 @@
       <!-- Brake Slowdown -->
     <let var="brake_value_nofilt" value="Clip(-@BRAKE, 0, MAX_PPRZ)"/>
     <ratelimit var="brake_value" value="$brake_value_nofilt" rate_min="-BRAKE_ENABLED_SLOWDOWN_FACTOR_RETRACT" rate_max="BRAKE_ENABLED_SLOWDOWN_FACTOR_EXTEND"/>
-    <!-- <let var="aileron" value="@ROLL  * RUDDERVATOR_ROLL_FACTOR"/>
-    <let var="elevator" value="@PITCH * RUDDERVATOR_PITCH_FACTOR"/> -->
-    <!-- <let var="crowbrake" value="$brake_value * BRAKE_MAX_PCT"/> -->
+    <let var="crowbrake" value="$brake_value * BRAKE_MAX_PCT"/>
     <set servo="S_THROTTLE" value="@THROTTLE"/>
-    <set servo="S_AILERON_LEFT" value="@ROLL"/>    
-    <set servo="S_AILERON_RIGHT" value="@ROLL"/>    
-    <!-- <set servo="S_AILERON_LEFT" value="-$elevator + $aileron - $crowbrake + $rudderleft"/>
-    <set servo="S_AILERON_RIGHT" value="$elevator + $aileron + $crowbrake + $rudderright"/>     -->
+    <set servo="S_AILERON_LEFT" value="@ROLL-$crowbrake"/>
+    <set servo="S_AILERON_RIGHT" value="@ROLL+$crowbrake"/>
     <set servo="S_RUDDERVATOR_LEFT" value="1.8*@PITCH+@YAW"/>
     <set servo="S_RUDDERVATOR_RIGHT" value="1.8*@PITCH-@YAW"/>
-    <!-- <set servo="S_RUDDERVATOR_LEFT" value="-$elevator + $aileron + $crowbrake - $rudderleft"/>
-    <set servo="S_RUDDERVATOR_RIGHT" value="$elevator + $aileron - $crowbrake - $rudderright"/> -->
     <set servo="S_HATCH" value="(Or((autopilot.mode == AP_MODE_AUTO1), (autopilot.mode == AP_MODE_AUTO2)) ? MAX_PPRZ : @HATCH)"/>
   </command_laws>
 
@@ -641,9 +648,10 @@
   </section>
 
   <section name="AGL" prefix="AGL_DIST_SONAR_">
-    <define name="ID" value="RANGEFINDER_I2C_SENDER_ID"/>
+    <!-- Accept the VB22A on hardware and AGL_SONAR_NPS_ID in simulation. -->
+    <define name="ID" value="ABI_BROADCAST"/>
     <define name="MAX_RANGE" value="$(RANGEFINDER_I2C_MAX_RANGE)/2" unit="m"/><!-- For AGL -->
-    <define name="MIN_RANGE" value="$(RANGEFINDER_I2C_MIN_RANGE)+0.7" unit="m"/><!-- For AGL -->
+    <define name="MIN_RANGE" value="$(RANGEFINDER_I2C_MIN_RANGE)" unit="m"/>
     <define name="FILTER" value="0.1"/>
   </section>
 
@@ -919,6 +927,16 @@
     <!--<define name="INTERCEPT_RATE" value="0.624" unit="m/s/s"/>-->
     <define name="TARGET_SPEED" value="GLIDE_AIRSPEED+1" unit="m/s"/>
   </section>
+
+  <section name="PRECISION_LANDING" prefix="PRECISION_LANDING_">
+    <define name="APPROACH_AIRSPEED" value="9.0" unit="m/s"/>
+    <define name="FINAL_HEIGHT" value="17.0" unit="m"/>
+    <define name="BRAKE_AGL" value="3.5" unit="m"/>
+    <define name="FLARE_AGL" value="2.0" unit="m"/>
+    <define name="AIM_BEFORE_TD" value="6.0" unit="m"/>
+    <define name="TOUCHDOWN_PITCH" value="4.0"/><!-- Flight-plan variable is in degrees. -->
+    <define name="FLARE_BRAKE" value="0.30"/>
+  </section>
   <!-- 
   <section name="DIGITAL_CAMERA" prefix="DC_">
     <define name="AUTOSHOOT_PERIOD" value="1.5" unit="sec"/>
@@ -954,9 +972,10 @@
 
   <section name="SIMULATOR" prefix="NPS_">
     <define name="JSBSIM_LAUNCHSPEED" value="10.0"/> <!-- firm hand toss, m/s -->
+    <define name="JSBSIM_LAUNCH_HEIGHT" value="1.6" unit="m"/>
     <define name="JSBSIM_MODEL" value="openuas_jsbsim_zohd_talon_250g" type="string"/>
-    <define name="COMMANDS_NB" value="4"/>
-    <define name="ACTUATOR_NAMES" value="throttle-cmd-norm, aileron-cmd-norm, elevator-cmd-norm, rudder-cmd-norm" type="string[]"/>
+    <define name="COMMANDS_NB" value="5"/>
+    <define name="ACTUATOR_NAMES" value="throttle-cmd-norm, aileron-cmd-norm, elevator-cmd-norm, rudder-cmd-norm, brake-cmd-norm" type="string[]"/>
     <!--<define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>-->
     <define name="JS_AXIS_MODE" value="4"/>
     <define name="BYPASS_AHRS" value="TRUE"/>

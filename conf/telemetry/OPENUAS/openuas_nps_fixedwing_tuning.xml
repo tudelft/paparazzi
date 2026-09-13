@@ -12,6 +12,8 @@
       <message name="PPRZ_MODE" period="0.20"/>
       <message name="NAVIGATION" period="0.20"/>
       <message name="ATTITUDE" period="0.05"/>
+      <message name="SONAR" period="0.05"/>
+      <message name="DEBUG_VECT" period="0.10"/>
     </mode>
   </process>
   <process name="Fbw">

@@ -1,0 +1,63 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<!--
+  Precision Landing Module for Fixed-Wing Aircraft
+  ================================================
+  This module controls automated final approach, predictive crow braking (spoileron drag),
+  and safety-gated go-around logic for target touchdown waypoint landing.
+
+  End-User Quick Start:
+  - Requires rangefinder module (e.g. agl_dist / Surertech VB22A) and pitot (SDP33).
+  - Main tuning parameters during field test:
+      * BRAKE_GAIN: Increase (e.g. 0.08 -> 0.12) if aircraft floats too far past TD.
+      * BRAKE_ENABLE_AGL: Altitude (m) where laser prediction starts controlling crow.
+      * FLARE_AGL: Altitude (m) where fixed pitch flare begins (configured in flight plan).
+-->
+<module name="precision_landing" dir="nav">
+  <doc>
+    <description>
+      Fixed-Wing Autonomous Precision Landing System.
+      Predicts touchdown point using 2D GNSS position/velocity and rangefinder AGL height.
+      Commands proportional aileron crow braking to eliminate predicted overshoot,
+      enforces stall safety airspeed limits, and triggers automatic go-arounds if
+      the approach strays outside precision scoring boundaries.
+    </description>
+    
+    <!-- Airspeed Safety Limits -->
+    <define name="MIN_AIRSPEED" value="8.2" unit="m/s" description="Minimum safe approach airspeed. Braking is disengaged if airspeed falls below this margin to prevent stall."/>
+    
+    <!-- Precision Boundary Limits (Abort Triggers) -->
+    <define name="MAX_CROSS_TRACK" value="1.2" unit="m" description="Maximum allowable lateral drift from runway centerline (leaves 0.3m safety margin inside official 1.5m half-box)."/>
+    <define name="MAX_LONG_ERROR" value="8.0" unit="m" description="Maximum allowable longitudinal prediction error before confirming an abort."/>
+    <define name="REJECT_DELAY" value="0.2" unit="s" description="Persistence time requirement for boundary violation before triggering go-around (filters sensor noise)."/>
+    
+    <!-- Altitude & Decision Bands -->
+    <define name="BRAKE_ENABLE_AGL" value="4.0" unit="m" description="Highest rangefinder AGL height (m) where close-range predictive crow braking engages."/>
+    <define name="ABORT_AGL" value="2.5" unit="m" description="Commit altitude (m). Below this height, powered go-arounds are disengaged to prevent low-altitude stalls."/>
+    <define name="AGL_TIMEOUT" value="0.25" unit="s" description="Maximum age of rangefinder measurement before falling back to barometric altitude."/>
+    
+    <!-- Filter & Controller Gains -->
+    <define name="MIN_SINK_RATE" value="0.25" unit="m/s" description="Minimum sink rate floor to prevent numerical division-by-zero during time-to-ground projection."/>
+    <define name="AGL_RATE_TAU" value="0.15" unit="s" description="Time constant for rangefinder sink rate low-pass filter (balances noise filtering with flare response)."/>
+    <define name="BRAKE_GAIN" value="0.08" description="Proportional gain converting predicted overshoot meters to crow brake demand."/>
+    <define name="MAX_BRAKE" value="1.0" description="Maximum allowed total crow brake command (1.0 = 100% full spoileron deflection)."/>
+    <define name="UPPER_MAX_BRAKE" value="0.5" description="Maximum allowed crow brake command in upper barometric altitude band (50% preserves pitch control)."/>
+    
+    <!-- Touchdown Flare Constraints -->
+    <define name="FLARE_MAX_ROLL" value="8.0" unit="deg" description="Maximum roll setpoint allowed during flare to prevent wingtip strikes on belly-landing foam planes."/>
+  </doc>
+  
+  <dep>
+    <depends>agl_dist</depends>
+  </dep>
+  
+  <header>
+    <file name="precision_landing.h"/>
+  </header>
+  
+  <init fun="precision_landing_init()"/>
+  
+  <makefile target="ap|nps">
+    <file name="precision_landing.c"/>
+  </makefile>
+</module>

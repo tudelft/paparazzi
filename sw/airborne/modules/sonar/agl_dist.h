@@ -34,6 +34,7 @@ extern void agl_dist_init(void);
 extern float agl_dist_valid;
 extern float agl_dist_value;
 extern float agl_dist_value_filtered;
+extern float agl_measurement_time;
 
 #endif
 

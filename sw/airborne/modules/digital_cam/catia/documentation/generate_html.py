@@ -87,6 +87,14 @@ DOCUMENTS = (
         "Maximize our chance of winning with the existing aircraft. Improve "
         "the onboard software and bring the Talon back with its Mission 2 results.",
     ),
+      (
+        "precision-landing-flight-test.md",
+        "precision-landing-flight-test.html",
+        "Adam and EasyStar 3 Precision Landing Flight Test",
+        "Precision Landing",
+        "Staged validation and tuning plan for Adam and EasyStar 3 autonomous IMAV2026 fixed-wing precision landing",
+        "Validate every sensor and control layer, then tune repeatable first contact inside the 20 by 3 metre precision box.",
+      ),
 )
 
 STYLE = """
@@ -269,7 +277,7 @@ footer { padding: 25px 20px; color: var(--surface); background: var(--black); bo
 
 def render(source_name: str, output_name: str, title: str, nav_label: str,
            description: str, lede: str) -> None:
-    source_text = (DOCUMENTATION_DIR / source_name).read_text(encoding="ascii")
+    source_text = (DOCUMENTATION_DIR / source_name).read_text(encoding="utf-8")
     renderer = markdown.Markdown(
         extensions=["fenced_code", "tables", "toc", "sane_lists"],
         extension_configs={"toc": {"permalink": False, "toc_depth": "2"}},

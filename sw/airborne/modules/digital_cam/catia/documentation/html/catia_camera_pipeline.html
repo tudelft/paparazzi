@@ -193,6 +193,7 @@ footer { padding: 25px 20px; color: var(--surface); background: var(--black); bo
       <a href="earcam-loudest-spot-explained.html" class="site-nav-link">EARcam Guide</a>
       <a href="earcam-dataflow.html" class="site-nav-link">EARcam Data Flow</a>
       <a href="mission2-score-first.html" class="site-nav-link">Mission 2 Plan</a>
+      <a href="precision-landing-flight-test.html" class="site-nav-link">Precision Landing</a>
       </nav>
       <p class="eyebrow">Paparazzi UAV / MORA / SODA</p>
       <h1>CATIA Camera Pipeline</h1>
@@ -211,6 +212,7 @@ footer { padding: 25px 20px; color: var(--surface); background: var(--black); bo
         <li><a href="earcam-loudest-spot-explained.html" class="">EARcam Guide</a></li>
         <li><a href="earcam-dataflow.html" class="">EARcam Data Flow</a></li>
         <li><a href="mission2-score-first.html" class="">Mission 2 Plan</a></li>
+        <li><a href="precision-landing-flight-test.html" class="">Precision Landing</a></li>
         </ul>
       </div>
       <div class="nav-section">
@@ -2286,6 +2288,12 @@ make -C sw/airborne/modules/digital_cam/catia -j&quot;$(nproc)&quot;
 <li>accepted camera triggers queue instead of being discarded while a save finishes;</li>
 <li>the attitude warp advances its projective coordinates across each scanline;</li>
 <li>bilinear coordinates and weights are calculated once for all RGB channels;</li>
+<li>LWIR server and CHDK protocol replies are read through small buffers rather
+   than one poll/read syscall pair per response byte;</li>
+<li>LWIR JPEG encoding uses standard precomputed Huffman tables instead of
+   recomputing image-specific tables for every frame;</li>
+<li>EARcam precomputes its Hann analysis window once per reporting interval,
+   removing per-sample cosine and division work from the 57-bin DSP loop;</li>
 <li>CATIA drains serial input in chunks instead of one byte per millisecond;</li>
 <li><code>poll()</code> sleeps until serial or UDP work arrives, reducing idle CPU use;</li>
 <li>SODA starts directly with <code>posix_spawnp()</code> instead of through a shell;</li>
