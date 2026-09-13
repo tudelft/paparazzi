@@ -291,9 +291,7 @@
       <define name="RADIO_MANUALRELEASE" value="RADIO_AUX4"/>
       <define name="RADIO_BRAKE" value="RADIO_AUX4"/>
       <define name="DC_RADIO_SHOOT" value="RADIO_AUX3"/>
-      <!-- <module name="telemetry" type="transparent">
-        <configure name="MODEM_PORT" value="/dev/ttyUSB0"/>
-      </module> -->
+      <module name="telemetry" type="transparent"/>
       <!-- <module name="imu" type="nps"/> -->
       <!-- <module name="gps" type="sim"/> -->
       <define name="USE_NPS_AIRSPEED"/>
@@ -308,7 +306,7 @@
       <define name="NPS_SONAR_MIN_DIST" value="0.005"/>
       <define name="NPS_SONAR_MAX_DIST" value="8.0"/>
       <define name="SENSOR_SYNC_SEND_SONAR"/>
-      <!-- <module name="udp"/> -->
+      <module name="udp"/>
        <!--<module name="uart"/>--><!-- TODO: Exteral HITL PC debugging e.g a photocam trigger etc -->
     </target>
 

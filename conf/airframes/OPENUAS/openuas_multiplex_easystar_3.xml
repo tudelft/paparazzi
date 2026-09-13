@@ -184,14 +184,14 @@
 
       <!-- Only enable with a module that supports v_ctl_auto_airspeed_setpoint-->
       
-      <module name="flight_benchmark">
+      <!-- <module name="flight_benchmark">
         <define name="BENCHMARK_AIRSPEED" value="TRUE"/>
         <define name="BENCHMARK_ALTITUDE" value="TRUE"/>
         <define name="BENCHMARK_POSITION" value="TRUE"/>
         <define name="BENCHMARK_TOLERANCE_AIRSPEED" value="1" unit="m/s"/>
         <define name="BENCHMARK_TOLERANCE_ALTITUDE" value="4" unit="m"/>
         <define name="BENCHMARK_TOLERANCE_POSITION" value="6" unit="m"/>
-      </module>
+      </module> -->
       
 
     </target>
@@ -227,7 +227,7 @@
        <define name="NPS_SONAR_OFFSET" value="-0.0635"/>
        <define name="NPS_SONAR_MIN_DIST" value="0.005"/>
        <define name="NPS_SONAR_MAX_DIST" value="8.0"/>
-      <define name="SENSOR_SYNC_SEND_SONAR"/>
+       <!-- <define name="SENSOR_SYNC_SEND_SONAR"/> -->
       <!--
       <define name="USE_NPS_AIRSPEED"/>
       <define name="USE_NPS_AOA"/>

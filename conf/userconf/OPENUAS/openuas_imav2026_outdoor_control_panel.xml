@@ -130,6 +130,26 @@
       <program name="MORA Local CATIA"/>
       <program name="EasyStar MORA Camera Demo Starter"/>
     </session>
+    <session name="Remote to CATIA">
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="Easystar_3"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS Classic">
+        <arg flag="--maximize"/>
+        <arg flag="--speech"/>
+      </program>
+      <program name="Environment Simulator (Legacy)"/>
+    </session>
     <session name="SIM IMAV2026 NPS new QTGUI">
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
@@ -149,7 +169,26 @@
       </program>
       <program name="Environment Simulator (Legacy)"/>
     </session>
-    <session name="Remote to CATIA">
+    <session name="SIM IMAV 2026 SIM new QTGUI">
+      <program name="Simulator">
+        <arg flag="-t" constant="sim"/>
+        <arg flag="-a" constant="Adam"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS Classic">
+        <arg flag="--maximize"/>
+      </program>
+      <program name="Environment Simulator (Legacy)"/>
+    </session>
+    <session name="Easystar3 NPS">
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
         <arg flag="-a" constant="Easystar_3"/>
@@ -165,7 +204,6 @@
       <program name="Real-time Plotter"/>
       <program name="GCS Classic">
         <arg flag="--maximize"/>
-        <arg flag="--speech"/>
       </program>
       <program name="Environment Simulator (Legacy)"/>
     </session>

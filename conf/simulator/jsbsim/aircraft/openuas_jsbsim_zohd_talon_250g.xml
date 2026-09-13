@@ -169,16 +169,6 @@
         ********************************************************************** -->
     <propulsion>
         <engine file="motor_generic_bl_1406_2600kv.xml">
-            <location unit="IN">
-                <x> 17.8 </x>
-                <y> 0.0 </y>
-                <z> 0.3 </z>
-            </location>
-            <orient unit="DEG">
-                <roll> 0.0 </roll>
-                <pitch> 0.0 </pitch>
-                <yaw> 0.0 </yaw>
-            </orient>
             <feed>0</feed>
             <thruster file="prop_generic_5x5.xml">
                 <location unit="IN">

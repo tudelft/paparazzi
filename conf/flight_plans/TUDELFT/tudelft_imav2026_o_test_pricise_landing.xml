@@ -100,12 +100,12 @@
     </block>
 
     <!-- Block 4: Hand-launch Takeoff sequence -->
-    <block key="t" name="Takeoff" strip_button="Takeoff (wp CLIMB)" strip_icon="takeoff.png" group="home">
+    <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png" group="home">
       <exception cond="GetPosAlt() @GT GetAltRef()+25" deroute="Standby"/>
       <call_once fun="precision_landing_stop()"/>
       <set value="0" var="autopilot.kill_throttle"/>
       <set value="0" var="autopilot.flight_time"/>
-      <go from="HOME" throttle="1.0" vmode="throttle" wp="CLIMB" pitch="DegOfRad(TAKEOFF_PITCH_ANGLE)"/>
+      <attitude roll="0" throttle="1.0" vmode="throttle" pitch="DegOfRad(TAKEOFF_PITCH_ANGLE)" until="GetPosAlt() @GT GetAltRef()+25"/>
     </block>
 
     <!-- Block 5: Standby loiter circle -->

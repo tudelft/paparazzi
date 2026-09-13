@@ -226,6 +226,9 @@ void nps_fdm_run_step(bool launch __attribute__((unused)), double *commands, int
     FDMExec->GetIC()->SetAltitudeAGLFtIC(FeetOfMeters(NPS_JSBSIM_LAUNCH_HEIGHT));
 #endif
     FDMExec->GetIC()->SetUBodyFpsIC(FeetOfMeters(NPS_JSBSIM_LAUNCHSPEED));
+#ifdef TAKEOFF_PITCH_ANGLE
+    FDMExec->GetIC()->SetThetaDegIC(DegOfRad(TAKEOFF_PITCH_ANGLE));
+#endif
     FDMExec->RunIC();
     launch_was_true = TRUE;
   } else if (!launch) {
@@ -580,10 +583,13 @@ static void init_jsbsim(double dt)
   string jsbsim_ic_name;
 
   char* pprz_home = getenv("PAPARAZZI_HOME");
+  if (!pprz_home) {
+    pprz_home = getenv("PAPARAZZI_SRC");
+  }
 
   int cnt = -1;
-  if (strlen(pprz_home) < sizeof(buf)) {
-    cnt = snprintf(buf, strlen(pprz_home) + 1, "%s", pprz_home);
+  if (pprz_home && strlen(pprz_home) < sizeof(buf)) {
+    cnt = snprintf(buf, sizeof(buf), "%s", pprz_home);
     rootdir = string(buf) + jsbsim_home;
   }
 

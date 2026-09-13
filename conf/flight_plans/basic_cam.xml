@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "flight_plan.dtd">
 
-<flight_plan alt="355" ground_alt="295" lat0="43.46223" lon0="1.27289" max_dist_from_home="1500" name="Basic" security_height="25">
+<flight_plan alt="345" ground_alt="295" lat0="43.46223" lon0="1.27289" max_dist_from_home="1500" name="Basic" security_height="25">
   <header>
 #include "modules/datalink/datalink.h"
 #include "modules/digital_cam/uart_cam_ctrl.h"
@@ -38,11 +38,13 @@
       <set value="1" var="autopilot.kill_throttle"/>
       <attitude roll="0" throttle="0" vmode="throttle"/>
     </block>
-    <block key="t" name="Takeoff" strip_button="Takeoff (wp CLIMB)" strip_icon="takeoff.png" group="home">
-      <exception cond="GetPosAlt() @GT GetAltRef()+25" deroute="Standby"/>
+    <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png" group="home">
+      <exception cond="GetPosAlt() @GT GetAltRef()+15" deroute="Standby"/>
       <set value="0" var="autopilot.kill_throttle"/>
       <set value="0" var="autopilot.flight_time"/>
-      <go from="HOME" throttle="1.0" vmode="throttle" wp="CLIMB" pitch="TAKEOFF_PITCH_ANGLE"/>
+      <set value="1" var="autopilot.launch"/>
+      <set value="1" var="autopilot.launch"/>
+      <attitude roll="0" throttle="1.0" vmode="throttle" pitch="DegOfRad(TAKEOFF_PITCH_ANGLE)" until="GetPosAlt() @GT GetAltRef()+10"/>
     </block>
     <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="home">
       <circle radius="nav_radius" wp="STDBY"/>

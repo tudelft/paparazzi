@@ -185,8 +185,8 @@ int find_launch_index(void)
 
   // list through the settings
   // TODO: maybe search for a substring with if(strstr(sent, word) != NULL)
-  for (uint8_t idx=0;idx<NB_SETTING;idx++) {
-   if (strcmp(ap_settings[idx],ap_launch) == 0) {
+  for (uint16_t idx = 0; idx < NB_SETTING; idx++) {
+   if (strcmp(ap_settings[idx], ap_launch) == 0) {
      return (int)idx;
     }
   }
@@ -226,8 +226,8 @@ static void on_DL_SETTING(IvyClientPtr app __attribute__((unused)),
    *
    * In case of STIL nps_update_launch_from_dl() is an empty function
    */
-  if ((ap_launch_index >= 0) || (ap_launch_index < NB_SETTING)) {
-    if (index==ap_launch_index){
+  if ((ap_launch_index >= 0) && (ap_launch_index < NB_SETTING)) {
+    if (index == ap_launch_index) {
       nps_update_launch_from_dl(value);
     }
   }

@@ -65,6 +65,26 @@
     <program name="EasyStar MORA Camera Demo Starter" command="sw/simulator/start_easystar_mora_camera_demo.py"/>
   </section>
   <section name="sessions">
+    <session name="IMAV2026 Outdoor Competition">
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="Easystar_3"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS Classic">
+        <arg flag="--maximize"/>
+        <arg flag="--speech"/>
+      </program>
+      <program name="Environment Simulator (Legacy)"/>
+    </session>
     <session name="IMAV2026 Replay flight">
       <program name="Log Plotter"/>
       <program name="Log File Player"/>
@@ -130,7 +150,7 @@
       <program name="MORA Local CATIA"/>
       <program name="EasyStar MORA Camera Demo Starter"/>
     </session>
-    <session name="IMAV2026 Outdoor Competition">
+    <session name="Remote2Catia">
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
         <arg flag="-a" constant="Easystar_3"/>
@@ -166,26 +186,6 @@
       <program name="Real-time Plotter"/>
       <program name="GCS Classic">
         <arg flag="--maximize"/>
-      </program>
-      <program name="Environment Simulator (Legacy)"/>
-    </session>
-    <session name="Remote2Catia">
-      <program name="Simulator">
-        <arg flag="-t" constant="nps"/>
-        <arg flag="-a" constant="Easystar_3"/>
-      </program>
-      <program name="Data Link">
-        <arg flag="-udp"/>
-        <arg flag="-udp_broadcast"/>
-      </program>
-      <program name="Server">
-        <arg flag="-n"/>
-      </program>
-      <program name="Messages"/>
-      <program name="Real-time Plotter"/>
-      <program name="GCS Classic">
-        <arg flag="--maximize"/>
-        <arg flag="--speech"/>
       </program>
       <program name="Environment Simulator (Legacy)"/>
     </session>

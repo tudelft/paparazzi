@@ -4,15 +4,42 @@
 <telemetry>
   <process name="Ap">
     <mode name="default">
-      <message name="COMMANDS" period="0.02"/>
-      <message name="H_CTL_A" period="0.02"/>
-      <message name="DESIRED" period="0.05"/>
-      <message name="AIRSPEED" period="0.05"/>
-      <message name="ENERGY" period="0.05"/>
-      <message name="PPRZ_MODE" period="0.20"/>
-      <message name="NAVIGATION" period="0.20"/>
-      <message name="ATTITUDE" period="0.05"/>
-      <message name="SONAR" period="0.05"/>
+      <message name="AMSL"                period="1.4"/>
+      <message name="ALIVE"               period="5.1"/>
+      <message name="GPS"                 period="0.5"/>
+      <message name="ESTIMATOR"           period="0.6"/>
+      <message name="WP_MOVED"            period="0.25"/>
+      <message name="CIRCLE"              period="1.05"/>
+      <message name="SEGMENT"             period="1.2"/>
+      <message name="CALIBRATION"         period="2.1"/>
+      <message name="NAVIGATION_REF"      period="4.0"/>
+      <message name="SETTINGS"            period="3.0"/>
+      <message name="STATE_FILTER_STATUS" period="2.2"/>
+      <message name="DATALINK_REPORT"     period="5.1"/>
+      <message name="DL_VALUE"            period="1.5"/>
+      <message name="SURVEY"              period="2.1"/>
+      <message name="GPS_SOL"             period="2.0"/>
+      <message name="IMU_ACCEL"           period="1.9"/>
+      <message name="IMU_GYRO"            period="1.9"/>
+      <message name="IMU_MAG"             period="1.9"/>
+      <message name="CAM"                 period="0.5"/>
+      <message name="CAM_POINT"           period="1.0"/>
+      <message name="FBW_STATUS"          period="1.1"/>
+      <message name="PAYLOAD"             period="1.5"/>
+      <message name="AIR_DATA"            period="1.3"/>
+      <message name="RANGEFINDER"         period="0.3"/>
+      <message name="FLIGHT_BENCHMARK"    period="1.6"/>
+      <message name="WIND_INFO_RET"       period="2.3"/>
+<!-- Tuning -->
+      <message name="COMMANDS" period="0.14"/>
+      <message name="H_CTL_A" period="0.13"/>
+      <message name="DESIRED" period="0.12"/>
+      <message name="AIRSPEED" period="0.11"/>
+      <message name="ENERGY" period="0.1"/>
+      <message name="PPRZ_MODE" period="0.2"/>
+      <message name="NAVIGATION" period="0.2"/>
+      <message name="ATTITUDE" period="0.5"/>
+      <message name="SONAR" period="0.5"/>
       <message name="DEBUG_VECT" period="0.10"/>
     </mode>
   </process>
