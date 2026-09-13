@@ -1,3 +1,4 @@
+/** @file ear_cam_pipe.h @brief CATIA API for persistent EARcam sampling, fusion, and acoustic image rendering. */
 #ifndef CATIA_EAR_CAM_PIPE_H
 #define CATIA_EAR_CAM_PIPE_H
 

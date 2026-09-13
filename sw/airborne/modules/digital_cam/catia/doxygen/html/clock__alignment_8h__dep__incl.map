@@ -1,0 +1,11 @@
+<map id="clock_alignment.h" name="clock_alignment.h">
+<area shape="poly" id="Node000001" title="Bounded mapping between flight&#45;controller microseconds and CATIA monotonic time." alt="" coords="271,24,266,18,254,13,234,9,209,6,181,5,154,6,129,9,109,13,96,18,92,24,96,30,109,35,129,39,154,42,181,43,209,42,234,39,254,35,266,30"/>
+<area shape="poly" id="Node000002" href="$clock__alignment_8c.html" title="Implementation of CATIA&#39;s token&#45;bound, interval&#45;based clock alignment." alt="" coords="184,110,180,104,167,99,147,95,122,92,95,91,67,92,42,95,22,99,10,104,5,110,10,116,22,121,42,125,67,128,95,129,122,128,147,125,167,121,180,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="150,55,115,93,111,89,154,51"/>
+<area shape="poly" id="Node000003" href="$pose__log_8h.html" title="Non&#45;blocking pose&#45;evidence CSV logging API." alt="" coords="328,110,325,104,316,99,303,95,286,92,268,91,250,92,233,95,220,99,211,104,208,110,211,116,220,121,233,125,250,128,268,129,286,128,303,125,316,121,325,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="211,51,253,91,248,92,210,56"/>
+<area shape="poly" id="Node000004" href="$catia_8c.html" title="Main CATIA daemon coordinating flight&#45;controller triggers and camera backends." alt="" coords="247,196,245,190,239,185,229,180,217,178,204,177,191,178,179,180,169,185,163,190,161,196,163,201,169,207,179,211,191,214,204,214,217,214,229,211,239,207,245,201"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="248,140,219,179,215,175,243,142"/>
+<area shape="poly" id="Node000005" href="$pose__log_8c.html" title="Bounded asynchronous CSV recorder for flight&#45;controller pose evidence." alt="" coords="390,196,387,190,379,185,366,180,349,178,331,177,312,178,296,180,282,185,274,190,271,196,274,201,282,207,296,211,312,214,331,214,349,214,366,211,379,207,387,201"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="292,139,320,177,315,176,289,143"/>
+</map>

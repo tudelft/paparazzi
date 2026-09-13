@@ -1,3 +1,4 @@
+/** @file ear_heatmap.c @brief JPEG heatmap rendering for geotagged EARcam sample sessions. */
 #include "ear_heatmap.h"
 
 #include <math.h>

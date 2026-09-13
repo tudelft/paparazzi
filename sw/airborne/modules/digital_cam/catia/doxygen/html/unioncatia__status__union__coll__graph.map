@@ -1,0 +1,5 @@
+<map id="catia_status_union" name="catia_status_union">
+<area shape="poly" id="Node000001" title=" " alt="" coords="197,157,192,151,179,145,159,141,133,139,105,138,76,139,50,141,30,145,17,151,12,157,17,162,30,168,50,172,76,174,105,175,133,174,159,172,179,168,192,162"/>
+<area shape="poly" id="Node000002" href="$structcatia__status__union_1_1catia__status__struct.html" title=" " alt="" coords="204,36,199,26,185,18,163,11,135,7,105,5,74,7,46,11,24,18,10,26,5,36,10,45,24,53,46,60,74,64,105,66,135,64,163,60,185,53,199,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="107,79,107,138,102,137,103,83"/>
+</map>

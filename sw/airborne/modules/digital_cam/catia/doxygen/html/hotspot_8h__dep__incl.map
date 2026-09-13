@@ -1,0 +1,13 @@
+<map id="hotspot.h" name="hotspot.h">
+<area shape="poly" id="Node000001" title="Connected&#45;component extraction of hot regions from Tiny1&#45;C temperature planes." alt="" coords="398,24,395,18,387,13,376,9,361,6,344,5,328,6,313,9,301,13,294,18,291,24,294,30,301,35,313,39,328,42,344,43,361,42,376,39,387,35,395,30"/>
+<area shape="poly" id="Node000002" href="$fire__detector_8h.html" title="Thermal&#45;fire candidate selection layered on generic hotspot extraction." alt="" coords="257,110,254,104,243,99,227,95,207,92,184,91,162,92,141,95,125,99,115,104,111,110,115,116,125,121,141,125,162,128,184,129,207,128,227,125,243,121,254,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="300,49,217,95,214,90,304,46"/>
+<area shape="poly" id="Node000005" href="$hotspot_8cpp.html" title="Thresholded connected&#45;component detection over calibrated thermal pixels." alt="" coords="407,110,404,104,395,99,381,95,364,92,344,91,325,92,307,95,293,99,284,104,281,110,284,116,293,121,307,125,325,128,344,129,364,128,381,125,395,121,404,116"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="346,56,347,92,342,89,343,61"/>
+<area shape="poly" id="Node000006" href="$temperature_8cpp.html" title="SDK temperature conversion, environment correction, and thermal reporting helpers." alt="" coords="595,110,591,104,580,99,562,95,539,92,514,91,488,92,466,95,448,99,436,104,432,110,436,116,448,121,466,125,488,128,514,129,539,128,562,125,580,121,591,116"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="388,44,483,92,478,93,387,49"/>
+<area shape="poly" id="Node000003" href="$fire__detector_8cpp.html" title="Scene&#45;relative and geometry&#45;aware thermal fire&#45;candidate classification." alt="" coords="171,196,167,190,155,185,137,180,114,178,88,177,63,178,40,180,21,185,9,190,5,196,9,201,21,207,40,211,63,214,88,214,114,214,137,211,155,207,167,201"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="156,137,110,179,107,175,151,139"/>
+<area shape="poly" id="Node000004" href="$mock__image_8cpp.html" title="Deterministic JPEG mock&#45;image conversion and embedded temperature fixture support." alt="" coords="365,196,361,190,349,185,330,180,307,178,280,177,254,178,230,180,211,185,199,190,195,196,199,201,211,207,230,211,254,214,280,214,307,214,330,211,349,207,361,201"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="216,136,263,177,258,177,214,141"/>
+</map>

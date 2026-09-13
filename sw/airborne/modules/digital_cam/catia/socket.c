@@ -1,4 +1,10 @@
-/* Sample UDP server */
+/**
+ * @file socket.c
+ * @brief Loopback UDP implementation for CATIA's local development transport.
+ * @details The fixed port permits the local bridge and test tools to find each other
+ * without configuration. All I/O is non-blocking so local consumers cannot delay the
+ * flight-controller UART event loop.
+ */
 
 #include <arpa/inet.h>
 #include <netinet/in.h>

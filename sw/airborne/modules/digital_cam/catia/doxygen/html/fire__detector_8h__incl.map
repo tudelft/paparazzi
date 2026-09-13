@@ -1,0 +1,11 @@
+<map id="fire_detector.h" name="fire_detector.h">
+<area shape="poly" id="Node000001" title="Thermal&#45;fire candidate selection layered on generic hotspot extraction." alt="" coords="236,24,232,18,222,13,206,9,185,6,163,5,140,6,120,9,104,13,93,18,90,24,93,30,104,35,120,39,140,42,163,43,185,42,206,39,222,35,232,30"/>
+<area shape="poly" id="Node000002" href="$hotspot_8h.html" title="Connected&#45;component extraction of hot regions from Tiny1&#45;C temperature planes." alt="" coords="216,110,213,104,206,99,194,95,179,92,163,91,146,92,132,95,120,99,112,104,110,110,112,116,120,121,132,125,146,128,163,129,179,128,194,125,206,121,213,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="164,41,165,76,160,75,162,46"/>
+<area shape="poly" id="Node000003" title=" " alt="" coords="96,196,94,190,88,185,78,180,65,178,51,177,37,178,24,180,14,185,8,190,5,196,8,201,14,207,24,211,37,214,51,214,65,214,78,211,88,207,94,201"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="143,127,86,172,83,167,138,129"/>
+<area shape="poly" id="Node000004" title=" " alt="" coords="205,196,203,190,197,185,188,180,176,178,163,177,150,178,138,180,128,185,122,190,120,196,122,201,128,207,138,211,150,214,163,214,176,214,188,211,197,207,203,201"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="165,127,165,162,160,160,161,131"/>
+<area shape="poly" id="Node000005" title=" " alt="" coords="310,196,308,190,302,185,293,180,282,178,269,177,257,178,246,180,237,185,231,190,229,196,231,201,237,207,246,211,257,214,269,214,282,214,293,211,302,207,308,201"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="185,125,240,169,235,170,183,130"/>
+</map>

@@ -1,3 +1,4 @@
+/** @file soda.cpp @brief Small validated command-line dispatch point for post-capture analysis handlers. */
 #include <fstream>
 #include <iostream>
 #include <cerrno>

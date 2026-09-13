@@ -1,0 +1,7 @@
+<map id="version.h" name="version.h">
+<area shape="poly" id="Node000001" title="Build&#45;version string exported by the standalone LWIR application." alt="" coords="122,24,120,18,112,13,101,9,86,6,70,5,54,6,39,9,27,13,20,18,17,24,20,30,27,35,39,39,54,42,70,43,86,42,101,39,112,35,120,30"/>
+<area shape="poly" id="Node000002" href="$lwircam_8h.html" title="Shared vendor SDK definitions and application&#45;level LWIR stream state." alt="" coords="125,110,122,104,114,99,102,95,87,92,70,91,53,92,38,95,26,99,18,104,15,110,18,116,26,121,38,125,53,128,70,129,87,128,102,125,114,121,122,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="71,56,73,91,67,90,69,61"/>
+<area shape="poly" id="Node000003" href="$lwircam_8cpp.html" title="Standalone Tiny1&#45;C CLI, stable&#45;frame qualification, and persistent capture&#45;server loop." alt="" coords="134,196,131,190,122,185,108,180,90,178,70,177,50,178,32,180,18,185,8,190,5,196,8,201,18,207,32,211,50,214,70,214,90,214,108,211,122,207,131,201"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="72,142,72,177,67,176,68,146"/>
+</map>

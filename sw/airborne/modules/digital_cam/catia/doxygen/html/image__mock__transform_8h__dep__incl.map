@@ -1,0 +1,7 @@
+<map id="image_mock_transform.h" name="image_mock_transform.h">
+<area shape="poly" id="Node000001" title="Local&#45;simulation JPEG attitude transform API." alt="" coords="259,24,253,18,236,13,210,9,177,6,140,5,103,6,70,9,44,13,27,18,21,24,27,30,44,35,70,39,103,42,140,43,177,42,210,39,236,35,253,30"/>
+<area shape="poly" id="Node000002" href="$catia_8c.html" title="Main CATIA daemon coordinating flight&#45;controller triggers and camera backends." alt="" coords="91,110,89,104,83,99,73,95,61,92,48,91,35,92,23,95,13,99,7,104,5,110,7,116,13,121,23,125,35,128,48,129,61,128,73,125,83,121,89,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="112,52,67,95,64,91,107,54"/>
+<area shape="poly" id="Node000003" href="$image__mock__transform_8c.html" title="Deterministic attitude&#45;based JPEG transform used by local CATIA simulation." alt="" coords="352,110,347,104,330,99,303,95,270,92,233,91,197,92,163,95,137,99,120,104,114,110,120,116,137,121,163,125,197,128,233,129,270,128,303,125,330,121,347,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="172,51,216,91,211,91,170,56"/>
+</map>

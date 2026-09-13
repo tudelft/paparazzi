@@ -1,0 +1,494 @@
+/* CATIA Doxygen theme: mirrors documentation/generate_html.py without changing
+ * Doxygen's document structure or JavaScript navigation behavior. */
+:root {
+  --catia-ink: #111111;
+  --catia-muted: #595959;
+  --catia-paper: #ffffff;
+  --catia-soft: #e8e8e8;
+  --catia-line: #dedede;
+  --catia-yellow: #ffdd00;
+  --catia-link: #806600;
+
+  /* Doxygen's generated controls inherit these variables directly. Override the
+   * default blue family here so search, breadcrumb, source-line, and SVG states
+   * follow the CATIA gold accent without rewriting generated files. */
+  --page-link-color: #806600;
+  --page-visited-link-color: #806600;
+  --page-external-link-color: #806600;
+  --group-header-color: #806600;
+  --citation-label-color: #806600;
+  --separator-color: #ffdd00;
+  --memdecl-template-color: #806600;
+  --memdef-template-color: #806600;
+  --nav-foreground-color: #806600;
+  --nav-breadcrumb-color: #806600;
+  --nav-text-normal-color: #806600;
+  --nav-menu-button-color: #806600;
+  --nav-menu-active-color: #806600;
+  --nav-arrow-color: #806600;
+  --nav-arrow-selected-color: #806600;
+  --sync-icon-color: #806600;
+  --sync-icon-selected-color: #806600;
+  --toc-header-color: #806600;
+  --search-filter-highlight-bg-color: #806600;
+  --search-results-foreground-color: #806600;
+  --code-link-color: #806600;
+  --code-external-link-color: #806600;
+  --fragment-lineno-link-fg-color: #806600;
+  --fragment-lineno-link-hover-fg-color: #806600;
+  --tooltip-link-color: #806600;
+  --icon-background-color: #806600;
+  --icon-folder-border-color: #806600;
+  --icon-doc-border-color: #806600;
+
+  /* Remove Doxygen's remaining blue-gray surface and control palette. */
+  --index-odd-item-bg-color: #f5f5f5;
+  --header-background-color: #ffffff;
+  --header-separator-color: #dedede;
+  --group-header-separator-color: #dedede;
+  --footer-foreground-color: #595959;
+  --title-background-color: #ffffff;
+  --title-separator-color: #dedede;
+  --directory-separator-color: #dedede;
+  --blockquote-background-color: #f5f5f5;
+  --blockquote-border-color: #ffdd00;
+  --scrollbar-thumb-color: #806600;
+  --scrollbar-background-color: #ffffff;
+  --icon-foreground-color: #ffffff;
+  --icon-folder-open-fill-color: #f5f5f5;
+  --icon-folder-fill-color: #f5f5f5;
+  --icon-doc-fill-color: #f5f5f5;
+  --memdecl-background-color: #f5f5f5;
+  --memdecl-separator-color: #dedede;
+  --memdecl-border-color: #dedede;
+  --memdef-border-color: #dedede;
+  --memdef-title-background-color: #ffdd00;
+  --memdef-proto-background-color: #f5f5f5;
+  --memdef-proto-text-color: #111111;
+  --table-cell-border-color: #dedede;
+  --table-header-background-color: #ffdd00;
+  --table-header-foreground-color: #111111;
+  --label-background-color: #806600;
+  --label-left-top-border-color: #806600;
+  --label-right-bottom-border-color: #806600;
+  --nav-background-color: #ffffff;
+  --nav-border-color: #dedede;
+  --nav-breadcrumb-separator-color: #dedede;
+  --nav-breadcrumb-active-bg: #f5f5f5;
+  --nav-breadcrumb-border-color: #dedede;
+  --nav-splitbar-bg-color: #dedede;
+  --nav-splitbar-handle-color: #111111;
+  --nav-menu-background-color: #ffffff;
+  --nav-menu-active-bg: #f5f5f5;
+  --sync-icon-border-color: #dedede;
+  --sync-icon-background-color: #ffffff;
+  --sync-icon-selected-background-color: #f5f5f5;
+  --toc-background-color: #f5f5f5;
+  --toc-border-color: #dedede;
+  --search-filter-border-color: #dedede;
+  --search-background-color: #ffffff;
+  --search-foreground-color: #111111;
+  --search-active-color: #111111;
+  --search-filter-background-color: #ffffff;
+  --search-filter-foreground-color: #111111;
+  --search-filter-highlight-text-color: #111111;
+  --search-results-background-color: #ffffff;
+  --search-results-foreground-color: #806600;
+  --search-results-border-color: #dedede;
+  --search-box-border-color: #806600;
+  --fragment-background-color: #111111;
+  --fragment-border-color: #ffdd00;
+  --fragment-lineno-link-bg-color: #f5f5f5;
+  --fragment-lineno-link-hover-bg-color: #ffdd00;
+  --todo-color-bg: #fff8d6;
+  --todo-color-hl: #806600;
+  --todo-color-text: #111111;
+  --test-color-bg: #fff8d6;
+  --test-color-hl: #806600;
+  --test-color-text: #111111;
+  --bug-color-bg: #f5f5f5;
+  --bug-color-hl: #111111;
+  --bug-color-text: #111111;
+}
+
+/* Doxygen includes an automatic dark-mode palette after its light palette. A
+ * system preference must never restore blue, so apply the same CATIA palette
+ * in that media query as well. */
+@media (prefers-color-scheme: dark) {
+  html:not(.dark-mode) {
+    color-scheme: light;
+    --page-background-color: #ffffff;
+    --page-foreground-color: #111111;
+    --page-link-color: #806600;
+    --page-visited-link-color: #806600;
+    --page-external-link-color: #806600;
+    --group-header-color: #111111;
+    --group-header-separator-color: #ffdd00;
+    --header-background-color: #ffffff;
+    --header-separator-color: #dedede;
+    --title-background-color: #ffffff;
+    --title-separator-color: #dedede;
+    --directory-separator-color: #dedede;
+    --memdecl-background-color: #f5f5f5;
+    --memdecl-border-color: #dedede;
+    --memdef-border-color: #dedede;
+    --memdef-title-background-color: #ffdd00;
+    --memdef-proto-background-color: #f5f5f5;
+    --memdef-proto-text-color: #111111;
+    --table-cell-border-color: #dedede;
+    --table-header-background-color: #ffdd00;
+    --table-header-foreground-color: #111111;
+    --nav-background-color: #ffffff;
+    --nav-foreground-color: #806600;
+    --nav-border-color: #dedede;
+    --nav-breadcrumb-color: #806600;
+    --nav-text-normal-color: #806600;
+    --nav-menu-button-color: #806600;
+    --nav-arrow-color: #111111;
+    --nav-arrow-selected-color: #111111;
+    --sync-icon-color: #111111;
+    --sync-icon-selected-color: #111111;
+    --toc-background-color: #f5f5f5;
+    --toc-border-color: #dedede;
+    --toc-header-color: #806600;
+    --search-background-color: #ffffff;
+    --search-foreground-color: #111111;
+    --search-active-color: #111111;
+    --search-filter-background-color: #ffffff;
+    --search-filter-foreground-color: #111111;
+    --search-filter-highlight-text-color: #111111;
+    --search-filter-highlight-bg-color: #ffdd00;
+    --search-results-background-color: #ffffff;
+    --search-results-foreground-color: #806600;
+    --search-results-border-color: #806600;
+    --search-box-border-color: #806600;
+    --code-link-color: #806600;
+    --code-external-link-color: #806600;
+    --fragment-background-color: #111111;
+    --fragment-foreground-color: #ffffff;
+    --fragment-border-color: #ffdd00;
+  }
+}
+
+/* Doxygen's manual dark-mode toggle adds this class directly. Keep it within
+ * the same light CATIA documentation theme instead of exposing a blue variant. */
+html.dark-mode {
+  color-scheme: light;
+  --page-background-color: #ffffff;
+  --page-foreground-color: #111111;
+  --page-link-color: #806600;
+  --page-visited-link-color: #806600;
+  --page-external-link-color: #806600;
+  --group-header-color: #111111;
+  --group-header-separator-color: #ffdd00;
+  --header-background-color: #ffffff;
+  --header-separator-color: #dedede;
+  --memdecl-background-color: #f5f5f5;
+  --memdef-title-background-color: #ffdd00;
+  --memdef-proto-background-color: #f5f5f5;
+  --memdef-proto-text-color: #111111;
+  --table-cell-border-color: #dedede;
+  --table-header-background-color: #ffdd00;
+  --table-header-foreground-color: #111111;
+  --nav-background-color: #ffffff;
+  --nav-foreground-color: #806600;
+  --nav-border-color: #dedede;
+  --nav-breadcrumb-color: #806600;
+  --nav-text-normal-color: #806600;
+  --nav-menu-button-color: #806600;
+  --nav-arrow-color: #111111;
+  --nav-arrow-selected-color: #111111;
+  --search-background-color: #ffffff;
+  --search-foreground-color: #111111;
+  --search-active-color: #111111;
+  --search-filter-background-color: #ffffff;
+  --search-filter-foreground-color: #111111;
+  --search-filter-highlight-text-color: #111111;
+  --search-filter-highlight-bg-color: #ffdd00;
+  --search-results-background-color: #ffffff;
+  --search-results-foreground-color: #806600;
+  --search-results-border-color: #806600;
+  --search-box-border-color: #806600;
+  --code-link-color: #806600;
+  --code-external-link-color: #806600;
+  --fragment-background-color: #111111;
+  --fragment-foreground-color: #ffffff;
+  --fragment-border-color: #ffdd00;
+}
+
+html, body {
+  color-scheme: light;
+  color: var(--catia-ink);
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.018) 1px, transparent 1px),
+    linear-gradient(rgba(0, 0, 0, 0.018) 1px, transparent 1px),
+    var(--catia-paper);
+  background-size: 28px 28px;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+body, table, div.fragment, div.line, .memproto, .memdoc, .directory,
+.headertitle, .title, .tabs, .tabs2, .tabs3, .tabs4, .tabs5 {
+  color: var(--catia-ink);
+}
+
+a, a:visited, .contents a:visited { color: var(--catia-link); }
+a:hover, a:focus-visible {
+  color: var(--catia-ink);
+  background: var(--catia-yellow);
+  text-decoration-thickness: 2px;
+}
+a:focus-visible { outline: 2px solid var(--catia-yellow); outline-offset: 2px; }
+
+#titlearea {
+  background: var(--catia-ink);
+  border-bottom: 5px solid var(--catia-yellow);
+  padding: 18px max(20px, calc((100vw - 1180px) / 2));
+}
+#titlearea, #titlearea table, #titlearea tbody, #titlearea tr,
+#titlearea td, #projectrow, #projectalign {
+  background: var(--catia-ink) !important;
+}
+#projectname, #projectbrief, #projectnumber { color: var(--catia-paper); }
+#projectname { font-family: "IBM Plex Sans", "Segoe UI", sans-serif; font-weight: 800; }
+#projectbrief { color: #dedede; }
+#projectlogo img { max-height: 44px; }
+
+#main-nav, .tabs, .tabs2, .tabs3, .tabs4, .tabs5 {
+  background: var(--catia-ink);
+  border: 0;
+}
+.tabs ul, .tabs2 ul, .tabs3 ul, .tabs4 ul, .tabs5 ul { background: transparent; }
+.tabs li, .tabs2 li, .tabs3 li, .tabs4 li, .tabs5 li { background: transparent; }
+.tabs a, .tabs a:visited, .tabs2 a, .tabs2 a:visited, .tabs3 a, .tabs3 a:visited,
+.tabs4 a, .tabs4 a:visited, .tabs5 a, .tabs5 a:visited {
+  color: var(--catia-paper);
+  background: transparent;
+  border: 0;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-weight: 700;
+}
+.tabs a:hover, .tabs a:focus-visible, .tabs li.current a, .tabs li.current a:visited,
+.tabs2 a:hover, .tabs2 a:focus-visible, .tabs2 li.current a, .tabs2 li.current a:visited {
+  color: var(--catia-ink);
+  background: var(--catia-yellow);
+}
+.tabs .sub-arrow, .tabs2 .sub-arrow, .tabs3 .sub-arrow, .tabs4 .sub-arrow,
+.tabs5 .sub-arrow, .sm-dox > li > a .sub-arrow {
+  border-top-color: var(--catia-paper);
+}
+.tabs a:hover .sub-arrow, .tabs a:focus-visible .sub-arrow,
+.tabs li.current a .sub-arrow, .tabs2 a:hover .sub-arrow,
+.tabs2 a:focus-visible .sub-arrow, .tabs2 li.current a .sub-arrow,
+.sm-dox > li > a:hover .sub-arrow, .sm-dox > li > a:focus-visible .sub-arrow {
+  border-top-color: var(--catia-ink);
+}
+.tabs a:focus-visible, .tabs2 a:focus-visible, .tabs3 a:focus-visible,
+.tabs4 a:focus-visible, .tabs5 a:focus-visible { outline-color: var(--catia-paper); }
+
+/* Doxygen's top navigation uses SmartMenus. Its generated active state is
+ * orange and can be temporary; make all selected states persistent CATIA
+ * yellow pills with black bold text and a high-contrast keyboard ring. */
+.sm-dox > li > a,
+.sm-dox > li > a:visited {
+  color: var(--catia-paper);
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-weight: 700;
+  border-radius: 5px;
+}
+.sm-dox > li > a.current,
+.sm-dox > li > a.highlighted,
+.sm-dox > li > a:active,
+.sm-dox > li > a:focus,
+.sm-dox > li > a:focus-visible {
+  color: var(--catia-ink) !important;
+  background: var(--catia-yellow) !important;
+  border-radius: 5px;
+  font-weight: 800;
+  outline: 2px solid var(--catia-yellow);
+  outline-offset: 2px;
+}
+.sm-dox > li > a:hover {
+  color: var(--catia-ink) !important;
+  background: var(--catia-yellow) !important;
+  border-radius: 5px;
+  font-weight: 800;
+}
+.sm-dox > li > a.current .sub-arrow,
+.sm-dox > li > a.highlighted .sub-arrow,
+.sm-dox > li > a:active .sub-arrow,
+.sm-dox > li > a:focus .sub-arrow,
+.sm-dox > li > a:focus-visible .sub-arrow,
+.sm-dox > li > a:hover .sub-arrow { border-top-color: var(--catia-ink); }
+
+#side-nav, #nav-tree, #nav-tree-contents, #nav-tree .selected,
+#nav-sync, #nav-path ul, #nav-path li {
+  background: var(--catia-paper);
+}
+#side-nav { border-right: 1px solid var(--catia-line); }
+#nav-tree a { color: var(--catia-link); font-family: "IBM Plex Sans", "Segoe UI", sans-serif; }
+#nav-tree .selected, #nav-tree a:hover { background: var(--catia-soft); }
+#nav-tree .selected a { font-weight: 700; border-left: 3px solid var(--catia-yellow); }
+/* The page outline is Doxygen's in-page navigation tree. Do not let its
+ * mode-dependent breadcrumb background restore a dark blue surface. */
+ul.page-outline, ul.page-outline ul, ul.page-outline div.item {
+  color: var(--catia-ink);
+  background: var(--catia-soft);
+}
+ul.page-outline li.vis, ul.page-outline div.item:hover {
+  color: var(--catia-ink);
+  background: var(--catia-yellow);
+}
+ul.page-outline a, ul.page-outline a:visited { color: var(--catia-link); }
+ul.page-outline a:hover, ul.page-outline a:focus-visible {
+  color: var(--catia-ink);
+  background: var(--catia-yellow);
+}
+
+/* Doxygen styles detailed-description headings and the file directory through
+ * dedicated selectors. Override those directly so neither retains blue tints. */
+h1.groupheader, h2.groupheader, h3.groupheader, td h2.groupheader {
+  color: var(--catia-ink);
+  background: transparent;
+  border-bottom: 3px solid var(--catia-yellow);
+  box-shadow: none;
+  font-weight: 800;
+}
+div.directory, .directory table, .directory td { background: var(--catia-paper); }
+.directory tr.odd, .directory tr.even { background: var(--catia-paper); }
+.directory tr:nth-child(even) { background: var(--catia-soft); }
+.directory td.entry, .directory td.desc { border-color: var(--catia-line); }
+.directory td.entry a, .directory td.entry a:visited { color: var(--catia-link); }
+.directory tr:hover td { color: var(--catia-ink); background: var(--catia-yellow); }
+.directory tr:hover a, .directory tr:hover a:visited { color: var(--catia-ink); }
+.directory td.entry a:hover, .directory td.entry a:focus-visible {
+  color: var(--catia-ink);
+  background: var(--catia-yellow);
+}
+
+.contents, div.contents, #doc-content {
+  max-width: 920px;
+  color: var(--catia-ink);
+}
+h1, h2, h3, h4, h5, h6, .title {
+  color: var(--catia-ink);
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  letter-spacing: 0;
+}
+h1, .title {
+  border-bottom: 3px solid var(--catia-yellow);
+  padding-bottom: 10px;
+}
+h2 { border-bottom: 2px solid var(--catia-line); padding-bottom: 8px; }
+
+code, pre, div.fragment, div.line, .memname, .paramname {
+  font-family: "IBM Plex Mono", "Liberation Mono", monospace;
+}
+code:not(.fragment code) { background: var(--catia-soft); padding: 0.1em 0.3em; }
+div.fragment {
+  background: var(--catia-ink);
+  color: var(--catia-paper);
+  border-left: 4px solid var(--catia-yellow);
+  border-radius: 0;
+  padding: 12px 14px;
+}
+div.line { color: inherit; }
+div.fragment div.line, div.fragment .line { color: var(--catia-paper); }
+
+.memitem, .memproto, .memdoc, .memtitle, .memtemplate, .memname,
+table.memberdecls, table.memname, table.params, table.fieldtable,
+.directory, .levels, .memSeparator {
+  border-color: var(--catia-line);
+  box-shadow: none;
+}
+.memproto, .memname, table.memberdecls, table.params, table.fieldtable {
+  background: var(--catia-soft);
+}
+.mdescLeft, .mdescRight, .mdescLeft *, .mdescRight * {
+  color: var(--catia-ink);
+}
+.mdescLeft a, .mdescLeft a:visited, .mdescRight a, .mdescRight a:visited {
+  color: var(--catia-link);
+}
+.mdescLeft a:hover, .mdescLeft a:focus-visible,
+.mdescRight a:hover, .mdescRight a:focus-visible {
+  color: var(--catia-ink);
+  background: var(--catia-yellow);
+}
+.memdoc { background: var(--catia-paper); border-radius: 0; }
+.memtitle { background: var(--catia-yellow); }
+
+table { border-collapse: collapse; background: var(--catia-paper); }
+th, table.memberdecls .heading, table.params .paramname, table.fieldtable th {
+  color: var(--catia-ink);
+  background: var(--catia-yellow);
+}
+/* Parameter names are semantic labels, not links: use a darker gold-brown on
+ * the gray declaration surface so they remain distinct without Doxygen orange. */
+td.paramname, td.paramname em, td.paramname code, .paramname {
+  color: var(--catia-link) !important;
+  background: var(--catia-soft);
+  font-weight: 700;
+}
+td.paramname:hover, td.paramname:focus-within {
+  color: var(--catia-ink) !important;
+  background: var(--catia-yellow);
+}
+td, th { border-color: var(--catia-line); }
+tr.even { background: var(--catia-soft); }
+
+/* Search is an input surface, never a dark navigation surface: typing, focus,
+ * autofill, filters, and result rows are explicitly black-on-white. */
+#MSearchBox, #MSearchBox .left, #MSearchBox .right, #MSearchField {
+  color: var(--catia-ink) !important;
+  background-color: var(--catia-paper) !important;
+  border-color: var(--catia-link);
+}
+#MSearchField, .MSearchBoxActive #MSearchField {
+  color: var(--catia-ink) !important;
+  caret-color: var(--catia-ink);
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+#MSearchField::placeholder { color: var(--catia-muted); opacity: 1; }
+#MSearchField:-webkit-autofill,
+#MSearchField:-webkit-autofill:hover,
+#MSearchField:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--catia-ink) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--catia-paper) inset;
+}
+#MSearchBox:focus-within { outline: 2px solid var(--catia-yellow); outline-offset: 2px; }
+#MSearchSelectWindow, #MSearchResultsWindow, iframe#MSearchResults {
+  color: var(--catia-ink) !important;
+  background: var(--catia-paper) !important;
+  border-color: var(--catia-link) !important;
+}
+#MSearchSelectWindow a.SelectItem, #MSearchSelectWindow a.SelectItem:visited {
+  color: var(--catia-ink) !important;
+  background: var(--catia-paper);
+}
+#MSearchSelectWindow a.SelectItem:hover,
+#MSearchSelectWindow a.SelectItem:focus-visible {
+  color: var(--catia-ink) !important;
+  background: var(--catia-yellow) !important;
+}
+iframe#MSearchResults { color-scheme: light; }
+.sm, .sm-dox, .sm-dox ul { background: var(--catia-ink); }
+.sm-dox a, .sm-dox a:visited { color: var(--catia-paper); }
+.sm-dox a:hover, .sm-dox a:focus, .sm-dox a.highlighted { color: var(--catia-ink); background: var(--catia-yellow); }
+/* A submenu sits on black as well; explicitly prevent inherited black text. */
+.sm-dox ul a, .sm-dox ul a:visited, .sm-dox ul a:focus { color: var(--catia-paper); }
+.sm-dox ul a:hover, .sm-dox ul a:focus-visible { color: var(--catia-ink); background: var(--catia-yellow); }
+.sm-dox ul .sub-arrow { border-left-color: var(--catia-paper); }
+.sm-dox ul a:hover .sub-arrow, .sm-dox ul a:focus-visible .sub-arrow { border-left-color: var(--catia-ink); }
+
+hr, .footer, address.footer {
+  border-color: var(--catia-line);
+  color: var(--catia-muted);
+}
+address.footer { border-top: 3px solid var(--catia-yellow); background: var(--catia-ink); color: var(--catia-paper); padding: 16px; }
+
+@media (max-width: 767px) {
+  #titlearea { padding: 14px 16px; }
+  #projectname { font-size: 1.6rem; }
+  .contents, div.contents { margin: 0 14px; }
+}

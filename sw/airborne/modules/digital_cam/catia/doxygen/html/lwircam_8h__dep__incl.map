@@ -1,0 +1,5 @@
+<map id="lwircam.h" name="lwircam.h">
+<area shape="poly" id="Node000001" title="Shared vendor SDK definitions and application&#45;level LWIR stream state." alt="" coords="125,24,122,18,114,13,102,9,87,6,70,5,53,6,38,9,26,13,18,18,15,24,18,30,26,35,38,39,53,42,70,43,87,42,102,39,114,35,122,30"/>
+<area shape="poly" id="Node000002" href="$lwircam_8cpp.html" title="Standalone Tiny1&#45;C CLI, stable&#45;frame qualification, and persistent capture&#45;server loop." alt="" coords="134,110,131,104,122,99,108,95,90,92,70,91,50,92,32,95,18,99,8,104,5,110,8,116,18,121,32,125,50,128,70,129,90,128,108,125,122,121,131,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="72,57,72,91,67,90,68,61"/>
+</map>

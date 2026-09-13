@@ -1,3 +1,12 @@
+/**
+ * @file catia.c
+ * @brief Main CATIA daemon coordinating flight-controller triggers and camera backends.
+ * @details The event loop receives validated UART frames, queues bounded capture jobs,
+ * dispatches backend work on detached workers, records metadata, and returns status.
+ * It deliberately keeps serial I/O separate from slow camera processes so one capture
+ * cannot block command reception. Backend failure is isolated per camera wherever
+ * possible; systemd owns whole-daemon restart for irrecoverable transport failures.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -171,6 +180,8 @@ static const char *pose_log_dir = CATIA_POSE_LOG_DIR;
 static bool motion_compensation_enabled;
 static uint64_t next_clock_probe_us, clock_probe_count, clock_reply_count, clock_rejected_count;
 
+/** @brief Read CATIA's monotonic clock for local latency and event ordering.
+ * @return Microseconds since an arbitrary monotonic origin, or zero on clock failure. */
 static uint64_t monotonic_time_us(void)
 {
   struct timespec now;
@@ -178,6 +189,9 @@ static uint64_t monotonic_time_us(void)
       ? (uint64_t)now.tv_sec * 1000000U + (uint64_t)now.tv_nsec / 1000U : 0;
 }
 
+/** @brief Opportunistically send a low-priority flight-controller clock probe.
+ * @details Probes are rate-limited to one per second and sent only on an idle UART so
+ * alignment evidence cannot delay capture/status traffic. */
 static void send_clock_probe(uint64_t now_us)
 {
   if (!clock_probes_enabled || now_us == 0 || now_us < next_clock_probe_us
@@ -194,6 +208,9 @@ static void send_clock_probe(uint64_t now_us)
   ++clock_probe_count;
 }
 
+/** @brief Validate and enqueue a token-bound pose sample with clock evidence.
+ * @details Mapping failure does not discard the pose: the log records it as unmapped,
+ * preserving raw diagnostic evidence without claiming false time precision. */
 static void record_clocked_pose(void)
 {
   if (catia_protocol.payload_len != CATIA_POSE_CLOCKED_MSG_SIZE) {
@@ -221,6 +238,11 @@ static void record_clocked_pose(void)
 
 extern char **environ;
 
+/** @brief Configure CATIA and run its multiplexed UART/local-UDP event loop.
+ * @return Process status suitable for systemd restart policy.
+ * @details Startup validates selected backends, starts optional persistent services,
+ * initializes non-blocking transport, then drains serial bytes into the protocol parser.
+ * Shutdown wakes and drains detached workers before releasing backend resources. */
 int main(int argc, char *argv[])
 {
   const char *serial_device = CATIA_SERIAL_DEVICE;
@@ -645,6 +667,8 @@ int main(int argc, char *argv[])
   return 0;
 }
 
+/** @brief Send READY=1 to systemd when launched with a notify socket.
+ * @details Failure is diagnostic only: CATIA also supports direct/manual execution. */
 static void notify_systemd_ready(void)
 {
   const char *socket_path = getenv("NOTIFY_SOCKET");

@@ -1,0 +1,5 @@
+<map id="FireCandidate" name="FireCandidate">
+<area shape="poly" id="Node000001" title="One hotspot with the evidence used to classify it as a fire candidate." alt="" coords="150,134,147,128,136,123,120,119,100,116,78,115,55,116,35,119,19,123,9,128,5,134,9,140,19,145,35,149,55,152,78,153,100,152,120,149,136,145,147,140"/>
+<area shape="poly" id="Node000002" href="$structHotspot.html" title="Measured geometry and temperatures for one connected hot region." alt="" coords="125,24,123,18,116,13,106,9,92,6,78,5,63,6,50,9,39,13,32,18,30,24,32,30,39,35,50,39,63,42,78,43,92,42,106,39,116,35,123,30"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="80,57,80,115,75,114,76,60"/>
+</map>

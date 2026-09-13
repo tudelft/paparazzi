@@ -1,3 +1,4 @@
+/** @file test_loudestspot.c @brief Standalone synthetic-data regression tool for EARcam loudest-spot fusion. */
 // C11 + POSIX.1-2008 (clock_gettime).
 #define _POSIX_C_SOURCE 200809L
 

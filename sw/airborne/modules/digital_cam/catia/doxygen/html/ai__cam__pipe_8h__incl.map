@@ -1,0 +1,5 @@
+<map id="ai_cam_pipe.h" name="ai_cam_pipe.h">
+<area shape="poly" id="Node000001" title="CATIA backend interface for Raspberry Pi AI Camera JPEG captures." alt="" coords="154,24,151,18,140,13,124,9,103,6,80,5,57,6,36,9,20,13,9,18,5,24,9,30,20,35,36,39,57,42,80,43,103,42,124,39,140,35,151,30"/>
+<area shape="poly" id="Node000002" title=" " alt="" coords="128,110,126,104,119,99,108,95,95,92,80,91,65,92,51,95,41,99,34,104,31,110,34,116,41,121,51,125,65,128,80,129,95,128,108,125,119,121,126,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="81,41,82,76,77,75,78,46"/>
+</map>

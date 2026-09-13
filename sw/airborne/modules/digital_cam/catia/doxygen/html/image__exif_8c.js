@@ -1,0 +1,28 @@
+var image__exif_8c =
+[
+    [ "ANGLE_BFP_SCALE", "image__exif_8c.html#acab3cd9ee1aeb73938d67894b1dba9b7", null ],
+    [ "ASCII_COMMENT_PREFIX_SIZE", "image__exif_8c.html#a51bac0d18903cd3817a0d9b26282817a", null ],
+    [ "EXIF_APP1_MAX_PAYLOAD", "image__exif_8c.html#aa8a44fd80486e54025cb6ad975de09bc", null ],
+    [ "POSITION_BFP_SCALE", "image__exif_8c.html#ada7d2a3ff43e8679d7695f6721b99114", null ],
+    [ "RAD_TO_DEG", "image__exif_8c.html#a89e47af0449640d4f15191aba5ca24c6", null ],
+    [ "SPEED_BFP_SCALE", "image__exif_8c.html#a2f8846a3a9f183a27fb10a1987f8be7a", null ],
+    [ "add_shot_tags", "image__exif_8c.html#af8be9af65a8b42a3deb5bda8ddb0f3b9", null ],
+    [ "copy_bytes", "image__exif_8c.html#af35a87f956d99436f1b49cce65682082", null ],
+    [ "copy_remainder", "image__exif_8c.html#a8ac2503cf44b38793fc73757d01ddf1f", null ],
+    [ "image_exif_write", "image__exif_8c.html#ac79cb4f1a19141e4ee2de5ce29aa214f", null ],
+    [ "image_exif_write_capture", "image__exif_8c.html#a92ecc436f916fa205b865abbbf09c09b", null ],
+    [ "image_exif_write_hotspots", "image__exif_8c.html#a1a444d70a14b31824706040ad96e15d1", null ],
+    [ "image_exif_write_timed", "image__exif_8c.html#a360033b14700249d2747a91ee89bdcb3", null ],
+    [ "is_standalone_marker", "image__exif_8c.html#a93689c47b8d40135a4fecd8912118765", null ],
+    [ "normalized_degrees", "image__exif_8c.html#a36779d86f8955cf2c07e59c9524a75ad", null ],
+    [ "replace_tag", "image__exif_8c.html#a5297624a3959c5ad9142867bfa8bdada", null ],
+    [ "rewrite_jpeg", "image__exif_8c.html#af696d015e74bf5ee4a61e712f9d96507", null ],
+    [ "save_exif", "image__exif_8c.html#a255113b247cee4bbbc4bce7bd287ce9a", null ],
+    [ "scaled_unsigned", "image__exif_8c.html#a5b15b9e63e0cf717d8e7d2b528c04a85", null ],
+    [ "set_ascii_tag", "image__exif_8c.html#af09a159dfef34def49bc72713f4443a6", null ],
+    [ "set_coordinate", "image__exif_8c.html#a53db10c66fc1fe021ae1d0f5ddb56fc3", null ],
+    [ "set_rational_tag", "image__exif_8c.html#ae0278e8dd66a660b1344f3ec3353a15d", null ],
+    [ "write_bytes", "image__exif_8c.html#a6b998e3cbc7f59f2daf274aa5ec621d5", null ],
+    [ "write_exif_segment", "image__exif_8c.html#aa4da6274738426bef4f036bf6de7ae3c", null ],
+    [ "byte_order", "image__exif_8c.html#a19edc99007812c4e62caa3963df4fa20", null ]
+];

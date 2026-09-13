@@ -1,0 +1,5 @@
+<map id="boot_id.h" name="boot_id.h">
+<area shape="poly" id="Node000001" title="Read Linux&#39;s boot&#45;unique identifier for pose&#45;log session provenance." alt="" coords="110,24,108,18,100,13,89,9,74,6,58,5,42,6,27,9,15,13,8,18,5,24,8,30,15,35,27,39,42,42,58,43,74,42,89,39,100,35,108,30"/>
+<area shape="poly" id="Node000002" title=" " alt="" coords="101,110,98,104,92,99,83,95,71,92,58,91,45,92,33,95,23,99,17,104,15,110,17,116,23,121,33,125,45,128,58,129,71,128,83,125,92,121,98,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="59,41,61,76,55,75,56,46"/>
+</map>

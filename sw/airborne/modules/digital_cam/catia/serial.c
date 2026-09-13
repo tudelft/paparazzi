@@ -1,5 +1,10 @@
-/*
- *      OpenUAS OBC
+/**
+ * @file serial.c
+ * @brief Configure CATIA's non-blocking flight-controller UART.
+ * @details This module owns only the receive-side descriptor setup. Transmit
+ * buffering and concurrent writers are handled by serial_tx.c. Raw 8-bit mode is
+ * necessary because CATIA frames are binary and can contain bytes that terminal
+ * line discipline would otherwise translate or consume.
  */
 
 #include <stdio.h>
@@ -23,7 +28,8 @@
 /* Open serial device for requested protocoll */
 /****************************************************************************/
 
-int fd; /* File descriptor for the port */
+/** Shared UART descriptor used by legacy receive/transmit integration code. */
+int fd;
 
 int serial_init(const char *port_name)
 {

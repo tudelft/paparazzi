@@ -1,0 +1,8 @@
+<map id="std.h" name="std.h">
+<area shape="poly" id="Node000001" title="Compatibility transmit primitive for legacy CATIA framing macros." alt="" coords="84,24,82,18,77,13,69,9,59,6,48,5,37,6,27,9,19,13,14,18,12,24,14,30,19,35,27,39,37,42,48,43,59,42,69,39,77,35,82,30"/>
+<area shape="poly" id="Node000002" href="$catia_8c.html" title="Main CATIA daemon coordinating flight&#45;controller triggers and camera backends." alt="" coords="91,196,89,190,83,185,73,180,61,178,48,177,35,178,23,180,13,185,7,190,5,196,7,201,13,207,23,211,35,214,48,214,61,214,73,211,83,207,89,201"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="39,55,35,91,35,128,45,177,40,177,29,129,29,91,38,60"/>
+<area shape="poly" id="Node000003" href="$serial_8h.html" title="Legacy UART descriptor setup and byte&#45;oriented compatibility macros." alt="" coords="134,110,132,104,126,99,116,95,103,92,89,91,75,92,63,95,53,99,47,104,45,110,47,116,53,121,63,125,75,128,89,129,103,128,116,125,126,121,132,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="64,53,83,90,78,91,63,59"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="76,141,59,178,55,175,72,144"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="FrameMailbox" name="FrameMailbox">
+<area shape="poly" id="Node000001" title="Thread&#45;safe latest&#45;frame mailbox with monotonic deadline waits." alt="" coords="151,134,148,128,138,123,121,119,101,116,78,115,56,116,35,119,19,123,9,128,5,134,9,140,19,145,35,149,56,152,78,153,101,152,121,149,138,145,148,140"/>
+<area shape="poly" id="Node000002" href="$structFrameStamp.html" title="Provenance attached atomically to the currently published frame." alt="" coords="147,24,143,18,134,13,118,9,99,6,78,5,57,6,38,9,23,13,14,18,10,24,14,30,23,35,38,39,57,42,78,43,99,42,118,39,134,35,143,30"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="80,57,81,115,76,114,76,60"/>
+</map>

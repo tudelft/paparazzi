@@ -1,0 +1,14 @@
+<map id="image_exif.h" name="image_exif.h">
+<area shape="poly" id="Node000001" title="Flight, timing, and thermal&#45;analysis metadata writing for captured JPEGs." alt="" coords="255,24,252,18,242,13,227,9,208,6,187,5,167,6,148,9,133,13,123,18,120,24,123,30,133,35,148,39,167,42,187,43,208,42,227,39,242,35,252,30"/>
+<area shape="poly" id="Node000002" href="$protocol_8h.html" title=" " alt="" coords="161,110,159,104,151,99,139,95,123,92,106,91,89,92,73,95,61,99,53,104,51,110,53,116,61,121,73,125,89,128,106,129,123,128,139,125,151,121,159,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="169,45,135,82,132,79,172,41"/>
+<area shape="poly" id="Node000005" href="$capture__timing_8h.html" title="Evidence recorded for a thermal request and the callback frame that served it." alt="" coords="352,110,348,104,336,99,317,95,294,92,269,91,243,92,220,95,202,99,190,104,186,110,190,116,202,121,220,125,243,128,269,129,294,128,317,125,336,121,348,116"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="205,40,243,80,238,80,204,45"/>
+<area shape="poly" id="Node000003" title=" " alt="" coords="116,196,113,190,106,185,93,180,78,178,61,177,44,178,28,180,16,185,8,190,5,196,8,201,16,207,28,211,44,214,61,214,78,214,93,211,106,207,113,201"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="99,127,80,165,75,162,94,131"/>
+<area shape="poly" id="Node000004" title=" " alt="" coords="245,196,243,190,235,185,224,180,209,178,193,177,176,178,162,180,150,185,143,190,140,196,143,201,150,207,162,211,176,214,193,214,209,214,224,211,235,207,243,201"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="125,126,167,167,161,167,123,131"/>
+<area shape="poly" id="edge5_Node000005_Node000004" title=" " alt="" coords="255,128,220,168,217,164,250,130"/>
+<area shape="poly" id="Node000006" title=" " alt="" coords="361,196,359,190,352,185,342,180,329,178,315,177,301,178,289,180,279,185,272,190,270,196,272,201,279,207,289,211,301,214,315,214,329,214,342,211,352,207,359,201"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="280,127,301,164,296,163,278,132"/>
+</map>

@@ -1,3 +1,4 @@
+/** @file local_pipe.c @brief Hardware-free camera backend that copies deterministic or randomly selected JPEG fixtures. */
 #include "local_pipe.h"
 #include "path_utils.h"
 

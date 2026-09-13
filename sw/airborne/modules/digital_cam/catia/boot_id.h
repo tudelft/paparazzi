@@ -1,8 +1,20 @@
 #ifndef CATIA_BOOT_ID_H
 #define CATIA_BOOT_ID_H
 
+/**
+ * @file boot_id.h
+ * @brief Read Linux's boot-unique identifier for pose-log session provenance.
+ * @details A boot ID distinguishes monotonic timestamps from two daemon runs after a
+ * board reboot. Failure is nonfatal and intentionally represented as "unknown" so
+ * logging remains available on non-Linux development systems.
+ */
+
 #include <stdio.h>
 
+/** @brief Fill a 36-character boot UUID or the stable fallback "unknown".
+ * @param result Caller buffer of exactly 37 bytes, including the terminator.
+ * @details Input is strictly validated instead of trusting procfs text, because this
+ * value becomes durable log metadata and should never contain a partial read. */
 static inline void catia_boot_id(char result[37])
 {
   const char unknown[] = "unknown";

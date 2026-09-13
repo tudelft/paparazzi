@@ -1,0 +1,7 @@
+<map id="pose_clock_evidence" name="pose_clock_evidence">
+<area shape="poly" id="Node000001" title="Optional token&#45;bound evidence mapping a controller pose interval to MORA time." alt="" coords="302,157,297,151,282,145,259,141,230,139,198,138,166,139,138,141,115,145,100,151,95,157,100,162,115,168,138,172,166,174,198,175,230,174,259,172,282,168,297,162"/>
+<area shape="poly" id="Node000002" href="$unioncatia__clock__request__union.html" title=" " alt="" coords="200,36,195,26,181,18,160,11,132,7,102,5,72,7,45,11,24,18,10,26,5,36,10,45,24,53,45,60,72,64,102,66,132,64,160,60,181,53,195,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="136,74,187,137,181,138,133,79"/>
+<area shape="poly" id="Node000003" href="$structclock__interval.html" title="Inclusive CATIA monotonic&#45;time bounds for a mapped controller timestamp." alt="" coords="367,36,364,30,354,24,338,20,318,18,296,17,274,18,254,20,238,24,228,30,224,36,228,41,238,47,254,51,274,53,296,54,318,53,338,51,354,47,364,41"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="274,65,215,139,211,135,269,67"/>
+</map>

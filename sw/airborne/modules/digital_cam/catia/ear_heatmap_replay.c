@@ -1,3 +1,4 @@
+/** @file ear_heatmap_replay.c @brief Offline CSV replay utility for validating EARcam heatmaps and fusion. */
 // C11 + POSIX.1-2008.
 #define _POSIX_C_SOURCE 200809L
 

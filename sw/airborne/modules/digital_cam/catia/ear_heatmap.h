@@ -1,3 +1,4 @@
+/** @file ear_heatmap.h @brief Render geotagged acoustic measurements into north-up JPEG heatmaps. */
 #ifndef CATIA_EAR_HEATMAP_H
 #define CATIA_EAR_HEATMAP_H
 

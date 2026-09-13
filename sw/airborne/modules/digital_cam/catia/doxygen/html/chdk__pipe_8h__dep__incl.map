@@ -1,0 +1,7 @@
+<map id="chdk_pipe.h" name="chdk_pipe.h">
+<area shape="poly" id="Node000001" title="Lifecycle for CATIA&#39;s CHDKPTP shell&#45;script camera backend." alt="" coords="178,24,175,18,166,13,151,9,133,6,113,5,93,6,75,9,61,13,52,18,49,24,52,30,61,35,75,39,93,42,113,43,133,42,151,39,166,35,175,30"/>
+<area shape="poly" id="Node000002" href="$catia_8c.html" title="Main CATIA daemon coordinating flight&#45;controller triggers and camera backends." alt="" coords="91,110,89,104,83,99,73,95,61,92,48,91,35,92,23,95,13,99,7,104,5,110,7,116,13,121,23,125,35,128,48,129,61,128,73,125,83,121,89,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="92,54,63,93,59,90,88,56"/>
+<area shape="poly" id="Node000003" href="$chdk__pipe_8c.html" title="Persistent CHDKPTP controller&#45;process adapter for legacy visible cameras." alt="" coords="243,110,240,104,231,99,217,95,199,92,179,91,159,92,141,95,126,99,117,104,114,110,117,116,126,121,141,125,159,128,179,129,199,128,217,125,231,121,240,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="138,53,167,91,162,91,135,57"/>
+</map>

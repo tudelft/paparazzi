@@ -1,3 +1,4 @@
+/** @file image_mock_transform.h @brief Local-simulation JPEG attitude transform API. */
 #ifndef CATIA_IMAGE_MOCK_TRANSFORM_H
 #define CATIA_IMAGE_MOCK_TRANSFORM_H
 

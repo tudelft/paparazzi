@@ -1,0 +1,5 @@
+<map id="catia_clock_reply_union" name="catia_clock_reply_union">
+<area shape="poly" id="Node000001" title=" " alt="" coords="232,157,227,151,210,145,185,141,154,139,119,138,84,139,52,141,27,145,11,151,5,157,11,162,27,168,52,172,84,174,119,175,154,174,185,172,210,168,227,162"/>
+<area shape="poly" id="Node000002" href="$unioncatia__clock__request__union.html" title=" " alt="" coords="216,36,211,26,197,18,176,11,149,7,119,5,89,7,62,11,40,18,26,26,22,36,26,45,40,53,62,60,89,64,119,66,149,64,176,60,197,53,211,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="121,79,121,138,116,136,117,83"/>
+</map>

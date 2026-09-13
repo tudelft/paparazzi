@@ -1,6 +1,16 @@
 #include "lwir_cam_pipe.h"
 #include "path_utils.h"
 
+/**
+ * @file lwir_cam_pipe.c
+ * @brief CATIA-side supervisor for the persistent LWIR capture-server process.
+ * @details The server holds the Tiny1-C stream open, avoiding per-shot sensor warmup.
+ * This parent owns its pipes and child lifecycle, validates line-protocol replies and
+ * capture timing, and permits one bounded respawn/retry when USB re-enumeration kills
+ * the server between requests. All failure paths clear state before returning so a
+ * later shot never reuses a stale descriptor.
+ */
+
 #include <errno.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -55,6 +65,13 @@ struct capture_timing lwir_cam_pipe_capture_timing(void)
   return capture_times;
 }
 
+/** @brief Parse one server timing payload after its protocol prefix.
+ * @param text Space-separated unsigned timing fields.
+ * @param timing Receives validated timing evidence.
+ * @param callback True for callback sequence/drop fields, false for polling timing.
+ * @return 1 for valid evidence, 0 for malformed or implausible evidence.
+ * @details Parsing is intentionally strict: timing metadata enriches EXIF but must
+ * never be accepted merely because a server process printed a vaguely similar line. */
 static int parse_capture_timing(const char *text, struct capture_timing *timing, bool callback)
 {
   uint64_t values[4] = {0};
@@ -87,6 +104,13 @@ double lwir_cam_pipe_capture_delay(void)
   return capture_delay_s;
 }
 
+/** @brief Read server diagnostic lines until an expected terminal reply arrives.
+ * @param expected Success line required to complete the operation.
+ * @param timeout_ms Per-read readiness timeout.
+ * @return 0 on the expected reply, -1 for timeout, EOF, or server error.
+ * @details Informational timing lines are parsed before the terminal reply. The buffer
+ * avoids a syscall per character while retaining line framing and preserving the
+ * historic sliding timeout semantics whenever more data arrives. */
 static int read_server_status(const char *expected, int timeout_ms)
 {
   char line[256];
@@ -151,6 +175,9 @@ static int read_server_status(const char *expected, int timeout_ms)
   }
 }
 
+/** @brief Close pipes and reap or terminate the owned capture server.
+ * @details Buffered response state is reset before the next spawn. Closing stdin asks
+ * cooperative server versions to exit; SIGTERM is used only when it remains alive. */
 static void stop_capture_server(void)
 {
   status_buffer_size = status_buffer_pos = 0;
@@ -184,7 +211,8 @@ static void stop_capture_server(void)
  * failure (broken pipe, dead process, or a timed-out/erroring reply) the server
  * state is fully reset so a caller's retry starts with a clean respawn instead of
  * repeatedly hitting the same stale, already-dead connection. */
-static int send_request_and_wait(const char *request, size_t request_size, int timeout_ms)
+/** @brief Send one newline-terminated server request and require an OK reply.
+ * @return 0 on end-to-end success or -1 after fully resetting failed server state. */
 {
   size_t sent = 0;
   while (sent < request_size) {
@@ -327,6 +355,12 @@ int lwir_cam_pipe_warmup(void)
   return 0;
 }
 
+/** @brief Run one standalone lwircam processing operation when no server is available.
+ * @param filename Existing image path, updated in place by the child.
+ * @param geolocate Nonzero for EXIF hotspot/geolocation processing, zero for mock conversion.
+ * @return 0 only after a normally exiting helper process.
+ * @details This fallback is primarily for test/mock operation; real capture prefers the
+ * warmed server to avoid both startup latency and competing camera ownership. */
 static int process_image(char *filename, int geolocate)
 {
   if (filename == NULL || filename[0] == '\0') {

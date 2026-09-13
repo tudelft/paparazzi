@@ -1,0 +1,17 @@
+<map id="ear_cam_pipe.h" name="ear_cam_pipe.h">
+<area shape="poly" id="Node000001" title="CATIA API for persistent EARcam sampling, fusion, and acoustic image rendering." alt="" coords="346,24,342,18,330,13,313,9,290,6,265,5,241,6,218,9,201,13,189,18,185,24,189,30,201,35,218,39,241,42,265,43,290,42,313,39,330,35,342,30"/>
+<area shape="poly" id="Node000002" href="$catia_8c.html" title="Main CATIA daemon coordinating flight&#45;controller triggers and camera backends." alt="" coords="115,110,113,104,107,99,97,95,85,92,72,91,59,92,47,95,38,99,32,104,29,110,32,116,38,121,47,125,59,128,72,129,85,128,97,125,107,121,113,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="214,50,103,98,101,93,216,45"/>
+<area shape="poly" id="Node000003" href="$ear__cam__pipe_8c.html" title="CATIA&#45;side lifecycle, sample collection, and location fusion for EARcam." alt="" coords="166,196,162,190,150,185,133,180,110,178,85,177,61,178,38,180,21,185,9,190,5,196,9,201,21,207,38,211,61,214,85,214,110,214,133,211,150,207,162,201"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="230,50,179,93,136,138,101,178,98,175,132,134,176,89,225,53"/>
+<area shape="poly" id="Node000004" href="$ear__heatmap_8h.html" title="Render geotagged acoustic measurements into north&#45;up JPEG heatmaps." alt="" coords="341,110,338,104,327,99,310,95,289,92,265,91,242,92,221,95,204,99,193,104,190,110,193,116,204,121,221,125,242,128,265,129,289,128,310,125,327,121,338,116"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="267,56,268,92,263,89,264,61"/>
+<area shape="poly" id="Node000006" href="$ear__heatmap__replay_8c.html" title="Offline CSV replay utility for validating EARcam heatmaps and fusion." alt="" coords="574,196,569,190,554,185,531,180,502,178,469,177,437,178,408,180,385,185,370,190,365,196,370,201,385,207,408,211,437,214,469,214,502,214,531,211,554,207,569,201"/>
+<area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="303,49,355,89,453,177,448,177,352,93,301,54"/>
+<area shape="poly" id="Node000007" href="$test__loudestspot_8c.html" title="Standalone synthetic&#45;data regression tool for EARcam loudest&#45;spot fusion." alt="" coords="598,110,593,104,580,99,560,95,535,92,507,91,479,92,453,95,433,99,421,104,416,110,421,116,433,121,453,125,479,128,507,129,535,128,560,125,580,121,593,116"/>
+<area shape="poly" id="edge8_Node000001_Node000007" title=" " alt="" coords="324,43,464,92,459,94,323,48"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="220,134,121,181,119,176,214,134"/>
+<area shape="poly" id="Node000005" href="$ear__heatmap_8c.html" title="JPEG heatmap rendering for geotagged EARcam sample sessions." alt="" coords="341,196,338,190,327,185,310,180,289,178,265,177,242,178,221,180,204,185,193,190,190,196,193,201,204,207,221,211,242,214,265,214,289,214,310,211,327,207,338,201"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="267,142,268,178,263,175,264,146"/>
+<area shape="poly" id="edge6_Node000004_Node000006" title=" " alt="" coords="318,130,431,177,426,178,317,135"/>
+</map>

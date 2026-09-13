@@ -1,6 +1,13 @@
 #ifndef CATIA_PATH_UTILS_H
 #define CATIA_PATH_UTILS_H
 
+/**
+ * @file path_utils.h
+ * @brief Small path and writable-directory helpers shared by CATIA backends.
+ * @details Paths are intentionally resolved only for a leading `~`: CATIA configuration
+ * is not a shell and must not expand arbitrary variables or execute shell syntax.
+ */
+
 #include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
@@ -14,6 +21,13 @@
 #define PATH_MAX 4096
 #endif
 
+/** @brief Expand a leading home-directory shorthand without allocating memory.
+ * @param path Configured path, possibly beginning with `~` or `~/`.
+ * @param buffer Caller-owned expansion storage.
+ * @param buffer_size Capacity of @p buffer.
+ * @return @p buffer for a successful expansion, @p path when no expansion is needed,
+ * or NULL when @p path is NULL.
+ * @details Returning the original pointer avoids copying the common literal-path case. */
 static inline const char *catia_resolve_path(const char *path, char *buffer, size_t buffer_size)
 {
   if (path == NULL) {
@@ -31,6 +45,12 @@ static inline const char *catia_resolve_path(const char *path, char *buffer, siz
   return path;
 }
 
+/** @brief Create missing directory components and verify the final directory is writable.
+ * @param path Directory path, with optional leading home shorthand.
+ * @return 0 for a writable directory, otherwise -1.
+ * @details Components are created one at a time to avoid invoking a shell. Existing
+ * parents are harmless, while final stat/access checks distinguish a file or read-only
+ * path from a usable capture destination. */
 static inline int catia_ensure_directory(const char *path)
 {
   if (path == NULL || path[0] == '\0') {

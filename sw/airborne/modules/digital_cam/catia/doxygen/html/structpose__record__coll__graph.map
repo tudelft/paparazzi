@@ -1,0 +1,13 @@
+<map id="pose_record" name="pose_record">
+<area shape="poly" id="Node000001" title=" " alt="" coords="314,266,311,260,302,255,288,251,269,248,249,247,229,248,211,251,196,255,187,260,184,266,187,272,196,277,211,281,229,284,249,285,269,284,288,281,302,277,311,272"/>
+<area shape="poly" id="Node000002" href="$unioncatia__pose__sample__union.html" title=" " alt="" coords="248,157,242,151,224,145,198,141,164,139,126,138,89,139,55,141,28,145,11,151,5,157,11,162,28,168,55,172,89,174,126,175,164,174,198,172,224,168,242,162"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="159,183,232,247,227,248,157,188"/>
+<area shape="poly" id="Node000003" href="$uniondc__shot__union.html" title=" " alt="" coords="201,36,197,30,187,24,170,20,150,18,126,17,103,18,83,20,66,24,56,30,52,36,56,41,66,47,83,51,103,53,126,54,150,53,170,51,187,47,197,41"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="128,68,129,138,124,137,125,72"/>
+<area shape="poly" id="Node000004" href="$structpose__clock__evidence.html" title="Optional token&#45;bound evidence mapping a controller pose interval to MORA time." alt="" coords="478,157,473,151,458,145,435,141,406,139,374,138,343,139,314,141,291,145,276,151,271,157,276,162,291,168,314,172,343,174,374,175,406,174,435,172,458,168,473,162"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="345,184,270,250,268,246,340,186"/>
+<area shape="poly" id="Node000005" href="$unioncatia__clock__request__union.html" title=" " alt="" coords="445,36,440,26,426,18,405,11,378,7,348,5,318,7,291,11,269,18,255,26,251,36,255,45,269,53,291,60,318,64,348,66,378,64,405,60,426,53,440,45"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="359,79,373,138,368,136,356,83"/>
+<area shape="poly" id="Node000006" href="$structclock__interval.html" title="Inclusive CATIA monotonic&#45;time bounds for a mapped controller timestamp." alt="" coords="613,36,609,30,599,24,583,20,563,18,541,17,519,18,499,20,483,24,473,30,469,36,473,41,483,47,499,51,519,53,541,54,563,53,583,51,599,47,609,41"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="507,61,400,140,397,136,502,64"/>
+</map>

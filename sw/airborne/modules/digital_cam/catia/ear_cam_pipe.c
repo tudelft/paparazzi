@@ -1,3 +1,11 @@
+/**
+ * @file ear_cam_pipe.c
+ * @brief CATIA-side lifecycle, sample collection, and location fusion for EARcam.
+ * @details A persistent EARcam child produces newline-delimited acoustic measurements.
+ * A reader thread retains only the latest measurement while CATIA geotags it at shots;
+ * the bounded session is then fused into a loudest-ground-spot estimate and can be
+ * rendered as an acoustic JPEG. Missing microphones remain nonfatal and are retried.
+ */
 // C11 + POSIX.1-2008 only (posix_spawn, clock_gettime, nanosleep, pthread).
 #define _POSIX_C_SOURCE 200809L
 
@@ -87,6 +95,8 @@ static double simulated_lon_deg;
 static double simulated_level_db_at_1m;
 static uint32_t simulated_noise_state = 0x2545F491U;
 
+/** @brief Select deterministic virtual acoustic measurements for simulation.
+ * @details Must precede initialization so no microphone child is launched. */
 void ear_cam_pipe_set_simulated_source(double lat_deg, double lon_deg, double level_db_at_1m)
 {
   simulated = true;
@@ -99,6 +109,7 @@ static char band_low_arg[16];
 static char band_high_arg[16];
 static bool band_set;
 
+/** @brief Set the detector band forwarded to a subsequently spawned EARcam child. */
 void ear_cam_pipe_set_band(double low_cut_hz, double high_cut_hz)
 {
   band_set = low_cut_hz > 0.0 && high_cut_hz > low_cut_hz;
@@ -109,6 +120,7 @@ void ear_cam_pipe_set_band(double low_cut_hz, double high_cut_hz)
 }
 
 // Deterministic +/-1.5 dB microphone noise (xorshift), independent of libc rand().
+/** @brief Produce reproducible bounded simulation noise without shared libc PRNG state. */
 static double simulated_noise_db(void)
 {
   uint32_t x = simulated_noise_state;
@@ -119,6 +131,7 @@ static double simulated_noise_db(void)
   return ((double)(x % 30001U) / 10000.0) - 1.5;
 }
 
+/** @brief Model a virtual point source using free-field inverse-distance attenuation. */
 static struct latest_measurement simulated_measurement(const union dc_shot_union *shot, uint64_t now)
 {
   double lat = shot->data.lat / 1e7;
@@ -142,6 +155,7 @@ static struct latest_measurement simulated_measurement(const union dc_shot_union
   return measurement;
 }
 
+/** @brief Return monotonic milliseconds for server freshness and retry decisions. */
 static uint64_t monotonic_ms(void)
 {
   struct timespec now;
@@ -149,6 +163,7 @@ static uint64_t monotonic_ms(void)
   return (uint64_t)now.tv_sec * 1000U + (uint64_t)now.tv_nsec / 1000000U;
 }
 
+/** @brief Sleep through signal interruption for bounded lifecycle polling. */
 static void sleep_ms(unsigned int milliseconds)
 {
   struct timespec interval = {
@@ -160,6 +175,9 @@ static void sleep_ms(unsigned int milliseconds)
   }
 }
 
+/** @brief Parse one named numeric field from an EARcam server line.
+ * @return 0 on one finite complete value, otherwise -1.
+ * @details Field-boundary checks prevent a short key from matching a suffix of another key. */
 static int parse_field(const char *line, const char *key, double *value)
 {
   const char *position = line;
@@ -179,6 +197,8 @@ static int parse_field(const char *line, const char *key, double *value)
   return -1;
 }
 
+/** @brief Interpret one complete server output line and atomically update shared state.
+ * @details Malformed samples are ignored rather than poisoning the latest valid reading. */
 static void handle_server_line(const char *line)
 {
   if (strncmp(line, "SAMPLE ", 7) == 0) {
@@ -223,6 +243,9 @@ static void handle_server_line(const char *line)
   }
 }
 
+/** @brief Read and frame EARcam output in a dedicated thread.
+ * @details Chunked reads avoid per-byte syscalls; only the latest measurement is retained
+ * because CATIA correlates a shot to current acoustic evidence, not a delayed backlog. */
 static void *reader_main(void *unused)
 {
   (void)unused;
@@ -271,6 +294,8 @@ static void *reader_main(void *unused)
   return NULL;
 }
 
+/** @brief Request child shutdown, join its reader, and reap the owned process.
+ * @details Joining precedes descriptor teardown so the reader cannot race reused state. */
 static void stop_server(void)
 {
   reader_stop = 1;
@@ -310,6 +335,7 @@ static void stop_server(void)
   server_ready = false;
 }
 
+/** @brief Create the CSV audit log lazily on the first accepted acoustic sample. */
 static int open_session_log(void)
 {
   char resolved_log[PATH_MAX];
@@ -341,6 +367,7 @@ static int open_session_log(void)
   return 0;
 }
 
+/** @brief Close the optional current-session audit log. */
 static void close_session_log(void)
 {
   if (session_log != NULL) {
@@ -350,6 +377,10 @@ static void close_session_log(void)
 }
 
 // Spawn `earcam --server` with a reader thread; returns without waiting for EARCAM_READY.
+/** @brief Spawn `earcam --server` and its asynchronous line reader.
+ * @return 0 after ownership is established, otherwise -1 with all partial resources closed.
+ * @details Readiness is observed asynchronously so process spawn cannot block CATIA's
+ * startup indefinitely on a missing microphone. */
 static int start_server(void)
 {
   int command_pipe[2];
@@ -427,6 +458,7 @@ static int start_server(void)
 }
 
 // The earcam process exits when the microphone disappears; bring it back when it does.
+/** @brief Rate-limit automatic EARcam child replacement after disconnect/failure. */
 static void restart_server_if_dead(uint64_t now)
 {
   if (simulated || ear_cam_pipe_ready()) {
@@ -442,6 +474,7 @@ static void restart_server_if_dead(uint64_t now)
   }
 }
 
+/** @brief Rate-limit repeated unavailable/stale microphone diagnostics. */
 static bool warning_due(uint64_t now)
 {
   if (now - last_warning_ms < EAR_WARNING_INTERVAL_MS) {
@@ -451,6 +484,8 @@ static bool warning_due(uint64_t now)
   return true;
 }
 
+/** @brief Allocate session storage and start or configure the acoustic backend.
+ * @return -1 only for unrecoverable setup errors; missing hardware stays retryable. */
 int ear_cam_pipe_init(const char *unused)
 {
   (void)unused;
@@ -511,6 +546,7 @@ int ear_cam_pipe_init(const char *unused)
   return 0;
 }
 
+/** @brief Stop the child and release all bounded session resources. */
 void ear_cam_pipe_deinit(void)
 {
   if (!simulated) {
@@ -523,6 +559,7 @@ void ear_cam_pipe_deinit(void)
   session_count = 0;
 }
 
+/** @brief Report whether an actual or simulated measurement source is ready. */
 bool ear_cam_pipe_ready(void)
 {
   pthread_mutex_lock(&ear_mutex);
@@ -531,6 +568,10 @@ bool ear_cam_pipe_ready(void)
   return ready;
 }
 
+/** @brief Associate the newest fresh acoustic measurement with a camera shot.
+ * @return 0 when appended, -1 when no current measurement is safe to use.
+ * @details The session discards its oldest half at capacity, retaining recent location
+ * evidence while bounding memory for unattended multi-day operation. */
 int ear_cam_pipe_record(const union dc_shot_union *shot)
 {
   if (shot == NULL || session == NULL) {
@@ -596,6 +637,7 @@ int32_t ear_cam_pipe_last_shot_nr(void)
   return session_count > 0 ? session[session_count - 1].shot_nr : 0;
 }
 
+/** @brief Render the current acoustic session into a north-up JPEG before it is cleared. */
 int ear_cam_pipe_render(const struct ear_loudest_spot *result, char *filename, size_t filename_size)
 {
   if (filename == NULL || filename_size == 0) {
@@ -635,6 +677,7 @@ int ear_cam_pipe_render(const struct ear_loudest_spot *result, char *filename, s
   return 0;
 }
 
+/** @brief Solve the current session without consuming it, for intermediate mission feedback. */
 int ear_cam_pipe_solve(struct ear_loudest_spot *result)
 {
   if (result == NULL) {
@@ -651,6 +694,7 @@ int ear_cam_pipe_solve(struct ear_loudest_spot *result)
   return status;
 }
 
+/** @brief Solve and close the current session, clearing accumulated samples afterward. */
 int ear_cam_pipe_finish(struct ear_loudest_spot *result)
 {
   if (result == NULL) {

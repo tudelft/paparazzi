@@ -1,0 +1,24 @@
+var searchData=
+[
+  ['p1_0',['p1',['../structCameraGeometry.html#aeb9e4687a0befbe22edee701ceba78bc',1,'CameraGeometry']]],
+  ['p2_1',['p2',['../structCameraGeometry.html#af09112624696cc8c1de23dcf169796c5',1,'CameraGeometry']]],
+  ['payload_2',['payload',['../structcatia__transport.html#aa4fec024dc0ccd5b257a9c1f4a45f433',1,'catia_transport']]],
+  ['payload_5fidx_3',['payload_idx',['../structcatia__transport.html#af7ecb8cdad54c63dd03eca00d7bd5371',1,'catia_transport']]],
+  ['payload_5flen_4',['payload_len',['../structcatia__transport.html#ab7123f59541885c187382e199a4d7c72',1,'catia_transport']]],
+  ['peak_5fcelsius_5',['peak_celsius',['../structHotspot.html#a68d29740d0ae115327ec50f701673a78',1,'Hotspot']]],
+  ['peak_5fx_6',['peak_x',['../structHotspot.html#a0cbecbf979d9298347531d7db7874385',1,'Hotspot']]],
+  ['peak_5fy_7',['peak_y',['../structHotspot.html#a468b6f3b7f3ea31af7c970ab372d681f',1,'Hotspot']]],
+  ['pending_8',['pending',['../structclock__alignment.html#a59600c10714163ca2478b450215d62d6',1,'clock_alignment::pending'],['../serial__tx_8c.html#a5f0e2dbfdf5a127ff003402bec4e194c',1,'pending:&#160;serial_tx.c']]],
+  ['pending_5ftoken_9',['pending_token',['../structclock__alignment.html#aee5727bec93aea4a7450f7db62ab7e8c',1,'clock_alignment']]],
+  ['phi_10',['phi',['../uniondc__shot__union.html#a5fa459274474f5d64734e90fb1bd3fb4',1,'dc_shot_union']]],
+  ['pitch_5frad_11',['pitch_rad',['../structCameraPose.html#aae2c5a767859adac8740984fd46e1945',1,'CameraPose']]],
+  ['pixels_12',['pixels',['../structdecoded__image.html#ad0c012d311dbf967a1084d03ccee1de0',1,'decoded_image::pixels'],['../structHotspot.html#ae2f3a283a53b7a7fec4c1b285a605885',1,'Hotspot::pixels']]],
+  ['pose_5flog_5fdir_13',['pose_log_dir',['../catia_8c.html#a2cd4c4b995be19e6ce8eed3b380bc3cd',1,'catia.c']]],
+  ['prefer_5ffire_5ftrays_14',['prefer_fire_trays',['../structFireOptions.html#a0cfd18500d5fe9a61e3f218cfbae21ee',1,'FireOptions']]],
+  ['probe_5freceive_5ffc_5fus_15',['probe_receive_fc_us',['../structpose__clock__evidence.html#af9c3dce14a607fc0604c2f881e54f31a',1,'pose_clock_evidence']]],
+  ['probe_5freceived_5fus_16',['probe_received_us',['../structpose__clock__evidence.html#ade5279b690586921f2eafca4c1cf5b18',1,'pose_clock_evidence']]],
+  ['probe_5fsent_5fus_17',['probe_sent_us',['../structpose__clock__evidence.html#a3ec3635072ab630e7b0fcbd88162589e',1,'pose_clock_evidence']]],
+  ['probe_5ftransmit_5ffc_5fus_18',['probe_transmit_fc_us',['../structpose__clock__evidence.html#a52e24051e9ec7106d30c274452b4bc47',1,'pose_clock_evidence']]],
+  ['pseudo_5fcolor_5fstatus_19',['pseudo_color_status',['../structFrameInfo__t.html#ab4127b024b437effb160d08601e809e6',1,'FrameInfo_t']]],
+  ['psi_20',['psi',['../uniondc__shot__union.html#ab6bdd1ff17c061912a1c2b0a6fdda98c',1,'dc_shot_union']]]
+];

@@ -1,3 +1,10 @@
+/**
+ * @file image_exif.c
+ * @brief Atomic JPEG EXIF rewriting for CATIA flight and thermal-capture provenance.
+ * @details Existing JPEG markers are copied while prior EXIF is replaced by a standards
+ * compliant APP1 block. A temporary sibling file plus fsync/rename prevents consumers
+ * from observing a partially rewritten capture after power loss or storage failure.
+ */
 #include "image_exif.h"
 #include "boot_id.h"
 #include "motion_compensation.h"

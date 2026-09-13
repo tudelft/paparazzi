@@ -1,0 +1,5 @@
+<map id="mock_image.h" name="mock_image.h">
+<area shape="poly" id="Node000001" title="Hardware&#45;free thermal JPEG fixture processing interface." alt="" coords="166,24,162,18,151,13,135,9,114,6,90,5,67,6,46,9,30,13,19,18,15,24,19,30,30,35,46,39,67,42,90,43,114,42,135,39,151,35,162,30"/>
+<area shape="poly" id="Node000002" href="$mock__image_8cpp.html" title="Deterministic JPEG mock&#45;image conversion and embedded temperature fixture support." alt="" coords="176,110,171,104,159,99,140,95,117,92,90,91,64,92,40,95,22,99,9,104,5,110,9,116,22,121,40,125,64,128,90,129,117,128,140,125,159,121,171,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="92,57,93,91,88,90,89,61"/>
+</map>

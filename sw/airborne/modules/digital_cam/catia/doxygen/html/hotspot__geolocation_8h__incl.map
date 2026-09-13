@@ -1,0 +1,5 @@
+<map id="hotspot_geolocation.h" name="hotspot_geolocation.h">
+<area shape="poly" id="Node000001" title="Calibrated camera&#45;ray projection from thermal pixels to ground estimates." alt="" coords="215,24,210,18,195,13,172,9,143,6,110,5,78,6,49,9,25,13,10,18,5,24,10,30,25,35,49,39,78,42,110,43,143,42,172,39,195,35,210,30"/>
+<area shape="poly" id="Node000002" title=" " alt="" coords="146,110,144,104,139,99,131,95,121,92,110,91,99,92,89,95,81,99,76,104,75,110,76,116,81,121,89,125,99,128,110,129,121,128,131,125,139,121,144,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="112,41,113,77,108,75,109,46"/>
+</map>

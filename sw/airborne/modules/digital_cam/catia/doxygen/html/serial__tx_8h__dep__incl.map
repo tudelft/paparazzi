@@ -1,0 +1,7 @@
+<map id="serial_tx.h" name="serial_tx.h">
+<area shape="poly" id="Node000001" title="Thread&#45;safe, non&#45;blocking framed UART transmission for CATIA." alt="" coords="167,24,164,18,156,13,143,9,127,6,109,5,92,6,76,9,63,13,55,18,52,24,55,30,63,35,76,39,92,42,109,43,127,42,143,39,156,35,164,30"/>
+<area shape="poly" id="Node000002" href="$catia_8c.html" title="Main CATIA daemon coordinating flight&#45;controller triggers and camera backends." alt="" coords="91,110,89,104,83,99,73,95,61,92,48,91,35,92,23,95,13,99,7,104,5,110,7,116,13,121,23,125,35,128,48,129,61,128,73,125,83,121,89,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="90,54,63,93,59,90,85,56"/>
+<area shape="poly" id="Node000003" href="$serial__tx_8c.html" title="Bounded mutex&#45;protected output queue for CATIA UART frames." alt="" coords="230,110,227,104,219,99,206,95,190,92,172,91,154,92,138,95,125,99,117,104,114,110,117,116,125,121,138,125,154,128,172,129,190,128,206,125,219,121,227,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="133,53,161,91,156,91,131,58"/>
+</map>

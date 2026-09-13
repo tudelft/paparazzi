@@ -1,6 +1,14 @@
 #ifndef STD_H
 #define STD_H
 
+/**
+ * @file std.h
+ * @brief Compatibility transmit primitive for legacy CATIA framing macros.
+ * @details Modern concurrent CATIA paths use serial_tx.h. This primitive remains for
+ * macros shared with the historical protocol layer and bounds backpressure to one
+ * second so a disconnected peer cannot deadlock the process.
+ */
+
 #include <errno.h>
 #include <poll.h>
 #include <stdint.h>
@@ -13,6 +21,10 @@
 
 extern int fd;
 
+/** @brief Write one legacy transport byte, retrying only transient interruption/backpressure.
+ * @param value Byte to transmit.
+ * @details POLLOUT is used after EAGAIN instead of spinning. Errors are reported but
+ * not propagated because the historic macro API has no return channel. */
 static inline void camera_link_transmit(uint8_t value)
 {
   for (;;) {

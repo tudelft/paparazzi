@@ -1,0 +1,11 @@
+<map id="lwir_cam_pipe.h" name="lwir_cam_pipe.h">
+<area shape="poly" id="Node000001" title="Parent&#45;side protocol for CATIA&#39;s persistent Tiny1&#45;C LWIR capture server." alt="" coords="213,24,209,18,197,13,179,9,156,6,131,5,106,6,83,9,65,13,53,18,49,24,53,30,65,35,83,39,106,42,131,43,156,42,179,39,197,35,209,30"/>
+<area shape="poly" id="Node000002" title=" " alt="" coords="102,110,100,104,93,99,82,95,69,92,54,91,39,92,25,95,15,99,8,104,5,110,8,116,15,121,25,125,39,128,54,129,69,128,82,125,93,121,100,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="113,45,82,82,78,79,116,41"/>
+<area shape="poly" id="Node000003" href="$capture__timing_8h.html" title="Evidence recorded for a thermal request and the callback frame that served it." alt="" coords="291,110,287,104,275,99,257,95,234,92,208,91,183,92,160,95,141,99,129,104,125,110,129,116,141,121,160,125,183,128,208,129,234,128,257,125,275,121,287,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="148,41,184,80,179,80,147,46"/>
+<area shape="poly" id="Node000004" title=" " alt="" coords="200,196,197,190,190,185,178,180,163,178,147,177,131,178,116,180,104,185,97,190,94,196,97,201,104,207,116,211,131,214,147,214,163,214,178,211,190,207,197,201"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="198,128,171,166,167,162,193,130"/>
+<area shape="poly" id="Node000005" title=" " alt="" coords="315,196,313,190,306,185,296,180,284,178,270,177,256,178,243,180,233,185,226,190,224,196,226,201,233,207,243,211,256,214,270,214,284,214,296,211,306,207,313,201"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="222,126,251,165,245,164,220,131"/>
+</map>

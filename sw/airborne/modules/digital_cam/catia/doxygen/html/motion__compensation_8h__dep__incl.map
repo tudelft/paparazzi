@@ -1,0 +1,5 @@
+<map id="motion_compensation.h" name="motion_compensation.h">
+<area shape="poly" id="Node000001" title="Project a capture location backward by the measured camera latency." alt="" coords="231,24,225,18,209,13,184,9,153,6,118,5,83,6,52,9,27,13,11,18,5,24,11,30,27,35,52,39,83,42,118,43,153,42,184,39,209,35,225,30"/>
+<area shape="poly" id="Node000002" href="$image__exif_8c.html" title="Atomic JPEG EXIF rewriting for CATIA flight and thermal&#45;capture provenance." alt="" coords="185,110,182,104,173,99,158,95,139,92,118,91,97,92,78,95,63,99,54,104,51,110,54,116,63,121,78,125,97,128,118,129,139,128,158,125,173,121,182,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="120,57,120,92,116,90,116,61"/>
+</map>

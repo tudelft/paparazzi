@@ -1,0 +1,7 @@
+<map id="ai_cam_pipe.h" name="ai_cam_pipe.h">
+<area shape="poly" id="Node000001" title="CATIA backend interface for Raspberry Pi AI Camera JPEG captures." alt="" coords="225,24,221,18,211,13,194,9,173,6,150,5,127,6,107,9,90,13,80,18,76,24,80,30,90,35,107,39,127,42,150,43,173,42,194,39,211,35,221,30"/>
+<area shape="poly" id="Node000002" href="$ai__cam__pipe_8c.html" title="Raspberry Pi AI Camera adapter backed by one rpicam&#45;still process per shot." alt="" coords="154,110,151,104,140,99,124,95,103,92,80,91,57,92,36,95,20,99,9,104,5,110,9,116,20,121,36,125,57,128,80,129,103,128,124,125,140,121,151,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="128,53,97,93,93,89,123,56"/>
+<area shape="poly" id="Node000003" href="$catia_8c.html" title="Main CATIA daemon coordinating flight&#45;controller triggers and camera backends." alt="" coords="264,110,262,104,256,99,246,95,234,92,221,91,208,92,196,95,187,99,181,104,178,110,181,116,187,121,196,125,208,128,221,129,234,128,246,125,256,121,262,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="176,52,209,92,204,91,174,57"/>
+</map>

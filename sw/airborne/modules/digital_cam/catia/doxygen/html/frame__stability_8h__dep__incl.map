@@ -1,0 +1,5 @@
+<map id="frame_stability.h" name="frame_stability.h">
+<area shape="poly" id="Node000001" title="Stateless transition helper for stable&#45;frame qualification counters." alt="" coords="168,24,164,18,153,13,135,9,112,6,87,5,62,6,39,9,21,13,9,18,5,24,9,30,21,35,39,39,62,42,87,43,112,42,135,39,153,35,164,30"/>
+<area shape="poly" id="Node000002" href="$lwircam_8cpp.html" title="Standalone Tiny1&#45;C CLI, stable&#45;frame qualification, and persistent capture&#45;server loop." alt="" coords="151,110,148,104,139,99,125,95,107,92,87,91,67,92,49,95,35,99,25,104,22,110,25,116,35,121,49,125,67,128,87,129,107,128,125,125,139,121,148,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="89,57,89,91,84,90,85,61"/>
+</map>

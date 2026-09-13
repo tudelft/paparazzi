@@ -1,0 +1,21 @@
+var searchData=
+[
+  ['rate_0',['rate',['../structoptions.html#a61ca0661f263a32149388df59d05de12',1,'options']]],
+  ['raw_5fframe_1',['raw_frame',['../structStreamFrameInfo__t.html#a2029a98f2bca743610256b1f0af34d76',1,'StreamFrameInfo_t']]],
+  ['ray_5fscale_2',['ray_scale',['../structprojection__fit.html#aad26f72be7f6eb45d4aced7c489b8f40',1,'projection_fit']]],
+  ['reader_5frunning_3',['reader_running',['../ear__cam__pipe_8c.html#acb75da634f3044283f3da276fb2315ca',1,'ear_cam_pipe.c']]],
+  ['reader_5fstop_4',['reader_stop',['../ear__cam__pipe_8c.html#afaaa12cf8ca565dac02a0d2d53dbd537',1,'ear_cam_pipe.c']]],
+  ['reader_5fthread_5',['reader_thread',['../ear__cam__pipe_8c.html#a288ff0a34795522361a569f6f609cf3f',1,'ear_cam_pipe.c']]],
+  ['receive_5ffc_5fus_6',['receive_fc_us',['../structclock__alignment.html#a71f79544744aab2cdc3107ad9f66978e',1,'clock_alignment']]],
+  ['receive_5fus_7',['receive_us',['../unioncatia__clock__reply__union.html#a4c133593a6e36ac669d99ef4886328f5',1,'catia_clock_reply_union']]],
+  ['received_5fus_8',['received_us',['../structclock__alignment.html#a22b1ddf8e3fca85313a1af4e19a9e30a',1,'clock_alignment::received_us'],['../structpose__record.html#af8e8e4a257f7bed208d5218bb74c4fbf',1,'pose_record::received_us']]],
+  ['recovery_9',['recovery',['../structheatmap__jpeg__error.html#abd4237d9dac55619bf80014619896080',1,'heatmap_jpeg_error::recovery'],['../structtransform__jpeg__error.html#ae0998c2a2529a1b1e45b48f5fe322f3f',1,'transform_jpeg_error::recovery']]],
+  ['region_10',['region',['../structFireCandidate.html#aab9ec8a18d9cf6bd82f93d2b6863b682',1,'FireCandidate']]],
+  ['rejected_11',['rejected',['../structpose__log__stats.html#a90e77e7aaf20d56c6b26d6c7f772ef76',1,'pose_log_stats::rejected'],['../pose__log_8c.html#a58be61e561cfe088e61c4d4dbc226558',1,'rejected:&#160;pose_log.c']]],
+  ['request_12',['request',['../unioncatia__clock__reply__union.html#aeababd303cf109919b0eebcd176304c2',1,'catia_clock_reply_union::request'],['../unioncatia__pose__clocked__union.html#aea07d45bcefd94bbc0ccd5e2f67ced66',1,'catia_pose_clocked_union::request']]],
+  ['request_5fmonotonic_5fus_13',['request_monotonic_us',['../structcapture__timing.html#a587283f712a4e4b6e5312540f9fe8715',1,'capture_timing']]],
+  ['requested_5fcamera_5fbackend_14',['requested_camera_backend',['../catia_8c.html#ab8a039df1e89261d524793bb8a483c8b',1,'catia.c']]],
+  ['return_15',['return',['../lwir__cam__pipe_8c.html#a9717e7bbecb906637e86cef6da3d83c2',1,'lwir_cam_pipe.c']]],
+  ['roll_5frad_16',['roll_rad',['../structCameraPose.html#ae90c56ec1b3ce268e65fe90b6c338c41',1,'CameraPose']]],
+  ['rotate_5fside_17',['rotate_side',['../structFrameInfo__t.html#a5dff25549b1a563a8b4f40a7af79bc53',1,'FrameInfo_t']]]
+];

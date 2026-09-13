@@ -1,0 +1,32 @@
+# CATIA API documentation. Keep INPUT deliberately narrow: the linked EARcam and
+# LWIRcam projects contain vendor SDK and third-party trees that are not CATIA code.
+PROJECT_NAME           = "CATIA Camera Pipeline"
+PROJECT_BRIEF          = "MORA camera trigger, capture, metadata, and acoustic pipeline"
+OUTPUT_DIRECTORY       = doxygen
+CREATE_SUBDIRS         = NO
+OUTPUT_LANGUAGE        = English
+OPTIMIZE_OUTPUT_FOR_C  = YES
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+EXTRACT_PRIVATE        = YES
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
+REPEAT_BRIEF           = YES
+FULL_PATH_NAMES        = NO
+STRIP_FROM_PATH        = . /home/n3yh3hnii/develop/get_maxsoundlevel_app /home/n3yh3hnii/develop/allthings_tiny1c_lwir_camera/lwircam
+INPUT                  = . /home/n3yh3hnii/develop/get_maxsoundlevel_app /home/n3yh3hnii/develop/allthings_tiny1c_lwir_camera/lwircam
+FILE_PATTERNS          = *.c *.h *.cpp *.hpp
+RECURSIVE              = NO
+EXCLUDE_PATTERNS       = */tests/* */include/* */libs/* */ext/* */documentation/* */doxygen/*
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+HTML_EXTRA_STYLESHEET  = doxygen-theme.css
+GENERATE_LATEX         = NO
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_NO_PARAMDOC       = YES
+WARN_LOGFILE           = doxygen-warnings.log
+GENERATE_TREEVIEW      = YES
+HAVE_DOT               = YES
+DOT_NODE_ATTR          = "color=black,fontcolor=black"
+DOT_EDGE_ATTR          = "color=black,fontcolor=black"

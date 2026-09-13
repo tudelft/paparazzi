@@ -1,0 +1,5 @@
+<map id="image_overlay.h" name="image_overlay.h">
+<area shape="poly" id="Node000001" title="Optional visual overlays for thermal candidate inspection." alt="" coords="177,24,173,18,161,13,144,9,121,6,96,5,71,6,49,9,31,13,19,18,15,24,19,30,31,35,49,39,71,42,96,43,121,42,144,39,161,35,173,30"/>
+<area shape="poly" id="Node000002" href="$image__overlay_8cpp.html" title="Minimal visual annotations for inspecting thermal analysis results." alt="" coords="187,110,182,104,169,99,149,95,124,92,96,91,68,92,43,95,23,99,10,104,5,110,10,116,23,121,43,125,68,128,96,129,124,128,149,125,169,121,182,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="98,57,99,92,94,90,94,61"/>
+</map>

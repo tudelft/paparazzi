@@ -1,0 +1,7 @@
+<map id="frame_mailbox.h" name="frame_mailbox.h">
+<area shape="poly" id="Node000001" title="Latest&#45;frame handoff between the vendor USB callback and capture logic." alt="" coords="272,24,268,18,256,13,238,9,215,6,189,5,163,6,140,9,122,13,110,18,106,24,110,30,122,35,140,39,163,42,189,43,215,42,238,39,256,35,268,30"/>
+<area shape="poly" id="Node000002" href="$frame__mailbox_8cpp.html" title="Non&#45;blocking callback&#45;to&#45;consumer latest&#45;frame mailbox implementation." alt="" coords="191,110,187,104,173,99,153,95,127,92,98,91,70,92,44,95,23,99,10,104,5,110,10,116,23,121,44,125,70,128,98,129,127,128,153,125,173,121,187,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="161,52,119,93,116,89,156,54"/>
+<area shape="poly" id="Node000003" href="$lwircam_8cpp.html" title="Standalone Tiny1&#45;C CLI, stable&#45;frame qualification, and persistent capture&#45;server loop." alt="" coords="344,110,341,104,332,99,317,95,299,92,280,91,260,92,242,95,227,99,218,104,215,110,218,116,227,121,242,125,260,128,280,129,299,128,317,125,332,121,341,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="220,51,264,92,258,91,218,56"/>
+</map>

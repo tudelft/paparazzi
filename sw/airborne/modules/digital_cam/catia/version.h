@@ -1,3 +1,4 @@
+/** @file version.h @brief Compile-time build identity strings for CATIA executables. */
 #ifndef CATIA_VERSION_H
 #define CATIA_VERSION_H
 #ifndef CATIA_GIT_SHA

@@ -1,0 +1,7 @@
+<map id="motion_compensation.h" name="motion_compensation.h">
+<area shape="poly" id="Node000001" title="Project a capture location backward by the measured camera latency." alt="" coords="231,24,225,18,209,13,184,9,153,6,118,5,83,6,52,9,27,13,11,18,5,24,11,30,27,35,52,39,83,42,118,43,153,42,184,39,209,35,225,30"/>
+<area shape="poly" id="Node000002" title=" " alt="" coords="105,110,103,104,97,99,87,95,75,92,62,91,49,92,37,95,27,99,21,104,19,110,21,116,27,121,37,125,49,128,62,129,75,128,87,125,97,121,103,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="108,42,84,80,80,77,104,45"/>
+<area shape="poly" id="Node000003" title=" " alt="" coords="221,110,219,104,212,99,202,95,189,92,175,91,161,92,149,95,139,99,132,104,130,110,132,116,139,121,149,125,161,128,175,129,189,128,202,125,212,121,219,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="132,41,157,79,152,79,129,46"/>
+</map>

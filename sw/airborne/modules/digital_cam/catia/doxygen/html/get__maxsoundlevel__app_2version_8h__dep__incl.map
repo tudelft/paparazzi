@@ -1,0 +1,5 @@
+<map id="version.h" name="version.h">
+<area shape="poly" id="Node000001" title="Compile&#45;time EARcam version and source&#45;revision identity strings." alt="" coords="111,24,109,18,101,13,89,9,75,6,59,5,42,6,28,9,16,13,9,18,6,24,9,30,16,35,28,39,42,42,59,43,75,42,89,39,101,35,109,30"/>
+<area shape="poly" id="Node000002" href="$earcam_8c.html" title="ALSA acoustic detector for motionSCOUT&#45;style narrow&#45;band alarm tones." alt="" coords="112,110,109,104,102,99,90,95,75,92,59,91,42,92,27,95,16,99,8,104,5,110,8,116,16,121,27,125,42,128,59,129,75,128,90,125,102,121,109,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="60,57,61,91,56,90,57,61"/>
+</map>

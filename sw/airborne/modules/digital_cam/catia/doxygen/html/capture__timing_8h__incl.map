@@ -1,0 +1,7 @@
+<map id="capture_timing.h" name="capture_timing.h">
+<area shape="poly" id="Node000001" title="Evidence recorded for a thermal request and the callback frame that served it." alt="" coords="202,24,198,18,186,13,168,9,145,6,119,5,94,6,70,9,52,13,40,18,36,24,40,30,52,35,70,39,94,42,119,43,145,42,168,39,186,35,198,30"/>
+<area shape="poly" id="Node000002" title=" " alt="" coords="110,110,108,104,100,99,89,95,74,92,58,91,42,92,27,95,15,99,8,104,5,110,8,116,15,121,27,125,42,128,58,129,74,128,89,125,100,121,108,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="108,42,82,81,78,77,104,45"/>
+<area shape="poly" id="Node000003" title=" " alt="" coords="226,110,224,104,217,99,207,95,195,92,181,91,167,92,154,95,144,99,137,104,135,110,137,116,144,121,154,125,167,128,181,129,195,128,207,125,217,121,224,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="133,41,162,79,156,79,131,46"/>
+</map>

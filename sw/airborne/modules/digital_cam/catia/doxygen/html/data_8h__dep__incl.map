@@ -1,0 +1,33 @@
+<map id="data.h" name="data.h">
+<area shape="poly" id="Node000001" title="Frame buffers and synchronization primitives for vendor stream workers." alt="" coords="256,24,254,18,248,13,239,9,228,6,215,5,203,6,191,9,182,13,177,18,175,24,177,30,182,35,191,39,203,42,215,43,228,42,239,39,248,35,254,30"/>
+<area shape="poly" id="Node000002" href="$camera_8h.html" title="Tiny1&#45;C SDK camera discovery and stream lifecycle interface." alt="" coords="122,367,119,361,112,356,100,352,85,349,69,348,52,349,37,352,25,356,18,361,15,367,18,373,25,378,37,382,52,385,69,386,85,385,100,382,112,378,119,373"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="183,54,148,90,106,140,68,199,53,230,42,263,39,281,42,300,50,325,61,348,56,348,45,327,37,301,34,281,37,262,48,228,63,196,102,137,145,87,186,49"/>
+<area shape="poly" id="Node000006" href="$cmd_8h.html" title="Vendor command transport and thermal calibration&#45;control interface." alt="" coords="178,196,176,190,171,185,162,180,150,178,138,177,125,178,114,180,105,185,99,190,97,196,99,201,105,207,114,211,125,214,138,214,150,214,162,211,171,207,176,201"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="200,59,148,178,143,176,202,54"/>
+<area shape="poly" id="Node000008" href="$display_8h.html" title="Frame conversion, orientation, preview, and JPEG output interface." alt="" coords="340,281,338,275,331,270,319,266,305,263,290,262,274,263,260,266,249,270,242,275,239,281,242,287,249,292,260,297,274,299,290,300,305,299,319,297,331,292,338,287"/>
+<area shape="poly" id="edge14_Node000001_Node000008" title=" " alt="" coords="223,56,243,128,286,262,281,262,238,129,222,61"/>
+<area shape="poly" id="Node000010" href="$data_8cpp.html" title="Allocation and synchronization lifecycle for image and temperature frame planes." alt="" coords="522,110,519,104,512,99,501,95,487,92,471,91,456,92,442,95,430,99,423,104,421,110,423,116,430,121,442,125,456,128,471,129,487,128,501,125,512,121,519,116"/>
+<area shape="poly" id="edge13_Node000001_Node000010" title=" " alt="" coords="262,38,436,95,432,98,262,43"/>
+<area shape="poly" id="Node000011" href="$temperature_8h.html" title="Tiny1&#45;C temperature conversion and environment&#45;correction interface." alt="" coords="396,110,393,104,382,99,367,95,347,92,325,91,302,92,282,95,267,99,256,104,253,110,256,116,267,121,282,125,302,128,325,129,347,128,367,125,382,121,393,116"/>
+<area shape="poly" id="edge15_Node000001_Node000011" title=" " alt="" coords="247,47,304,91,299,92,248,53"/>
+<area shape="poly" id="Node000003" href="$camera_8cpp.html" title="Tiny1&#45;C enumeration, stream setup, and vendor SDK lifecycle implementation." alt="" coords="132,453,129,447,120,442,106,437,88,435,69,434,49,435,31,437,17,442,8,447,5,453,8,459,17,464,31,468,49,471,69,472,88,471,106,468,120,464,129,459"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="69,399,71,434,66,433,68,404"/>
+<area shape="poly" id="Node000004" href="$lwircam_8h.html" title="Shared vendor SDK definitions and application&#45;level LWIR stream state." alt="" coords="286,453,283,447,275,442,263,437,248,435,231,434,214,435,199,437,187,442,179,447,176,453,179,459,187,464,199,468,214,471,231,472,248,471,263,468,275,464,283,459"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="112,388,204,435,199,438,111,393"/>
+<area shape="poly" id="Node000005" href="$lwircam_8cpp.html" title="Standalone Tiny1&#45;C CLI, stable&#45;frame qualification, and persistent capture&#45;server loop." alt="" coords="296,538,293,533,283,527,269,523,251,521,231,520,211,521,193,523,179,527,170,533,167,538,170,544,179,550,193,554,211,556,231,557,251,556,269,554,283,550,293,544"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="233,485,233,521,229,518,229,489"/>
+<area shape="poly" id="edge6_Node000006_Node000002" title=" " alt="" coords="95,219,73,238,54,264,48,285,49,307,62,348,57,348,44,308,43,284,49,261,69,235,98,215"/>
+<area shape="poly" id="edge12_Node000006_Node000004" title=" " alt="" coords="158,224,179,261,212,357,230,434,225,433,207,359,174,264,157,229"/>
+<area shape="poly" id="Node000007" href="$cmd_8cpp.html" title="Vendor control commands and thermal calibration table management." alt="" coords="164,281,162,275,155,270,143,266,129,263,114,262,98,263,84,266,73,270,66,275,63,281,66,287,73,292,84,297,98,299,114,300,129,299,143,297,155,292,162,287"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="129,227,122,263,116,261,128,232"/>
+<area shape="poly" id="edge8_Node000006_Node000008" title=" " alt="" coords="176,215,265,264,260,266,177,221"/>
+<area shape="poly" id="edge9_Node000008_Node000002" title=" " alt="" coords="240,303,105,355,103,350,243,298"/>
+<area shape="poly" id="edge11_Node000008_Node000004" title=" " alt="" coords="281,313,240,435,235,432,277,316"/>
+<area shape="poly" id="Node000009" href="$display_8cpp.html" title="Thermal frame conversion, optional preview, orientation, and atomic JPEG capture output." alt="" coords="410,367,407,361,399,356,385,352,368,349,350,348,331,349,314,352,301,356,292,361,289,367,292,373,301,378,314,382,331,385,350,386,368,385,385,382,399,378,407,373"/>
+<area shape="poly" id="edge10_Node000008_Node000009" title=" " alt="" coords="312,310,340,349,335,348,311,315"/>
+<area shape="poly" id="edge18_Node000011_Node000004" title=" " alt="" coords="385,127,443,149,466,162,480,175,485,186,485,195,480,215,469,309,455,347,424,388,392,412,356,430,318,442,284,449,282,444,317,437,354,425,389,408,420,384,450,345,464,308,475,214,480,194,480,187,476,178,462,166,440,154,385,132"/>
+<area shape="poly" id="edge16_Node000011_Node000006" title=" " alt="" coords="274,135,168,184,164,180,277,131"/>
+<area shape="poly" id="edge17_Node000011_Node000008" title=" " alt="" coords="307,140,294,177,289,223,290,263,285,261,283,223,289,176,304,144"/>
+<area shape="poly" id="Node000012" href="$temperature_8cpp.html" title="SDK temperature conversion, environment correction, and thermal reporting helpers." alt="" coords="466,196,462,190,450,185,432,180,410,178,385,177,359,178,337,180,319,185,307,190,303,196,307,201,319,207,337,211,359,214,385,214,410,214,432,211,450,207,462,201"/>
+<area shape="poly" id="edge19_Node000011_Node000012" title=" " alt="" coords="346,138,374,177,369,177,346,144"/>
+</map>

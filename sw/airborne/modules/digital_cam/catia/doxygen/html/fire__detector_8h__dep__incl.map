@@ -1,0 +1,7 @@
+<map id="fire_detector.h" name="fire_detector.h">
+<area shape="poly" id="Node000001" title="Thermal&#45;fire candidate selection layered on generic hotspot extraction." alt="" coords="257,24,254,18,243,13,227,9,207,6,184,5,162,6,141,9,125,13,115,18,111,24,115,30,125,35,141,39,162,42,184,43,207,42,227,39,243,35,254,30"/>
+<area shape="poly" id="Node000002" href="$fire__detector_8cpp.html" title="Scene&#45;relative and geometry&#45;aware thermal fire&#45;candidate classification." alt="" coords="171,110,167,104,155,99,137,95,114,92,88,91,63,92,40,95,21,99,9,104,5,110,9,116,21,121,40,125,63,128,88,129,114,128,137,125,155,121,167,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="156,52,110,94,107,89,151,53"/>
+<area shape="poly" id="Node000003" href="$mock__image_8cpp.html" title="Deterministic JPEG mock&#45;image conversion and embedded temperature fixture support." alt="" coords="365,110,361,104,349,99,330,95,307,92,280,91,254,92,230,95,211,99,199,104,195,110,199,116,211,121,230,125,254,128,280,129,307,128,330,125,349,121,361,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="216,50,263,92,258,91,214,55"/>
+</map>

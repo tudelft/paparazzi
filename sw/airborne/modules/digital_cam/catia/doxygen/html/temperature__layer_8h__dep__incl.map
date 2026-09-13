@@ -1,0 +1,9 @@
+<map id="temperature_layer.h" name="temperature_layer.h">
+<area shape="poly" id="Node000001" title="JPEG APP marker storage and retrieval for thermal temperature planes." alt="" coords="381,24,376,18,363,13,341,9,315,6,285,5,256,6,229,9,208,13,194,18,189,24,194,30,208,35,229,39,256,42,285,43,315,42,341,39,363,35,376,30"/>
+<area shape="poly" id="Node000002" href="$mock__image_8cpp.html" title="Deterministic JPEG mock&#45;image conversion and embedded temperature fixture support." alt="" coords="176,110,171,104,159,99,140,95,117,92,90,91,64,92,40,95,22,99,9,104,5,110,9,116,22,121,40,125,64,128,90,129,117,128,140,125,159,121,171,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="235,48,129,95,127,90,230,48"/>
+<area shape="poly" id="Node000003" href="$native__frame_8cpp.html" title="Persist raw Tiny1&#45;C thermal planes in portable JPEG metadata or raw evidence files." alt="" coords="371,110,367,104,354,99,336,95,312,92,285,91,259,92,235,95,216,99,203,104,199,110,203,116,216,121,235,125,259,128,285,129,312,128,336,125,354,121,367,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="287,57,287,92,283,89,283,60"/>
+<area shape="poly" id="Node000004" href="$temperature__layer_8cpp.html" title="Read and write the versioned JPEG marker carrying thermal temperature data." alt="" coords="607,110,602,104,587,99,563,95,534,92,501,91,468,92,439,95,416,99,401,104,395,110,401,116,416,121,439,125,468,128,501,129,534,128,563,125,587,121,602,116"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="342,44,461,92,456,92,341,50"/>
+</map>

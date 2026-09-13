@@ -1,0 +1,9 @@
+<map id="ear_heatmap.h" name="ear_heatmap.h">
+<area shape="poly" id="Node000001" title="Render geotagged acoustic measurements into north&#45;up JPEG heatmaps." alt="" coords="341,24,338,18,327,13,310,9,289,6,265,5,242,6,221,9,204,13,193,18,190,24,193,30,204,35,221,39,242,42,265,43,289,42,310,39,327,35,338,30"/>
+<area shape="poly" id="Node000002" href="$ear__cam__pipe_8c.html" title="CATIA&#45;side lifecycle, sample collection, and location fusion for EARcam." alt="" coords="166,110,162,104,150,99,133,95,110,92,85,91,61,92,38,95,21,99,9,104,5,110,9,116,21,121,38,125,61,128,85,129,110,128,133,125,150,121,162,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="220,48,121,95,119,90,214,48"/>
+<area shape="poly" id="Node000003" href="$ear__heatmap_8c.html" title="JPEG heatmap rendering for geotagged EARcam sample sessions." alt="" coords="341,110,338,104,327,99,310,95,289,92,265,91,242,92,221,95,204,99,193,104,190,110,193,116,204,121,221,125,242,128,265,129,289,128,310,125,327,121,338,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="267,57,268,92,263,89,264,60"/>
+<area shape="poly" id="Node000004" href="$ear__heatmap__replay_8c.html" title="Offline CSV replay utility for validating EARcam heatmaps and fusion." alt="" coords="574,110,569,104,554,99,531,95,502,92,469,91,437,92,408,95,385,99,370,104,365,110,370,116,385,121,408,125,437,128,469,129,502,128,531,125,554,121,569,116"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="318,44,431,92,426,92,317,49"/>
+</map>

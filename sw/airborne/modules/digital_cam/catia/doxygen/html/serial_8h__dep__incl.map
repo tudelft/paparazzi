@@ -1,0 +1,5 @@
+<map id="serial.h" name="serial.h">
+<area shape="poly" id="Node000001" title="Legacy UART descriptor setup and byte&#45;oriented compatibility macros." alt="" coords="95,24,93,18,86,13,76,9,64,6,50,5,36,6,24,9,14,13,8,18,5,24,8,30,14,35,24,39,36,42,50,43,64,42,76,39,86,35,93,30"/>
+<area shape="poly" id="Node000002" href="$catia_8c.html" title="Main CATIA daemon coordinating flight&#45;controller triggers and camera backends." alt="" coords="93,110,91,104,85,99,75,95,63,92,50,91,37,92,25,95,16,99,10,104,7,110,10,116,16,121,25,125,37,128,50,129,63,128,75,125,85,121,91,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="52,57,53,91,48,90,48,61"/>
+</map>

@@ -1,9 +1,27 @@
 #ifndef CATIA_MOTION_COMPENSATION_H
 #define CATIA_MOTION_COMPENSATION_H
 
+/**
+ * @file motion_compensation.h
+ * @brief Project a capture location backward by the measured camera latency.
+ * @details The helper uses WGS-84 local curvature radii rather than a fixed
+ * meters-per-degree approximation, which keeps the correction meaningful over CATIA's
+ * valid operating latitudes while retaining a small, allocation-free calculation.
+ */
+
 #include <math.h>
 #include <stdint.h>
 
+/** @brief Correct latitude/longitude for horizontal platform motion during capture.
+ * @param latitude In/out latitude in $10^{-7}$ degrees.
+ * @param longitude In/out longitude in $10^{-7}$ degrees.
+ * @param speed Ground speed in m/s.
+ * @param course Ground-track angle in radians, clockwise from north.
+ * @param delay Capture latency in seconds.
+ * @return 1 when corrected coordinates were stored, 0 when inputs were unsafe.
+ * @details Conservative limits reject implausible telemetry and polar geometry, where
+ * longitude correction becomes ill-conditioned. Longitude is normalized after the
+ * local tangent-plane displacement to preserve the wire representation's range. */
 static inline int compensate_ground_position(int32_t *latitude, int32_t *longitude,
                                              double speed, double course, double delay)
 {

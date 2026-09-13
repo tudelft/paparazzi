@@ -1,0 +1,7 @@
+<map id="socket.h" name="socket.h">
+<area shape="poly" id="Node000001" title="Local non&#45;blocking UDP channel used by CATIA&#39;s development pipeline." alt="" coords="157,24,155,18,147,13,136,9,122,6,107,5,91,6,77,9,66,13,59,18,56,24,59,30,66,35,77,39,91,42,107,43,122,42,136,39,147,35,155,30"/>
+<area shape="poly" id="Node000002" href="$catia_8c.html" title="Main CATIA daemon coordinating flight&#45;controller triggers and camera backends." alt="" coords="91,110,89,104,83,99,73,95,61,92,48,91,35,92,23,95,13,99,7,104,5,110,7,116,13,121,23,125,35,128,48,129,61,128,73,125,83,121,89,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="88,54,62,93,58,90,83,56"/>
+<area shape="poly" id="Node000003" href="$socket_8c.html" title="Loopback UDP implementation for CATIA&#39;s local development transport." alt="" coords="216,110,213,104,206,99,195,95,181,92,165,91,150,92,136,95,125,99,117,104,115,110,117,116,125,121,136,125,150,128,165,129,181,128,195,125,206,121,213,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="129,53,156,92,151,91,126,57"/>
+</map>

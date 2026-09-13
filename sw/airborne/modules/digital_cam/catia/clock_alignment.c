@@ -1,9 +1,19 @@
 #include <stddef.h>
 #include "clock_alignment.h"
 
+/**
+ * @file clock_alignment.c
+ * @brief Implementation of CATIA's token-bound, interval-based clock alignment.
+ * @details This intentionally avoids synchronizing clocks globally. It validates a
+ * small request/reply exchange, then maps only poses that carry the matching token.
+ * Integer interval arithmetic makes the drift assumptions explicit and handles normal
+ * uint32_t flight-controller timer wrap by subtraction.
+ */
+
 _Static_assert(sizeof(union catia_clock_reply_union) == CATIA_CLOCK_REPLY_MSG_SIZE, "Clock reply wire size");
 _Static_assert(sizeof(union catia_pose_clocked_union) == CATIA_POSE_CLOCKED_MSG_SIZE, "Clocked pose wire size");
 
+/** @brief Compare opaque wire tokens without depending on host structure padding. */
 static bool same_token(union catia_clock_request_union first, union catia_clock_request_union second)
 {
   return first.data.token_low == second.data.token_low && first.data.token_high == second.data.token_high;

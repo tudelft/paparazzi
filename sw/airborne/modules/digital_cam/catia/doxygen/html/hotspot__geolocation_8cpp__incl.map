@@ -1,0 +1,9 @@
+<map id="hotspot_geolocation.cpp" name="hotspot_geolocation.cpp">
+<area shape="poly" id="Node000001" title="Ray/ground&#45;plane geometry used to estimate thermal hotspot locations." alt="" coords="309,24,303,18,287,13,262,9,230,6,194,5,159,6,127,9,101,13,85,18,79,24,85,30,101,35,127,39,159,42,194,43,230,42,262,39,287,35,303,30"/>
+<area shape="poly" id="Node000002" href="$hotspot__geolocation_8h.html" title="Calibrated camera&#45;ray projection from thermal pixels to ground estimates." alt="" coords="215,110,210,104,195,99,172,95,143,92,110,91,78,92,49,95,25,99,10,104,5,110,10,116,25,121,49,125,78,128,110,129,143,128,172,125,195,121,210,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="175,45,141,82,137,78,178,41"/>
+<area shape="poly" id="Node000004" title=" " alt="" coords="320,110,318,104,312,99,303,95,292,92,280,91,267,92,256,95,247,99,241,104,239,110,241,116,247,121,256,125,267,128,280,129,292,128,303,125,312,121,318,116"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="213,41,255,82,249,82,212,46"/>
+<area shape="poly" id="Node000003" title=" " alt="" coords="146,196,144,190,139,185,131,180,121,178,110,177,99,178,89,180,81,185,76,190,75,196,76,201,81,207,89,211,99,214,110,214,121,214,131,211,139,207,144,201"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="112,127,113,162,108,160,109,131"/>
+</map>

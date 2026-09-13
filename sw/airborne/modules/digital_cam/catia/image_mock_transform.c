@@ -1,3 +1,4 @@
+/** @file image_mock_transform.c @brief Deterministic attitude-based JPEG transform used by local CATIA simulation. */
 #include "image_mock_transform.h"
 
 #include <errno.h>

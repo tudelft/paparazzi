@@ -1,4 +1,11 @@
-/* execill - How a parent and child might communicate. */
+/**
+ * @file chdk_pipe.c
+ * @brief Persistent CHDKPTP controller-process adapter for legacy visible cameras.
+ * @details CATIA drives the controller through stdin/stdout pipes and parses its prompt
+ * protocol with operation-wide deadlines. Buffered reads reduce syscall overhead while
+ * keeping the original response framing semantics. Any command failure clears the
+ * returned filename, allowing CATIA's backend lifecycle to retry on a later shot.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>

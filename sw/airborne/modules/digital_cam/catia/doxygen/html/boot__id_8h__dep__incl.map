@@ -1,0 +1,7 @@
+<map id="boot_id.h" name="boot_id.h">
+<area shape="poly" id="Node000001" title="Read Linux&#39;s boot&#45;unique identifier for pose&#45;log session provenance." alt="" coords="200,24,197,18,190,13,178,9,164,6,147,5,131,6,117,9,105,13,97,18,95,24,97,30,105,35,117,39,131,42,147,43,164,42,178,39,190,35,197,30"/>
+<area shape="poly" id="Node000002" href="$image__exif_8c.html" title="Atomic JPEG EXIF rewriting for CATIA flight and thermal&#45;capture provenance." alt="" coords="140,110,137,104,127,99,112,95,94,92,73,91,52,92,33,95,18,99,9,104,5,110,9,116,18,121,33,125,52,128,73,129,94,128,112,125,127,121,137,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="124,53,90,93,86,89,119,55"/>
+<area shape="poly" id="Node000003" href="$pose__log_8c.html" title="Bounded asynchronous CSV recorder for flight&#45;controller pose evidence." alt="" coords="283,110,280,104,272,99,258,95,242,92,223,91,205,92,188,95,175,99,167,104,164,110,167,116,175,121,188,125,205,128,223,129,242,128,258,125,272,121,280,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="175,52,210,92,205,91,172,56"/>
+</map>

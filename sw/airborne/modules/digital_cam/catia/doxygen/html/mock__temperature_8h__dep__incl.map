@@ -1,0 +1,5 @@
+<map id="mock_temperature.h" name="mock_temperature.h">
+<area shape="poly" id="Node000001" title="Deterministic synthetic temperature&#45;plane helpers for mock captures." alt="" coords="204,24,199,18,185,13,163,9,135,6,105,5,74,6,46,9,24,13,10,18,5,24,10,30,24,35,46,39,74,42,105,43,135,42,163,39,185,35,199,30"/>
+<area shape="poly" id="Node000002" href="$mock__image_8cpp.html" title="Deterministic JPEG mock&#45;image conversion and embedded temperature fixture support." alt="" coords="190,110,185,104,173,99,155,95,131,92,105,91,78,92,55,95,36,99,24,104,19,110,24,116,36,121,55,125,78,128,105,129,131,128,155,125,173,121,185,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="106,57,107,92,102,90,103,61"/>
+</map>

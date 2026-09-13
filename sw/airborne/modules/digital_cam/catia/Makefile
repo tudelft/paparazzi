@@ -208,6 +208,8 @@ aicam chdkcam: $(CATIA_OUTPUT)
 
 documentation:
 	./documentation/update-documentation.sh
+	doxygen Doxyfile
+	bash ./postprocess-doxygen-graphs.sh doxygen/html
 
 clean:
 	rm -rf ./catia ./soda ./catia-arm64 ./soda-arm64 ./lwircam-native ./lwircam-arm64 ./earcam-native ./earcam-arm64 ./ear_heatmap_replay $(BUILD_DIR) ./.near-horizon-*

@@ -13,6 +13,15 @@
 #include <time.h>
 #include <unistd.h>
 
+/**
+ * @file ai_cam_pipe.c
+ * @brief Raspberry Pi AI Camera adapter backed by one rpicam-still process per shot.
+ * @details Unlike LWIR's persistent stream, this backend delegates each optical capture
+ * to rpicam-still. Initialization validates the output directory up front; capture then
+ * creates a deterministic shot filename, replaces stale output, bounds child lifetime,
+ * and verifies that a nonempty regular file was produced before publishing success.
+ */
+
 #ifndef CATIA_AI_CAM_TIMEOUT_SECONDS
 #define CATIA_AI_CAM_TIMEOUT_SECONDS 30
 #endif
@@ -162,6 +171,11 @@ int ai_cam_pipe_shoot(char *filename, size_t filename_size, int image_number)
   return 0;
 }
 
+/**
+ * @brief Release AI Camera backend state.
+ * @details rpicam-still is owned and reaped synchronously by ai_cam_pipe_shoot(), so
+ * this adapter has no persistent process or descriptor to release.
+ */
 void ai_cam_pipe_deinit(void)
 {
 }

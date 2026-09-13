@@ -5,6 +5,15 @@
 #include <pthread.h>
 #include <unistd.h>
 
+/**
+ * @file serial_tx.c
+ * @brief Bounded mutex-protected output queue for CATIA UART frames.
+ * @details Writes are non-blocking and may be partial. The ring buffer retains the
+ * unsent suffix until the main event loop sees POLLOUT. A permanent write failure is
+ * latched instead of silently dropping later messages, allowing CATIA to exit and
+ * let systemd recover the UART connection.
+ */
+
 #define SERIAL_TX_CAPACITY 4096
 
 static pthread_mutex_t transmit_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -13,6 +22,11 @@ static size_t head, count;
 static int output_fd = -1;
 static int output_error;
 
+/** @brief Flush as much queued output as the descriptor currently accepts.
+ * @pre transmit_mutex is held.
+ * @return 0 for success or temporary backpressure, -1 for a latched terminal error.
+ * @details EAGAIN/EINTR deliberately retain the ring contents. Other errors are
+ * retained in @c output_error so the owning event loop can surface the failure. */
 static int flush_locked(void)
 {
   if (output_fd < 0 || output_error != 0) {
@@ -67,6 +81,14 @@ void serial_tx_stop(void)
   pthread_mutex_unlock(&transmit_mutex);
 }
 
+/** @brief Construct, enqueue, and opportunistically transmit one framed message.
+ * @param message Protocol ID.
+ * @param payload Payload, if any.
+ * @param length Payload byte count.
+ * @param idle_only Whether low-priority traffic must avoid an occupied queue.
+ * @return 0 on acceptance or -1 with errno on validation, queue, or I/O failure.
+ * @details The frame is first built on the stack, then copied atomically while the
+ * mutex is held. This avoids exposing an incomplete frame to another producer. */
 static int send_frame(uint8_t message, const uint8_t *payload, size_t length, bool idle_only)
 {
   if (length > 250 || (length > 0 && payload == NULL)) {

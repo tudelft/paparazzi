@@ -1,3 +1,10 @@
+/**
+ * @file pose_log.c
+ * @brief Bounded asynchronous CSV recorder for flight-controller pose evidence.
+ * @details The UART path uses trylock and drops rather than blocks when the writer is
+ * busy. A dedicated thread batches durable writes, preserving acquisition latency while
+ * recording queue loss and clock-alignment provenance explicitly in each row.
+ */
 #define _GNU_SOURCE
 #include "pose_log.h"
 #include "protocol.h"

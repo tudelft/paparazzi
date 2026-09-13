@@ -1,0 +1,14 @@
+<map id="clock_alignment.c" name="clock_alignment.c">
+<area shape="poly" id="Node000001" title="Implementation of CATIA&#39;s token&#45;bound, interval&#45;based clock alignment." alt="" coords="206,24,201,18,189,13,169,9,144,6,116,5,89,6,64,9,44,13,31,18,27,24,31,30,44,35,64,39,89,42,116,43,144,42,169,39,189,35,201,30"/>
+<area shape="poly" id="Node000002" title=" " alt="" coords="102,196,100,190,93,185,82,180,69,178,54,177,39,178,25,180,15,185,8,190,5,196,8,201,15,207,25,211,39,214,54,214,69,214,82,211,93,207,100,201"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="103,46,81,92,62,162,57,160,77,90,105,41"/>
+<area shape="poly" id="Node000003" href="$clock__alignment_8h.html" title="Bounded mapping between flight&#45;controller microseconds and CATIA monotonic time." alt="" coords="270,110,265,104,253,99,233,95,208,92,180,91,153,92,128,95,108,99,95,104,91,110,95,116,108,121,128,125,153,128,180,129,208,128,233,125,253,121,265,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="130,40,160,79,155,80,130,46"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="153,131,92,173,88,168,156,126"/>
+<area shape="poly" id="Node000004" href="$protocol_8h.html" title=" " alt="" coords="237,196,234,190,226,185,214,180,199,178,182,177,165,178,149,180,137,185,129,190,126,196,129,201,137,207,149,211,165,214,182,214,199,214,214,211,226,207,234,201"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="182,127,184,162,179,160,179,132"/>
+<area shape="poly" id="Node000005" title=" " alt="" coords="170,281,168,275,160,270,148,266,132,263,115,262,98,263,82,266,70,270,62,275,60,281,62,287,70,292,82,297,98,299,115,300,132,299,148,297,160,292,168,287"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="170,213,140,253,136,249,166,215"/>
+<area shape="poly" id="Node000006" title=" " alt="" coords="300,281,297,275,290,270,278,266,263,263,247,262,231,263,216,266,204,270,197,275,194,281,197,287,204,292,216,297,231,299,247,300,263,299,278,297,290,292,297,287"/>
+<area shape="poly" id="edge6_Node000004_Node000006" title=" " alt="" coords="196,212,227,251,221,250,194,217"/>
+</map>

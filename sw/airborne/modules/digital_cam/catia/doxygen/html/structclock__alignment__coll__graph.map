@@ -1,0 +1,7 @@
+<map id="clock_alignment" name="clock_alignment">
+<area shape="poly" id="Node000001" title="Stateful evidence for at most one pending and one accepted clock probe." alt="" coords="280,178,276,172,264,167,246,163,224,160,198,159,173,160,151,163,132,167,121,172,117,178,121,184,132,189,151,193,173,196,198,197,224,196,246,193,264,189,276,184"/>
+<area shape="poly" id="Node000002" href="$unioncatia__clock__request__union.html" title=" " alt="" coords="200,36,195,26,181,18,160,11,132,7,102,5,72,7,45,11,24,18,10,26,5,36,10,45,24,53,45,60,72,64,102,66,132,64,160,60,181,53,195,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="132,76,189,158,183,159,129,80"/>
+<area shape="poly" id="Node000003" href="$structclock__interval.html" title="Inclusive CATIA monotonic&#45;time bounds for a mapped controller timestamp." alt="" coords="367,36,364,30,354,24,338,20,318,18,296,17,274,18,254,20,238,24,228,30,224,36,228,41,238,47,254,51,274,53,296,54,318,53,338,51,354,47,364,41"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="293,68,285,104,267,137,253,151,235,163,233,158,249,147,263,133,280,102,290,72"/>
+</map>

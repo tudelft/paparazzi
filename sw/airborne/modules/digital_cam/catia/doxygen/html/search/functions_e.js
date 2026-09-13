@@ -1,0 +1,27 @@
+var searchData=
+[
+  ['random_5findex_0',['random_index',['../local__pipe_8c.html#a73864c585f9ec319d1a89fdc068651f5',1,'local_pipe.c']]],
+  ['read_5fcharacter_1',['read_character',['../chdk__pipe_8c.html#a01310a8b405d07787c5f5309f3fb46aa',1,'chdk_pipe.c']]],
+  ['read_5fjpeg_5fdimensions_2',['read_jpeg_dimensions',['../image__mock__transform_8c.html#a1eb647d76464df4b005a08cc02e14776',1,'image_mock_transform.c']]],
+  ['read_5fnative_5ftemperature_3',['read_native_temperature',['../native__frame_8cpp.html#aecf71c3d730fe206b7d8cf9cfc8d66e0',1,'read_native_temperature(const char *jpeg_path, size_t width, size_t height, std::vector&lt; uint8_t &gt; &amp;temperature):&#160;native_frame.cpp'],['../native__frame_8h.html#aecf71c3d730fe206b7d8cf9cfc8d66e0',1,'read_native_temperature(const char *jpeg_path, size_t width, size_t height, std::vector&lt; uint8_t &gt; &amp;temperature):&#160;native_frame.cpp']]],
+  ['read_5fnuc_5fparameter_4',['read_nuc_parameter',['../cmd_8cpp.html#aab91ad2a02d502cabe33d1d8842c0880',1,'cmd.cpp']]],
+  ['read_5fserver_5fstatus_5',['read_server_status',['../lwir__cam__pipe_8c.html#ac5969d399296dd7b904e3e2aac063510',1,'lwir_cam_pipe.c']]],
+  ['read_5ftemperature_5flayer_6',['read_temperature_layer',['../temperature__layer_8cpp.html#acdbcc830ffedfdca30d58762bfe7254b',1,'read_temperature_layer(const char *path, size_t width, size_t height, std::vector&lt; uint8_t &gt; &amp;temperature, bool *synthetic):&#160;temperature_layer.cpp'],['../temperature__layer_8h.html#a65ae030a0f9adecc83ccb6015d6842ad',1,'read_temperature_layer(const char *path, size_t width, size_t height, std::vector&lt; uint8_t &gt; &amp;temperature, bool *synthetic=nullptr):&#160;temperature_layer.cpp']]],
+  ['reader_5fmain_7',['reader_main',['../ear__cam__pipe_8c.html#add3cfb95326d2e1311305f92c90436c5',1,'ear_cam_pipe.c']]],
+  ['record_5fclocked_5fpose_8',['record_clocked_pose',['../catia_8c.html#a4625232af076158cd567d84c28deb0ae',1,'catia.c']]],
+  ['rect_5ftemp_5fdemo_9',['rect_temp_demo',['../temperature_8cpp.html#a7d84caccee46b4a892640a19de7662ae',1,'rect_temp_demo(uint16_t *temp_data, TempDataRes_t temp_res):&#160;temperature.cpp'],['../temperature_8h.html#a7d84caccee46b4a892640a19de7662ae',1,'rect_temp_demo(uint16_t *temp_data, TempDataRes_t temp_res):&#160;temperature.cpp']]],
+  ['release_5fworker_5fslot_10',['release_worker_slot',['../catia_8c.html#a8cc94f93eaf104ddbcc2016469b85330',1,'catia.c']]],
+  ['replace_5fimage_5fatomically_11',['replace_image_atomically',['../image__mock__transform_8c.html#a2873a3e1e22deff06993c20703efeb15',1,'image_mock_transform.c']]],
+  ['replace_5ftag_12',['replace_tag',['../image__exif_8c.html#a5297624a3959c5ad9142867bfa8bdada',1,'image_exif.c']]],
+  ['report_5fhotspots_13',['report_hotspots',['../hotspot_8cpp.html#a01585e28b01ae1ec052f16ce953c5941',1,'report_hotspots(const uint8_t *temperature, size_t bytes, size_t width, size_t height, bool synthetic, double altitude_agl_m, const char *image_path):&#160;hotspot.cpp'],['../hotspot_8h.html#adbff984fd8ffc44bb9c252888e03d1c1',1,'report_hotspots(const uint8_t *temperature, size_t bytes, size_t width, size_t height, bool synthetic=false, double altitude_agl_m=-1.0, const char *image_path=nullptr):&#160;hotspot.cpp']]],
+  ['restart_5fserver_5fif_5fdead_14',['restart_server_if_dead',['../ear__cam__pipe_8c.html#ad8e106d4e4d4633a929b2f065f003349',1,'ear_cam_pipe.c']]],
+  ['reverse_5ftemp_5fframe_5fto_5fnuc_15',['reverse_temp_frame_to_nuc',['../temperature_8cpp.html#a7b688f0096feaf28abfab10af53a03a2',1,'reverse_temp_frame_to_nuc(uint16_t *org_temp, NucFactor_t *nuc_factor, int pix_num, uint16_t *nuc_data):&#160;temperature.cpp'],['../temperature_8h.html#a7b688f0096feaf28abfab10af53a03a2',1,'reverse_temp_frame_to_nuc(uint16_t *org_temp, NucFactor_t *nuc_factor, int pix_num, uint16_t *nuc_data):&#160;temperature.cpp']]],
+  ['rewrite_5fjpeg_16',['rewrite_jpeg',['../image__exif_8c.html#af696d015e74bf5ee4a61e712f9d96507',1,'image_exif.c']]],
+  ['rotate_5fdemo_17',['rotate_demo',['../display_8cpp.html#a3ceef02ef0fb0ff2467c1eab8f529c5e',1,'display.cpp']]],
+  ['run_5fcase_18',['run_case',['../test__loudestspot_8c.html#aa655e592f89b68fda3ab5a7ce8e088c9',1,'test_loudestspot.c']]],
+  ['run_5fmeter_19',['run_meter',['../earcam_8c.html#a09e4cf07d57e95e6660948e16b633b65',1,'earcam.c']]],
+  ['run_5fmission4_5fcase_20',['run_mission4_case',['../test__loudestspot_8c.html#a7927dde782e86bbc1d8f32154e14d804',1,'test_loudestspot.c']]],
+  ['run_5frefinement_5fcase_21',['run_refinement_case',['../test__loudestspot_8c.html#af53c7fc4a6297d4c5082716b979f3434',1,'test_loudestspot.c']]],
+  ['run_5fself_5ftest_22',['run_self_test',['../earcam_8c.html#aa5a3ff6e07ed515bed9703b774b7416d',1,'earcam.c']]],
+  ['run_5fsoda_23',['run_soda',['../catia_8c.html#a9d5c76e6792cbfcefb6ce4c03234b24e',1,'catia.c']]]
+];
