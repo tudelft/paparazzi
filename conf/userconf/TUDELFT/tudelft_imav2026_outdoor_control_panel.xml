@@ -65,25 +65,16 @@
     <program name="EasyStar MORA Camera Demo Starter" command="sw/simulator/start_easystar_mora_camera_demo.py"/>
   </section>
   <section name="sessions">
-    <session name="IMAV2026 Outdoor Competition">
-      <program name="Simulator">
-        <arg flag="-t" constant="nps"/>
-        <arg flag="-a" constant="Easystar_3"/>
-      </program>
+    <session name="IMAV 2026 testflights">
       <program name="Data Link">
-        <arg flag="-udp"/>
-        <arg flag="-udp_broadcast"/>
+        <arg flag="-d" constant="/dev/ttyUSB0"/>
+        <arg flag="-s" constant="57600"/>
       </program>
-      <program name="Server">
-        <arg flag="-n"/>
-      </program>
+      <program name="Server"/>
       <program name="Messages"/>
       <program name="Real-time Plotter"/>
-      <program name="GCS Classic">
-        <arg flag="--maximize"/>
-        <arg flag="--speech"/>
-      </program>
-      <program name="Environment Simulator (Legacy)"/>
+      <program name="GCS"/>
+      <program name="GPSd position display"/>
     </session>
     <session name="IMAV2026 Replay flight">
       <program name="Log Plotter"/>
@@ -105,7 +96,7 @@
         <arg flag="-srtm"/>
       </program>
     </session>
-    <session name="Local CATIA demo">
+    <session name="Local PC CATIA mock test">
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
         <arg flag="-a" constant="Easystar_3"/>
@@ -126,7 +117,7 @@
       <program name="Environment Simulator (Legacy)"/>
       <program name="MORA Local CATIA"/>
     </session>
-    <session name="MORA Camera Demo">
+    <session name="MORA Camera Test">
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
         <arg flag="-a" constant="Easystar_3"/>
@@ -170,25 +161,6 @@
       </program>
       <program name="Environment Simulator (Legacy)"/>
     </session>
-    <session name="SIM IMAV2026 NPS new QTGUI">
-      <program name="Simulator">
-        <arg flag="-t" constant="nps"/>
-        <arg flag="-a" constant="Adam"/>
-      </program>
-      <program name="Data Link">
-        <arg flag="-udp"/>
-        <arg flag="-udp_broadcast"/>
-      </program>
-      <program name="Server">
-        <arg flag="-n"/>
-      </program>
-      <program name="Messages"/>
-      <program name="Real-time Plotter"/>
-      <program name="GCS Classic">
-        <arg flag="--maximize"/>
-      </program>
-      <program name="Environment Simulator (Legacy)"/>
-    </session>
     <session name="SIM IMAV2026 Outdoor Competition">
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
@@ -210,6 +182,53 @@
       <program name="Environment Simulator (Legacy)">
         <arg flag="-w3"/>
         <arg flag="-d123"/>
+      </program>
+    </session>
+    <session name="Sim IMAV2026 Outdoor Competition">
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="Easystar_3"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS Classic">
+        <arg flag="--maximize"/>
+        <arg flag="--speech"/>
+      </program>
+      <program name="Environment Simulator (Legacy)"/>
+    </session>
+    <session name="Simulate IMAV2026 outdoor competition">
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="Easystar_3"/>
+      </program>
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="Adam"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS Classic">
+        <arg flag="--maximize"/>
+        <arg flag="--speech"/>
+      </program>
+      <program name="Environment Simulator (Legacy)">
+        <arg flag="-w3"/>
+        <arg flag="-d220"/>
       </program>
     </session>
   </section>

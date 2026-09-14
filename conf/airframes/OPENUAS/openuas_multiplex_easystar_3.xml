@@ -486,7 +486,8 @@
     <let var="gyro_active" value="(1 > AP_MODE ? 0 : 1)"/><!-- yes a bit puzzling is it ;)-->
     <let var="gyro_yaw" value="$gyro_active * (stateGetBodyRates_i()->r)"/>
     <let var="yaw_ctrl_sgl" value="@YAW - ($k_rudder_gyro * ($gyro_yaw)) - @ROLL * ASSIST_ROLL_WITH_RUDDER"/>
-    <let var="brake_value_nofilt" value="Clip(-@BRAKE, 0, MAX_PPRZ)"/>
+    <!-- Brake Slowdown: Gated to AUTO2 only to prevent unintended crowbrake in MANUAL and AUTO1 modes -->
+    <let var="brake_value_nofilt" value="((autopilot.mode == AP_MODE_AUTO2) ? Clip(-@BRAKE, 0, MAX_PPRZ) : 0)"/>
     <ratelimit var="brake_value" value="$brake_value_nofilt" rate_min="-BRAKE_ENABLED_SLOWDOWN_FACTOR_RETRACT" rate_max="BRAKE_ENABLED_SLOWDOWN_FACTOR_EXTEND"/>
     <let var="crowbrake" value="$brake_value * BRAKE_MAX_PCT"/>
     <set servo="S_THROTTLE" value="@THROTTLE"/>
