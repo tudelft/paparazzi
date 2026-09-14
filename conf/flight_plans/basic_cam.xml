@@ -34,6 +34,7 @@
       <call_once fun="NavSetGroundReferenceHere()"/>
     </block>
     <block name="Holding point">
+      <call_once fun="NavSetWaypointHere(WP_HOME)"/>
       <!--set var="nav_mode" value="NAV_MODE_ROLL"/-->
       <set value="1" var="autopilot.kill_throttle"/>
       <attitude roll="0" throttle="0" vmode="throttle"/>
