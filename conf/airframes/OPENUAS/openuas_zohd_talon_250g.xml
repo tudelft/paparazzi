@@ -568,7 +568,7 @@
 
   <section name="TRIM" prefix="COMMAND_">
     <define name="ROLL_TRIM" value="-350"/>
-    <define name="PITCH_TRIM" value="960"/>
+    <define name="PITCH_TRIM" value="400"/>
   </section>
 
   <section name="IMU" prefix="IMU_">
@@ -582,7 +582,7 @@
     <define name="MAG_Z_NEUTRAL" value="0"/>
 
     <define name="BODY_TO_IMU_PHI" value="0.0" unit="rad"/>
-    <define name="BODY_TO_IMU_THETA" value="0.16" unit="rad"/>
+    <define name="BODY_TO_IMU_THETA" value="0.13" unit="rad"/>
     <define name="BODY_TO_IMU_PSI" value="0.0" unit="rad"/>
 
   </section> 
