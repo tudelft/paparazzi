@@ -286,10 +286,16 @@ void autopilot_failsafe_checks(void)
   }
 #endif /* GPS && FAILSAFE_DELAY_WITHOUT_GPS */
 
-  /* If in-flight, with good GPS but too far, then activate HOME mode
-   * In MANUAL with good RC, FBW will allow to override. */
+  /* A valid MANUAL command must retain direct pilot control. */
+  bool manual_with_valid_rc = false;
+#if defined RADIO_CONTROL || defined RADIO_CONTROL_AUTO1
+  manual_with_valid_rc = autopilot_get_mode() == AP_MODE_MANUAL && !RadioControlIsLost();
+#endif
+
+  /* If in-flight, with good GPS but too far, then activate HOME mode. */
   if (autopilot_get_mode() != AP_MODE_HOME &&
       autopilot_get_mode() != AP_MODE_GPS_OUT_OF_ORDER &&
+      !manual_with_valid_rc &&
       autopilot.launch) {
     if (too_far_from_home || datalink_lost() || higher_than_max_altitude()) {
       autopilot_set_mode(AP_MODE_HOME);
