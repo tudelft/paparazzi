@@ -9,6 +9,23 @@ import log_2_tuned_airframe as tune
 
 
 class AutotuneProvenanceTest(unittest.TestCase):
+    def test_bank_replay_reduces_both_lead_and_exit_subtraction(self):
+        times = np.arange(0.0, 20.0, 0.2)
+        bank = np.where((times >= 2) & (times < 10), np.pi / 6, 0.0)
+        active = np.ones(times.shape, dtype=bool)
+        steady, original = tune.replay_bank_feedforward(times, bank, bank, active, .36, .85, 2)
+        retained, reduced = tune.replay_bank_feedforward(times, bank, bank, active, .36, .65, 2)
+        np.testing.assert_allclose(steady, retained)
+        np.testing.assert_allclose(reduced, original * .65 / .85)
+        self.assertGreater(original[10], 0)
+        self.assertLess(original[50], 0)
+        self.assertLess(abs(reduced[50]), abs(original[50]))
+        self.assertLess(abs(original[-1]), .003)
+        off = tune.replay_bank_feedforward(times, bank, bank, ~active, .36, .85, 2)
+        np.testing.assert_array_equal(off, np.zeros((2, len(times))))
+        with self.assertRaises(ValueError):
+            tune.replay_bank_feedforward(times, bank, bank, active, .36, .85, 0)
+
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
@@ -49,6 +66,21 @@ class AutotuneProvenanceTest(unittest.TestCase):
         self.log_path.write_text(self.log_path.read_text().replace(self.airframe, ""))
         with self.assertRaises(tune.AutotuneError):
             tune.parse_log_header(self.log_path, 129)
+
+    def test_logged_baseline_is_editable_and_preserves_targets(self):
+        text = tune.logged_airframe_text(self.log_path, 129)
+        root = tune.ET.fromstring(text)
+        self.assertIsNotNone(root.find("./firmware/target[@name='nps']"))
+        self.assertEqual(tune.AirframeEditor(text).get_define("BODY_TO_IMU_THETA"), "0.13")
+
+    def test_reviewed_only_cannot_apply_heuristics(self):
+        analysis = tune.Analysis(level_elevator_pprz=1000, level_theta_at_10=9,
+                                 cruise_throttle=.9, course_osc_frac=1, n_course=100)
+        output, changes, _ = tune.tune_airframe(self.base, analysis, self.flight, 40,
+                                               {"COURSE_PGAIN": "0.8"}, reviewed_only=True)
+        self.assertEqual(len(changes), 1)
+        self.assertEqual(tune.AirframeEditor(output).get_define("PITCH_TRIM"), "400")
+        self.assertEqual(tune.AirframeEditor(output).get_define("BODY_TO_IMU_THETA"), "0.13")
 
     def test_logged_brakes_hold_tuning_even_when_current_mixer_removed(self):
         analysis = tune.Analysis(auto2_negative_brake_frac=1.0, level_elevator_pprz=500)
@@ -95,6 +127,11 @@ class AutotuneProvenanceTest(unittest.TestCase):
         }
         flight = replace(self.flight, msgs=messages)
         first = tune.analyze(flight, -20, auto1_only=True)
+        mixed = tune.analyze(flight, -20)
+        auto2_commands = ((command_time >= 40) & (command_time < 60)) | (command_time >= 100)
+        commands[auto2_commands, 0] = 9600
+        changed_auto2 = tune.analyze(flight, -20)
+        self.assertEqual(mixed.cruise_throttle, changed_auto2.cruise_throttle)
         self.assertEqual(first.auto2_seconds, 0)
         self.assertEqual(first.n_course, 0)
         self.assertAlmostEqual(first.level_elevator_pprz, 500)
@@ -103,6 +140,20 @@ class AutotuneProvenanceTest(unittest.TestCase):
         self.assertAlmostEqual(second.level_elevator_pprz, first.level_elevator_pprz)
         output, _, _ = tune.tune_airframe(self.base, second, flight, 40)
         self.assertEqual(tune.AirframeEditor(output).get_define("COURSE_PGAIN"), "0.9")
+
+        messages["PPRZ_MODE"] = (np.array([0.0]), np.array([[2]]))
+        gps[:, 3] = ((350 + times) % 360) * 10
+        desired[:, 2] = np.radians((350 + times) % 360)
+        messages["GPS"] = (times[::5], gps[::5])
+        air_data[:, 5] = 12
+        messages["CIRCLE"] = (times, np.c_[np.where(times < 60, 0, 100),
+                              np.zeros(count), np.full(count, 32)])
+        messages["NAVIGATION"] = (times, np.zeros((count, 4)))
+        corrected = tune.analyze(flight, -20)
+        self.assertLess(corrected.course_err_rms_deg, 1.0)
+        self.assertTrue(np.isnan(corrected.auto2_radial_rms))
+        self.assertEqual(corrected.airspeed_source, "AIRSPEED.airspeed (state)")
+        self.assertAlmostEqual(corrected.airspeed_mean, 10.0)
 
 
 if __name__ == "__main__":

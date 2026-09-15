@@ -152,7 +152,7 @@
         <define name="RANGEFINDER_I2C_USE_FILTER" value="FALSE"/><!-- not always needed VB22A filters internally quite well -->
         <define name="RANGEFINDER_I2C_MEDIAN_SIZE" value="5"/>
         <define name="RANGEFINDER_I2C_MIN_RANGE" value="0.005" unit="m"/>
-        <define name="RANGEFINDER_I2C_MAX_RANGE" value="6.0" unit="m"/><!-- For e.g. VB22A Theoretically 20m at 90% reflectivity in daylight real useful range ~ 8m upto 0m-->
+        <define name="RANGEFINDER_I2C_MAX_RANGE" value="4.0" unit="m"/><!-- For e.g. VB22A Theoretically 20m at 90% reflectivity in daylight real useful range ~ 8m upto 0m-->
         <!-- Sensor is centered in body X/Y and sits 4 mm above the belly contact plane. -->
         <define name="RANGEFINDER_I2C_OFFSET" value="0.004" unit="m"/>
         <define name="RANGEFINDER_I2C_SCALE" value="0.001"/><!-- Since VB22A sensor is set to emit in millimeters per default-->
@@ -304,7 +304,7 @@
          rear belly contact plane, approximately 1.1 in below it. -->
        <define name="NPS_SONAR_OFFSET" value="-0.02794"/>
       <define name="NPS_SONAR_MIN_DIST" value="0.005"/>
-      <define name="NPS_SONAR_MAX_DIST" value="6.0"/>
+      <define name="NPS_SONAR_MAX_DIST" value="4.0"/>
       <define name="SENSOR_SYNC_SEND_SONAR"/>
       <module name="udp"/>
     </target>
@@ -602,7 +602,7 @@
     <define name="BODY_TO_GPS_Z" value="0.04" unit="m"/>
 
     <define name="ROLL_NEUTRAL_DEFAULT" value="0." unit="deg"/>
-    <define name="PITCH_NEUTRAL_DEFAULT" value="6.6" unit="deg"/><!-- TODO: verify this value -->
+    <define name="PITCH_NEUTRAL_DEFAULT" value="7.8" unit="deg"/><!-- verified -->
     <define name="USE_GPS_ALT" value="TRUE"/>
     <!--<define name="USE_GPS_ALT_SPEED" value="FALSE"/>-->
     <!--<define name="VFF_R_GPS" value="0.03"/>--><!-- If one trusts baro a bit more -->
@@ -619,7 +619,7 @@
     <!-- Accept the VB22A on hardware and AGL_SONAR_NPS_ID in simulation. -->
     <define name="ID" value="ABI_BROADCAST"/>
     <define name="MIN_RANGE" value="0.005" unit="m"/>
-    <define name="MAX_RANGE" value="6.0" unit="m"/><!-- For AGL -->
+    <define name="MAX_RANGE" value="4.0" unit="m"/><!-- For AGL -->
     <define name="FILTER" value="0.1"/>
   </section>
 
@@ -659,7 +659,7 @@
          COMMANDED bank (leading, this will remove the roll-in dip).
          (ELEVATOR_OF_ROLL is ignored by stabilization_adaptive - it is
          hardcoded to 0 there; PITCH_OF_ROLL is the supported knob.) -->
-    <define name="PITCH_OF_ROLL" value="0.044" unit="rad"/>
+    <define name="PITCH_OF_ROLL" value="0.04" unit="rad"/>
     <define name="ROLL_SLEW" value="0.2"/>
     <define name="ROLL_ATTITUDE_GAIN" value="11000."/>
     <define name="ROLL_RATE_GAIN" value="500."/>
@@ -750,9 +750,9 @@
            lagged measured bank - split verified in the oval).
          Oval acceptance: dip <= 0.24 m, balloon <= 0.19 m, mean -0.04. -->
     <define name="ENERGY_BANK_THROTTLE_GAIN" value="0.36"/>
-    <define name="ENERGY_BANK_WASHOUT_GAIN" value="0.85"/>
+    <define name="ENERGY_BANK_WASHOUT_GAIN" value="0.70"/>
     <define name="ENERGY_BANK_WASHOUT_TAU" value="2.0"/>
-    <define name="ENERGY_BANK_PITCH_GAIN" value="0.19"/>
+    <define name="ENERGY_BANK_PITCH_GAIN" value="0.20"/>
 
     <!-- groundspeed floor: guarantee progress against wind (STRONG_WIND set) -->
     <define name="AUTO_GROUNDSPEED_SETPOINT" value="5.0" unit="m/s"/>
@@ -763,7 +763,7 @@
 
     <!-- full-range throttle change takes 0.25 s (motor lag is ~0.1 s):
          the bank feedforward must be delivered within the ~1 s roll-in -->
-    <define name="THROTTLE_SLEW_LIMITER" value="0.20" unit="s"/>
+    <define name="THROTTLE_SLEW_LIMITER" value="0.25" unit="s"/>
 
     <!-- envelope for the airspeed setpoint (GCS-adjustable):
          floor is auto-bounded by ETECS at 1.23 * STALL_AIRSPEED = 8.2 m/s -->
@@ -825,11 +825,8 @@
     <define name="MIN_SPEED_FOR_TAKEOFF" value="8.6" unit="m/s"/> <!-- firm hand toss -->
     <define name="AIRSPEED_SETPOINT_SLEW" value="0.27" unit="m/s/s"/>
 
-    <!--default is 1 -->
-    <!--TODO:  maybe not needed anymore
-    <define name="GLIDE_VSPEED" value="2." unit="m/s"/>
-    <define name="GLIDE_PITCH" value="10." unit="deg"/>
-    -->
+    <define name="GLIDE_VSPEED" value="1.4" unit="m/s"/>
+    <define name="GLIDE_PITCH" value="4." unit="deg"/>
 
     <define name="TAKEOFF_PITCH_ANGLE" value="15" unit="deg"/> <!-- throw 8-12 deg, settle in climb -->
     <define name="FLARE_PITCH_ANGLE" value="10" unit="deg"/>

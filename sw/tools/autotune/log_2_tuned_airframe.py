@@ -134,6 +134,19 @@ def parse_log_header(log_path: Path, ac_id: int) -> tuple[str, str, dict]:
     return aircraft.get("name"), aircraft.get("airframe"), defines
 
 
+def logged_airframe_text(log_path: Path, ac_id: int) -> str:
+    airframe = logged_aircraft(log_path, ac_id).find("airframe")
+    for element in airframe.iter():
+        attributes = element.attrib.copy()
+        element.attrib.clear()
+        for key in ("name", "value"):
+            if key in attributes:
+                element.set(key, attributes.pop(key))
+        element.attrib.update(attributes)
+    ET.indent(airframe, space="  ")
+    return '<!DOCTYPE airframe SYSTEM "../airframe.dtd">\n' + ET.tostring(airframe, encoding="unicode") + "\n"
+
+
 def parse_data_file(data_path: Path, ac_id: int, wanted: set[str]) -> dict:
     """Single pass over the .data stream into numpy arrays.
 
@@ -216,6 +229,9 @@ class Analysis:
     auto2_bank_sat_frac: float = NAN      # AUTO2 time with roll setpoint at the limit
     auto2_radial_rms: float = NAN         # circle tracking error (m) when CIRCLE msg present
     circle_radius_flown: float = NAN
+    bank_rollout_seconds: float = 0.0
+    bank_rollout_underspeed_frac: float = NAN
+    bank_rollout_throttle_term: float = NAN
 
     # -- pitch (iteration 1)
     n_level: int = 0
@@ -301,6 +317,36 @@ def _min_run(mask: np.ndarray, min_len: int) -> np.ndarray:
     return out
 
 
+def replay_bank_feedforward(times: np.ndarray, bank: np.ndarray,
+                            commanded_bank: np.ndarray, active: np.ndarray,
+                            steady_gain: float, washout_gain: float,
+                            tau: float) -> tuple[np.ndarray, np.ndarray]:
+    """Replay bank-only throttle terms on measured motion, not a new flight trajectory.
+
+    Inputs are a uniform time grid, bank angles in radians, and the mask where
+    the energy controller runs. Internal-rate bank motion and initial washout
+    state are unobserved; allow several time constants of warm-up.
+    """
+    if len(times) < 2 or not np.isfinite(tau) or tau <= 0:
+        raise ValueError("bank replay needs at least two samples and positive tau")
+    if any(values.shape != times.shape for values in (bank, commanded_bank, active)):
+        raise ValueError("bank replay arrays must have matching shapes")
+    intervals = np.diff(times)
+    if not np.all(np.isfinite(intervals)) or np.any(intervals <= 0) \
+            or not np.allclose(intervals, intervals[0]) or intervals[0] > tau:
+        raise ValueError("bank replay needs a uniform increasing grid with dt <= tau")
+    angle = np.minimum(np.maximum(np.abs(bank), np.abs(commanded_bank)), np.pi / 3)
+    demand = 1.0 / np.cos(angle) ** 2 - 1.0
+    state = 0.0
+    washout = np.zeros_like(demand)
+    for index in range(len(times)):
+        if active[index]:
+            state += (demand[index] - state) * intervals[0] / tau
+            washout[index] = washout_gain * (demand[index] - state)
+    steady = np.where(active, steady_gain * demand, 0.0)
+    return steady, washout
+
+
 def analyze(fl: FlightLog, pitch_min_deg: float = -25.0,
         t_range: tuple[float, float] | None = None,
         auto1_only: bool = False) -> Analysis:
@@ -318,7 +364,11 @@ def analyze(fl: FlightLog, pitch_min_deg: float = -25.0,
     theta = np.degrees(att[:, 2])
     gs = interp(t_gps, gps[:, 5] / 100.0)
 
-    if "AIR_DATA" in fl.msgs and fl.msgs["AIR_DATA"][1].shape[1] >= 6 \
+    if "AIRSPEED" in fl.msgs and fl.msgs["AIRSPEED"][1][:, 0].max() > 3.0:
+        t_speed, state_speed = fl.series("AIRSPEED")
+        spd = interp(t_speed, state_speed[:, 0])
+        a.airspeed_source = "AIRSPEED.airspeed (state)"
+    elif "AIR_DATA" in fl.msgs and fl.msgs["AIR_DATA"][1].shape[1] >= 6 \
             and fl.msgs["AIR_DATA"][1][:, 5].max() > 3.0:
         t_ad, ad = fl.series("AIR_DATA")
         spd = interp(t_ad, ad[:, 5])
@@ -349,7 +399,7 @@ def analyze(fl: FlightLog, pitch_min_deg: float = -25.0,
         des_roll = interp(t_des, np.degrees(des[:, 0]))
         des_pitch = interp(t_des, np.degrees(des[:, 1]))
         if des.shape[1] > 2:
-            des_course = interp(t_des, des[:, 2])
+            des_course = interp(t_des, np.unwrap(des[:, 2]))
         if des.shape[1] > 5:
             des_alt = interp(t_des, des[:, 5])
 
@@ -382,12 +432,12 @@ def analyze(fl: FlightLog, pitch_min_deg: float = -25.0,
     airborne = _min_run(airborne, int(round(15.0 / dt)))
     if t_range is not None:
         airborne &= (tq >= t_range[0]) & (tq <= t_range[1])
+    changes = np.r_[0, np.flatnonzero(np.diff(mode[:, 0]) != 0) + 1]
+    change_indices = np.searchsorted(t_mode[changes], tq, side="right") - 1
+    settled = (tq - t_mode[changes[np.maximum(change_indices, 0)]]) >= 3.0
+    next_change = np.r_[t_mode[changes[1:]], np.inf]
+    settled &= (next_change[np.maximum(change_indices, 0)] - tq) >= 3.0
     if auto1_only:
-        changes = np.r_[0, np.flatnonzero(np.diff(mode[:, 0]) != 0) + 1]
-        change_indices = np.searchsorted(t_mode[changes], tq, side="right") - 1
-        settled = (tq - t_mode[changes[np.maximum(change_indices, 0)]]) >= 3.0
-        next_change = np.r_[t_mode[changes[1:]], np.inf]
-        settled &= (next_change[np.maximum(change_indices, 0)] - tq) >= 3.0
         airborne &= (m == 1) & settled
     if airborne.sum() < 50:
         raise AutotuneError("insufficient airborne data (need sustained speed > 6 m/s)")
@@ -402,7 +452,7 @@ def analyze(fl: FlightLog, pitch_min_deg: float = -25.0,
     # = airspeed * heading + wind), only where both are meaningful.
     wsel = sel & (spd > 5) & (gs > 1)
     if wsel.sum() > 200:
-        crs = np.radians(interp(t_gps, gps[:, 3] / 10.0))
+        crs = interp(t_gps, np.unwrap(np.radians(gps[:, 3] / 10.0)))
         hdg = att[:, 1]
         gE, gN = gs * np.sin(crs), gs * np.cos(crs)
         aE, aN = spd * np.sin(hdg), spd * np.cos(hdg)
@@ -460,7 +510,8 @@ def analyze(fl: FlightLog, pitch_min_deg: float = -25.0,
         log.warning("only %d turning samples; yaw mixing tuned from defaults", a.n_turn)
 
     # ---- ETECS plant identification (quasi-steady, gentle bank) --------
-    qs = sel & (m >= 1) & (np.abs(phi) < 10) & (spd > 0.7 * a.airspeed_mean) & (thr > 0.02)
+    plant = sel & (m == 1) & settled
+    qs = plant & (np.abs(phi) < 10) & (spd > 0.7 * a.airspeed_mean) & (thr > 0.02)
     a.n_quasi_steady = int(qs.sum())
     if a.n_quasi_steady >= 200:
         cr = qs & (np.abs(zdot) < 0.3)
@@ -477,12 +528,12 @@ def analyze(fl: FlightLog, pitch_min_deg: float = -25.0,
         beta_p, r2_p = _lstsq(np.c_[np.ones(qs.sum()), zdot[qs]], np.radians(theta[qs]))
         if r2_p > 0.2:
             a.pitch_per_vz = float(beta_p[1])
-        ft = sel & (thr > 0.95) & (np.abs(phi) < 10)
+        ft = plant & (thr > 0.95) & (np.abs(phi) < 10)
         a.full_throttle_frac = float((thr[sel] > 0.95).mean())
         if ft.sum() >= 40:
             # 75th percentile: sustained capability, not a momentary zoom.
             a.max_climb_full_throttle = float(np.percentile(zdot[ft], 75))
-        gl = sel & (thr < 0.03) & (zdot < -0.3) & (spd > 6.5) & (np.abs(phi) < 10)
+        gl = plant & (thr < 0.03) & (zdot < -0.3) & (spd > 6.5) & (np.abs(phi) < 10)
         a.n_glide = int(gl.sum())
         if a.n_glide >= 30:
             a.glide_ratio = float(np.median(spd[gl] / -zdot[gl]))
@@ -512,7 +563,7 @@ def analyze(fl: FlightLog, pitch_min_deg: float = -25.0,
         if have_des:
             a.auto2_pitch_pinned_frac = float((des_pitch[s2_air] < pitch_min_deg + 4.0).mean())
             a.pitch_err_rms_auto2 = float(np.sqrt(np.mean((des_pitch[s2_air] - theta[s2_air]) ** 2)))
-            roll_lim = 40.0
+            roll_lim = fl.flown("ROLL_MAX_SETPOINT", 40.0)
             a.auto2_bank_sat_frac = float((np.abs(des_roll[s2_air]) >= roll_lim - 0.5).mean())
             # Steady elevator in AUTO2: the pilot's RC pitch trim is not in the
             # loop here, so this is the clean CG / mechanical trim indicator.
@@ -537,7 +588,8 @@ def analyze(fl: FlightLog, pitch_min_deg: float = -25.0,
         if "CIRCLE" in fl.msgs and "NAVIGATION" in fl.msgs:
             t_c, circ = fl.series("CIRCLE")
             in2 = (t_c > tq[s2_air][0]) & (t_c < tq[s2_air][-1])
-            if in2.sum() > 10 and circ.shape[1] >= 3:
+            if in2.sum() > 10 and circ.shape[1] >= 3 \
+                    and np.max(np.ptp(circ[in2, :2], axis=0)) < 1.0:
                 cx, cy = float(np.median(circ[in2, 0])), float(np.median(circ[in2, 1]))
                 a.circle_radius_flown = float(abs(np.median(circ[in2, 2])))
                 t_n, nav = fl.series("NAVIGATION")
@@ -553,13 +605,35 @@ def analyze(fl: FlightLog, pitch_min_deg: float = -25.0,
             a.power_wot_w = float((volt * cur)[wot].mean())
             a.volt_sag_wot = float(volt[rest].mean() - volt[wot].mean())
     if des_course is not None and s2.sum() * dt >= MIN_AUTO2_SECONDS:
-        course = interp(t_gps, np.radians(gps[:, 3] / 10.0))        # decideg -> rad
+        course = interp(t_gps, np.unwrap(np.radians(gps[:, 3] / 10.0)))
         err = np.degrees(np.angle(np.exp(1j * (des_course[s2] - course[s2]))))
         a.n_course = int(s2.sum())
         a.course_err_rms_deg = float(np.sqrt(np.mean(err ** 2)))
         a.course_err_mean_deg = float(np.mean(err))
         sign_changes = int(np.sum(np.diff(np.sign(err - err.mean())) != 0))
         a.course_osc_frac = sign_changes / max(1e-3, a.n_course * dt)
+    washout_gain = fl.flown("ENERGY_BANK_WASHOUT_GAIN", 0.0)
+    if have_des and "AIRSPEED" in fl.msgs and fl.msgs["AIRSPEED"][1].shape[1] >= 3 \
+            and washout_gain > 0:
+        grid = np.arange(tq[0], tq[-1], 0.2)
+        grid_indices = np.clip(np.searchsorted(tq, grid, side="right") - 1, 0, len(tq) - 1)
+        grid_mode = mode[np.clip(np.searchsorted(t_mode, grid, side="right") - 1,
+                                0, len(t_mode) - 1), 0]
+        bank = np.interp(grid, tq, att[:, 0])
+        commanded_bank = np.interp(grid, t_des, des[:, 0])
+        tau = fl.flown("ENERGY_BANK_WASHOUT_TAU", 1.0)
+        if np.isfinite(tau) and tau >= 0.2:
+            _, washout = replay_bank_feedforward(grid, bank, commanded_bank, grid_mode == 2,
+                                                  0.0, washout_gain, tau)
+            speed_times, speed_values = fl.series("AIRSPEED")
+            measured_speed = np.interp(grid, speed_times, speed_values[:, 0])
+            controlled_speed = np.interp(grid, speed_times, speed_values[:, 2])
+            rollout = sel[grid_indices] & settled[grid_indices] & (grid_mode == 2) \
+                & (grid > grid[0] + 5 * tau) & (washout < -0.1 * washout_gain)
+            a.bank_rollout_seconds = float(rollout.sum() * 0.2)
+            if rollout.any():
+                a.bank_rollout_underspeed_frac = float((measured_speed[rollout] < controlled_speed[rollout]).mean())
+                a.bank_rollout_throttle_term = float(np.median(washout[rollout]))
     return a
 
 
@@ -640,7 +714,8 @@ def fmt(x: float, nd: int = 3) -> str:
 
 def tune_airframe(xml_text: str, a: Analysis, fl: FlightLog,
                   target_radius: float,
-                  overrides: dict[str, str] | None = None) -> tuple[str, list[Change], list[Advice]]:
+                  overrides: dict[str, str] | None = None,
+                  reviewed_only: bool = False) -> tuple[str, list[Change], list[Advice]]:
     ed = AirframeEditor(xml_text)
     advice: list[Advice] = []
     v_ref = a.level_airspeed if isnum(a.level_airspeed) else \
@@ -653,6 +728,19 @@ def tune_airframe(xml_text: str, a: Analysis, fl: FlightLog,
         else:
             ed.set_define("override", name, value, "set explicitly on the command line")
     ed.locked_defines = set(overrides or {})
+
+    if reviewed_only:
+        advice.append(Advice(
+            "reviewed changes only",
+            "Only explicit --set changes were applied; automatic tuning heuristics were disabled. "
+            "Telemetry estimates are diagnostic, not identified optimal gains. Full throttle alone "
+            "does not establish a propulsion fault or justify changing the endurance design. "
+            "AUTO1 plant estimates exclude AUTO2 and mode-transition margins. A commanded AUTO1 "
+            "dive or level full-throttle run does not measure maximum climb capability. "
+            "Manual crow requires RC or actuator evidence; COMMANDS.BRAKE alone cannot exclude it. "
+            "Circle RMS is withheld when logged centers move, as on an oval. "
+            "Validate the candidate in a supervised comparison flight."))
+        return ed.text, ed.changes, advice
 
     if a.auto1_only:
         advice.append(Advice(
@@ -764,17 +852,13 @@ def tune_airframe(xml_text: str, a: Analysis, fl: FlightLog,
 
     # IMU alignment sanity: level pitch normalised to 10 m/s should be a few
     # degrees for a small foam wing. Compare against the flown mount angle.
-    b2i_flown = fl.flown("BODY_TO_IMU_THETA", ed.get_float("BODY_TO_IMU_THETA", 0.0))
     if isnum(a.level_theta_at_10) and a.level_theta_at_10 > 4.5:
-        suggested = b2i_flown + math.radians(a.level_theta_at_10 - 2.5)
         advice.append(Advice(
             "IMU pitch alignment",
-            f"level-flight body pitch normalised to 10 m/s is {a.level_theta_at_10:+.1f} deg with "
-            f"IMU_BODY_TO_IMU_THETA={b2i_flown:.3f} rad. A cruise alpha of 2-3 deg is expected; "
-            f"if the FC was moved, raise BODY_TO_IMU_THETA to about {suggested:.3f} rad. Confirm on "
-            f"the bench: hold the wing chord level and read ATTITUDE.theta in the GCS; add that "
-            f"reading (in rad) to BODY_TO_IMU_THETA. Flight data alone cannot separate IMU tilt "
-            f"from a genuinely higher angle of attack (heavier aircraft or slower flight)."))
+            f"level-flight body pitch normalised to 10 m/s is {a.level_theta_at_10:+.1f} deg. "
+            "Flight attitude cannot distinguish IMU mounting error from angle of attack. "
+            "No mounting correction is inferred; retain the logged angle unless a measured "
+            "physical body datum establishes a bench-calibration error."))
 
     # =====================================================================
     # 1. Pitch and roll trim (COMMAND_*_TRIM: added to commands in
@@ -1123,8 +1207,9 @@ def _f(x: float, spec: str = "6.2f", unit: str = "") -> str:
 
 def write_report(report_path: Path, fl: FlightLog, a: Analysis, changes: list[Change],
                  advice: list[Advice], out_xml: Path, base_xml: Path, target_radius: float,
-                 build_status: str, build_tail: str) -> str:
+                 build_status: str, build_tail: str, base_text: str | None = None) -> str:
     v_ref = a.level_airspeed if isnum(a.level_airspeed) else a.airspeed_mean
+    base_text = base_xml.read_text() if base_text is None else base_text
     L = [
         "=" * 74,
         "PAPARAZZI AIRFRAME AUTO-TUNE REPORT (Iteration 2)",
@@ -1138,7 +1223,7 @@ def write_report(report_path: Path, fl: FlightLog, a: Analysis, changes: list[Ch
         f"analysis scope: {'AUTO1 only; 3 s either side of mode changes excluded' if a.auto1_only else 'all airborne modes'}",
                 "configuration (log / base / output):",
                 *[f"  {name}: {fl.flown_defines.get(name, '(absent)')} / "
-                    f"{AirframeEditor(base_xml.read_text()).get_define(name)} / "
+                    f"{AirframeEditor(base_text).get_define(name)} / "
                     f"{AirframeEditor(out_xml.read_text()).get_define(name)}"
                     for name in ("BODY_TO_IMU_THETA", "PITCH_TRIM", "ROLL_TRIM")],
         "",
@@ -1157,7 +1242,7 @@ def write_report(report_path: Path, fl: FlightLog, a: Analysis, changes: list[Ch
         f"  AUTO2 min AGL / sink   : {_f(a.auto2_min_agl, '.0f', ' m')} / {_f(a.auto2_max_sink, '.1f', ' m/s')}"
         f"  pitch at min limit {_f(a.auto2_pitch_pinned_frac, '.0%')} of AUTO2, alt err at entry "
         f"{_f(a.auto2_alt_err_at_entry, '+.0f', ' m')}",
-        f"  level pitch @10 m/s    : {_f(a.level_theta_at_10, '+.1f', ' deg')} (IMU alignment sanity)",
+        f"  level pitch @10 m/s    : {_f(a.level_theta_at_10, '+.1f', ' deg')} (not an IMU calibration)",
         "",
         f"-- PITCH / ROLL TRIM  (straight+level, n={a.n_level}) " + "-" * 25,
         f"  body pitch / demanded  : {_f(a.level_theta_deg, '+.2f')} / {_f(a.level_desired_pitch_deg, '+.2f')} deg"
@@ -1176,12 +1261,12 @@ def write_report(report_path: Path, fl: FlightLog, a: Analysis, changes: list[Ch
         f"  rudder per deg of bank : {_f(a.yaw_per_bank_pprz_deg, '.0f', ' pprz/deg')}",
         f"  target turn radius     : {target_radius:.1f} m (= {required_bank_deg(v_ref, target_radius):.0f} deg bank at {v_ref:.1f} m/s)",
         "",
-        f"-- ETECS PLANT  (quasi-steady, n={a.n_quasi_steady}) " + "-" * 33,
+        f"-- ETECS PLANT  (settled AUTO1 selection, n={a.n_quasi_steady}) " + "-" * 20,
         f"  cruise throttle        : {_f(a.cruise_throttle, '.0%')} at {_f(a.cruise_airspeed, '.1f', ' m/s')}",
         f"  throttle per m/s climb : {_f(a.throttle_per_vz, '.3f')} (regression)",
         f"  throttle per m/s speed : {_f(a.throttle_per_airspeed, '.3f')}",
         f"  pitch per m/s climb    : {_f(a.pitch_per_vz, '.3f', ' rad/(m/s)')}",
-        f"  sustained climb @ WOT  : {_f(a.max_climb_full_throttle, '.2f', ' m/s')}"
+        f"  observed Vz p75 @ WOT  : {_f(a.max_climb_full_throttle, '.2f', ' m/s')}"
         f"  ({_f(a.full_throttle_frac, '.0%')} of flight at full throttle)",
         f"  glide ratio (idle)     : {_f(a.glide_ratio, '.1f')} (n={a.n_glide})",
         "",
@@ -1195,6 +1280,10 @@ def write_report(report_path: Path, fl: FlightLog, a: Analysis, changes: list[Ch
         f" roll sp at limit {_f(a.auto2_bank_sat_frac, '.0%')}",
         f"  AUTO2 steady elevator  : {_f(a.auto2_level_elevator, '+.0f', ' pprz')} (n={a.n_auto2_level}, no RC trim in loop)",
         f"  AUTO2 negative brake  : {_f(a.auto2_negative_brake_frac, '.0%')} of samples below -95% command",
+        f"  bank washout replay    : {a.bank_rollout_seconds:.1f} s strong negative term; "
+        f"{_f(a.bank_rollout_underspeed_frac, '.0%')} already underspeed; "
+        f"median term {_f(a.bank_rollout_throttle_term, '+.1%')} throttle",
+        "  replay limitation      : measured bank at 0.2 s, AUTO2 activity proxy; not a closed-loop prediction",
         "",
         "-- XML CHANGES " + "-" * 59,
     ]
@@ -1227,6 +1316,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--airframe-out", type=Path, default=PPRZ_HOME / "conf" / "airframes" / "OPENUAS")
     ap.add_argument("--base", type=Path, default=None,
                     help="airframe XML to tune (default: the one referenced by the log)")
+    ap.add_argument("--logged-base", action="store_true",
+                    help="use the exact embedded airframe as candidate baseline, not the current file")
+    ap.add_argument("--reviewed-only", action="store_true",
+                    help="apply only explicit --set changes; retain diagnostic analysis")
     ap.add_argument("--ac-id", type=int, default=129)
     ap.add_argument("--turn-radius", type=float, default=30.0,
                     help="target minimum autonomous turn radius [m]")
@@ -1248,6 +1341,8 @@ def main(argv: list[str] | None = None) -> int:
         out_dir = resolve_existing(args.airframe_out, "airframe output directory")
 
         fl = load_flight_log(log_dir, args.log_name, args.ac_id)
+        if args.logged_base and args.base:
+            raise AutotuneError("--logged-base and --base are mutually exclusive")
         base_xml = resolve_existing(args.base or (PPRZ_HOME / "conf" / fl.airframe_rel),
                                     "base airframe XML")
         base_name = re.sub(r"_optim_\d{3}$", "", base_xml.stem)
@@ -1259,12 +1354,12 @@ def main(argv: list[str] | None = None) -> int:
             k, v = item.split("=", 1)
             overrides[k.strip()] = v.strip()
 
-        base_text = base_xml.read_text()
+        base_text = logged_airframe_text(fl.log_path, fl.ac_id) if args.logged_base else base_xml.read_text()
         pitch_min = fl.flown("PITCH_MIN_SETPOINT", -25.0)
         analysis = analyze(fl, pitch_min, tuple(args.t_range) if args.t_range else None,
                    auto1_only=args.auto1_only)
         tuned_text, changes, advice = tune_airframe(base_text, analysis, fl,
-                                                    args.turn_radius, overrides)
+                                                    args.turn_radius, overrides, args.reviewed_only)
 
         out_xml = next_version_path(out_dir, base_name)
         out_xml.write_text(tuned_text)
@@ -1277,8 +1372,9 @@ def main(argv: list[str] | None = None) -> int:
             build_status = "PASS" if ok else "FAIL"
 
         report_path = out_xml.with_suffix(".report.txt")
-        report = write_report(report_path, fl, analysis, changes, advice, out_xml, base_xml,
-                              args.turn_radius, build_status, build_tail)
+        report = write_report(report_path, fl, analysis, changes, advice, out_xml,
+                      fl.log_path if args.logged_base else base_xml,
+                      args.turn_radius, build_status, build_tail, base_text)
         print(report)
         print(f"\nreport saved: {report_path}")
 
