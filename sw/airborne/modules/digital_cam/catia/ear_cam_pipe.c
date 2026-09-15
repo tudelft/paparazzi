@@ -638,7 +638,8 @@ int32_t ear_cam_pipe_last_shot_nr(void)
 }
 
 /** @brief Render the current acoustic session into a north-up JPEG before it is cleared. */
-int ear_cam_pipe_render(const struct ear_loudest_spot *result, char *filename, size_t filename_size)
+int ear_cam_pipe_render(const struct ear_loudest_spot *result, char *filename, size_t filename_size,
+                        bool simulated)
 {
   if (filename == NULL || filename_size == 0) {
     return -1;
@@ -655,8 +656,9 @@ int ear_cam_pipe_render(const struct ear_loudest_spot *result, char *filename, s
     fprintf(stderr, "EAR_CAM_PIPE:\tfailed to create %s: %s\n", photo_dir, strerror(errno));
     return -1;
   }
-  int length = snprintf(filename, filename_size, "%s/e%06d.jpg", photo_dir,
-                        ear_cam_pipe_last_shot_nr());
+  const char *prefix = simulated ? "me" : "e";
+  int length = snprintf(filename, filename_size, "%s/%s%06d.jpg", photo_dir,
+                        prefix, ear_cam_pipe_last_shot_nr());
   if (length < 0 || (size_t)length >= filename_size) {
     filename[0] = '\0';
     return -1;
@@ -669,8 +671,8 @@ int ear_cam_pipe_render(const struct ear_loudest_spot *result, char *filename, s
   }
   // Undecorated field alongside, for ear_heatmap_overlay.py on the ground.
   char field[512];
-  length = snprintf(field, sizeof(field), "%s/e%06d_field.jpg", photo_dir,
-                    ear_cam_pipe_last_shot_nr());
+  length = snprintf(field, sizeof(field), "%s/%s%06d_field.jpg", photo_dir,
+                    prefix, ear_cam_pipe_last_shot_nr());
   if (length > 0 && (size_t)length < sizeof(field)) {
     ear_heatmap_write_field(field, session, session_count, result);
   }

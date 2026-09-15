@@ -50,6 +50,12 @@ int main(int argc, char **argv)
   handle_received_message();
   assert(shooting_count == 0 && shooting_thread_count == 0);
 
+  message.data.shot.data.nr = 37;
+  message.data.camera_id = CATIA_CAMERA_CHDK;
+  for (size_t index = 0; index < sizeof(message.bin); ++index) {
+    catia_protocol.payload[index] = message.bin[index];
+  }
+  handle_received_message();
   message.data.shot.data.nr = 38;
   message.data.camera_id = CATIA_CAMERA_AICAM;
   for (size_t index = 0; index < sizeof(message.bin); ++index) {
@@ -67,11 +73,11 @@ int main(int argc, char **argv)
     pthread_cond_wait(&workers_finished, &mut);
   }
   pthread_mutex_unlock(&mut);
-  assert(shooting_count == 2);
+  assert(shooting_count == 3);
   assert(optical_camera_id == CATIA_CAMERA_LWIRCAM);
 
   char image_path[PATH_MAX];
-  int length = snprintf(image_path, sizeof(image_path), "%s/m000039.jpg", argv[2]);
+  int length = snprintf(image_path, sizeof(image_path), "%s/ml000039.jpg", argv[2]);
   assert(length > 0 && (size_t)length < sizeof(image_path));
   ExifData *metadata = exif_data_new_from_file(image_path);
   assert(metadata != NULL);
@@ -160,7 +166,7 @@ int main(int argc, char **argv)
       status_frame.msg_received = false;
     }
   }
-  assert(status_count == 2);
+  assert(status_count == 3);
   serial_tx_stop();
   close(uart[0]);
   close(uart[1]);

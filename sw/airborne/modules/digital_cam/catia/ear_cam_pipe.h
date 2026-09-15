@@ -47,7 +47,8 @@ int ear_cam_pipe_solve(struct ear_loudest_spot *result);
 /** Render the current session as an acoustic "photo" photos/e%06d.jpg (north-up
  *  intensity map with the loudest spot marked). Fills filename; returns 0 on success.
  *  Must be called before ear_cam_pipe_finish() clears the session. */
-int ear_cam_pipe_render(const struct ear_loudest_spot *result, char *filename, size_t filename_size);
+int ear_cam_pipe_render(const struct ear_loudest_spot *result, char *filename, size_t filename_size,
+                        bool simulated);
 
 /** Shot number of the newest recorded sample (0 when empty). */
 int32_t ear_cam_pipe_last_shot_nr(void);

@@ -113,7 +113,7 @@ struct capture_job {
 };
 
 static void *handle_msg_shoot(void *ptr);
-static void capture_image(const union dc_shot_union *shoot, bool multiple);
+static void capture_image(const union dc_shot_union *shoot);
 static void handle_received_message(void);
 static void start_shoot_worker(const union dc_shot_union *shoot, uint8_t camera_mask);
 static void handle_targeted_stop(int32_t camera_id);
@@ -133,6 +133,7 @@ static int move_file(const char *source, const char *destination);
 static int camera_backend_select(enum camera_backend_type type, bool test_mode);
 static int camera_prepare(int camera_id);
 static void cameras_deinit(void);
+static int local_backend_shoot(char *filename, size_t filename_size, int image_number);
 static int chdk_backend_init(const char *source_image);
 static int chdk_backend_shoot(char *filename, size_t filename_size, int image_number);
 
@@ -169,6 +170,7 @@ static bool test_capture_enabled;
 static bool earcam_requested;
 static bool earcam_active;
 static bool earcam_unavailable;
+static bool earcam_simulated;
 static int optical_camera_id = CATIA_CAMERA_ALL;
 static uint64_t serial_receive_monotonic_us;
 static struct clock_alignment fc_clock;
@@ -324,6 +326,7 @@ int main(int argc, char *argv[])
         }
         ear_cam_pipe_set_simulated_source(sim_lat, sim_lon, sim_level);
         earcam_requested = true;
+        earcam_simulated = true;
         break;
       }
       case 'B': {
@@ -728,10 +731,9 @@ static void *handle_msg_shoot(void *ptr)
   shooting_count++;
   pthread_mutex_unlock(&mut);
 
-  bool multiple = (job->camera_mask & (job->camera_mask - 1U)) != 0;
   for (int camera_id = CATIA_CAMERA_CHDK; camera_id <= CATIA_CAMERA_LWIRCAM && keep_running; ++camera_id) {
     if ((job->camera_mask & (1U << (camera_id - 1))) != 0 && camera_prepare(camera_id) == 0) {
-      capture_image(&job->shot, multiple);
+      capture_image(&job->shot);
     }
   }
 
@@ -745,7 +747,7 @@ static void *handle_msg_shoot(void *ptr)
   return NULL;
 }
 
-static void capture_image(const union dc_shot_union *shoot, bool multiple)
+static void capture_image(const union dc_shot_union *shoot)
 {
   char filename[MAX_FILENAME] = "";
   bool image_ready = false;
@@ -763,16 +765,6 @@ static void capture_image(const union dc_shot_union *shoot, bool multiple)
     camera.deinit();
     camera_initialized[optical_camera_id] = false;
     filename[0] = '\0';
-  }
-  if (filename[0] != '\0' && multiple && (test_capture_enabled || local_capture_only)) {
-    char destination[MAX_FILENAME];
-    int length = snprintf(destination, sizeof(destination), "%s-cam%d.jpg", filename, optical_camera_id);
-    if (length < 0 || (size_t)length >= sizeof(destination) || rename(filename, destination) != 0) {
-      fprintf(stderr, "CATIA:\tfailed to separate multi-camera test image\n");
-      filename[0] = '\0';
-    } else {
-      for (int index = 0; index <= length; ++index) filename[index] = destination[index];
-    }
   }
   printf("CATIA-%d:\tShooting: got image %s\n", shoot->data.nr, filename);
   if (filename[0] != '\0' && mock_transform_enabled) {
@@ -1073,7 +1065,7 @@ static void handle_targeted_stop(int32_t camera_id)
     // Final stop: render the acoustic "photo" from the whole session before it is cleared.
     ear_cam_pipe_solve(&spot);
     char sound_picture[MAX_FILENAME];
-    if (ear_cam_pipe_render(&spot, sound_picture, sizeof(sound_picture)) == 0) {
+    if (ear_cam_pipe_render(&spot, sound_picture, sizeof(sound_picture), earcam_simulated) == 0) {
       union dc_shot_union picture_shot;
       memset(&picture_shot, 0, sizeof(picture_shot));
       picture_shot.data.nr = ear_cam_pipe_last_shot_nr();
@@ -1281,7 +1273,7 @@ static int camera_backend_select(enum camera_backend_type type, bool test_mode)
       break;
     case CAMERA_BACKEND_LOCAL:
       camera = (struct camera_backend) {
-        "local", local_pipe_init, local_pipe_shoot, local_pipe_deinit, CATIA_SODA
+        "local", local_pipe_init, local_backend_shoot, local_pipe_deinit, CATIA_SODA
       };
       break;
     case CAMERA_BACKEND_AI_CAM:
@@ -1302,11 +1294,20 @@ static int camera_backend_select(enum camera_backend_type type, bool test_mode)
 
   if (test_mode) {
     camera.init = local_pipe_test_init;
-    camera.shoot = local_pipe_shoot;
+    camera.shoot = local_backend_shoot;
     camera.deinit = local_pipe_deinit;
     camera.soda_application = CATIA_SODA;
   }
   return 0;
+}
+
+static int local_backend_shoot(char *filename, size_t filename_size, int image_number)
+{
+  static const char camera_suffixes[] = {0, 'c', 'a', 'l', 'e'};
+  if (optical_camera_id < CATIA_CAMERA_CHDK || optical_camera_id > CATIA_CAMERA_EARCAM) {
+    return -1;
+  }
+  return local_pipe_shoot(filename, filename_size, image_number, camera_suffixes[optical_camera_id]);
 }
 
 static int chdk_backend_init(const char *source_image)

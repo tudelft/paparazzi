@@ -16,8 +16,9 @@ int local_pipe_test_init(const char *mock_image);
  * @param filename Destination path buffer.
  * @param filename_size Destination capacity.
  * @param image_number Shot sequence.
+ * @param camera_suffix Real-camera filename prefix (`c`, `a`, `l`, or `e`).
  * @return 0 after a complete copy, otherwise -1. */
-int local_pipe_shoot(char *filename, size_t filename_size, int image_number);
+int local_pipe_shoot(char *filename, size_t filename_size, int image_number, char camera_suffix);
 /** @brief Forget selected local sources; no persistent process is owned. */
 void local_pipe_deinit(void);
 

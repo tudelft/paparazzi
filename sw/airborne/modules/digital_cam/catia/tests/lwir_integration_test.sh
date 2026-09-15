@@ -27,10 +27,12 @@ gcc -Wall -Wextra -Werror -Wno-expansion-to-defined \
 PATH="$output/no-external-tools" EXIFTOOL="$output/no-external-tools/exiftool" PERL5LIB= \
   "$output/test" "$root/lwircam/mock_lwir_01.jpg" "$output/photos" \
   "$root/lwircam/tests/mock_camera_256x192.yml" | tee "$output/log"
-test -s "$output/photos/m000039.jpg"
-test ! -e "$output/photos/m000039.jpg.hotspots.json"
-test -s "$output/photos/m000040.jpg"
-test ! -e "$output/photos/m000040.jpg.hotspots.json"
+test -s "$output/photos/mc000037.jpg"
+test -s "$output/photos/ma000038.jpg"
+test -s "$output/photos/ml000039.jpg"
+test ! -e "$output/photos/ml000039.jpg.hotspots.json"
+test -s "$output/photos/ma000040.jpg"
+test ! -e "$output/photos/ma000040.jpg.hotspots.json"
 grep -q 'CATIA-39:.*soda return 0' "$output/log"
 grep -q 'CATIA-40:.*soda return 0' "$output/log"
 for camera in aicam chdkcam lwircam earcam; do
@@ -39,4 +41,4 @@ done
 g++ -std=c++11 -Wall -Wextra -Werror -I"$root/lwircam" \
   "$root/lwircam/temperature_layer.cpp" "$root/lwircam/tests/compare_temperature_layers.cpp" \
   -o "$output/compare"
-"$output/compare" "$root/lwircam/mock_lwir_01.jpg" "$output/photos/m000039.jpg"
+"$output/compare" "$root/lwircam/mock_lwir_01.jpg" "$output/photos/ml000039.jpg"
