@@ -1,0 +1,21 @@
+diff --git a/lib/common/ocaml/pprz_transport.ml b/lib/common/ocaml/pprz_transport.ml
+index e2e94b2..87c542b 100644
+--- a/lib/common/ocaml/pprz_transport.ml
++++ b/lib/common/ocaml/pprz_transport.ml
+@@ -58,9 +58,13 @@ module PprzTransportBase(SubType:TRANSPORT_TYPE) = struct
+ 
+   let checksum = fun msg ->
+     let l = String.length msg in
+-    let ck_a, ck_b = compute_checksum msg in
+-    DebugPL.call 'T' (fun f -> fprintf f "Pprz_transport cs: %d %d | %d %d\n" ck_a (Char.code msg.[l-2]) ck_b (Char.code msg.[l-1]));
+-    ck_a = Char.code msg.[l-2] && ck_b = Char.code msg.[l-1]
++    if l < SubType.overhead_length || l <= SubType.offset_length ||
++       Char.code msg.[SubType.offset_length] <> l then
++      false
++    else
++      let ck_a, ck_b = compute_checksum msg in
++      DebugPL.call 'T' (fun f -> fprintf f "Pprz_transport cs: %d %d | %d %d\n" ck_a (Char.code msg.[l-2]) ck_b (Char.code msg.[l-1]));
++      ck_a = Char.code msg.[l-2] && ck_b = Char.code msg.[l-1]
+ 
+   let payload = fun msg ->
+     let l = String.length msg in

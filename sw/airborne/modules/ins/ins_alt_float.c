@@ -137,6 +137,9 @@ static void reset_ref(void)
   struct UtmCoor_f utm = utm_float_from_gps(&gps, 0);
   // reset state UTM ref
   stateSetLocalUtmOrigin_f(MODULE_INS_ALT_FLOAT_ID, &utm);
+  /* Reproject position now: retaining the previous UTM zone corrupts immediate HOME capture. */
+  utm.alt = ins_altf.alt;
+  stateSetPositionUtm_f(MODULE_INS_ALT_FLOAT_ID, &utm);
   ins_altf.origin_initialized = true;
   // reset filter flag
   ins_altf.reset_alt_ref = true;

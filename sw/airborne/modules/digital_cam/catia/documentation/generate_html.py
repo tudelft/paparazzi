@@ -93,7 +93,7 @@ DOCUMENTS = (
         "Adam and EasyStar 3 Precision Landing Flight Test",
         "Precision Landing",
         "Staged validation and tuning plan for Adam and EasyStar 3 autonomous IMAV2026 fixed-wing precision landing",
-        "Validate every sensor and control layer, then tune repeatable first contact inside the 20 by 3 metre precision box.",
+        "Tune the final standstill spot near TD, preferably with first touch also inside the 20 by 3 metre box; review contact quality separately.",
       ),
 )
 

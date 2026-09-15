@@ -36,7 +36,7 @@
 #include "pprzlink/messages.h"
 #endif
 
-#ifdef RANGEFINDER_I2C_SYNC_SEND
+#if RANGEFINDER_I2C_SYNC_SEND
 #include "modules/datalink/downlink.h"
 #endif
 
@@ -83,7 +83,7 @@ PRINT_CONFIG_VAR(RANGEFINDER_I2C_PORT)
 #define RANGEFINDER_I2C_USE_FILTER 1 // Enable filtering for rangefinder per default, sensors tend to give noisy spiking readings
 #endif
 
-#ifdef RANGEFINDER_I2C_USE_FILTER
+#if RANGEFINDER_I2C_USE_FILTER
 #include "filters/median_filter.h"
 ///The amount of sensor samples to keep in the median filter buffer
 #ifndef RANGEFINDER_I2C_MEDIAN_SIZE
@@ -106,10 +106,12 @@ struct RangefinderI2C rangefinder_i2c;
 /**
  * Send measured value and status information so it can be read back in e.g. log file for debugging
  */
+#if PERIODIC_TELEMETRY
 static void rangefinder_i2c_send_rangefinder(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_RANGEFINDER(trans, dev, AC_ID, &rangefinder_i2c.addr, &rangefinder_i2c.raw, &rangefinder_i2c.distance);
 }
+#endif
 
 /**
  * Set the default values at initialization
@@ -120,13 +122,13 @@ void rangefinder_i2c_init(void)
   rangefinder_i2c.addr = RANGEFINDER_I2C_ADDR;
 
   //Init with defaults that do not cause harm
-  rangefinder_i2c.distance = (float)RANGEFINDER_I2C_MIN_RANGE; // Start with minimum range as default distance
-  rangefinder_i2c.raw = (uint16_t)(rangefinder_i2c.distance / RANGEFINDER_I2C_SCALE);
+  rangefinder_i2c.distance = NAN;
+  rangefinder_i2c.raw = 0;
   rangefinder_i2c.update_agl = RANGEFINDER_I2C_USE_FOR_AGL;
 
   rangefinder_i2c.status = RANGEFINDER_I2C_REQ_DATA;
 
-#ifdef RANGEFINDER_I2C_USE_FILTER
+#if RANGEFINDER_I2C_USE_FILTER
   init_median_filter_f(&rangefinder_i2c_filter, RANGEFINDER_I2C_MEDIAN_SIZE);
 #endif
 
@@ -152,17 +154,22 @@ void rangefinder_i2c_event(void)
       // wait and do nothing
       break;
     case I2CTransSuccess:
+      if (rangefinder_i2c.status == RANGEFINDER_I2C_WAIT_REQUEST) {
+        rangefinder_i2c.status = RANGEFINDER_I2C_READ_DATA;
+      } else if (rangefinder_i2c.status == RANGEFINDER_I2C_WAIT_DATA) {
+        rangefinder_i2c.status = RANGEFINDER_I2C_PARSE_DATA;
+      }
+      rangefinder_i2c.trans.status = I2CTransDone;
+      break;
     case I2CTransFailed:
-      // set to done
+      rangefinder_i2c.distance = NAN;
+      rangefinder_i2c.status = RANGEFINDER_I2C_REQ_DATA;
       rangefinder_i2c.trans.status = I2CTransDone;
       break;
     default:
       // do nothing
       break;
   }
-#if RANGEFINDER_I2C_SYNC_SEND
-  rangefinder_i2c_report();
-#endif
 }
 
 /**
@@ -187,44 +194,33 @@ void rangefinder_i2c_periodic(void)
         if (rangefinder_i2c.trans.status == I2CTransDone) {
           rangefinder_i2c.trans.buf[0] = RANGEFINDER_I2C_READ_MODE_SINGLE;
           if (i2c_transmit(&RANGEFINDER_I2C_PORT, &rangefinder_i2c.trans, rangefinder_i2c.addr, 1)) {
-            rangefinder_i2c.status = RANGEFINDER_I2C_READ_DATA;
+            rangefinder_i2c.status = RANGEFINDER_I2C_WAIT_REQUEST;
           }
         }
         break;   
       #endif 
     case RANGEFINDER_I2C_READ_DATA:
       if (rangefinder_i2c.trans.status == I2CTransDone) {
-        #if ( RANGEFINDER_I2C_READ_MODE_SINGLE == 0x00 )
-          rangefinder_i2c.trans.buf[0] = 0;
-          rangefinder_i2c.trans.buf[1] = 0;
-        #else
-          rangefinder_i2c.trans.buf[1] = 0;
-          rangefinder_i2c.trans.buf[2] = 0;
-        #endif 
-
-        if (i2c_blocking_receive(&RANGEFINDER_I2C_PORT, &rangefinder_i2c.trans, rangefinder_i2c.addr, 2, 0.5)) {
-          rangefinder_i2c.status = RANGEFINDER_I2C_PARSE_DATA;
+        if (i2c_receive(&RANGEFINDER_I2C_PORT, &rangefinder_i2c.trans, rangefinder_i2c.addr, 2)) {
+          rangefinder_i2c.status = RANGEFINDER_I2C_WAIT_DATA;
         }
       }
       break;
     case RANGEFINDER_I2C_PARSE_DATA: {
-      #if ( RANGEFINDER_I2C_READ_MODE_SINGLE == 0x00 )
-        rangefinder_i2c.raw = (uint16_t)((rangefinder_i2c.trans.buf[0] << 8) | rangefinder_i2c.trans.buf[1]);
-      #else
-        rangefinder_i2c.raw = (uint16_t)((rangefinder_i2c.trans.buf[1] << 8) | rangefinder_i2c.trans.buf[2]);
-      #endif
+      rangefinder_i2c.raw = (uint16_t)((rangefinder_i2c.trans.buf[0] << 8) | rangefinder_i2c.trans.buf[1]);
       
       // Time of when measurement was taken, not when ABI message was send, tiny delay can occur between those two events
       uint32_t now_ts = get_sys_time_usec();
 
       // Convert the raw value to meters, optionally filter and apply the offset
       rangefinder_i2c.distance = (((float)(rangefinder_i2c.raw)) * RANGEFINDER_I2C_SCALE);
-#ifdef RANGEFINDER_I2C_USE_FILTER
+#if RANGEFINDER_I2C_USE_FILTER
       rangefinder_i2c.distance = update_median_filter_f(&rangefinder_i2c_filter, rangefinder_i2c.distance);
 #endif
 
-      if (rangefinder_i2c.distance <= (float)RANGEFINDER_I2C_MAX_RANGE) {  //Discard non reliable readings that are out of range
-        if (rangefinder_i2c.distance < (float)RANGEFINDER_I2C_MIN_RANGE) { rangefinder_i2c.distance = (float)RANGEFINDER_I2C_MIN_RANGE; }
+      if (isfinite(rangefinder_i2c.distance) && RANGEFINDER_I2C_SCALE > 0.f
+          && rangefinder_i2c.distance >= (float)RANGEFINDER_I2C_MIN_RANGE
+          && rangefinder_i2c.distance <= (float)RANGEFINDER_I2C_MAX_RANGE) {
 
         // Compensate range measurement for body rotation
         #if RANGEFINDER_I2C_COMPENSATE_ROTATION    
@@ -251,6 +247,9 @@ void rangefinder_i2c_periodic(void)
 
       // Reset status as so to start reading new distance value again
       rangefinder_i2c.status = RANGEFINDER_I2C_REQ_DATA;
+    #if RANGEFINDER_I2C_SYNC_SEND
+      rangefinder_i2c_report();
+    #endif
       break;
     }
     default:
@@ -268,5 +267,7 @@ void rangefinder_i2c_periodic(void)
  */
 void rangefinder_i2c_report(void)
 {
+#if RANGEFINDER_I2C_SYNC_SEND
   DOWNLINK_SEND_RANGEFINDER(DefaultChannel, DefaultDevice, &rangefinder_i2c.addr, &rangefinder_i2c.raw, &rangefinder_i2c.distance);
+#endif
 }

@@ -61,6 +61,7 @@ struct AirData {
 /** global AirData state
  */
 extern struct AirData air_data;
+extern float air_data_airspeed_time; /**< Last air-data airspeed state update (seconds), -1 before first sample. */
 
 /** AirData initialization. Called at startup.
  */

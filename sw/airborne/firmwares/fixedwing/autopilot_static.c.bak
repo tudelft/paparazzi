@@ -36,9 +36,6 @@
 
 /* Geofence exceptions */
 #include "modules/nav/nav_geofence.h"
-#if USE_PRECISION_LANDING
-#include "modules/nav/precision_landing.h"
-#endif
 
 #if USE_GPS
 #include "modules/gps/gps.h"
@@ -47,10 +44,6 @@
 #include "modules/datalink/downlink.h"
 
 static inline uint8_t pprz_mode_update(void);
-#if USE_GPS && defined FAILSAFE_DELAY_WITHOUT_GPS
-static uint8_t gps_failsafe_restore_mode;
-static bool gps_failsafe_active;
-#endif
 
 /** mode to enter when RC is lost in AP_MODE_MANUAL or AP_MODE_AUTO1 */
 #ifndef RC_LOST_MODE
@@ -148,26 +141,13 @@ void autopilot_static_on_rc_frame(void)
 
 void autopilot_static_set_mode(uint8_t new_autopilot_mode)
 {
-  if (new_autopilot_mode >= AP_MODE_NB) {
-    return;
-  }
   if (new_autopilot_mode != autopilot.mode) {
-#if USE_GPS && defined FAILSAFE_DELAY_WITHOUT_GPS
-    gps_failsafe_active = false;
-#endif
-#if USE_PRECISION_LANDING
-    precision_landing_on_mode_change(new_autopilot_mode);
-#endif
     autopilot.mode = new_autopilot_mode;
   }
 }
 
 void autopilot_static_SetModeHandler(float new_autopilot_mode)
 {
-  if (!isfinite(new_autopilot_mode) || new_autopilot_mode < AP_MODE_MANUAL
-      || new_autopilot_mode >= AP_MODE_NB || floorf(new_autopilot_mode) != new_autopilot_mode) {
-    return;
-  }
   autopilot_static_set_mode(new_autopilot_mode);
 }
 
@@ -284,6 +264,8 @@ void autopilot_failsafe_checks(void)
 #if USE_GPS && (defined FAILSAFE_DELAY_WITHOUT_GPS)
   /* This section is used for the failsafe of GPS
    */
+  static uint8_t last_pprz_mode;
+  static bool gps_lost = false;
 
   /** If aircraft is launched and is in autonomus mode, go into
       AP_MODE_GPS_OUT_OF_ORDER mode (Failsafe) if we lost the GPS */
@@ -292,31 +274,22 @@ void autopilot_failsafe_checks(void)
     if (sys_time.nb_sec - gps.last_3dfix_time > FAILSAFE_DELAY_WITHOUT_GPS) {
       if (autopilot_get_mode() == AP_MODE_AUTO2 ||
           autopilot_get_mode() == AP_MODE_HOME) {
-        gps_failsafe_restore_mode = autopilot_get_mode();
+        last_pprz_mode = autopilot_get_mode();
         autopilot_set_mode(AP_MODE_GPS_OUT_OF_ORDER);
-        gps_failsafe_active = true;
+        gps_lost = true;
       }
-    } else if (gps_failsafe_active) { /* GPS is ok */
+    } else if (gps_lost) { /* GPS is ok */
       /** If aircraft was in failsafe mode, come back in previous mode */
-      if (autopilot_get_mode() == AP_MODE_GPS_OUT_OF_ORDER) {
-        autopilot_set_mode(gps_failsafe_restore_mode);
-      }
-      gps_failsafe_active = false;
+      autopilot_set_mode(last_pprz_mode);
+      gps_lost = false;
     }
   }
 #endif /* GPS && FAILSAFE_DELAY_WITHOUT_GPS */
 
-  /* Healthy pilot-controlled modes must not fight the automatic HOME checks. */
-  bool pilot_with_valid_rc = false;
-#if defined RADIO_CONTROL || defined RADIO_CONTROL_AUTO1
-  pilot_with_valid_rc = (autopilot_get_mode() == AP_MODE_MANUAL || autopilot_get_mode() == AP_MODE_AUTO1)
-                       && !RadioControlIsLost();
-#endif
-
-  /* If in-flight, with good GPS but too far, then activate HOME mode. */
+  /* If in-flight, with good GPS but too far, then activate HOME mode
+   * In MANUAL with good RC, FBW will allow to override. */
   if (autopilot_get_mode() != AP_MODE_HOME &&
       autopilot_get_mode() != AP_MODE_GPS_OUT_OF_ORDER &&
-      !pilot_with_valid_rc &&
       autopilot.launch) {
     if (too_far_from_home || datalink_lost() || higher_than_max_altitude()) {
       autopilot_set_mode(AP_MODE_HOME);
@@ -392,6 +365,9 @@ static inline uint8_t pprz_mode_update(void)
      ) {
 #ifndef RADIO_AUTO_MODE
     uint8_t nm = AP_MODE_OF_PULSE(radio_control_get(RADIO_MODE));
+    bool b = autopilot_set_mode(nm);
+    return b;
+    //return autopilot_set_mode(AP_MODE_OF_PULSE(radio_control_get(RADIO_MODE)));
 #else
     INFO("Using RADIO_AUTO_MODE to switch between AUTO1 and AUTO2.")
     /* If RADIO_AUTO_MODE is enabled mode swithing will be seperated between
@@ -402,20 +378,16 @@ static inline uint8_t pprz_mode_update(void)
      * This is mainly a cludge for entry level radios with no three-way switch
      * but two available two-way switches which can be used.
      */
-    uint8_t nm = AP_MODE_OF_PULSE(radio_control_get(RADIO_MODE)) == AP_MODE_MANUAL ? AP_MODE_MANUAL
-                 : ((radio_control_get(RADIO_AUTO_MODE) > THRESHOLD2) ? AP_MODE_AUTO2 : AP_MODE_AUTO1);
-#endif // RADIO_AUTO_MODE
-    if (nm == AP_MODE_AUTO2 && autopilot.launch) {
-#if USE_GPS && defined FAILSAFE_DELAY_WITHOUT_GPS
-      if (autopilot_get_mode() == AP_MODE_GPS_OUT_OF_ORDER) {
-        return false;
-      }
-#endif
-      if (too_far_from_home || datalink_lost() || higher_than_max_altitude()) {
-        nm = AP_MODE_HOME;
-      }
+    if (AP_MODE_OF_PULSE(radio_control_get(RADIO_MODE)) == AP_MODE_MANUAL) {
+      /* RADIO_MODE in MANUAL position */
+      return autopilot_set_mode(AP_MODE_MANUAL);
+    } else {
+      /* RADIO_MODE not in MANUAL position.
+       * Select AUTO mode bassed on RADIO_AUTO_MODE channel
+       */
+      return autopilot_set_mode((radio_control_get(RADIO_AUTO_MODE) > THRESHOLD2) ? AP_MODE_AUTO2 : AP_MODE_AUTO1);
     }
-    return autopilot_set_mode(nm);
+#endif // RADIO_AUTO_MODE
   } else {
     return false;
   }

@@ -88,26 +88,27 @@
             <damping_coeff unit="LBS/FT/SEC"> 0.3 </damping_coeff>
         </contact>
         <contact type="STRUCTURE" name="BELLY_FRONT">
+            <!-- Estimated 30.5 mm belly footprint; four pads total 180 lb/ft, about 0.93 mm mean static compression. -->
             <location unit="IN">
                 <x> 3.0 </x>
-                <y> 0.0 </y>
+                <y> -0.6 </y>
                 <z> -1.3 </z>
             </location>
             <static_friction> 0.8 </static_friction>
             <dynamic_friction> 0.5 </dynamic_friction>
-            <spring_coeff unit="LBS/FT"> 6 </spring_coeff>
-            <damping_coeff unit="LBS/FT/SEC"> 0.3 </damping_coeff>
+            <spring_coeff unit="LBS/FT"> 45 </spring_coeff>
+            <damping_coeff unit="LBS/FT/SEC"> 0.4 </damping_coeff>
         </contact>
         <contact type="STRUCTURE" name="BELLY_REAR">
             <location unit="IN">
                 <x> 9.0 </x>
-                <y> 0.0 </y>
+                <y> -0.6 </y>
                 <z> -1.1 </z>
             </location>
             <static_friction> 0.8 </static_friction>
             <dynamic_friction> 0.5 </dynamic_friction>
-            <spring_coeff unit="LBS/FT"> 6 </spring_coeff>
-            <damping_coeff unit="LBS/FT/SEC"> 0.3 </damping_coeff>
+            <spring_coeff unit="LBS/FT"> 45 </spring_coeff>
+            <damping_coeff unit="LBS/FT/SEC"> 0.4 </damping_coeff>
         </contact>
         <contact type="STRUCTURE" name="TAIL_SKID">
             <!-- rear fuselage under the pusher prop disk (452 mm length) -->
@@ -154,6 +155,28 @@
             <dynamic_friction> 0.5 </dynamic_friction>
             <spring_coeff unit="LBS/FT"> 6 </spring_coeff>
             <damping_coeff unit="LBS/FT/SEC"> 0.3 </damping_coeff>
+        </contact>
+        <contact type="STRUCTURE" name="BELLY_FRONT_RIGHT">
+            <location unit="IN">
+                <x> 3.0 </x>
+                <y> 0.6 </y>
+                <z> -1.3 </z>
+            </location>
+            <static_friction> 0.8 </static_friction>
+            <dynamic_friction> 0.5 </dynamic_friction>
+            <spring_coeff unit="LBS/FT"> 45 </spring_coeff>
+            <damping_coeff unit="LBS/FT/SEC"> 0.4 </damping_coeff>
+        </contact>
+        <contact type="STRUCTURE" name="BELLY_REAR_RIGHT">
+            <location unit="IN">
+                <x> 9.0 </x>
+                <y> 0.6 </y>
+                <z> -1.1 </z>
+            </location>
+            <static_friction> 0.8 </static_friction>
+            <dynamic_friction> 0.5 </dynamic_friction>
+            <spring_coeff unit="LBS/FT"> 45 </spring_coeff>
+            <damping_coeff unit="LBS/FT/SEC"> 0.4 </damping_coeff>
         </contact>
     </ground_reactions>
 

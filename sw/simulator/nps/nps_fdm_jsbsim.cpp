@@ -27,6 +27,7 @@
  */
 
 #include <iostream>
+#include <vector>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -277,6 +278,7 @@ void nps_fdm_run_step(bool launch __attribute__((unused)), double *commands, int
   for (i = 0; i < num_steps; i++) {
 #if NPS_JSBSIM_CONTACT_LOG
     static bool contact_log_armed = false;
+    static std::vector<bool> active_contacts;
     contact_log_armed |= launch && fdm.agl > 10.0;
     const double impact_speed = MetersOfFeet(FDMExec->GetPropagate()->GetVel().Magnitude(1, 2));
     const double impact_sink = MetersOfFeet(FDMExec->GetPropagate()->GetVel()(3));
@@ -285,8 +287,10 @@ void nps_fdm_run_step(bool launch __attribute__((unused)), double *commands, int
 #if NPS_JSBSIM_CONTACT_LOG
     if (contact_log_armed) {
       FGGroundReactions *contacts = FDMExec->GetGroundReactions();
+      active_contacts.resize(contacts->GetNumGearUnits(), false);
       for (int contact_index = 0; contact_index < contacts->GetNumGearUnits(); contact_index++) {
-        if (contacts->GetGearUnit(contact_index)->GetWOW()) {
+        const bool touching = contacts->GetGearUnit(contact_index)->GetWOW();
+        if (touching && !active_contacts[contact_index]) {
           fetch_state();
           printf("NPS_LANDING_CONTACT {\"time\":%.6f,\"east\":%.6f,\"north\":%.6f,"
                  "\"altitude\":%.6f,\"groundspeed\":%.6f,\"sink\":%.6f,\"pitch\":%.6f,"
@@ -295,9 +299,8 @@ void nps_fdm_run_step(bool launch __attribute__((unused)), double *commands, int
                  impact_speed, impact_sink, DegOfRad(fdm.ltp_to_body_eulers.theta),
                  DegOfRad(fdm.ltp_to_body_eulers.phi), contact_index);
           fflush(stdout);
-          contact_log_armed = false;
-          break;
         }
+        active_contacts[contact_index] = touching;
       }
     }
 #endif

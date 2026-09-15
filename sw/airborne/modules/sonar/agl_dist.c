@@ -37,16 +37,35 @@ float agl_measurement_time;
 
 /** default sonar */
 #ifndef AGL_DIST_ID
+#ifdef AGL_DIST_SONAR_ID
+#define AGL_DIST_ID AGL_DIST_SONAR_ID
+#else
 #define AGL_DIST_ID ABI_BROADCAST
 #endif
+#endif
 #ifndef AGL_DIST_MAX_RANGE
+#ifdef AGL_DIST_SONAR_MAX_RANGE
+#define AGL_DIST_MAX_RANGE AGL_DIST_SONAR_MAX_RANGE
+#else
 #define AGL_DIST_MAX_RANGE 5.0f
 #endif
+#endif
 #ifndef AGL_DIST_MIN_RANGE
+#ifdef AGL_DIST_SONAR_MIN_RANGE
+#define AGL_DIST_MIN_RANGE AGL_DIST_SONAR_MIN_RANGE
+#else
 #define AGL_DIST_MIN_RANGE 0.001f
 #endif
+#endif
 #ifndef AGL_DIST_FILTER
+#ifdef AGL_DIST_SONAR_FILTER
+#define AGL_DIST_FILTER AGL_DIST_SONAR_FILTER
+#else
 #define AGL_DIST_FILTER 0.1f
+#endif
+#endif
+#ifndef AGL_DIST_TIMEOUT
+#define AGL_DIST_TIMEOUT 0.25f
 #endif
 
 abi_event agl_ev;
@@ -86,6 +105,7 @@ void agl_dist_init(void)
 static void agl_cb(uint8_t __attribute__((unused)) sender_id, uint32_t __attribute__((unused)) stamp, float distance)
 {
   if (distance < AGL_DIST_MAX_RANGE && distance > AGL_DIST_MIN_RANGE) {
+    const bool was_valid = agl_dist_valid;
     agl_dist_value = distance;
     agl_dist_valid = true;
     float now = get_sys_time_float();
@@ -93,7 +113,11 @@ static void agl_cb(uint8_t __attribute__((unused)) sender_id, uint32_t __attribu
     agl_measurement_time = now;
 
     // update multirate exponentially weighted moving average filter
-    agl_dist_value_filtered += (agl_dist_value - agl_dist_value_filtered) * dt / (AGL_DIST_FILTER + dt);
+    if (!was_valid || dt <= 0.f || dt >= AGL_DIST_TIMEOUT || AGL_DIST_FILTER <= 0.f) {
+      agl_dist_value_filtered = agl_dist_value;
+    } else {
+      agl_dist_value_filtered += (agl_dist_value - agl_dist_value_filtered) * dt / (AGL_DIST_FILTER + dt);
+    }
   } else {
     agl_dist_valid = false;
   }

@@ -43,8 +43,7 @@
       <exception cond="GetPosAlt() @GT GetAltRef()+15" deroute="Standby"/>
       <set value="0" var="autopilot.kill_throttle"/>
       <set value="0" var="autopilot.flight_time"/>
-      <set value="1" var="autopilot.launch"/>
-      <set value="1" var="autopilot.launch"/>
+      <!-- <set value="1" var="autopilot.launch"/> -->
       <attitude roll="0" throttle="1.0" vmode="throttle" pitch="DegOfRad(TAKEOFF_PITCH_ANGLE)" until="GetPosAlt() @GT GetAltRef()+10"/>
     </block>
     <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="home">

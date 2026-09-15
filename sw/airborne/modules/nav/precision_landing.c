@@ -32,15 +32,16 @@
  *    - **Precision Decision Band** (below `brake_agl` with fresh AGL):
  *      Computes time-to-ground \f$t_{contact} = h / v_z\f$ and projects touchdown location.
  *      Applies spoileron drag proportionally to predicted overshoot beyond `aim_before_td`.
- *      Linear blending ramps brake demand down near ground ($0.5\,\text{m}$ AGL) to prevent
- *      abrupt aerodynamic pitch transients during flare transition.
+ *      Retains bounded predictive braking near ground while airspeed is valid;
+ *      the aircraft mixer applies its configured actuator rate limits.
  *
  * 5. **Safety Persistence & Abort State Machine**:
  *    - Aborts if airspeed drops below `MIN_AIRSPEED` (protecting stall margin).
  *    - Aborts if lateral drift prediction exceeds \f$1.2\,\text{m}\f$ (retaining \f$0.3\,\text{m}\f$ margin inside the official \f$1.5\,\text{m}\f$ half-box).
- *    - Aborts if longitudinal prediction breaches bounds (\f$> 8.0\,\text{m}\f$ short or \f$> 8.0\,\text{m}\f$ overshoot with \f$\ge 95\%\f$ brake saturation).
+ *    - Rejects close-range longitudinal predictions beyond 8 m on either side of TD.
  *    - Evaluates prediction rejection across a \f$0.2\,\text{s}\f$ persistence timer to prevent single-sample sensor noise from triggering premature go-arounds.
- *    - Below commit height (\f$2.5\,\text{m}\f$), disallows powered go-around and forces flare landing.
+ *    - At/below commit height, latches no-powered-abort; failures then request flare.
+ *    - Pilot takeover cancels the sequence until another explicit landing entry.
  */
 
 #include "modules/nav/precision_landing.h"
@@ -52,12 +53,17 @@
 #include "firmwares/fixedwing/stabilization/stabilization_attitude.h"
 #include "state.h"
 #include "mcu_periph/sys_time.h"
+#include "autopilot.h"
+#include "modules/air_data/air_data.h"
+#if USE_GPS
+#include "modules/gps/gps.h"
+#endif
 
 #include <math.h>
 
 /* --- Default Configuration Parameters (Overridable via Airframe XML) --- */
 
-/** Minimum safe airspeed during approach (m/s). Below this, braking is disengaged and abort triggered. */
+/** Minimum approach airspeed (m/s). Below this, release brakes and reject; committed flight requests flare. */
 #ifndef PRECISION_LANDING_MIN_AIRSPEED
 #define PRECISION_LANDING_MIN_AIRSPEED 8.2f
 #endif
@@ -67,14 +73,28 @@
 #define PRECISION_LANDING_MAX_CROSS_TRACK 1.2f
 #endif
 
+#ifndef PRECISION_LANDING_APPROACH_CORRIDOR_SLOPE
+#define PRECISION_LANDING_APPROACH_CORRIDOR_SLOPE 0.25f
+#endif
+
 /** Maximum allowed longitudinal short/overshoot prediction error before aborting (m). */
 #ifndef PRECISION_LANDING_MAX_LONG_ERROR
 #define PRECISION_LANDING_MAX_LONG_ERROR 8.0f
 #endif
 
-/** Timeout threshold for rangefinder sample freshness (seconds). Stale data switches to barometric fallback. */
+/* The geometric aim compensates for airborne tracking/flare travel, not measured ground stopping.
+ * Keep its tuning range separate from MAX_LONG_ERROR so tuning cannot widen contact acceptance. */
+#ifndef PRECISION_LANDING_MAX_AIM_DISTANCE
+#define PRECISION_LANDING_MAX_AIM_DISTANCE 20.0f
+#endif
+
+/** Range freshness limit (s). Fused altitude is an upper-band fallback, not a replacement for low-AGL ranging. */
 #ifndef PRECISION_LANDING_AGL_TIMEOUT
 #define PRECISION_LANDING_AGL_TIMEOUT 0.25f
+#endif
+
+#ifndef PRECISION_LANDING_AIRSPEED_TIMEOUT
+#define PRECISION_LANDING_AIRSPEED_TIMEOUT 0.5f
 #endif
 
 /** Default AGL altitude below which close-range predictive braking is enabled (m). */
@@ -107,7 +127,7 @@
 #define PRECISION_LANDING_MAX_BRAKE 1.0f
 #endif
 
-/** Maximum roll angle setpoint during touchdown flare (radians). 8 deg prevents wingtip strike on belly landers. */
+/** Flare roll setpoint cap (radians). Limits commanded bank; does not guarantee wingtip clearance. */
 #ifndef PRECISION_LANDING_FLARE_MAX_ROLL
 #define PRECISION_LANDING_FLARE_MAX_ROLL RadOfDeg(8.f)
 #endif
@@ -145,8 +165,190 @@ static float previous_agl_time;    /**< Timestamp of previous AGL sample (s) */
 static float range_sink_rate_mps;  /**< Filtered vertical sink rate derived from rangefinder differentiation (m/s) */
 static uint8_t range_rate_samples; /**< Number of consecutive valid range-rate samples accumulated */
 static uint8_t touchdown_wp;       /**< Waypoint index of target touchdown location */
+static uint8_t approach_wp;
+static float approach_east, approach_north, approach_altitude;
+static float touchdown_east, touchdown_north, touchdown_altitude;
 static bool precision_landing_ready;/**< Flag confirming valid runway vector setup */
 static float rejection_since;      /**< Timestamp when prediction rejection condition first triggered (s) */
+static bool landing_committed;
+bool precision_landing_cancelled;
+static bool landing_active;
+static bool bench_active;
+static bool roll_limit_owned;
+static float saved_roll_limit;
+
+static bool airspeed_safe(void)
+{
+  const float age = get_sys_time_float() - air_data_airspeed_time;
+  return air_data_airspeed_time >= 0.f && age >= 0.f && age < PRECISION_LANDING_AIRSPEED_TIMEOUT
+         && precision_landing_airspeed_safe(stateIsAirspeedValid(), stateGetAirspeed_f(),
+                                           PRECISION_LANDING_MIN_AIRSPEED);
+}
+
+static void release_controls(void)
+{
+  precision_landing_brake_fraction = 0.f;
+  commands[COMMAND_BRAKE] = 0;
+  if (roll_limit_owned) {
+    h_ctl_roll_max_setpoint = saved_roll_limit;
+    roll_limit_owned = false;
+  }
+}
+
+static bool geometry_unchanged(void)
+{
+  /* A waypoint edit or reference-frame reset invalidates the captured slope and axes together.
+   * Do not silently combine new waypoints with old geometry during an established final. */
+  return precision_landing_ready && approach_wp < NB_WAYPOINT && touchdown_wp < NB_WAYPOINT
+         && WaypointX(approach_wp) == approach_east && WaypointY(approach_wp) == approach_north
+         && WaypointAlt(approach_wp) == approach_altitude
+         && WaypointX(touchdown_wp) == touchdown_east && WaypointY(touchdown_wp) == touchdown_north
+         && WaypointAlt(touchdown_wp) == touchdown_altitude;
+}
+
+static void cancel_invalid_geometry(void)
+{
+  const float age = get_sys_time_float() - agl_measurement_time;
+  const bool fresh = agl_dist_valid && isfinite(agl_dist_value_filtered) && agl_dist_value_filtered >= 0.f
+                     && age >= 0.f && age < PRECISION_LANDING_AGL_TIMEOUT;
+  const float height = fresh ? agl_dist_value_filtered
+                            : (precision_landing_ready ? GetPosAlt() - touchdown_altitude : NAN);
+  const bool final_active = precision_landing_ready || landing_committed;
+  if (final_active && (landing_committed || !isfinite(height)
+                      || precision_landing_should_commit(height, PRECISION_LANDING_ABORT_AGL))) {
+    release_controls();
+    precision_landing_ready = false;
+    landing_committed = true;
+    precision_landing_commit_flare = true;
+    precision_landing_abort = false;
+    return;
+  }
+  precision_landing_stop();
+  precision_landing_cancelled = true;
+  precision_landing_abort = true;
+}
+
+bool precision_landing_parameters_valid(float airspeed, float height, float brake_height,
+    float flare_height, float aim, float pitch, float brake, float retries)
+{
+  return isfinite(airspeed) && airspeed >= PRECISION_LANDING_MIN_AIRSPEED && airspeed <= 12.f
+         && isfinite(height) && height >= 10.f && height <= 25.f
+         && isfinite(brake_height) && brake_height >= PRECISION_LANDING_ABORT_AGL
+         && brake_height <= PRECISION_LANDING_BRAKE_ENABLE_AGL
+         && isfinite(flare_height) && flare_height >= 0.5f && flare_height <= PRECISION_LANDING_ABORT_AGL
+         && isfinite(aim) && aim >= 2.f && aim <= PRECISION_LANDING_MAX_AIM_DISTANCE
+         && isfinite(pitch) && pitch >= -5.f && pitch <= 10.f
+         && isfinite(brake) && brake >= 0.f && brake <= fminf(PRECISION_LANDING_MAX_BRAKE, 0.75f)
+         && isfinite(retries) && retries >= 0.f && retries <= 5.f && floorf(retries) == retries;
+}
+
+bool precision_landing_entry_valid(uint8_t af_wp, uint8_t td_wp, float height, float radius)
+{
+  if (af_wp >= NB_WAYPOINT || td_wp >= NB_WAYPOINT || !isfinite(height) || height <= 0.f
+      || !isfinite(radius) || fabsf(radius) < 1.f) {
+    return false;
+  }
+  const float east = WaypointX(td_wp) - WaypointX(af_wp);
+  const float north = WaypointY(td_wp) - WaypointY(af_wp);
+  const float length = hypotf(east, north);
+  const float altitude = WaypointAlt(td_wp) + height;
+  if (!isfinite(length) || length <= 1.f || !isfinite(east * east + north * north)
+      || !isfinite(radius * radius) || !isfinite(altitude) || altitude <= WaypointAlt(td_wp)) {
+    return false;
+  }
+  const float baseleg_east = WaypointX(af_wp) + north / length * radius;
+  const float baseleg_north = WaypointY(af_wp) - east / length * radius;
+  return isfinite(baseleg_east) && isfinite(baseleg_north);
+}
+
+void precision_landing_start(void)
+{
+  bench_active = false;
+  release_controls();
+  landing_active = autopilot_get_mode() == AP_MODE_AUTO2;
+  precision_landing_cancelled = !landing_active;
+  landing_committed = false;
+  precision_landing_ready = false;
+  precision_landing_abort = false;
+  precision_landing_commit_flare = false;
+}
+
+void precision_landing_release(void)
+{
+  /* Flight-plan stage exits release outputs without reopening the powered-abort option.
+   * Only an explicit new landing start resets the commitment latch. */
+  release_controls();
+}
+
+bool precision_landing_is_active(void)
+{
+  return landing_active && !precision_landing_cancelled && autopilot_get_mode() == AP_MODE_AUTO2;
+}
+
+static bool bench_interlocks_ok(void)
+{
+  const struct EnuCoor_f *speed = stateGetSpeedEnu_f();
+  const float age = get_sys_time_float() - agl_measurement_time;
+  return autopilot_get_mode() == AP_MODE_AUTO2 && autopilot.kill_throttle
+         && !autopilot.launch && autopilot.flight_time == 0
+         && agl_dist_valid && isfinite(agl_dist_value_filtered)
+         && agl_dist_value_filtered >= 0.f && agl_dist_value_filtered <= 0.5f
+         && age >= 0.f && age < PRECISION_LANDING_AGL_TIMEOUT
+         && isfinite(speed->x) && isfinite(speed->y) && isfinite(speed->z)
+         && hypotf(speed->x, speed->y) <= 0.5f && fabsf(speed->z) <= 0.2f;
+}
+
+void precision_landing_bench_start(void)
+{
+  precision_landing_stop();
+  bench_active = bench_interlocks_ok();
+}
+
+bool precision_landing_bench_run(void)
+{
+  if (!bench_active || !bench_interlocks_ok()) {
+    bench_active = false;
+    release_controls();
+    return false;
+  }
+  commands[COMMAND_BRAKE] = -MAX_PPRZ;
+  return true;
+}
+
+void precision_landing_check_abort(void)
+{
+  if (!precision_landing_is_active()) {
+    precision_landing_cancelled = true;
+    release_controls();
+    return;
+  }
+  const float age = get_sys_time_float() - agl_measurement_time;
+  const bool fresh = agl_dist_valid && isfinite(agl_dist_value_filtered) && agl_dist_value_filtered >= 0.f
+                     && age >= 0.f && age < PRECISION_LANDING_AGL_TIMEOUT;
+  const float height = fresh ? agl_dist_value_filtered
+                            : (precision_landing_ready ? GetPosAlt() - touchdown_altitude : NAN);
+  landing_committed |= !isfinite(height) || precision_landing_should_commit(height, PRECISION_LANDING_ABORT_AGL);
+  precision_landing_commit_flare = landing_committed;
+  precision_landing_abort = !landing_committed;
+  release_controls();
+}
+
+void precision_landing_on_mode_change(uint8_t mode)
+{
+  /* Clear demand even outside an active final: stale crow must not survive a mode transition.
+   * Returning to AUTO2 must not resume landing without an explicit landing entry. */
+  if (mode != autopilot_get_mode()) {
+    precision_landing_cancelled = true;
+    precision_landing_stop();
+  }
+}
+
+static void reject_approach(void)
+{
+  precision_landing_commit_flare = landing_committed;
+  precision_landing_abort = !landing_committed;
+  release_controls();
+}
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -185,21 +387,29 @@ void precision_landing_init(void)
 
 void precision_landing_stop(void)
 {
-  /* Disengage crow brake commands and restore standard flight roll setpoint limit immediately upon
-   * exiting landing blocks. Restoring roll authority is critical to prevent restricted roll control
-   * during subsequent go-around or standby maneuvers. */
-  precision_landing_brake_fraction = 0.f;
-  commands[COMMAND_BRAKE] = 0;
-  h_ctl_roll_max_setpoint = H_CTL_ROLL_MAX_SETPOINT;
+  release_controls();
+  bench_active = false;
+  landing_active = false;
+  precision_landing_ready = false;
 }
 
 void precision_landing_flare(float brake_fraction)
 {
+  if (!landing_active || precision_landing_cancelled || autopilot_get_mode() != AP_MODE_AUTO2) {
+    precision_landing_cancelled = true;
+    return;
+  }
+  landing_active = true;
+  landing_committed = true;
+  if (!roll_limit_owned) {
+    saved_roll_limit = h_ctl_roll_max_setpoint;
+    roll_limit_owned = true;
+  }
   /* Defensive check against NaN inputs from uninitialized flight-plan variables. */
-  if (!isfinite(brake_fraction)) {
+  if (!isfinite(brake_fraction) || !airspeed_safe()) {
     brake_fraction = 0.f;
   }
-  Bound(brake_fraction, 0.f, PRECISION_LANDING_MAX_BRAKE);
+  Bound(brake_fraction, 0.f, fminf(fmaxf(PRECISION_LANDING_MAX_BRAKE, 0.f), 1.f));
   precision_landing_brake_fraction = brake_fraction;
   
   /* Paparazzi mixer convention: negative command value corresponds to upward spoileron deflection. */
@@ -207,31 +417,73 @@ void precision_landing_flare(float brake_fraction)
   
   /* Restrict maximum roll setpoint during touchdown flare (e.g. 8 degrees). Belly-landing foam airframes
    * have low ground clearance; excessive bank during contact risks catching a wingtip and cartwheeling. */
-  h_ctl_roll_max_setpoint = PRECISION_LANDING_FLARE_MAX_ROLL;
+  h_ctl_roll_max_setpoint = fminf(saved_roll_limit, PRECISION_LANDING_FLARE_MAX_ROLL);
+}
+
+void precision_landing_flare_run(float pitch_deg, float brake_fraction)
+{
+  if (!landing_active || precision_landing_cancelled || autopilot_get_mode() != AP_MODE_AUTO2) {
+    precision_landing_cancelled = true;
+    return;
+  }
+  precision_landing_flare(brake_fraction);
+  float pitch = isfinite(pitch_deg) ? RadOfDeg(pitch_deg) : 0.f;
+  Bound(pitch, H_CTL_PITCH_MIN_SETPOINT, H_CTL_PITCH_MAX_SETPOINT);
+  /* Own the local throttle setpoint, not the global kill latch, so pilot takeover retains authority. */
+  NavVerticalAutoThrottleMode(pitch);
+  NavVerticalThrottleMode(0);
+  NavAttitude(0.f);
+#if USE_GPS
+  const struct EnuCoor_f *position = stateGetPositionEnu_f();
+  if (geometry_unchanged() && GpsFixValid() && isfinite(position->x) && isfinite(position->y)
+      && !NavApproachingFrom(touchdown_wp, approach_wp, 0)) {
+    NavSegment(approach_wp, touchdown_wp);
+  }
+#endif
 }
 
 void precision_landing_setup(uint8_t af_wp, uint8_t td_wp, float brake_enable_agl, float aim_before_td)
 {
+  if (!landing_active || precision_landing_cancelled || autopilot_get_mode() != AP_MODE_AUTO2) {
+    precision_landing_cancelled = true;
+    return;
+  }
+  landing_active = true;
+  release_controls();
+  if (af_wp >= NB_WAYPOINT || td_wp >= NB_WAYPOINT) {
+    cancel_invalid_geometry();
+    return;
+  }
   const float east = WaypointX(td_wp) - WaypointX(af_wp);
   const float north = WaypointY(td_wp) - WaypointY(af_wp);
-  const float length = sqrtf(east * east + north * north);
+  const float length = hypotf(east, north);
+  const float altitude_difference = WaypointAlt(af_wp) - WaypointAlt(td_wp);
+  const float slope = length > 1.f ? altitude_difference / length : NAN;
 
-  /* Verify that touchdown and approach waypoints are physically distinct (>1m apart) and all input
-   * floats are finite. Invalid geometry disables module execution and flags immediate abort. */
+  /* Reject degenerate or non-descending geometry before navigation can consume its slope.
+   * Invalid geometry requests flare if already committed, rather than a powered recovery. */
   precision_landing_ready = isfinite(length) && length > 1.f && isfinite(brake_enable_agl)
                            && isfinite(aim_before_td) && isfinite(WaypointAlt(af_wp))
-                           && isfinite(WaypointAlt(td_wp));
+                           && isfinite(WaypointAlt(td_wp)) && isfinite(altitude_difference)
+                           && isfinite(slope) && slope > 0.f;
   touchdown_wp = td_wp;
+  approach_wp = af_wp;
   if (precision_landing_ready) {
     final_unit_east = east / length;
     final_unit_north = north / length;
     
-    /* Calculate nominal slope dz/dx. Lower-bounded at 0.02 (approx 1.1 deg) to prevent zero division
-     * in flat flight plans. */
-    final_slope = fmaxf((WaypointAlt(af_wp) - WaypointAlt(td_wp)) / length, 0.02f);
+    final_slope = slope;
+    approach_east = WaypointX(af_wp);
+    approach_north = WaypointY(af_wp);
+    approach_altitude = WaypointAlt(af_wp);
+    touchdown_east = WaypointX(td_wp);
+    touchdown_north = WaypointY(td_wp);
+    touchdown_altitude = WaypointAlt(td_wp);
   } else {
     final_unit_east = 0.f;
     final_unit_north = 0.f;
+    cancel_invalid_geometry();
+    return;
   }
 
   precision_landing_remaining_m = length;
@@ -241,7 +493,7 @@ void precision_landing_setup(uint8_t af_wp, uint8_t td_wp, float brake_enable_ag
   brake_enable_agl_m = brake_enable_agl;
   Bound(brake_enable_agl_m, PRECISION_LANDING_ABORT_AGL, PRECISION_LANDING_BRAKE_ENABLE_AGL);
   aim_before_td_m = aim_before_td;
-  Bound(aim_before_td_m, 0.f, PRECISION_LANDING_MAX_LONG_ERROR);
+  Bound(aim_before_td_m, 0.f, PRECISION_LANDING_MAX_AIM_DISTANCE);
   precision_landing_agl_fresh = false;
   rejection_since = -1.f;
   previous_agl_m = 0.f;
@@ -250,28 +502,52 @@ void precision_landing_setup(uint8_t af_wp, uint8_t td_wp, float brake_enable_ag
   range_rate_samples = 0;
   precision_landing_abort = !precision_landing_ready;
   precision_landing_commit_flare = false;
-  precision_landing_stop();
+  landing_committed = false;
 }
 
 void precision_landing_run(void)
 {
+  if (!landing_active || precision_landing_cancelled || autopilot_get_mode() != AP_MODE_AUTO2) {
+    precision_landing_cancelled = true;
+    return;
+  }
+  if (!geometry_unchanged()) {
+    cancel_invalid_geometry();
+    return;
+  }
+  const float now = get_sys_time_float();
+  const float measurement_age = now - agl_measurement_time;
+  precision_landing_agl_fresh = agl_dist_valid
+                              && isfinite(agl_dist_value_filtered) && agl_dist_value_filtered >= 0.f
+                              && measurement_age >= 0.f && measurement_age < PRECISION_LANDING_AGL_TIMEOUT;
+  const float barometric_agl = precision_landing_ready ? GetPosAlt() - WaypointAlt(touchdown_wp) : NAN;
+  const float decision_height = precision_landing_agl_fresh ? agl_dist_value_filtered : barometric_agl;
+  /* Latch before evaluating faults: height noise or later sensor loss must not re-enable a
+   * powered abort after entering the low-altitude commitment region. Unknown height also commits. */
+  landing_committed |= precision_landing_should_commit(decision_height, PRECISION_LANDING_ABORT_AGL);
+  landing_committed |= !isfinite(decision_height);
+  precision_landing_abort = false;
+  precision_landing_commit_flare = false;
+
   if (!precision_landing_ready) {
-    precision_landing_abort = true;
-    precision_landing_stop();
+    reject_approach();
     return;
   }
 
   const struct EnuCoor_f *position = stateGetPositionEnu_f();
   const struct EnuCoor_f *speed = stateGetSpeedEnu_f();
+#if USE_GPS
+  if (!GpsFixValid()) {
+    reject_approach();
+    return;
+  }
+#endif
   
   /* Fail-safe floating-point verification: if state estimation produces NaN or Inf (e.g. after sensor failure),
    * commit to flare if close to ground or abort if airborne to protect flight controls from corrupt values. */
   if (!isfinite(position->x) || !isfinite(position->y) || !isfinite(speed->x)
-      || !isfinite(speed->y) || !isfinite(speed->z)) {
-    precision_landing_commit_flare = precision_landing_should_commit(GetPosAlt() - WaypointAlt(touchdown_wp),
-                                      PRECISION_LANDING_ABORT_AGL);
-    precision_landing_abort = !precision_landing_commit_flare;
-    precision_landing_stop();
+      || !isfinite(speed->y) || !isfinite(speed->z) || !isfinite(barometric_agl)) {
+    reject_approach();
     return;
   }
   
@@ -279,20 +555,21 @@ void precision_landing_run(void)
   const float to_td_east = WaypointX(touchdown_wp) - position->x;
   const float to_td_north = WaypointY(touchdown_wp) - position->y;
   
-  /* Project velocity vector onto along-track and cross-track unit vectors.
-   * Note: along_speed represents forward velocity along the approach line (handles crab natively). */
+  /* Ground velocity includes head/tailwind travel and crosswind drift without adding wind twice.
+   * Airspeed remains a separate brake-safety gate; groundspeed cannot establish stall margin.
+   * This projects first contact, not the subsequent surface-dependent slide to final rest. */
   const float along_speed = speed->x * final_unit_east + speed->y * final_unit_north;
   const float cross_speed = speed->x * final_unit_north - speed->y * final_unit_east;
 
   precision_landing_remaining_m = to_td_east * final_unit_east + to_td_north * final_unit_north;
   precision_landing_cross_track_m = to_td_east * final_unit_north - to_td_north * final_unit_east;
+  if (!isfinite(along_speed) || !isfinite(cross_speed) || !isfinite(precision_landing_remaining_m)
+      || !isfinite(precision_landing_cross_track_m)) {
+    reject_approach();
+    return;
+  }
   
   /* Rangefinder Freshness & Differentiated Sink Rate Calculation */
-  const float now = get_sys_time_float();
-  const float measurement_age = now - agl_measurement_time;
-  precision_landing_agl_fresh = agl_dist_valid
-                                && isfinite(agl_dist_value_filtered) && agl_dist_value_filtered >= 0.f
-                                && measurement_age >= 0.f && measurement_age < PRECISION_LANDING_AGL_TIMEOUT;
   if (precision_landing_agl_fresh && agl_measurement_time > previous_agl_time) {
     if (previous_agl_time > 0.f && agl_measurement_time - previous_agl_time < PRECISION_LANDING_AGL_TIMEOUT) {
       const float dt = agl_measurement_time - previous_agl_time;
@@ -315,12 +592,13 @@ void precision_landing_run(void)
     previous_agl_time = agl_measurement_time;
   }
 
-  precision_landing_abort = false;
-  precision_landing_commit_flare = false;
+  if (!airspeed_safe() || along_speed < 1.f || precision_landing_remaining_m <= 0.f) {
+    reject_approach();
+    return;
+  }
 
   /* --- UPPER ALTITUDE BAND & BAROMETRIC FALLBACK --- */
   if (!precision_landing_agl_fresh || agl_dist_value_filtered > brake_enable_agl_m) {
-    const float barometric_agl = GetPosAlt() - WaypointAlt(touchdown_wp);
     if (barometric_agl > brake_enable_agl_m || precision_landing_agl_fresh) {
       /* Compute barometric prediction above brake_agl to allow early, smooth dissipation of excess potential energy. */
       const struct PrecisionLandingPrediction prediction = precision_landing_predict(precision_landing_remaining_m,
@@ -328,15 +606,30 @@ void precision_landing_run(void)
           PRECISION_LANDING_MIN_SINK_RATE);
       precision_landing_predicted_error_m = prediction.longitudinal_error_m;
       precision_landing_predicted_cross_track_m = prediction.cross_track_error_m;
+      const float approach_corridor = PRECISION_LANDING_MAX_CROSS_TRACK
+          + PRECISION_LANDING_APPROACH_CORRIDOR_SLOPE * fmaxf(decision_height - brake_enable_agl_m, 0.f);
+      if (!isfinite(prediction.longitudinal_error_m) || !isfinite(prediction.cross_track_error_m)
+          || fabsf(precision_landing_cross_track_m) > approach_corridor) {
+        if (rejection_since < 0.f) {
+          rejection_since = now;
+        }
+        if (now - rejection_since >= PRECISION_LANDING_REJECT_DELAY) {
+          reject_approach();
+          return;
+        }
+      } else {
+        rejection_since = -1.f;
+      }
       float brake = 0.f;
       if (isfinite(barometric_agl) && isfinite(prediction.longitudinal_error_m)
-          && precision_landing_airspeed_safe(stateIsAirspeedValid(), stateGetAirspeed_f(), PRECISION_LANDING_MIN_AIRSPEED)
+          && airspeed_safe()
           && along_speed > 1.f && -speed->z > PRECISION_LANDING_MIN_SINK_RATE) {
         const float desired_height = fmaxf(precision_landing_remaining_m - aim_before_td_m, 0.f) * final_slope;
         brake = (barometric_agl - desired_height) * 0.3f;
         
         /* Cap upper band brake at 50% max to ensure sufficient pitch/roll control authority remains. */
-        Bound(brake, 0.f, PRECISION_LANDING_UPPER_MAX_BRAKE);
+        Bound(brake, 0.f, fminf(fmaxf(PRECISION_LANDING_UPPER_MAX_BRAKE, 0.f),
+                  fminf(fmaxf(PRECISION_LANDING_MAX_BRAKE, 0.f), 1.f)));
       }
       precision_landing_brake_fraction = brake;
       commands[COMMAND_BRAKE] = (pprz_t)(-brake * MAX_PPRZ);
@@ -344,9 +637,7 @@ void precision_landing_run(void)
     }
     
     /* If below brake_agl but rangefinder data is missing, commit to flare if below 2.5m, otherwise abort. */
-    precision_landing_commit_flare = precision_landing_should_commit(barometric_agl, PRECISION_LANDING_ABORT_AGL);
-    precision_landing_abort = !precision_landing_commit_flare;
-    precision_landing_stop();
+    reject_approach();
     return;
   }
 
@@ -362,18 +653,12 @@ void precision_landing_run(void)
   /* --- SAFETY BOUNDARY & PERSISTENCE EVALUATION --- */
   if (agl_dist_value_filtered > PRECISION_LANDING_ABORT_AGL) {
     /* Immediate abort if airspeed drops below stall safety margin or along-track groundspeed halts. */
-    precision_landing_abort = !precision_landing_airspeed_safe(stateIsAirspeedValid(), stateGetAirspeed_f(),
-                              PRECISION_LANDING_MIN_AIRSPEED) || along_speed < 1.f;
+    precision_landing_abort = !airspeed_safe() || along_speed < 1.f;
     
-    /* Persistence filter for spatial prediction violations:
-     * Triggers abort if prediction exceeds 1.2m cross-track or 8.0m longitudinal limits, OR if the aircraft
-     * is overshooting with crow brakes saturated at >= 95% max deflection.
-     * Requiring 0.2s continuous violation prevents single-sample sensor noise from canceling a good approach. */
+    /* Require a persistent box violation before rejecting a close-range approach. */
     if (precision_landing_prediction_rejected(precision_landing_predicted_error_m,
         precision_landing_predicted_cross_track_m, PRECISION_LANDING_MAX_LONG_ERROR,
-        PRECISION_LANDING_MAX_CROSS_TRACK)
-        || (precision_landing_predicted_error_m < -PRECISION_LANDING_MAX_LONG_ERROR
-          && precision_landing_brake_fraction >= PRECISION_LANDING_MAX_BRAKE * 0.95f)) {
+        PRECISION_LANDING_MAX_CROSS_TRACK)) {
       if (rejection_since < 0.f) {
         rejection_since = now;
       }
@@ -383,21 +668,24 @@ void precision_landing_run(void)
     }
   }
 
-  /* --- PROPORTIONAL CROW BRAKE CALCULATION & FLARE BLENDING --- */
+  if (precision_landing_abort) {
+    reject_approach();
+    return;
+  }
+
+  /* --- PROPORTIONAL CROW BRAKE CALCULATION --- */
+  /* Positive prediction error is upstream of TD, so error below aim means overshooting the aim.
+   * Do not fade demand solely with altitude: that previously retracted crow while overshooting,
+   * leaving the rate-limited actuators to extend again at flare. Airspeed gating and caps remain. */
   float brake = 0.f;
-  if (!precision_landing_abort && precision_landing_airspeed_safe(stateIsAirspeedValid(), stateGetAirspeed_f(),
-      PRECISION_LANDING_MIN_AIRSPEED)
+  if (!precision_landing_abort && airspeed_safe()
       && agl_dist_value_filtered < brake_enable_agl_m
       && precision_landing_predicted_error_m < aim_before_td_m) {
     brake = (aim_before_td_m - precision_landing_predicted_error_m)
             * PRECISION_LANDING_BRAKE_GAIN;
             
-    /* Linear blend from 3.5m down to 0.5m AGL: smoothly tapers off predictive braking as the aircraft
-     * nears the ground to prevent abrupt pitch trim shifts during touchdown flare transition. */
-    float flare_blend = (agl_dist_value_filtered - 0.5f) / fmaxf(brake_enable_agl_m - 0.5f, 0.1f);
-    Bound(flare_blend, 0.f, 1.f);
-    brake *= flare_blend;
-    Bound(brake, 0.f, PRECISION_LANDING_MAX_BRAKE);
+    brake = isfinite(brake) ? brake : 0.f;
+    Bound(brake, 0.f, fminf(fmaxf(PRECISION_LANDING_MAX_BRAKE, 0.f), 1.f));
   }
 
   precision_landing_brake_fraction = brake;
@@ -406,7 +694,12 @@ void precision_landing_run(void)
 
 void precision_landing_glide(void)
 {
-  if (!precision_landing_ready) {
+  if (!precision_landing_ready || precision_landing_abort || precision_landing_commit_flare
+      || precision_landing_cancelled || autopilot_get_mode() != AP_MODE_AUTO2) {
+    return;
+  }
+  if (!geometry_unchanged()) {
+    cancel_invalid_geometry();
     return;
   }
   const struct EnuCoor_f *speed = stateGetSpeedEnu_f();
@@ -416,5 +709,12 @@ void precision_landing_glide(void)
    * Shifting the target height upstream by aim_before_td_m ensures the unbraked trajectory targets
    * the upstream box entry rather than the box center, absorbing flare float. */
   const float height = fmaxf(precision_landing_remaining_m - aim_before_td_m, 0.f) * final_slope;
-  NavVerticalAltitudeMode(WaypointAlt(touchdown_wp) + height, -fmaxf(along_speed, 0.f) * final_slope);
+  const float altitude = WaypointAlt(touchdown_wp) + height;
+  const float preclimb = -fmaxf(along_speed, 0.f) * final_slope;
+  if (!isfinite(along_speed) || !isfinite(height) || !isfinite(altitude) || !isfinite(preclimb)) {
+    reject_approach();
+    return;
+  }
+  flight_altitude = altitude;
+  NavVerticalAltitudeMode(altitude, preclimb);
 }

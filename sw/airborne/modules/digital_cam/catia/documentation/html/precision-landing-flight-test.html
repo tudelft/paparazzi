@@ -197,7 +197,7 @@ footer { padding: 25px 20px; color: var(--surface); background: var(--black); bo
       </nav>
       <p class="eyebrow">Paparazzi UAV / MORA / SODA</p>
       <h1>Adam and EasyStar 3 Precision Landing Flight Test</h1>
-      <p class="lede">Validate every sensor and control layer, then tune repeatable first contact inside the 20 by 3 metre precision box.</p>
+      <p class="lede">Tune the final standstill spot near TD, preferably with first touch also inside the 20 by 3 metre box; review contact quality separately.</p>
     </div>
   </header>
   <div class="layout">
@@ -220,7 +220,13 @@ footer { padding: 25px 20px; color: var(--surface); background: var(--black); bo
         <div class="toc">
 <ul>
 <li><a href="#adam-and-easystar-3-precision-landing-flight-test-plan">Adam and EasyStar 3 Precision Landing Flight-Test Plan</a><ul>
-<li><a href="#software-validation-status-2026-09-13">Software validation status, 2026-09-13</a></li>
+<li><a href="#current-development-baseline-2026-09-15">Current development baseline, 2026-09-15</a></li>
+<li><a href="#earlier-landing-integration-check-2026-09-15-superseded">Earlier landing integration check, 2026-09-15 (superseded)</a></li>
+<li><a href="#structural-flight-safety-audit-2026-09-15">Structural flight-safety audit, 2026-09-15</a></li>
+<li><a href="#precision-objective-and-current-tuning-2026-09-15">Precision objective and current tuning, 2026-09-15</a></li>
+<li><a href="#talon-and-foam-contact-update-2026-09-15">Talon and foam-contact update, 2026-09-15</a></li>
+<li><a href="#safety-revision-status-2026-09-14-historical">Safety revision status, 2026-09-14 (historical)</a></li>
+<li><a href="#historical-results-2026-09-13-superseded">Historical results, 2026-09-13 (superseded)</a></li>
 <li><a href="#objective-scoring-geometry-system-under-test">Objective, Scoring Geometry, &amp; System under Test</a></li>
 <li><a href="#part-i-option-a-minimal-express-flight-test-plan-time-critical-protocol">Part I: Option A — Minimal Express Flight-Test Plan (Time-Critical Protocol)</a></li>
 <li><a href="#part-ii-option-b-comprehensive-staged-validation-plan-full-engineering-protocol">Part II: Option B — Comprehensive Staged Validation Plan (Full Engineering Protocol)</a></li>
@@ -247,15 +253,589 @@ footer { padding: 25px 20px; color: var(--surface); background: var(--black); bo
     </nav>
     <main><h1 id="adam-and-easystar-3-precision-landing-flight-test-plan">Adam and EasyStar 3 Precision Landing Flight-Test Plan</h1>
 <p>This guide validates and tunes the autonomous precision landing developed for
-the ZOHD Talon 250G aircraft <strong>Adam</strong> and the Multiplex <strong>EasyStar 3</strong>.</p>
+the ZOHD Talon 250G aircraft <strong>Adam</strong> and the Multiplex <strong>EasyStar 3</strong>.
+The primary objective is final standstill inside the 20 x 3 m box, as close to <code>TD</code>
+as practical; first touch
+inside the box is a preferred additional outcome, not a substitute for stopping accurately.</p>
 <p>To accommodate varying field conditions, team schedules, and competition constraints, this document provides <strong>two separate, complete flight-test plans</strong>:</p>
 <ul>
 <li><strong>Part I: Option A — Minimal Express Test Plan (Time-Critical Protocol)</strong>: A 4-step execution path designed for emergency field deployment when less than 30–45 minutes total remain before a flight window or competition deadline. It focuses exclusively on mandatory safety checks, simple geometry setup, one high-pass verification, and direct touchdown scoring.</li>
 <li><strong>Part II: Option B — Comprehensive Staged Validation Plan (Full Engineering Protocol)</strong>: An 11-phase in-depth validation campaign (Phase 0 through Phase 10) for systematic sensor calibration, aerodynamic characterization, safety state-machine verification, parameter tuning, and wind envelope expansion when full testing time is available.</li>
 </ul>
 <hr>
-<h2 id="software-validation-status-2026-09-13">Software validation status, 2026-09-13</h2>
-<p>This is a <strong>simulation-tested development baseline, not flight or competition clearance</strong>. Both aircraft complete the autonomous approach and land inside the 20 x 3 m box in the tested calm-air cases. The controller, telemetry, test plan, and reusable NPS harness are implemented in <a href="sw/airborne/modules/nav/precision_landing.c">sw/airborne/modules/nav/precision_landing.c</a> and <a href="sw/simulator/nps/nps_fixedwing_tuning.py">sw/simulator/nps/nps_fixedwing_tuning.py</a>. M10 absolute position error, surveyed TD accuracy, real crow aerodynamics, sand contact, and sensor outages still require the staged flight tests below. The available evidence does not establish a probability of success or an operational wind envelope.</p>
+<h2 id="current-development-baseline-2026-09-15">Current development baseline, 2026-09-15</h2>
+<p>This section supersedes the earlier failed baseline below. Predictive crow no
+longer fades solely because height decreases; airspeed freshness, brake caps,
+mode ownership and the aircraft actuator rate limits remain enforced. The
+upstream geometric aim now has an independent 20 m bound; the contact prediction
+rejection boundary remains +/-8 m longitudinal and +/-1.2 m lateral.</p>
+<p>EasyStar now uses 12 m upstream glide aim and <strong>0 degree flare pitch</strong>. Its
+9 m/s approach, 17 m final height, 1.2 m flare height, 0.65 flare demand and
+0.05 brake gain are unchanged. Adam retains its 7 m aim and +4 degree flare.
+The geometric aim is neither a commanded ground-contact point nor a stopping
+distance prediction. No deliberate-stall command or added ground friction is used.</p>
+<table>
+<thead>
+<tr>
+<th>Final-source check</th>
+<th>First contact along / across TD</th>
+<th>Confirmed stop along / across TD</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Adam calm, retained defaults</td>
+<td>-5.70 / +0.78 m</td>
+<td>+0.64 / +0.59 m</td>
+<td>Both inside box</td>
+</tr>
+<tr>
+<td>EasyStar calm, retained defaults</td>
+<td>-4.64 / +0.49 m</td>
+<td>+5.24 / +0.27 m</td>
+<td>Both inside box</td>
+</tr>
+<tr>
+<td>EasyStar 1 m/s north wind</td>
+<td>-4.78 / +0.48 m</td>
+<td>+4.80 / +0.04 m</td>
+<td>Both inside box; contact-model warning</td>
+</tr>
+<tr>
+<td>EasyStar 1 m/s east wind</td>
+<td>-1.39 / +0.57 m</td>
+<td>+10.96 / +0.27 m</td>
+<td>Stop outside box</td>
+</tr>
+</tbody>
+</table>
+<p>The east-wind run was initially mislabeled crosswind: it is predominantly
+tailwind on this westbound AF-to-TD leg. No tailwind capability is established.
+The controller does account for wind-induced travel through measured along-track
+and cross-track ground velocity. Higher along-track groundspeed moves the contact
+prediction farther downrange and increases close-range crow demand when permitted
+by airspeed and brake limits. It does not predict post-contact stopping distance:
+the upstream aim is fixed, not a dynamic tailwind/ground-friction correction.
+The north-wind wingtip warning occurred after belly contact at 2.37 degrees bank,
+3.33 m/s ground speed and approximately zero sink. It is retained as a diagnostic,
+not proof of damage or a reason to discard a valid in-box stopping result.</p>
+<p>The operator reports little sliding on sand, especially with slight nose-down
+contact. The model instead uses two friction-only belly contacts, without sand
+penetration resistance, and predicts roughly 10 m contact-to-stop displacement.
+<strong>That distance is not a validated prediction for the real EasyStar.</strong> Real sand
+stopping accuracy remains unverified; do not move the real touchdown point merely
+to compensate for simulated sliding. Gentle near-ground settling is acceptable
+for the precision score; contact diagnostics and physical inspection are separate.</p>
+<p>The retained settings are unchanged by this surface discussion. The team's field
+expectation is a short slide after slight nose-down sand contact, not the model's
+roughly 10 m slide. Both calm and tested tailwind first contacts are already inside
+the box; short stopping travel could therefore produce an in-box final rest, but
+that remains for the team's physical tests to establish. A simulated tailwind stop
+outside the box is not proof of a real-sand miss, nor is first contact inside proof
+of a final-stop pass. Do not tune an earlier contact merely to fit an uncalibrated
+long slide, or increase simulated friction merely to obtain a passing result.</p>
+<h3 id="developer-rationale">Developer rationale</h3>
+<ul>
+<li>Keep predictive braking through the low approach: the removed altitude-only
+   fade retracted crow during predicted overshoot, then required the rate-limited
+   actuators to extend again for flare. Airspeed protection still overrides braking.</li>
+<li>Keep the 20 m geometric aim bound independent of the +/-8 m contact rejection
+   limit: changing the glide target must not relax the accepted contact corridor.</li>
+<li>Latch commitment before processing sensor faults: noisy or missing height must
+   not reopen powered abort after entering the low-altitude commitment region.</li>
+<li>Release outputs on mode changes and require explicit landing re-entry: stale
+   brake demand must not interfere with pilot takeover or a later AUTO2 mission.</li>
+<li>Reject changed waypoint geometry instead of mixing a captured slope with new
+   coordinates; at low or unknown height on an established final, request flare.</li>
+<li>Score confirmed final rest separately from predicted or measured first contact.
+   Gentle foam-airframe settling is a diagnostic, not an automatic precision failure.</li>
+</ul>
+<p>The final rejection check with simulation-only speed 7.5 m/s and final height
+10 m climbed to 26.08 m without contact. All 33 host/generator tests passed,
+including retained low-height braking, invalid-airspeed release, independent aim
+validation and unchanged rejection limits. Both dedicated aircraft built for
+<code>ap</code> and <code>nps</code>. Editor include-path diagnostics persist despite compiler success.
+No firmware was uploaded. These checks establish a development baseline, not
+measured pinpoint sand accuracy, a wind envelope or flight clearance.</p>
+<p>Evidence directories under <code>var/nps_precision_landing</code>:
+<code>adam_retained_default_final_20260915</code>, <code>easystar_retained_default_final_20260915</code>,
+<code>easystar_retained_northwind1_final_20260915</code>,
+<code>easystar_retained_crosswind1_final_20260915</code> (actually tailwind), and
+<code>easystar_retained_rejection_final_20260915</code>.</p>
+<h2 id="earlier-landing-integration-check-2026-09-15-superseded">Earlier landing integration check, 2026-09-15 (superseded)</h2>
+<p><strong>Adam passed this calm-air NPS check; EasyStar 3 did not. Neither result is
+hardware or flight clearance.</strong> These runs used the current dedicated landing
+configurations with no nominal parameter overrides. Final standstill, not merely
+first contact or smoothness, determines the precision result.</p>
+<table>
+<thead>
+<tr>
+<th>Aircraft</th>
+<th>First touch along / across TD</th>
+<th>Confirmed stop along / across TD</th>
+<th>Stop distance from TD</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Adam</td>
+<td>-5.77 / +0.77 m</td>
+<td>+0.59 / +0.58 m</td>
+<td>0.83 m</td>
+<td>First touch and stop inside box</td>
+</tr>
+<tr>
+<td>EasyStar 3</td>
+<td>+10.22 / +0.15 m</td>
+<td>+18.52 / -0.09 m</td>
+<td>18.52 m</td>
+<td>First touch and stop outside box</td>
+</tr>
+</tbody>
+</table>
+<p>Positive longitudinal error means beyond TD. Evidence is retained under
+<code>var/nps_precision_landing/adam_landing_focus_20260915</code> and
+<code>var/nps_precision_landing/easystar_landing_focus_20260915</code> as CSV, contact logs
+and JSON. These are simulated CG positions, not physical contact footprints.</p>
+<p>EasyStar entered its normal flare near the configured 1.2 m AGL, with zero
+commanded throttle and approximately +4 degrees commanded pitch. The 2.5 m
+no-powered-abort latch did not prematurely trigger flare. It then floated beyond
+TD and travelled another 8.30 m between contact and standstill. One gentle wingtip
+settling contact was recorded; the failed precision result is the out-of-box stop,
+not a claim of damage. The current predictor estimates contact from height and
+sink rate; it does not predict the final stop or account for the subsequent flare
+and surface-dependent rollout. <strong>EasyStar's nominal precision baseline remains
+unaccepted and needs separate, controlled performance work.</strong> No limits, gains,
+surface friction or aircraft defaults were changed to obtain these results.</p>
+<p>The separate EasyStar rejection test used NPS-only overrides
+<code>landing_airspeed=7.5</code> and <code>final_height=10</code> with <code>--expect-go-around</code>. It passed,
+climbing to 26.61 m above the simulator origin without structural contact.
+Evidence is in <code>var/nps_precision_landing/easystar_rejection_focus_20260915</code>.
+This is one unsuitable-approach test, not a sensor-fault or wind-envelope test.</p>
+<p>All 33 focused host/generator tests passed. The current dedicated <code>ap</code> and <code>nps</code>
+targets rebuilt successfully for both aircraft. The rangefinder test-header
+mismatch was corrected in the test only; all 12 combinations of sensor mode,
+periodic telemetry and debug sending then passed. Normal successful VB22A reads
+were not shown to be defective, and hardware compatibility of the asynchronous
+driver remains bench-unverified. No additional production-driver redesign was
+made during this check. The editor still reports a missing <code>std.h</code> include path
+for the landing header despite successful host and aircraft compiler checks.</p>
+<h3 id="bounded-regression-comparison-and-remaining-failure">Bounded regression comparison and remaining failure</h3>
+<p>The saved <code>easystar_release_check</code> first contacted at +4.09 m, but its last
+stationary sample was already +11.35 m beyond TD. It did not establish an in-box
+stop. The later nominal failure is not merely a scoring change: first contact
+also moved farther downstream.</p>
+<p>One controlled NPS comparison changed only <code>NPS_USE_CROW_ACTUATORS</code> to <code>FALSE</code>.
+The legacy raw-crow path contacted at -0.58 m and stopped at +9.22 m, versus
++10.22 m contact and +18.52 m stop with the actual mixer path. This establishes
+that the simulation input path materially affects landing performance; it does
+not isolate every difference from the older release. The actual EasyStar mixer
+scales crow by 0.70 and rate-limits deployment: a 0.65 command gives approximately
+0.455 steady surface input when unsaturated. <strong>The legacy path is not a fix.</strong>
+<code>NPS_USE_CROW_ACTUATORS=TRUE</code> was restored and rebuilt after this diagnostic.</p>
+<p>Single-parameter NPS trials with actual crow retained:</p>
+<table>
+<thead>
+<tr>
+<th>Trial override</th>
+<th>First contact along TD</th>
+<th>Confirmed stop along TD</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>touchdown_pitch=0</code></td>
+<td>+4.30 m</td>
+<td>+14.10 m</td>
+<td>Out-of-box stop</td>
+</tr>
+<tr>
+<td><code>flare_brake=0.75</code></td>
+<td>+9.07 m</td>
+<td>+17.28 m</td>
+<td>Out-of-box stop</td>
+</tr>
+<tr>
+<td><code>flare_agl=0.6</code></td>
+<td>+11.11 m</td>
+<td>+20.19 m</td>
+<td>Out-of-box stop</td>
+</tr>
+<tr>
+<td><code>final_height=22</code></td>
+<td>None</td>
+<td>None</td>
+<td>Three rejected approaches, no contact before timeout</td>
+</tr>
+</tbody>
+</table>
+<p>These trials are retained under <code>var/nps_precision_landing</code> with names
+<code>easystar_raw_crow_probe_20260915</code>, <code>easystar_pitch0_actual_crow_20260915</code>,
+<code>easystar_brake075_actual_crow_20260915</code>, <code>easystar_flare06_actual_crow_20260915</code>
+and <code>easystar_height22_final_check_20260915</code>. The earlier cancelled height trial
+has incomplete logs; only its three orphaned processes were stopped.</p>
+<p>No trial setting was promoted: EasyStar retains 9 m/s approach, 17 m final
+height, 1.2 m flare height, +4 degree flare pitch, 0.65 flare demand and 6 m aim.
+Safety limits, mixer limits and surface friction are unchanged. Whole-metre
+<code>DESIRED.altitude</code> telemetry is formatting (<code>%.0f</code>), not proof of quantized
+control. No deliberate-stall logic was added. <strong>EasyStar precision landing is
+still unresolved; the trials above must not be presented as a completed fix.</strong></p>
+<h2 id="structural-flight-safety-audit-2026-09-15">Structural flight-safety audit, 2026-09-15</h2>
+<p>This audit prioritizes unintended flight commands, invalid navigation and memory
+safety over millimetre landing accuracy. The fixes below are independent of the
+earlier aim/friction experiments; no performance limits were relaxed for this audit.
+Passing the tests is not proof of a failure-free system or flight clearance.</p>
+<h3 id="recorded-home-oscillation">Recorded HOME oscillation</h3>
+<p>The supplied <code>var/logs/26_09_14__18_02_22.log</code> and matching <code>.data</code> establish:</p>
+<ul>
+<li>At approximately 100.93 s, <strong>AUTO1/HOME</strong> alternates rapidly while RC status is
+   OK, GPS has a 3D fix, ground speed is approximately 0.07 m/s and flight time is
+   zero. This was not simply a MANUAL/HOME event as previously assumed.</li>
+<li>The Takeoff block was selected at 100.70 s. The archived plan sets <code>launch=1</code>
+   in that block even before physical flight; the TAKEOFF telemetry event occurs
+   much later, at 279.13 s. Launch request and airborne detection are different.</li>
+<li>The local reference is UTM zone 32, east 398874 m, north 5620443 m, but HOME
+   is reported at east 822287.75 m, north 5629417 m in that zone. Other waypoints
+   are local; <code>dist_home</code> is approximately 423508 m. Recapturing HOME later reduces
+   this distance to zero.</li>
+<li>The INS origin reset changed zones without immediately updating its stored UTM
+   position. Immediate <code>NavSetWaypointHere(WP_HOME)</code> could subtract coordinates
+   expressed in different zones. An actual-state/geodetic regression reproduces
+   the large offset and verifies the correction: reset now installs a position in
+   the new zone while preserving the fused altitude.</li>
+<li>There are no <code>I2C_ERRORS</code> samples in this log. The I2C code defects below were
+   found independently; this flight record does not prove that an I2C fault occurred.
+   It also does not identify every source revision of the running firmware.</li>
+</ul>
+<h3 id="mode-and-control-ownership">Mode and control ownership</h3>
+<p>The old manual-only HOME guard did not cover the recorded AUTO1 case. With valid
+pilot RC control, MANUAL and AUTO1 now retain pilot authority rather than being
+overwritten by the automatic HOME check. AUTO2 still resolves an active distance,
+datalink or altitude HOME request before applying the RC-selected mode, avoiding
+an intermediate AUTO2/HOME toggle. RC-loss handling remains configured by
+<code>RC_LOST_MODE</code>; locked-HOME behavior without <code>UNLOCKED_HOME_MODE</code> is retained.
+These changes do not disable the separate kill-throttle or GPS protection paths.</p>
+<p>GPS recovery restores a saved mode only while still in the GPS failsafe. An
+explicit mode change cancels that restoration. Invalid, fractional or non-finite
+GCS mode values are rejected before integer conversion. <code>fixedwing_basic.xml</code>
+now calls <code>autopilot_SetModeHandler</code> instead of assigning <code>autopilot.mode</code> directly,
+so GCS changes cannot bypass landing cleanup. Other custom settings files must use
+that handler too; direct assignments outside this integration remain unsupported.</p>
+<p>In landing-enabled firmware, every real mode change clears old autonomous brake
+demand, including when the landing state machine was inactive. This closes a
+bench-command re-entry path. The crow bench block now needs AUTO2, throttle already
+killed, no launch request, zero flight time, fresh AGL at most 0.5 m and near-zero
+velocity. It never changes the global throttle-kill flag. Losing any interlock
+clears demand and requires a new explicit bench entry. Selecting it in flight
+therefore cannot kill the motor or latch crow. Remove the propeller for bench tests.
+Manual/AUTO1 crow remains controlled by the configured live RC slider; this is
+intentional pilot input, not autonomous landing activation. Servos retain their
+configured retraction ramp, so zero demand does not mean instantaneous retraction.</p>
+<h3 id="numerical-and-generated-code-fixes">Numerical and generated-code fixes</h3>
+<ul>
+<li>All 8-bit waypoint indices are checked before lookup. Derived differences,
+   lengths, slope and altitude/preclimb commands are checked too: finite inputs
+   alone do not prevent floating-point overflow. Active-final geometry is captured
+   and checked for changes. Invalid geometry cancels before final; in an established
+   final at/below commit height it requests wings-level flare, not a powered turn.</li>
+<li>Landing settings are checked at runtime before the example changes AF altitude
+   or computes a baseleg. NaN, infinity, zero radius and out-of-range values cannot
+   bypass the displayed GCS limits. The retry setting stays float until validated
+   (integer-valued 0-5); the counter saturates at 6 instead of wrapping. Standby
+   restores nominal airspeed and the configured default clockwise circle radius.</li>
+<li>Generated modules, settings and the aircraft makefile now depend on the expanded
+   configuration signature. A removed module can no longer persist merely because
+   the remaining module source timestamps are old. The regression adds then removes
+   <code>auto1_commands</code> in a temporary fixture and checks both generated headers.</li>
+<li>The landing module has no dynamic allocation or variable-length copy buffer.
+   Its diagnostic arrays have fixed, size-derived message lengths. Sanitizer tests
+   exercise invalid indices, extreme floats, mode changes and two-byte I2C buffers;
+   they do not constitute exhaustive firmware memory or concurrency verification.</li>
+</ul>
+<h3 id="rangefinder-transaction-fixes">Rangefinder transaction fixes</h3>
+<p><code>i2c_blocking_receive</code> returns an enum, not a Boolean; both success and failure
+are nonzero. The former driver could parse a failed/partial read and could block
+its sensor task for up to 0.5 s. It now submits asynchronous reads, keeps one
+transaction outstanding, and parses only a successful completion. Failed reads
+publish no AGL sample; consumers must enforce freshness. A stuck bus does not
+cause the driver to resubmit into an in-use buffer; hardware bus recovery still
+belongs to the I2C backend and requires bench testing.</p>
+<p>Both direct-read and command-triggered devices now parse exactly the two received
+bytes, indices 0 and 1. The old command-triggered branch used indices 1 and 2,
+reading beyond the received payload (not necessarily beyond the allocated I2C
+buffer). VB22A uses direct-read mode, so that offset defect was not on its active
+path. Read failures, zero/out-of-range samples, queue rejection and prolonged
+pending transactions are covered by host tests. The configured median-filter
+switch is respected. Normal RANGEFINDER telemetry uses its separate registered
+callback and the telemetry schedule. <code>rangefinder_i2c_report()</code> sends only with
+<code>RANGEFINDER_I2C_SYNC_SEND</code> enabled; enabling periodic telemetry does not enable
+this debug helper. Its automatic debug send runs once after parsing a successful
+read, including out-of-range values marked NaN, not on every event-loop call.
+Failed or pending reads do not trigger that automatic debug send. The optional
+module report task remains disabled by default.</p>
+<h3 id="verification-and-residual-checks">Verification and residual checks</h3>
+<p>The structural suite has <strong>33 tests</strong>: 32 controller, sensor and mode checks plus
+one real-generator integration check. Controller and driver tests use ASan/UBSan
+and float-cast checks; mode tests cover both RC switch layouts, GPS recovery and
+1000 repeated cycles with active HOME conditions, with and without landing enabled.
+The UTM test uses the actual state and geodetic implementations. Tests pass without
+sanitizer findings. Normal hardware and dedicated <code>ap</code>, <code>sim</code>, <code>nps</code> landing builds
+are checked for both Adam and EasyStar; only make jobserver notices were observed.</p>
+<pre><code class="language-sh">python3 -B -m unittest discover -s sw/simulator/nps -p 'test_fixedwing*.py' -v
+python3 -B -m unittest discover -s sw/simulator/nps -p test_landing_generation.py -v
+</code></pre>
+<p>The generation test requires the built <code>sw/tools/generators/gen_aircraft.out</code>.
+It operates in a temporary directory under <code>var</code>, leaving the active configuration
+unchanged. The supplied flight logs are read-only evidence and are not rewritten.</p>
+<p>The earlier audit run <code>adam_structural_safety_20260915</code> retained the 7 m aim,
+put first touch and final stop inside the box, and stopped 0.84 m from TD. The
+latest two-aircraft checks above supersede it for current integration status,
+including EasyStar's failed nominal precision result. Required follow-up is prop-off
+RC/GCS mode-transition testing, correct field/reference verification, receiver-loss
+behavior and I2C disconnect/reconnect/timing checks on hardware. No firmware was
+uploaded and no real flight or hardware fault injection was performed here.</p>
+<p>A local relocatable example may deliberately reset its origin and capture HOME.
+A surveyed mission must retain its geographic waypoints. The mixed-zone fix makes
+an explicit reset coherent; it does not silently translate a surveyed mission to
+wherever the aircraft is powered on. The precision example deliberately preserves
+its supplied origin and requires correct field coordinates. Arbitrary sensor
+failures, RAM corruption, all custom module combinations and all interrupt/thread
+interleavings remain outside the evidence: no 100% no-mishap guarantee is claimed.</p>
+<h2 id="precision-objective-and-current-tuning-2026-09-15">Precision objective and current tuning, 2026-09-15</h2>
+<p>The goal is <strong>stop near TD</strong>, preferably with <strong>first touch also inside the box</strong>.
+Smoothness is not the optimization objective. Keep flight-safety constraints and
+inspect contact anomalies, but do not confuse a provisional quality-limit
+exceedance with failure to achieve the standstill spot or proof of airframe damage.</p>
+<h3 id="metrics-and-acceptance">Metrics and acceptance</h3>
+<ul>
+<li><code>landing_pass</code> and <code>inside_precision_box</code> now mean a confirmed final stop inside
+   the 20 x 3 m box. This supersedes their earlier first-contact/combined-quality meaning.</li>
+<li><code>final_longitudinal_m</code>, <code>final_cross_track_m</code> and <code>final_distance_to_td_m</code>
+   describe that standstill position relative to TD. Smaller final distance is the
+   primary tuning objective; positive longitudinal error means beyond TD.</li>
+<li><code>preferred_landing_pass</code> additionally requires first contact inside the box.
+   Prefer this result while minimizing final error; report both outcomes explicitly.</li>
+<li><code>touchdown_inside_precision_box</code> and <code>touchdown_inside_internal_margin</code> retain
+   the first-contact checks. <code>inside_internal_margin</code> now refers to the final stop.</li>
+<li><code>touchdown_to_stop_distance_m</code> is straight-line displacement from first contact
+   to rest, not integrated path length. Use it to distinguish excessive float from
+   rollout instead of moving the contact point without considering stopping distance.</li>
+<li>Standstill needs a contact log and a continuous two-second near-ground window:
+   horizontal speed at most 0.5 m/s, vertical speed magnitude at most 0.2 m/s, all
+   positions within 0.2 m of the last position, finite data and bounded sample gaps.
+   Without confirmation, final-position fields are <code>null</code> and precision does not pass.</li>
+<li><code>contact_quality_pass</code>, <code>rollout_quality_pass</code>, <code>strict_quality_pass</code> and
+   <code>contact_review_required</code> remain separate diagnostics. A precision pass can
+   coexist with a contact-review warning; it is not flight clearance or proof of
+   an undamaged aircraft. CLI failure is based on missing stop evidence or an
+   out-of-box stop, not merely a rough-looking touchdown.</li>
+</ul>
+<p>Archived JSON files are not rewritten and may use the old field meanings.
+Re-evaluate their CSV/contact logs with the current harness before comparing them.
+Positions in NPS are aircraft CG positions, not surveyed physical contact footprints.</p>
+<h3 id="adam-aim-comparison">Adam aim comparison</h3>
+<p>The existing aim parameter was varied alone in calm-air NPS. Speeds, gains,
+flare pitch, braking, friction and rejection limits were unchanged. Negative
+touchdown longitudinal error below means first contact before TD.</p>
+<table>
+<thead>
+<tr>
+<th>Run under <code>var/nps_precision_landing/</code></th>
+<th style="text-align: right;">Aim upstream (m)</th>
+<th style="text-align: right;">First touch along/across (m)</th>
+<th style="text-align: right;">Final stop along/across (m)</th>
+<th style="text-align: right;">Final distance (m)</th>
+<th>Touch and stop inside</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>adam_foam_contact_policy_20260915</code> (replayed)</td>
+<td style="text-align: right;">6.0</td>
+<td style="text-align: right;">-4.49 / +0.71</td>
+<td style="text-align: right;">+1.89 / +0.51</td>
+<td style="text-align: right;">1.96</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>adam_aim_6.5_20260915</code></td>
+<td style="text-align: right;">6.5</td>
+<td style="text-align: right;">-5.17 / +0.75</td>
+<td style="text-align: right;">+1.21 / +0.55</td>
+<td style="text-align: right;">1.33</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>adam_aim_7.0_20260915</code></td>
+<td style="text-align: right;">7.0</td>
+<td style="text-align: right;">-5.87 / +0.76</td>
+<td style="text-align: right;">+0.50 / +0.56</td>
+<td style="text-align: right;">0.75</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>adam_aim_7_repeat_20260915</code></td>
+<td style="text-align: right;">7.0</td>
+<td style="text-align: right;">-5.74 / +0.75</td>
+<td style="text-align: right;">+0.63 / +0.55</td>
+<td style="text-align: right;">0.84</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>adam_aim7_default_20260915</code> (rebuilt default, no override)</td>
+<td style="text-align: right;">7.0</td>
+<td style="text-align: right;">-5.68 / +0.78</td>
+<td style="text-align: right;">+0.70 / +0.59</td>
+<td style="text-align: right;">0.91</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p>Adam defaults to <strong>7 m upstream aim</strong>. The current independent aim bound is 20 m;
+EasyStar's current baseline is 12 m. The historical Adam 7 m trials have about 4 m longitudinal margin from
+first contact to the entry edge and about 0.7 m lateral margin. All three also satisfy
+the stricter quality diagnostics. Adam's hardware and NPS targets build with the
+saved default; the final run uses it without a runtime override. No firmware was
+uploaded. This is a provisional, model-derived improvement,
+not a statistically established repeatability result or a field stopping-distance
+calibration. Validate on the actual landing surface before relying on the default.
+The controller still predicts first contact and uses an empirical upstream aim;
+it does not yet estimate post-contact friction or control final rest directly.</p>
+<h2 id="talon-and-foam-contact-update-2026-09-15">Talon and foam-contact update, 2026-09-15</h2>
+<h3 id="airframe-tolerance-versus-landing-quality">Airframe tolerance versus landing quality</h3>
+<p>The operator reports that both foam pusher aircraft tolerate slight nose-down
+arrivals and even a roughly one-metre drop with no forward speed without damage.
+This is useful operational experience, not a controlled impact qualification.
+The harness scores final-position precision and separately reports landing quality;
+exceeding its provisional quality limits does <strong>not</strong> demonstrate airframe damage.
+No drop test is requested.</p>
+<p>First-contact belly pitch from -10 to +20 degrees is accepted by the quality check;
+this is a provisional operator-informed criterion, not a measured structural limit or a
+new commanded touchdown pitch. The 1.5 m/s contact sink limit remains a quality
+target. Nose-first impacts, harder arrivals or incomplete contact evidence still
+need review rather than an automatic pass or a claim of damage. Controller gains,
+stall margins, commanded flare pitch and model friction are unchanged by this
+clarification. Crow may reduce speed and lift and increase ground loading, but
+short stopping distances on a particular surface still need measurements.</p>
+<p><strong>Slight wingtip contact during settling is not automatically a failed landing.</strong>
+Both Talon 250G and EasyStar 3 are forgiving foam belly landers. The harness now
+reports wing touches separately rather than equating every touch with damage.
+Its provisional definition of gentle settling is a named wingtip contact after
+belly touchdown, at groundspeed at most 2 m/s, absolute vertical speed at most
+0.3 m/s, absolute bank at most 8 degrees and pitch from -10 to +20 degrees.
+Finite measurements and ordered contact timestamps are required. These are
+conservative test classifications, not measured foam damage thresholds: the log
+records aircraft motion at contact onset, not local contact force or damage.</p>
+<p>First-impact belly/sink/attitude checks are quality diagnostics, not standstill
+scoring. Nose, unknown, high-speed or hard wing impacts and excessive bounce/attitude
+require review rather than being called damage. Leaving the box during rollout is
+reported separately; stopping outside it fails precision. First-contact and settling
+pitch use -10 to +20 degrees. Each new contact
+onset is recorded, so a later harder touch on the same wing is evaluated too.
+Continuous scrapes are not load-monitored; real post-landing inspection remains
+required. The earlier EasyStar touch at approximately 0.88 m/s with negligible
+sink qualifies as gentle; that run still fails because it stopped outside the box.</p>
+<p>Adam's approach rejection was traced to applying its real-aircraft roll trim to
+the symmetric JSBSim model, not a false rangefinder lock. <code>NPS_ROLL_TRIM=0</code> now
+overrides only the simulator's initial roll trim; hardware retains its existing
+trim. Landing gains and rejection limits were not relaxed for this correction.</p>
+<p>The Talon ground model also had excessive belly compliance and no finite-width
+belly support. Independent drop/slide tests showed more than 20 mm compression
+and unintended nose/wing contacts. Four pads now represent an estimated 30.5 mm
+wide belly footprint, with total stiffness 180 lb/ft (about 0.93 mm average static
+compression at 250 g). These dimensions/compliance are engineering estimates,
+not measurements of the real foam or ground. Static/dynamic friction remains
+0.8/0.5; no artificial stopping force was added. The harness resolves belly and
+wingtip identities from model names instead of assuming common contact indices.
+Its two-second stop window now accounts for accelerated wall-clock telemetry
+cadence and includes the sample preceding the window boundary.</p>
+<h3 id="rangefinder-comparison">Rangefinder comparison</h3>
+<p>Both aircraft configure the VB22A with 100 Hz periodic calls, 0.005-6 m usable
+range, 0.004 m hardware offset, rotation compensation and a 0.1 s AGL filter.
+The read/parse state machine means configured call frequency is not a guarantee
+of 100 distinct hardware measurements per second. NPS emits at 100 Hz; its belly
+offset is -0.02794 m for Talon versus -0.0635 m for EasyStar. These reflect different
+model geometries, not different sensor calibration. NPS models vertical clearance,
+not the complete optical ray/attitude-dependent range envelope or I2C timing.</p>
+<p>The driver incorrectly enabled its median filter even with
+<code>RANGEFINDER_I2C_USE_FILTER=FALSE</code>; the conditional now respects the value on both
+aircraft. Above 6 m, NPS clips the raw reading to the range boundary; AGL rejects
+that boundary and retains its last filtered value with freshness false. A displayed
+5.7 m held value during flight at 10-17 m is therefore not a fresh range lock.
+Use the freshness flag and timestamp, not the held distance alone.</p>
+<h3 id="current-evidence">Current evidence</h3>
+<p>The 6 m-aim run <code>adam_foam_contact_policy_20260915</code> passes first-contact,
+rollout and stopping gates: touchdown -4.49 m along TD, +0.71 m across, sink
+1.15 m/s, belly contacts only, no go-around. Earlier corrected-model repeats
+also pass when evaluated with the corrected cadence/settling checks. In
+<code>adam_ground_fixed_final_20260914</code>, final rest was +1.68 m along and +0.53 m
+across after approximately 6.37 m travel from first contact. Thus this model
+stops inside the box; it does not demonstrate an instantaneous real-world stop.</p>
+<p>29 focused regression tests pass, including separate precision/quality results,
+the preferred touch-and-stop objective, pitch boundaries, gentle/hard/repeated
+touches, both models' contact identities, missing data, creep and stop timing.
+<code>test_talon_ground_contact.py</code> separately tests zero-speed drop and 8.5 m/s slide
+at three timesteps using Python JSBSim 1.3.1; NPS exercises its installed JSBSim
+library independently. Both hardware targets compile with the filter fix and
+Adam NPS compiles with the simulator trim override. Hardware flight clearance,
+surface-specific stopping distance and a wind envelope still require measurement.</p>
+<pre><code class="language-sh">python3 -B -m unittest discover -s sw/simulator/nps -p test_fixedwing_landing.py -v
+python3 -B -m unittest discover -s sw/simulator/nps -p test_talon_ground_contact.py -v
+</code></pre>
+<p>The second command requires the optional Python <code>jsbsim</code> package.</p>
+<h2 id="safety-revision-status-2026-09-14-historical">Safety revision status, 2026-09-14 (historical)</h2>
+<p><strong>Development only: autonomous landing clearance is withheld.</strong> The safety review
+found defects in commitment, mode takeover, sensor freshness, actuator simulation,
+and acceptance metrics. The revised controller and tests address these software
+paths, but the old first-contact runs do not validate this revision. Do not use the
+Express plan below to bypass the missing staged validation.</p>
+<ul>
+<li>Changing away from AUTO2 cancels landing and releases brake/roll-limit ownership.
+   Re-entering AUTO2 does not resume the approach; select a new landing entry.</li>
+<li>GCS jumps to non-landing blocks end ownership too. Direct jumps into internal
+   landing blocks are rejected unless a sequence was explicitly started.</li>
+<li>Decisions run before flight-plan exceptions. Fresh AGL takes precedence over
+   fused height. At/below 2.5 m, commitment stays latched; failures request flare,
+   not powered go-around. Unknown height also prohibits an automatic powered abort.</li>
+<li>Low, non-finite or stale airspeed inhibits brake demand in final <strong>and flare</strong>.
+   Freshness is measured at the air-data receiver (default timeout 0.5 s).</li>
+<li>Flare immediately requests zero throttle and bounded pitch without modifying
+   the global kill flag. GPS loss uses wings-level attitude instead of route guidance.</li>
+<li>Upper approach lateral tolerance narrows with height: 1.2 m plus 0.25 m per meter
+   above brake_agl. Close-range predicted errors beyond +/-8 m longitudinal or
+   +/-1.2 m lateral reject after 0.2 s, independent of brake saturation.</li>
+<li>Startup does not relocate the origin/TD. Survey actual field coordinates,
+   elevations and runway direction before use; supplied coordinates are examples.</li>
+<li>NPS uses post-mixer aileron values, including rate limiting, travel scaling and
+   saturation. Real aerodynamic brake coefficients still require measurement.</li>
+<li>Passing requires acceptable contact, rollout inside the box and a two-second
+   stationary window. Gentle wingtip settling is classified as described above.
+   A first touch alone fails.</li>
+</ul>
+<p>The corrected-mixer diagnostic runs under <code>var/nps_precision_landing/</code> are
+<strong>not accepted</strong>: <code>adam_corridor_review_20260914</code> rejected its approaches and
+returned to standby without contact; <code>easystar_corridor_review_20260914</code> touched
+inside the box but slid beyond it and recorded a later wingtip contact. These
+expose the need for further approach/flare/aerodynamic validation, not justification
+to relax the gates. Subsequent command-transition fixes have focused regression
+coverage; rerun the full campaign before drawing performance conclusions.</p>
+<p>Final software checks: 19 focused tests pass, including compiled controller, AGL
+callback and mixed-aileron tests. Both dedicated aircraft build for <code>ap</code>, <code>nps</code>
+and <code>sim</code>. The final Adam NPS rejection run (<code>adam_rejection_complete_20260914</code>)
+climbed to 25.51 m with zero contacts. These establish build compatibility and
+tested safety behavior, not a successful stopped landing or hardware flight clearance.</p>
+<h2 id="historical-results-2026-09-13-superseded">Historical results, 2026-09-13 (superseded)</h2>
+<p>The measurements and build claims below describe the previous software. They
+omit post-mixer and stopped-rollout validation and are retained only for comparison.</p>
+<p>The previous baseline recorded first contacts inside the box; that result is
+superseded by the corrected mixer and rollout gates. The controller and reusable
+harness remain in <a href="sw/airborne/modules/nav/precision_landing.c">sw/airborne/modules/nav/precision_landing.c</a>
+and <a href="sw/simulator/nps/nps_fixedwing_tuning.py">sw/simulator/nps/nps_fixedwing_tuning.py</a>.
+GNSS accuracy, surveyed TD, real crow aerodynamics, ground contact and sensor outages
+still require staged validation. No probability of success or wind envelope is established.</p>
 <p>Representative first-contact measurements from the saved simulation runs:</p>
 <table>
 <thead>
@@ -321,7 +901,15 @@ the ZOHD Talon 250G aircraft <strong>Adam</strong> and the Multiplex <strong>Eas
 </table>
 <p>Positive along-track error means beyond <code>TD</code>. Crosswind cases used the simulator wind setting of 1 m/s at 0 degrees. One earlier 2 m/s, 90-degree wind case landed +9.36 m along and +1.07 m across: inside the official box but outside the retained longitudinal margin. Do not interpret this as tailwind approval. Identical repeated results can reflect deterministic simulation, not independent real-world trials. Adam's roughly 1.2 m/s contact sink remains a particular bench/flight-validation concern.</p>
 <p>The separate <code>easystar_reject_verified</code> run rejected an unsuitable 7.5 m/s, 10 m final-height configuration and climbed above 25 m without contact. Host tests in <a href="tests/modules/test_precision_landing_controller.c">tests/modules/test_precision_landing_controller.c</a> and <a href="sw/simulator/nps/test_fixedwing_landing.py">sw/simulator/nps/test_fixedwing_landing.py</a> exercise the actual controller for stale/future AGL timestamps, sensor-height handover, low/invalid airspeed, invalid state, degenerate final, prediction rejection, maximum-brake overshoot, retry reset, and brake cleanup. They do not replace flight validation of these failure cases.</p>
-<p>First-contact positions are the <strong>aircraft CG position at the first JSBSim structural contact</strong>, not the footprint of the belly contact point. The log captures contact at the physics timestep, including wingtip contacts; scoring acceptance requires one of the two belly contacts in these two models. The harness requires this log for a successful precision-landing run. A height crossing alone is insufficient because it can be a sample after a bounce. Provisional contact gates are finite data, sink 0-1.5 m/s, absolute bank at most 8 degrees, and pitch 0-15 degrees; these are development gates, not proven airframe structural limits. Internal-margin results are reported separately.</p>
+<p>First-contact positions are the <strong>aircraft CG position at the first JSBSim structural contact</strong>,
+not the footprint of the belly contact point. Belly/wing identities are resolved from
+the loaded model. The harness requires the physics-timestep contact log; a height
+crossing alone can be a sample after a bounce. Provisional first-contact gates are
+finite data, belly impact, sink 0-1.5 m/s, absolute bank at most 8 degrees and pitch
+-10 to +20 degrees. These quality diagnostics do not determine standstill scoring.
+Later gentle wingtip settling is reported rather than automatically
+rejected. These are development gates, not proven structural limits. Internal-margin
+results are reported separately.</p>
 <h3 id="reproduce-the-tests">Reproduce the tests</h3>
 <p>From the Paparazzi repository root, build each aircraft with its own telemetry UDP pair. A separate Ivy bus alone does <strong>not</strong> isolate telemetry ports.</p>
 <pre><code class="language-sh">make -f Makefile.ac AIRCRAFT=Adam_Precision_Landing_Test \
@@ -336,12 +924,12 @@ make -f Makefile.ac AIRCRAFT=Easystar_3_Precision_Landing_Test \
 
 python3 sw/simulator/nps/nps_fixedwing_tuning.py \
   --aircraft Adam_Precision_Landing_Test --ac-id 129 --scenario precision-landing \
-  --settle-seconds 20 --measure-seconds 4 --bus 127.255.255.255:2166 \
+   --settle-seconds 20 --measure-seconds 15 --bus 127.255.255.255:2166 \
   --udp-port 42258 --udp-uplink-port 42259 --output-dir var/nps_precision_landing/adam_new
 
 python3 sw/simulator/nps/nps_fixedwing_tuning.py \
   --aircraft Easystar_3_Precision_Landing_Test --ac-id 135 --scenario precision-landing \
-  --settle-seconds 20 --measure-seconds 4 --bus 127.255.255.255:2165 \
+   --settle-seconds 20 --measure-seconds 15 --bus 127.255.255.255:2165 \
   --udp-port 42270 --udp-uplink-port 42271 --output-dir var/nps_precision_landing/easystar_new
 </code></pre>
 <p>Use a new output directory per run. <code>--setting NAME=VALUE</code> supports controlled parameter trials; <code>--wind-speed</code> and <code>--wind-direction</code> set simulator wind. To reproduce rejection, add <code>--setting landing_airspeed=7.5 --setting final_height=10 --expect-go-around</code> to the EasyStar command. Do not lower the harness's 20 m climb gate to make a failed launch pass. Both models launch at 1.6 m and 10 m/s without a fabricated vertical throw. The flight plan converts the radian-valued <code>TAKEOFF_PITCH_ANGLE</code> to degrees before the flight-plan generator applies its normal degree-to-radian conversion.</p>
@@ -386,7 +974,10 @@ gcc -std=c11 -Wall -Wextra -Werror \
 </tbody>
 </table>
 <p>The rulebook does not specify an abort, go-around, or retry limit. It requires fully autonomous flight, safe return to the designated landing area, and work within the shared 30-minute slot. The test plan allows two automatic retries after the initial approach. Confirm with the organizers that an autonomous retry is accepted before competition day.</p>
-<p>The waypoint <code>TD</code> marks the center of the 20 x 3 m precision box. The initial predicted first-contact aim is 6 m before <code>TD</code>, which is 4 m inside the entry edge and leaves 16 m for flare float. The controller rejects recoverably bad predictions outside these internal limits:</p>
+<p>The waypoint <code>TD</code> marks the desired final stop at the center of the 20 x 3 m box.
+The nominal zero-brake glide aim is 7 m before TD for Adam and 12 m for EasyStar,
+leaving space for flare travel and rollout. It is not a guaranteed first-touch
+position. The controller retains these predicted-contact rejection limits:</p>
 <table>
 <thead>
 <tr>
@@ -411,7 +1002,12 @@ gcc -std=c11 -Wall -Wextra -Werror \
 </tr>
 </tbody>
 </table>
-<p>The scored quantity should be recorded as the first belly contact position. Both foam aircraft have no landing gear and little expected rollout on sand, but final rest position should also be recorded until competition judging practice is confirmed.</p>
+<p>Record both first belly contact and final rest position. Short travel after slight
+nose-down sand contact is the team's field expectation; measure it rather than
+substituting the simulator's long slide or assuming exactly zero travel.
+Final stop inside the box is the primary software objective;
+first touch also inside is the preferred result. Confirm the organizer's actual
+judging convention separately; software metric names do not establish competition rules.</p>
 <h3 id="system-under-test">System under test</h3>
 <p>Use one of these isolated aircraft entries with the shared flight plan <a href="conf/flight_plans/TUDELFT/tudelft_imav2026_o_test_pricise_landing.xml">conf/flight_plans/TUDELFT/tudelft_imav2026_o_test_pricise_landing.xml</a>:</p>
 <table>
@@ -433,6 +1029,37 @@ gcc -std=c11 -Wall -Wextra -Werror \
 </tbody>
 </table>
 <p>Competition aircraft bindings are intentionally unchanged.</p>
+<h3 id="brake-command-ownership">Brake command ownership</h3>
+<p>The Talon and EasyStar <code>rc_commands</code> explicitly set <code>BRAKE=0</code>. Landing code
+owns <code>COMMAND_BRAKE</code>, with zero retracted and negative values deployed.
+Both mixers separately read the live RC brake slider in MANUAL/AUTO1
+while RC status is OK: negative deploys crow, zero/positive retracts it.
+Neither copies that slider into <code>COMMAND_BRAKE</code>; <code>auto1_commands</code> must remain
+disabled on both aircraft. EasyStar reads live RC hatch input directly in its
+AUTO1 mixer while RC status is OK, otherwise selecting <code>SERVO_HATCH_CLOSED</code>.
+Other modes use <code>COMMAND_HATCH</code>. AUTO1 hatch movement does not update that
+stored command; switching to AUTO2 restores the stored hatch demand.
+Do not add RC brake passthrough to
+<code>auto_rc_commands</code>, because it would overwrite autonomous landing demand.</p>
+<p>The September 14 Talon log exposed a regression: MANUAL copied <code>@BRAKE=-9600</code>,
+AUTO1 retained it with crow gated off, and selecting AUTO2 enabled full configured
+crow. <code>ACTUATORS_RAW</code> confirmed approximately 600 us aileron separation in AUTO2.
+The resulting descent and elevator demand are not clean-airframe tuning data.
+The RC mapping is now isolated; crow scaling and rate limits are unchanged.
+Final, flare, and crow bench-test block exits clear the autonomous demand.
+Physical retraction still follows the mixer rate limiter and servo response.</p>
+<p>With the propeller removed, exercise each aircraft's slider in MANUAL and AUTO1:
+negative must deploy crow and zero/positive must retract it, with roll control
+still functioning. With the slider negative, select ordinary AUTO2 cruise:
+crow must retract when no autonomous brake demand is active. Also check RC loss
+and recovery. Returning to MANUAL/AUTO1 with a negative slider restores manual
+crow demand. On EasyStar, also verify AUTO1 hatch control, RC-loss closure,
+and the return to stored hatch demand in AUTO2. Inspect actuator telemetry for
+AUTO1 hatch movement rather than relying on <code>COMMANDS.HATCH</code>.
+Next select the crow bench-test block in AUTO2 and verify deployment followed by
+retraction, including an early block exit. Final/flare should retain proportional
+braking; go-around and standby must retract it. Check servo output as well as
+<code>COMMANDS</code>: manual crow is intentionally not represented in <code>COMMAND_BRAKE</code>.</p>
 <p>The landing system assigns one clear role to each available capability:</p>
 <table>
 <thead>
@@ -486,7 +1113,13 @@ $$</p>
 e_{cross} = c - v_c t_{contact}
 $$</p>
 <p>Negative $e_{long}$ predicts touchdown beyond <code>TD</code>; positive values predict a short touchdown. Crow is proportional to predicted travel beyond the selected upstream aim point. It is rate-limited and capped by each airframe's mixer.</p>
-<p>Both simulation baselines use a 17 m final height and 9 m/s approach airspeed. The AF-to-TD route uses existing glide/energy guidance, with vertical aim shifted upstream by <code>aim_before_td</code> without moving <code>TD</code>. Above the precision decision band, excess height relative to this path commands at most 50% brake demand using the fused navigation state. In the final decision band, fresh VB22A AGL and range rate drive prediction. Range-rate initialization uses fused vertical speed and resets after measurement gaps. Flare kills throttle and limits bank to 8 degrees. Actual mixer travel caps remain aircraft-specific.</p>
+<p>Both examples retain a 17 m final height and 9 m/s approach airspeed; these are
+development settings, not newly validated tuning. The AF-to-TD glide aim is shifted
+upstream without moving TD, and its altitude target bypasses the shared 1 m update
+deadband. Upper-band braking is capped at 50% demand. Fresh AGL and range rate drive
+the close-range prediction. Flare requests zero throttle without touching the global
+kill flag and limits the roll setpoint to at most 8 degrees. Actual roll, servo travel
+and aerodynamic authority must still be verified on the aircraft.</p>
 <h3 id="configuration-baseline">Configuration baseline</h3>
 <p>Do not optimize several values at once. Start every new test campaign from this baseline and record every departure:</p>
 <table>
@@ -530,15 +1163,15 @@ $$</p>
 </tr>
 <tr>
 <td><code>aim_before_td</code></td>
-<td style="text-align: right;">6.0 m</td>
-<td style="text-align: right;">6.0 m</td>
-<td style="text-align: right;">2.0-7.0 m</td>
-<td>First-contact target before box center</td>
+<td style="text-align: right;">7.0 m</td>
+<td style="text-align: right;">12.0 m</td>
+<td style="text-align: right;">2.0-20.0 m</td>
+<td>Upstream geometric aim; not a calibrated stopping distance</td>
 </tr>
 <tr>
 <td><code>touchdown_pitch</code></td>
 <td style="text-align: right;">4.0 deg</td>
-<td style="text-align: right;">4.0 deg</td>
+<td style="text-align: right;">0.0 deg</td>
 <td style="text-align: right;">-5.0 to 10.0 deg</td>
 <td>Commanded flare pitch; measured contact pitch differs</td>
 </tr>
@@ -596,7 +1229,7 @@ $$</p>
 <li><strong>Power-On &amp; Control Check</strong>:
    - Remove propeller or restrain aircraft securely.
    - Power radio and avionics. Verify control surfaces respond correctly in <code>MANUAL</code>, <code>AUTO1</code>, and <code>AUTO2</code>.
-   - Verify motor kill switch (<code>autopilot.kill_throttle = 1</code>) immediately disarms throttle in all modes.</li>
+   - Verify the configured physical motor-kill behavior with the propeller removed; fixed-wing MANUAL/AUTO1 RC throttle is not universally inhibited by <code>autopilot.kill_throttle</code>.</li>
 <li><strong>Crow Brake Bench Test</strong>:
    - Trigger block <code>Crow brake bench test</code> from GCS (or select via settings).
    - Observe 3-second extension: both ailerons must move <strong>upward</strong> together.
@@ -627,7 +1260,9 @@ $$</p>
 <li><strong>Forced High Go-Around</strong>:
    - As aircraft passes <code>AF</code> at 17 m and begins descent, verify <code>precision_landing</code> telemetry updates (<code>remaining_m</code>, <code>predicted_error_m</code>).
    - Allow descent to ~5 m AGL, then switch to <code>Standby</code> or command <code>go-around</code> from GCS.
-   - Verify aircraft immediately retracts crow, applies full throttle, climbs straight along final heading to 25 m AGL, and enters standby circle.</li>
+   - Above commit height, verify brake demand clears, servos retract at the configured rate,
+     and climb-out occurs before turning. The sequence retries up to its configured limit,
+     then returns to standby. Below commit height, expect flare rather than powered abort.</li>
 </ol>
 <p><strong>Pass Criteria</strong>: Aircraft tracks final centerline within 1.0 m, rangefinder acquires at 4 m AGL, and manual/commanded go-around smoothly aborts descent without stall or wing drop.</p>
 <hr>
@@ -656,7 +1291,7 @@ $$</p>
 </tr>
 <tr>
 <td><strong>Long overshoot</strong> (&gt; +10 m past <code>TD</code>)</td>
-<td>Increase <code>aim_before_td</code> by 1.0 m (max 7.0 m) or increase <code>flare_brake</code> by 0.10. Re-test once.</td>
+<td>Separate airborne float from ground travel; validate the surface model before changing the geometric aim. Do not compensate for unvalidated simulated sliding.</td>
 </tr>
 <tr>
 <td><strong>Short contact</strong> (&gt; -10 m before <code>TD</code>)</td>
@@ -969,18 +1604,18 @@ $$</p>
 <li>Select the desired left/right autonomous landing once.</li>
 <li>Do not manually alter the approach unless required for safety.</li>
 <li>Mark first belly contact and final rest position before moving the aircraft.</li>
-<li>Measure along-track and cross-track error relative to <code>TD</code>.</li>
+<li>Measure final-stop along-track, cross-track and radial error relative to <code>TD</code>; record first-touch errors separately.</li>
 <li>Record whether an automatic retry occurred and why.</li>
 <li>Inspect belly, propeller, control surfaces, pitot, and rangefinder.</li>
 </ol>
 <h3 id="advancement-gates">Advancement gates</h3>
 <p>Advance only after at least five consecutive landings satisfy all of:</p>
 <ul>
-<li>first contact inside 20 x 3 m;</li>
-<li>absolute cross-track error no more than 1.0 m;</li>
+<li>confirmed final stop inside 20 x 3 m, with first touch also inside as the preferred test outcome;</li>
+<li>final-stop absolute cross-track error no more than 1.0 m; report first-touch error separately;</li>
 <li>airspeed never below the aircraft-specific minimum before flare;</li>
 <li>no manual intervention;</li>
-<li>no uncontrolled bounce, wingtip strike, or excessive pitch impact;</li>
+<li>no uncontrolled bounce, hard wingtip strike, or excessive pitch impact (a light settling touch is recorded, not automatically rejected);</li>
 <li>no unexplained AGL, GNSS, or airspeed dropout;</li>
 <li>automatic retry behavior matches the logged rejection reason.</li>
 </ul>
@@ -994,19 +1629,22 @@ $$</p>
 </ul>
 <hr>
 <h2 id="phase-9-parameter-tuning-matrix">Phase 9: Parameter tuning matrix</h2>
-<p>Change one parameter family per test set and retain at least three repeats.</p>
-<h3 id="long-or-floating-touchdown">Long or floating touchdown</h3>
+<p>Change one parameter family per test set and retain at least three repeats before
+field adoption. Compare final-stop mean and worst radial/cross-track error first,
+then the proportion with both first touch and final stop inside. Do not select a
+smoother-looking landing that has worse stopping precision or unresolved safety issues.</p>
+<h3 id="final-stop-beyond-td">Final stop beyond TD</h3>
 <p>In order:</p>
 <ol>
-<li>Increase <code>aim_before_td</code> in 0.5 m steps, no higher than 7 m.</li>
+<li>Check first-touch and stop positions separately against measured surface behavior. The geometric aim is bounded at 20 m independently of the unchanged contact rejection limits; a larger bound is not permission to target contact outside the box.</li>
 <li>If prediction remains long before flare, raise <code>brake_agl</code> by 0.25 m.</li>
 <li>If crow is effective but too weak, increase <code>BRAKE_GAIN</code> conservatively after high-altitude characterization.</li>
 <li>If touchdown prediction is correct but flare floats, lower <code>flare_agl</code> by 0.1-0.2 m.</li>
 </ol>
-<h3 id="short-touchdown">Short touchdown</h3>
+<h3 id="final-stop-short-of-td">Final stop short of TD</h3>
 <p>In order:</p>
 <ol>
-<li>Decrease <code>aim_before_td</code> by 0.5 m.</li>
+<li>Decrease <code>aim_before_td</code> by 0.5 m only when final rest is short; an upstream first touch followed by a stop at TD is desirable.</li>
 <li>Lower <code>brake_agl</code> by 0.25 m.</li>
 <li>Reduce <code>BRAKE_GAIN</code> if brake remains active despite a short trend.</li>
 <li>Raise <code>flare_agl</code> only if sink arrest, not energy, caused the short contact.</li>
@@ -1028,7 +1666,9 @@ $$</p>
 <hr>
 <h2 id="phase-10-wind-envelope-expansion">Phase 10: Wind envelope expansion</h2>
 <p>Expand only after calm-air repeatability. Test separate headwind and crosswind components because total wind speed alone does not describe landing risk.</p>
-<p>For each wind bin, require at least five accepted approaches and report mean, standard deviation, and worst-case touchdown error:</p>
+<p>For each wind bin, require at least five accepted approaches and report mean,
+standard deviation and worst-case final-stop error, plus first-touch errors and
+the fraction achieving both inside the box:</p>
 <table>
 <thead>
 <tr>
@@ -1073,11 +1713,19 @@ $$</p>
 <li>invalid or low airspeed;</li>
 <li>predicted lateral contact outside 1.2 m persisting for 0.2 s;</li>
 <li>predicted short contact beyond 8 m persisting for 0.2 s;</li>
-<li>predicted overshoot beyond 8 m while approach brake demand is at least 95% of its controller maximum, persisting for 0.2 s;</li>
+<li>predicted overshoot beyond 8 m persisting for 0.2 s, regardless of brake saturation;</li>
 <li>inadequate forward progress;</li>
 <li>rangefinder loss when fused height also requires the close-range decision.</li>
 </ul>
-<p>Above this band, fused height and vertical speed support bounded braking; lack of AGL does not alone trigger rejection. At/below 2.5 m fused height, AGL loss commits to flare rather than a low powered turn. GNSS loss is checked throughout final with the same 2.5 m commit-height rule. These fallback heights depend on altitude-reference accuracy and need fault-injection flight validation. A go-around retracts crow, restores normal bank limits and nominal airspeed, climbs on the final heading to 25 m before turning back, rejoins the baseleg, and retries at most twice. Controller state is reset on final entry, before exceptions run. Passing TD while still high goes around, not straight into flare. Leaving final or flare clears crow and restores the bank limit. After commit, flare braking is a fixed tested demand, not a closed-loop touchdown predictor; do not treat the provisional stall/energy protection as a validated flare envelope.</p>
+<p>Above this band, fused height supports bounded braking; low/stale airspeed and a
+persistent violation of the converging lateral corridor still reject. Fresh AGL
+takes priority for commitment. At/below commit height, or with unknown height,
+powered abort is prohibited; passing TD or losing navigation then requests flare.
+Go-around rechecks this latch, clears brake demand, preserves external kill
+commands, climbs straight before turning, and retries at most twice. Rate-limited
+servo retraction is not instantaneous. Flare braking is a fixed demand only while
+airspeed is fresh and above its threshold; it is not a validated aerodynamic
+envelope or a closed-loop stopping-distance controller.</p>
 <p>The safety pilot may always intervene to prevent injury or damage. Record that intervention because competition scoring may apply the manual autonomy factor.</p>
 <hr>
 <h2 id="flight-test-record-template">Flight-test record template</h2>
@@ -1166,6 +1814,18 @@ $$</p>
 <td></td>
 </tr>
 <tr>
+<td>Final-rest distance from TD</td>
+<td></td>
+</tr>
+<tr>
+<td>First touch and final stop both inside</td>
+<td></td>
+</tr>
+<tr>
+<td>Contact-quality review (separate from precision)</td>
+<td></td>
+</tr>
+<tr>
 <td>Retry count and reason</td>
 <td></td>
 </tr>
@@ -1188,8 +1848,8 @@ $$</p>
 <ul>
 <li>crow bench and high-altitude tests pass;</li>
 <li>VB22A passes static and moving sand tests from 4 m to contact;</li>
-<li>at least ten consecutive autonomous landings are inside 20 x 3 m;</li>
-<li>the worst lateral first-contact error is at most 1.2 m;</li>
+<li>at least ten consecutive autonomous final stops are inside 20 x 3 m, preferably with all first touches also inside;</li>
+<li>the worst lateral final-stop error is at most 1.2 m; first-touch error and both-inside rate are reported;</li>
 <li>at least five of those landings cover the approved crosswind envelope;</li>
 <li>automatic abort/retry is demonstrated for GNSS, AGL, airspeed, and predicted boundary failures;</li>
 <li>no parameter has been changed since the validating test set;</li>

@@ -123,7 +123,7 @@
         <define name="RANGEFINDER_I2C_USE_FILTER" value="FALSE"/><!-- not always needed VB22A filters internally quite well -->
         <define name="RANGEFINDER_I2C_MEDIAN_SIZE" value="5"/>
         <define name="RANGEFINDER_I2C_MIN_RANGE" value="0.005" unit="m"/>
-        <define name="RANGEFINDER_I2C_MAX_RANGE" value="8.0" unit="m"/><!-- For e.g. VB22A Theoretically 20m at 90% reflectivity in daylight real useful range ~ 8m upto 0m-->
+        <define name="RANGEFINDER_I2C_MAX_RANGE" value="6.0" unit="m"/><!-- For e.g. VB22A Theoretically 20m at 90% reflectivity in daylight real useful range ~ 8m upto 0m-->
         <!-- Sensor is centered in body X/Y and sits 4 mm above the belly contact plane. -->
         <define name="RANGEFINDER_I2C_OFFSET" value="0.004" unit="m"/>
         <define name="RANGEFINDER_I2C_SCALE" value="0.001"/><!-- Since VB22A sensor is set to emit in millimeters per default-->
@@ -226,7 +226,7 @@
          2.5 in above the interpolated belly contact plane. -->
        <define name="NPS_SONAR_OFFSET" value="-0.0635"/>
        <define name="NPS_SONAR_MIN_DIST" value="0.005"/>
-       <define name="NPS_SONAR_MAX_DIST" value="8.0"/>
+      <define name="NPS_SONAR_MAX_DIST" value="6.0"/>
        <!-- <define name="SENSOR_SYNC_SEND_SONAR"/> -->
       <!--
       <define name="USE_NPS_AIRSPEED"/>
@@ -275,7 +275,6 @@
 
     <module name="ins" type="alt_float"/>
 
-    <module name="auto1_commands"/> 
     <!-- FIXME since not working in JSBSim target with RC controller steering in Simulator-->
     <module name="air_data"/>
 
@@ -424,7 +423,8 @@
     <set command="ROLL"         value="@ROLL"/>
     <set command="PITCH"        value="@PITCH"/>
     <set command="YAW"          value="@YAW"/>    
-    <set command="BRAKE"        value="@BRAKE"/>
+    <!-- Landing code owns BRAKE; never carry the RC switch value into AUTO2. -->
+    <set command="BRAKE"        value="0"/>
     <set command="ACTIVELIGHTS" value="@MANUALLIGHT"/>
     <set command="HATCH"        value="@HATCH"/>
     <set command="SHUTTER"      value="@MANUALSHUTTER"/> 
@@ -486,8 +486,8 @@
     <let var="gyro_active" value="(1 > AP_MODE ? 0 : 1)"/><!-- yes a bit puzzling is it ;)-->
     <let var="gyro_yaw" value="$gyro_active * (stateGetBodyRates_i()->r)"/>
     <let var="yaw_ctrl_sgl" value="@YAW - ($k_rudder_gyro * ($gyro_yaw)) - @ROLL * ASSIST_ROLL_WITH_RUDDER"/>
-    <!-- Brake Slowdown: Gated to AUTO2 only to prevent unintended crowbrake in MANUAL and AUTO1 modes -->
-    <let var="brake_value_nofilt" value="((autopilot.mode == AP_MODE_AUTO2) ? Clip(-@BRAKE, 0, MAX_PPRZ) : 0)"/>
+    <let var="manual_crow" value="((autopilot.mode == AP_MODE_MANUAL || autopilot.mode == AP_MODE_AUTO1) ? ((radio_control.status == RC_OK) ? Clip(-radio_control_get(RADIO_BRAKE), 0, MAX_PPRZ) : 0) : 0)"/>
+    <let var="brake_value_nofilt" value="((autopilot.mode == AP_MODE_AUTO2) ? Clip(-@BRAKE, 0, MAX_PPRZ) : $manual_crow)"/>
     <ratelimit var="brake_value" value="$brake_value_nofilt" rate_min="-BRAKE_ENABLED_SLOWDOWN_FACTOR_RETRACT" rate_max="BRAKE_ENABLED_SLOWDOWN_FACTOR_EXTEND"/>
     <let var="crowbrake" value="$brake_value * BRAKE_MAX_PCT"/>
     <set servo="S_THROTTLE" value="@THROTTLE"/>
@@ -505,7 +505,7 @@
     <!-- <set servo="S_ELEVATOR" value="@PITCH"/> -->
     <!-- <set servo="S_RUDDER" value="@YAW"/> -->
     <!-- <set servo="S_LIGHT" value="@ACTIVELIGHTS"/>  -->
-    <set servo="S_HATCH" value="@HATCH"/>
+    <set servo="S_HATCH" value="((autopilot.mode == AP_MODE_AUTO1) ? ((radio_control.status == RC_OK) ? radio_control_get(RADIO_HATCH) : SERVO_HATCH_CLOSED) : @HATCH)"/>
     <set servo="S_SHUTTER" value="@SHUTTER"/>
   </command_laws>
 
@@ -655,16 +655,16 @@
     <!--<define name="VFF_VZ_R_GPS" value="0.2"/>-->
 
     <!-- Still called SONAR_ , when INS is refactored in due time it will become RANGEFINDER_ -->
-    <define name="SONAR_MAX_RANGE" value="$(RANGEFINDER_I2C_MAX_RANGE)"/>
-    <define name="SONAR_MIN_RANGE" value="$(RANGEFINDER_I2C_MIN_RANGE)"/>
+    <define name="SONAR_MAX_RANGE" value="AGL_DIST_SONAR_MAX_RANGE"/>
+    <define name="SONAR_MIN_RANGE" value="AGL_DIST_SONAR_MIN_RANGE"/>
 
   </section>
 
   <section name="AGL" prefix="AGL_DIST_SONAR_">
     <!-- Accept the VB22A on hardware and AGL_SONAR_NPS_ID in simulation. -->
     <define name="ID" value="ABI_BROADCAST"/>
-    <define name="MAX_RANGE" value="$(RANGEFINDER_I2C_MAX_RANGE)/2" unit="m"/><!-- For AGL -->
-    <define name="MIN_RANGE" value="$(RANGEFINDER_I2C_MIN_RANGE)" unit="m"/>
+    <define name="MAX_RANGE" value="6.0" unit="m"/>
+    <define name="MIN_RANGE" value="0.005" unit="m"/>
     <define name="FILTER" value="0.1"/>
   </section>
 
@@ -876,8 +876,8 @@
     <define name="FINAL_HEIGHT" value="17.0" unit="m"/>
     <define name="BRAKE_AGL" value="3.5" unit="m"/>
     <define name="FLARE_AGL" value="1.2" unit="m"/>
-    <define name="AIM_BEFORE_TD" value="6.0" unit="m"/>
-    <define name="TOUCHDOWN_PITCH" value="4.0"/><!-- Flight-plan variable is in degrees. -->
+    <define name="AIM_BEFORE_TD" value="12.0" unit="m"/>
+    <define name="TOUCHDOWN_PITCH" value="0.0"/><!-- Flight-plan variable is in degrees. -->
     <define name="FLARE_BRAKE" value="0.65"/>
   </section>
 
@@ -915,6 +915,7 @@
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">
+    <define name="USE_CROW_ACTUATORS" value="TRUE"/>
     <define name="JSBSIM_LAUNCHSPEED" value="10.0"/>
     <define name="JSBSIM_LAUNCH_HEIGHT" value="1.6" unit="m"/>
     <!-- <define name="JSBSIM_MODEL" value="YardStik" type="string"/> -->

@@ -35,6 +35,8 @@
 #include "mcu_periph/sys_time.h"
 #include "state.h"
 #include "modules/core/commands.h"
+#include "modules/actuators/actuators.h"
+#include "nps_crow.h"
 
 #include "modules/core/abi.h"
 
@@ -82,6 +84,10 @@ void nps_autopilot_init(enum NpsRadioControlType type_rc, int num_rc_script, cha
 
   modules_mcu_init();
   main_ap_init();
+
+#ifdef NPS_ROLL_TRIM
+  command_roll_trim = NPS_ROLL_TRIM;
+#endif
 
 }
 
@@ -224,6 +230,14 @@ void nps_autopilot_run_step(double time)
   nps_autopilot.commands[COMMAND_YAW] = (double)commands[COMMAND_YAW] / MAX_PPRZ;
 #endif /* COMMAND_YAW */
 #endif /* NPS_ACTUATOR_NAMES */
+
+#if NPS_USE_CROW_ACTUATORS
+  const struct NpsCrowCommands crow = nps_crow_commands(
+      actuators[SERVO_S_AILERON_LEFT_IDX].pprz_val,
+      actuators[SERVO_S_AILERON_RIGHT_IDX].pprz_val, MAX_PPRZ);
+  nps_autopilot.commands[COMMAND_ROLL] = crow.roll;
+  nps_autopilot.commands[COMMAND_BRAKE] = crow.brake;
+#endif
 
   // do the launch when clicking launch in GCS
   nps_autopilot.launch = autopilot.launch && !autopilot.kill_throttle;

@@ -35,7 +35,7 @@
 #include "nps_random.h"
 #include "nps_sensors.h"
 
-/// 10Hz default
+/// 100Hz default
 #ifndef NPS_SONAR_DT
 #define NPS_SONAR_DT 0.01
 #endif

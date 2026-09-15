@@ -98,37 +98,40 @@ class FlightLog:
             return default
 
 
-def parse_log_header(log_path: Path, ac_id: int) -> tuple[str, str, dict]:
-    """Aircraft name, airframe path and flown defines for ac_id from the .log."""
-    header = []
-    with log_path.open("r", errors="replace") as f:
-        for line in f:
-            header.append(line)
-            if "</conf>" in line or len(header) > 500000:
-                break
-    text = "".join(header)
-    for m in re.finditer(r"<aircraft\s+[^>]*?>", text, re.S):
-        tag = m.group(0)
-        m_id = re.search(r'ac_id="(\d+)"', tag)
-        if not (m_id and int(m_id.group(1)) == ac_id):
-            continue
-        name = re.search(r'name="([^"]+)"', tag)
-        airframe = re.search(r'airframe="([^"]+)"', tag)
-        if not (name and airframe):
-            raise AutotuneError(f".log <aircraft> entry for ac_id {ac_id} lacks name/airframe attributes")
-        # The embedded airframe copy tells us which values were actually flown.
-        # The logger upper-cases and reorders attributes: <define VALUE=".." NAME=".."/>.
-        af_start = text.find("<airframe", m.end())
-        af_end = text.find("</airframe>", af_start)
-        defines = {}
-        if af_start > 0 and af_end > af_start:
-            for d in re.finditer(r"<define\s+([^>]*?)/?>", text[af_start:af_end]):
-                attrs = dict(re.findall(r'(\w+)="([^"]*)"', d.group(1)))
-                attrs = {k.lower(): v for k, v in attrs.items()}
-                if "name" in attrs and "value" in attrs:
-                    defines.setdefault(attrs["name"], attrs["value"])
-        return name.group(1), airframe.group(1), defines
+def logged_aircraft(log_path: Path, ac_id: int) -> ET.Element:
+    """Read one aircraft's embedded configuration, normalizing attribute case."""
+    try:
+        root = ET.parse(log_path).getroot()
+    except ET.ParseError as exc:
+        raise AutotuneError(f"invalid log configuration: {log_path}: {exc}") from exc
+    for element in root.iter():
+        element.attrib = {key.lower(): value for key, value in element.attrib.items()}
+    for aircraft in root.iter("aircraft"):
+        if aircraft.get("ac_id") == str(ac_id):
+            if not aircraft.get("name") or not aircraft.get("airframe"):
+                raise AutotuneError(f"log aircraft {ac_id} lacks name/airframe attributes")
+            if aircraft.find("airframe") is None:
+                raise AutotuneError(f"log aircraft {ac_id} lacks its embedded airframe")
+            return aircraft
     raise AutotuneError(f"no <aircraft ac_id=\"{ac_id}\"> found in {log_path.name}")
+
+
+def parse_log_header(log_path: Path, ac_id: int) -> tuple[str, str, dict]:
+    """Aircraft name, path and hardware-target defines from the embedded XML."""
+    aircraft = logged_aircraft(log_path, ac_id)
+    airframe = aircraft.find("airframe")
+    for firmware in airframe.findall("firmware"):
+        if firmware.get("name") != "fixedwing":
+            airframe.remove(firmware)
+            continue
+        for target in firmware.findall("target"):
+            if target.get("name") != "ap":
+                firmware.remove(target)
+    defines = {}
+    for define in airframe.iter("define"):
+        if define.get("name") and define.get("value") is not None:
+            defines.setdefault(define.get("name"), define.get("value"))
+    return aircraft.get("name"), aircraft.get("airframe"), defines
 
 
 def parse_data_file(data_path: Path, ac_id: int, wanted: set[str]) -> dict:
@@ -189,6 +192,7 @@ def load_flight_log(log_dir: Path, log_name: str, ac_id: int) -> FlightLog:
 @dataclass
 class Analysis:
     """Metrics extracted from the flight used to derive XML changes."""
+    auto1_only: bool = False
     airspeed_source: str = "AIR_DATA.airspeed"
     airspeed_mean: float = NAN
     airborne_seconds: float = NAN
@@ -206,6 +210,7 @@ class Analysis:
     pitch_err_rms_auto2: float = NAN
     auto2_level_elevator: float = NAN     # steady elevator in AUTO2 (no RC trim influence)
     n_auto2_level: int = 0
+    auto2_negative_brake_frac: float = NAN
     rollsp_rate_lowgs: float = NAN        # roll setpoint jitter [deg/s] at low groundspeed
     rollsp_rate_highgs: float = NAN
     auto2_bank_sat_frac: float = NAN      # AUTO2 time with roll setpoint at the limit
@@ -297,8 +302,9 @@ def _min_run(mask: np.ndarray, min_len: int) -> np.ndarray:
 
 
 def analyze(fl: FlightLog, pitch_min_deg: float = -25.0,
-            t_range: tuple[float, float] | None = None) -> Analysis:
-    a = Analysis()
+        t_range: tuple[float, float] | None = None,
+        auto1_only: bool = False) -> Analysis:
+    a = Analysis(auto1_only=auto1_only)
     t_att, att = fl.series("ATTITUDE")           # phi psi theta [rad]
     t_gps, gps = fl.series("GPS")                # f3 course decideg, f5 speed cm/s
     t_cmd, cmd = fl.series("COMMANDS")           # THROTTLE ROLL PITCH YAW ...
@@ -332,7 +338,8 @@ def analyze(fl: FlightLog, pitch_min_deg: float = -25.0,
     roll_c = interp(t_cmd, cmd[:, 1])
     pitch_c = interp(t_cmd, cmd[:, 2])
     yaw_c = interp(t_cmd, cmd[:, 3])
-    m = np.round(interp(t_mode, mode[:, 0]))
+    mode_indices = np.clip(np.searchsorted(t_mode, tq, side="right") - 1, 0, len(t_mode) - 1)
+    m = mode[mode_indices, 0]
 
     have_des = "DESIRED" in fl.msgs
     des_course = None
@@ -375,6 +382,13 @@ def analyze(fl: FlightLog, pitch_min_deg: float = -25.0,
     airborne = _min_run(airborne, int(round(15.0 / dt)))
     if t_range is not None:
         airborne &= (tq >= t_range[0]) & (tq <= t_range[1])
+    if auto1_only:
+        changes = np.r_[0, np.flatnonzero(np.diff(mode[:, 0]) != 0) + 1]
+        change_indices = np.searchsorted(t_mode[changes], tq, side="right") - 1
+        settled = (tq - t_mode[changes[np.maximum(change_indices, 0)]]) >= 3.0
+        next_change = np.r_[t_mode[changes[1:]], np.inf]
+        settled &= (next_change[np.maximum(change_indices, 0)] - tq) >= 3.0
+        airborne &= (m == 1) & settled
     if airborne.sum() < 50:
         raise AutotuneError("insufficient airborne data (need sustained speed > 6 m/s)")
     sel = airborne
@@ -488,6 +502,9 @@ def analyze(fl: FlightLog, pitch_min_deg: float = -25.0,
     s2_air = sel & (m == 2) & (spd > 6.0)
     if s2_air.sum() > 5:
         z = z_est
+        if cmd.shape[1] > 4:
+            command_indices = np.clip(np.searchsorted(t_cmd, tq, side="right") - 1, 0, len(t_cmd) - 1)
+            a.auto2_negative_brake_frac = float((cmd[command_indices[s2_air], 4] < -0.95 * MAX_PPRZ).mean())
         if isnum(a.ground_alt):
             a.auto2_min_agl = float((z[s2_air] - a.ground_alt).min())
         a.auto2_max_sink = float(zdot[s2_air].min())
@@ -575,6 +592,7 @@ class AirframeEditor:
     def __init__(self, text: str):
         self.text = text
         self.changes: list[Change] = []
+        self.locked_defines: set[str] = set()
 
     def get_define(self, name: str) -> str | None:
         m = re.search(r'<define\s+name="%s"\s+value="([^"]*)"' % re.escape(name), self.text)
@@ -590,6 +608,8 @@ class AirframeEditor:
             return default
 
     def set_define(self, section: str, name: str, value: str, rationale: str) -> bool:
+        if name in self.locked_defines:
+            return False
         pat = re.compile(r'(<define\s+name="%s"\s+value=")([^"]*)(")' % re.escape(name))
         m = pat.search(self.text)
         if not m:
@@ -628,8 +648,37 @@ def tune_airframe(xml_text: str, a: Analysis, fl: FlightLog,
 
     # Manual overrides (--set NAME=VALUE) are applied first and win.
     for name, value in (overrides or {}).items():
-        if not ed.set_define("override", name, value, "set explicitly on the command line"):
+        if ed.get_define(name) is None:
             advice.append(Advice("override", f"--set {name}: define not found in the airframe"))
+        else:
+            ed.set_define("override", name, value, "set explicitly on the command line")
+    ed.locked_defines = set(overrides or {})
+
+    if a.auto1_only:
+        advice.append(Advice(
+            "AUTO1 scope / validation",
+            "AUTO2 was excluded, with a 3 s margin either side of mode changes. "
+            "Level-flight attitude cannot distinguish IMU mounting error from angle of attack; "
+            "mount angles are not tuned. The steady-flight selection does not establish pitch "
+            "stability, and no pitch P/D gains are identified. Validate trims on the bench and "
+            "in supervised flight before autonomous flight. Plant values are estimates, not "
+            "certified performance or a measured stall boundary."))
+
+    airframe = logged_aircraft(fl.log_path, fl.ac_id).find("airframe")
+    brake_input = airframe.find("./command_laws/let[@var='brake_value_nofilt']")
+    if brake_input is not None and "Clip(-@BRAKE" in brake_input.get("value", "") \
+            and "AP_MODE_AUTO2" in brake_input.get("value", "") \
+            and fl.flown("BRAKE_MAX_PCT", 0.0) > 0.0 \
+            and isnum(a.auto2_negative_brake_frac) and a.auto2_negative_brake_frac > 0.5:
+        advice.append(Advice(
+            "AUTO2 AIRBRAKES / TUNING HOLD",
+            f"COMMANDS.BRAKE was below -95% for {a.auto2_negative_brake_frac:.0%} of sampled AUTO2. "
+            "The LOGGED airframe enables Clip(-@BRAKE, 0, MAX_PPRZ) in AUTO2, so this commanded full "
+            "configured airbrake deployment. Check ACTUATORS_RAW. Brake-on sink and elevator demand must not be treated as "
+            "clean-airframe propulsion limits or a CG measurement. All automatic parameter "
+            "changes are withheld; inspect brake command ownership and pitch oscillation first. "
+            "A compiling XML is not flight validation."))
+        return ed.text, ed.changes, advice
 
     # =====================================================================
     # 0. Flight-critical configuration faults found in the log
@@ -1007,7 +1056,7 @@ def tune_airframe(xml_text: str, a: Analysis, fl: FlightLog,
             advice.append(Advice("course loop",
                                  f"AUTO2 course tracking is healthy (RMS {a.course_err_rms_deg:.1f} deg, "
                                  f"{a.course_osc_frac:.2f} sign changes/s); COURSE_PGAIN {pgain} kept"))
-    elif isnum(a.roll_track_lag_s) and not windy:
+    elif isnum(a.roll_track_lag_s) and not windy and not a.auto1_only:
         # Model check: course-loop bandwidth ~ pgain*g/V must stay well below
         # the roll-tracking bandwidth (1/lag) or the outer loop oscillates.
         bw_course = pgain * G / v_ref
@@ -1086,6 +1135,12 @@ def write_report(report_path: Path, fl: FlightLog, a: Analysis, changes: list[Ch
         f"base XML   : {base_xml}",
         f"output XML : {out_xml}",
         f"build check: {build_status}",
+        f"analysis scope: {'AUTO1 only; 3 s either side of mode changes excluded' if a.auto1_only else 'all airborne modes'}",
+                "configuration (log / base / output):",
+                *[f"  {name}: {fl.flown_defines.get(name, '(absent)')} / "
+                    f"{AirframeEditor(base_xml.read_text()).get_define(name)} / "
+                    f"{AirframeEditor(out_xml.read_text()).get_define(name)}"
+                    for name in ("BODY_TO_IMU_THETA", "PITCH_TRIM", "ROLL_TRIM")],
         "",
         "-- FLIGHT " + "-" * 64,
         f"  airborne {a.airborne_seconds:.0f} s in {a.n_flights} flight(s) | AUTO1 {a.auto1_seconds:.0f} s | AUTO2 {a.auto2_seconds:.0f} s",
@@ -1139,6 +1194,7 @@ def write_report(report_path: Path, fl: FlightLog, a: Analysis, changes: list[Ch
         f"  AUTO2 circle           : R {_f(a.circle_radius_flown, '.0f', ' m')}, radial err RMS {_f(a.auto2_radial_rms, '.0f', ' m')},"
         f" roll sp at limit {_f(a.auto2_bank_sat_frac, '.0%')}",
         f"  AUTO2 steady elevator  : {_f(a.auto2_level_elevator, '+.0f', ' pprz')} (n={a.n_auto2_level}, no RC trim in loop)",
+        f"  AUTO2 negative brake  : {_f(a.auto2_negative_brake_frac, '.0%')} of samples below -95% command",
         "",
         "-- XML CHANGES " + "-" * 59,
     ]
@@ -1147,7 +1203,7 @@ def write_report(report_path: Path, fl: FlightLog, a: Analysis, changes: list[Ch
             L += [f"{i}. {c.what}", f"   before : {c.before}", f"   after  : {c.after}",
                   f"   why    : {c.rationale}", ""]
     else:
-        L.append("(no changes were necessary)")
+        L.append("(no automatic changes emitted; see advice for any tuning hold)")
     if advice:
         L.append("-- ADVICE / NEXT FLIGHT " + "-" * 50)
         for ad in advice:
@@ -1180,6 +1236,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="only analyse log time [T0, T1] seconds (e.g. one of several flights)")
     ap.add_argument("--target", default="ap", help="build target for verification")
     ap.add_argument("--no-build", action="store_true", help="skip compile verification")
+    ap.add_argument("--auto1-only", action="store_true",
+                    help="use only AUTO1 samples, excluding 3 s either side of mode changes; keep course gains")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args(argv)
 
@@ -1202,9 +1260,9 @@ def main(argv: list[str] | None = None) -> int:
             overrides[k.strip()] = v.strip()
 
         base_text = base_xml.read_text()
-        m_pmin = re.search(r'name="PITCH_MIN_SETPOINT"\s+value="([^"]+)"', base_text)
-        pitch_min = float(m_pmin.group(1)) if m_pmin else -25.0
-        analysis = analyze(fl, pitch_min, tuple(args.t_range) if args.t_range else None)
+        pitch_min = fl.flown("PITCH_MIN_SETPOINT", -25.0)
+        analysis = analyze(fl, pitch_min, tuple(args.t_range) if args.t_range else None,
+                   auto1_only=args.auto1_only)
         tuned_text, changes, advice = tune_airframe(base_text, analysis, fl,
                                                     args.turn_radius, overrides)
 

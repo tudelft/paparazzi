@@ -51,10 +51,10 @@
  *
  * @param longitudinal_error Predicted distance upstream (+) or downstream (-) of TD (meters).
  * @param lateral_error Predicted cross-track offset from runway centerline (meters).
- * @param max_short_error Maximum acceptable longitudinal short error (meters).
+ * @param max_short_error Maximum absolute longitudinal error (meters).
  * @param max_lateral_error Maximum acceptable lateral cross-track error (meters).
  * @return true If the prediction is non-finite or outside allowable spatial bounds.
- * @return false If the prediction represents a safe touchdown within bounds.
+ * @return false If the contact prediction is within bounds; this does not guarantee a safe final stop.
  *
  * @note A persistence filter in precision_landing.c requires this predicate to remain
  *       true for a continuous duration (e.g. 0.2s) before triggering an abort, preventing
@@ -67,14 +67,14 @@ static inline bool precision_landing_prediction_rejected(float longitudinal_erro
 	 * Negative longitudinal error means landing past TD (overshoot); error > max_short_error
 	 * means landing too far short of the box. */
 	return !isfinite(longitudinal_error) || !isfinite(lateral_error)
-				 || longitudinal_error > max_short_error || fabsf(lateral_error) > max_lateral_error;
+				 || fabsf(longitudinal_error) > max_short_error || fabsf(lateral_error) > max_lateral_error;
 }
 
 /**
  * @brief Validates airspeed safety for drag device (crow brake) deployment.
  *
  * @details
- * Ensures that measured pitot airspeed is valid, non-finite, and strictly above
+ * Ensures that measured pitot airspeed is valid, finite, and at or above
  * the minimum stall margin airspeed before allowing active drag application.
  *
  * @param valid Boolean flag indicating whether the airspeed state estimator is healthy.
@@ -83,9 +83,8 @@ static inline bool precision_landing_prediction_rejected(float longitudinal_erro
  * @return true If airspeed is valid and safely above stall threshold.
  * @return false If airspeed is invalid or dangerously close to stall.
  *
- * @warning Deploying spoilerons/crow braking near or below stall speed causes immediate
- *          lift collapse and potential wing drop. Braking is automatically inhibited
- *          when this check returns false.
+ * @warning This predicate is not an aerodynamic envelope guarantee. The controller
+ *          also checks measurement freshness before authorizing brake demand.
  */
 static inline bool precision_landing_airspeed_safe(bool valid, float airspeed, float minimum)
 {
@@ -104,11 +103,11 @@ static inline bool precision_landing_airspeed_safe(bool valid, float airspeed, f
  * @param height Current measured AGL or fused altitude above touchdown elevation (meters).
  * @param commit_height Altitude threshold below which go-around is disallowed (meters).
  * @return true If the aircraft is at or below commit height and must flare.
- * @return false If the aircraft is above commit height and can safely go around.
+ * @return false If above commit height or unknown; callers must handle unknown height.
  */
 static inline bool precision_landing_should_commit(float height, float commit_height)
 {
-	return isfinite(height) && height >= 0.f && height <= commit_height;
+	return isfinite(height) && height <= commit_height;
 }
 
 /**
@@ -126,6 +125,10 @@ struct PrecisionLandingPrediction {
  * @details
  * Predicts the point of first ground contact by projecting current horizontal velocity
  * over the estimated time-to-ground.
+ * Ground velocity already includes wind-induced travel; adding a wind vector here would
+ * double-count it. This constant-velocity estimate does not anticipate gusts, flare dynamics
+ * or surface-dependent stopping after contact. Keep final-rest scoring separate from this
+ * predictor, and do not interpret the upstream geometric aim as a calibrated slide distance.
  *
  * To avoid numerical division-by-zero or negative time-to-ground during thermals or up-drafts,
  * sink rate is lower-bounded by `min_sink_rate_mps` (typically 0.25 m/s).
@@ -163,6 +166,26 @@ extern float precision_landing_brake_fraction;           /**< Currently commande
 extern bool precision_landing_agl_fresh;                 /**< Flag indicating if rangefinder data was updated recently */
 extern bool precision_landing_abort;                     /**< Flag set when safety limits are violated (triggers go-around) */
 extern bool precision_landing_commit_flare;              /**< Flag set when below commit height (forces flare) */
+extern bool precision_landing_cancelled; /**< Takeover latch cleared only by explicit start. */
+/** @brief Arm a new landing sequence in AUTO2, without enabling throttle. */
+extern void precision_landing_start(void);
+/** @brief Check the example's live tuning values before navigation or integer conversion. */
+extern bool precision_landing_parameters_valid(float airspeed, float height, float brake_height,
+	float flare_height, float aim, float pitch, float brake, float retries);
+/** @brief Check approach geometry before the example mutates AF altitude or computes a baseleg. */
+extern bool precision_landing_entry_valid(uint8_t af_wp, uint8_t td_wp, float height, float radius);
+/** @brief True only while an explicitly started landing owns AUTO2 control. */
+extern bool precision_landing_is_active(void);
+/** @brief Start a ground-only crow check without changing throttle kill or launch state. */
+extern void precision_landing_bench_start(void);
+/** @brief Refresh bench demand only while ground, zero-motion and killed-throttle interlocks hold. */
+extern bool precision_landing_bench_run(void);
+/** @brief Synchronously cancel landing on an autopilot mode change. */
+extern void precision_landing_on_mode_change(uint8_t mode);
+/** @brief Release brake demand and owned roll limit without clearing commitment. */
+extern void precision_landing_release(void);
+/** @brief Recheck height before/during go-around; unknown height prohibits powered abort. */
+extern void precision_landing_check_abort(void);
 
 /* --- Public Function Declarations --- */
 
@@ -191,13 +214,15 @@ extern void precision_landing_run(void);
 extern void precision_landing_glide(void);
 
 /**
- * @brief Applies fixed flare pitch and braking demand during touchdown flare.
+ * @brief Applies airspeed-gated flare braking and a bounded roll limit.
  * @param brake_fraction Normalized spoileron brake deflection to hold during flare (0.0 to 1.0).
  */
 extern void precision_landing_flare(float brake_fraction);
+/** @brief Apply zero throttle, bounded pitch (degrees), and GPS-aware lateral flare guidance. */
+extern void precision_landing_flare_run(float pitch_deg, float brake_fraction);
 
 /**
- * @brief Resets airbrakes and restores normal roll control authority upon exiting landing blocks.
+ * @brief End the sequence, clear brake demand, and restore the previously owned roll limit.
  */
 extern void precision_landing_stop(void);
 

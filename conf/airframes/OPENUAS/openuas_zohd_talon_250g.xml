@@ -6,11 +6,11 @@
     + MODEL:            ZoHD Talon 250G
     + FLIGHTCONTROLLER: FlyingRC F4 v1.5 as Mateksys F405-TE-SD
     + IMU:              ICM42688-P
-    + ACTUATORS:        JX PDI-1143HB 4.3g
+    + ACTUATORS:        JX PDI-1143HB (ailerons), Power HD HD-1440A (ruddervators)
     + GNSS              uBlox M10 GNSS
     + MAGNETOMETER:     QMC5883L on GNSS module, optionally RM3100
     + ESC:              HAKRC 32A 35A
-    + RCRX:             OpenR-XSR
+    + RCRX:             OpenR-XSR, TBS nano
     + AIRSPEED:         Sensirion SDP33
     + TELEMETRY:        Mesh 433mHz LoRa or temporary XBEE S1 Pro Digimesh
     + BARO:             Infineon DPS310
@@ -136,10 +136,9 @@
         <!-- Installed pitot port order produces negative raw pressure for forward airflow. -->
         <define name="SDP3X_DYNAMIC_PRESSURE_SWAPPED" value="TRUE"/>
         <!-- <define name="USE_AIRSPEED_LOWPASS_FILTER" value="FALSE"/> --><!-- TRUE per default -->
-        <!-- ~0.3 Hz: flight 3 log showed 0.97 m/s HF airspeed noise and no control lag at 0.15 (1 Hz). -->
-        <define name="SDP3X_LOWPASS_TAU" value="0.5"/>
+        <define name="SDP3X_LOWPASS_TAU" value="0.4"/>
         <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
-        <define name="USE_AIRSPEED" value="TRUE"/><!-- autotune: state airspeed was 0 in flight, ETECS flew blind -->
+        <define name="USE_AIRSPEED" value="TRUE"/><!-- ENABLE for flying Autonomous on ETECS -->
         <!--<define name="SDP3X_SYNC_SEND" value="TRUE"/>--><!-- Disable after debugging; sends unfiltered samples at 100 Hz. -->
       </module>
 
@@ -153,7 +152,7 @@
         <define name="RANGEFINDER_I2C_USE_FILTER" value="FALSE"/><!-- not always needed VB22A filters internally quite well -->
         <define name="RANGEFINDER_I2C_MEDIAN_SIZE" value="5"/>
         <define name="RANGEFINDER_I2C_MIN_RANGE" value="0.005" unit="m"/>
-        <define name="RANGEFINDER_I2C_MAX_RANGE" value="8.0" unit="m"/><!-- For e.g. VB22A Theoretically 20m at 90% reflectivity in daylight real useful range ~ 8m upto 0m-->
+        <define name="RANGEFINDER_I2C_MAX_RANGE" value="6.0" unit="m"/><!-- For e.g. VB22A Theoretically 20m at 90% reflectivity in daylight real useful range ~ 8m upto 0m-->
         <!-- Sensor is centered in body X/Y and sits 4 mm above the belly contact plane. -->
         <define name="RANGEFINDER_I2C_OFFSET" value="0.004" unit="m"/>
         <define name="RANGEFINDER_I2C_SCALE" value="0.001"/><!-- Since VB22A sensor is set to emit in millimeters per default-->
@@ -198,14 +197,14 @@
       <module name="imu_quality_assessment"/>
 
       <!-- Only enable with a module that supports v_ctl_auto_airspeed_setpoint-->
-      <module name="flight_benchmark">
+      <!-- <module name="flight_benchmark">
         <define name="BENCHMARK_AIRSPEED" value="TRUE"/>
         <define name="BENCHMARK_ALTITUDE" value="TRUE"/>
         <define name="BENCHMARK_POSITION" value="TRUE"/>
         <define name="BENCHMARK_TOLERANCE_AIRSPEED" value="1" unit="m/s"/>
         <define name="BENCHMARK_TOLERANCE_ALTITUDE" value="4" unit="m"/>
         <define name="BENCHMARK_TOLERANCE_POSITION" value="6" unit="m"/>
-      </module>
+      </module> -->
 
       <!-- If one want to use a Joystick over telemetry connection one can us this instead of sbus -->
       <!--<module name="radio_control" type="datalink"/>-->
@@ -278,6 +277,7 @@
     <!-- NPS simulation target: flies the validated JSBSim model
          openuas_jsbsim_zohd_talon_250g with the same ETECS tuning -->
     <target name="nps" board="pc">
+      <define name="NPS_ROLL_TRIM" value="0" description="The symmetric JSBSim model does not have the real airframe's roll-trim bias."/>
       <configure name="PERIODIC_FREQUENCY" value="500"/>
       <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
       <configure name="AHRS_CORRECT_FREQUENCY" value="500"/>
@@ -288,7 +288,7 @@
       <!-- <configure name="MODULES_FREQUENCY" value="500"/> -->
       <module name="fdm" type="jsbsim"/>
       <module name="radio_control" type="ppm"/>
-      <define name="RADIO_MANUALRELEASE" value="RADIO_AUX4"/>
+      <define name="RADIO_MANUALRELEASE" value="RADIO_AUX2"/>
       <define name="RADIO_BRAKE" value="RADIO_AUX4"/>
       <define name="DC_RADIO_SHOOT" value="RADIO_AUX3"/>
       <module name="telemetry" type="transparent"/>
@@ -304,10 +304,9 @@
          rear belly contact plane, approximately 1.1 in below it. -->
        <define name="NPS_SONAR_OFFSET" value="-0.02794"/>
       <define name="NPS_SONAR_MIN_DIST" value="0.005"/>
-      <define name="NPS_SONAR_MAX_DIST" value="8.0"/>
+      <define name="NPS_SONAR_MAX_DIST" value="6.0"/>
       <define name="SENSOR_SYNC_SEND_SONAR"/>
       <module name="udp"/>
-       <!--<module name="uart"/>--><!-- TODO: Exteral HITL PC debugging e.g a photocam trigger etc -->
     </target>
 
     <define name="USE_INS_MODULE" value="TRUE"/>
@@ -353,7 +352,7 @@
     <module name="ins" type="alt_float"/>
 
     <module name="navigation"/>
-    <!-- <module name="nav" type="drop"/>-->
+    <module name="nav" type="drop"/>
     <module name="nav" type="line"/>
     <module name="nav" type="line_border"/>
     <module name="nav" type="line_osam"/>
@@ -412,39 +411,9 @@
     <!-- </module> -->
 
     <!-- <module name="tcas"/> -->
+  <!-- Loaded Modules -->
 
-    <!--
-    <module name="tag_tracking">
-      <configure name="JEVOIS_UART" value="UART3"/>
-      <configure name="JEVOIS_BAUD" value="B115200"/>
-      <define name="JEVOIS_SEND_ALT"/>
-    </module>
-    -->
-
-    <!-- UART is value on which port Jevois camera is connected -->
-    <!--
-    <module name="jevois">
-      <configure name="JEVOIS_UART" value="UART1"/>
-      <configure name="JEVOIS_BAUD" value="B115200"/> -->
-      <!--<define name="JEVOIS_SEND_ALT"/> --><!-- enable for color rectangle tracking -->
-    <!-- </module> -->
-
-    <!-- Enable only for vision navigation functionality with external vision board -->
-    <!--
-    <module name="where_am_i">
-      <configure name="JEVOIS_UART" value="UART1"/>
-      <configure name="JEVOIS_BAUD" value="B115200"/>
-      <define name="JEVOIS_SEND_ALT"/>
-    </module>
-    -->
-
-    <!-- Enable only for vision navigation functionality with external vision board -->
-    <!-- <module name="do_i_see_a_fence"/>
-      <configure name="JEVOIS_UART" value="UART1"/>
-      <configure name="JEVOIS_BAUD" value="B115200"/>
-      <define name="JEVOIS_SEND_ALT"/>
-    </module>
-    -->
+    <module name="precision_landing"/>
 
   </firmware>
 
@@ -513,7 +482,8 @@
     <set command="ROLL" value="@ROLL"/>
     <set command="PITCH" value="@PITCH"/>
     <set command="YAW" value="@YAW"/>
-    <set command="BRAKE" value="@BRAKE"/>
+    <!-- Landing code owns BRAKE; never carry the RC switch value into AUTO2. -->
+    <set command="BRAKE" value="0"/>
     <set command="HATCH" value="@MANUALRELEASE"/>
     <set command="CLICKSHUTTER" value="@MANUALRELEASE"/>
   </rc_commands>
@@ -522,6 +492,7 @@
     <!-- autotune: RC yaw passthrough removed, COMMAND_YAW is owned by the yaw loop -->
     <!-- To determine best pitch for flare in auto2 one can add Pitch command temporary while landing-->
     <!--WARNING only enable if you know why <set command="PITCH" value="@PITCH"/>-->
+    <!--WARNING only enable if you know why <set command="BRAKE" value="@BRAKE"/>-->
   </auto_rc_commands>
 
   <commands>
@@ -535,8 +506,9 @@
   </commands>
 
   <command_laws>
-    <!-- Brake Slowdown: Gated to AUTO2 only to prevent unintended crowbrake in MANUAL and AUTO1 modes -->
-    <let var="brake_value_nofilt" value="((autopilot.mode == AP_MODE_AUTO2) ? Clip(-@BRAKE, 0, MAX_PPRZ) : 0)"/>
+    <let var="manual_crow" value="((autopilot.mode == AP_MODE_MANUAL || autopilot.mode == AP_MODE_AUTO1) ? ((radio_control.status == RC_OK) ? Clip(-radio_control_get(RADIO_BRAKE), 0, MAX_PPRZ) : 0) : 0)"/>
+    <let var="brake_value_nofilt" value="((autopilot.mode == AP_MODE_AUTO2) ? Clip(-@BRAKE, 0, MAX_PPRZ) : $manual_crow)"/>
+    <!-- for future AUTO2 only <let var="brake_value_nofilt" value="((autopilot.mode == AP_MODE_AUTO2) ? Clip(-@BRAKE, 0, MAX_PPRZ) : 0)"/>-->
     <ratelimit var="brake_value" value="$brake_value_nofilt" rate_min="-BRAKE_ENABLED_SLOWDOWN_FACTOR_RETRACT" rate_max="BRAKE_ENABLED_SLOWDOWN_FACTOR_EXTEND"/>
     <let var="crowbrake" value="$brake_value * BRAKE_MAX_PCT"/>
     <set servo="S_THROTTLE" value="@THROTTLE"/>
@@ -567,8 +539,8 @@
   </section>
 
   <section name="TRIM" prefix="COMMAND_">
-    <define name="ROLL_TRIM" value="-350"/>
-    <define name="PITCH_TRIM" value="400"/>
+    <define name="ROLL_TRIM" value="800"/>
+    <define name="PITCH_TRIM" value="890"/>
   </section>
 
   <section name="IMU" prefix="IMU_">
@@ -640,16 +612,16 @@
     <!--<define name="VFF_VZ_R_GPS" value="0.2"/>-->
 
     <!-- Still called SONAR_ , when INS is refactored in due time it will become RANGEFINDER_ -->
-    <define name="SONAR_MAX_RANGE" value="$(RANGEFINDER_I2C_MAX_RANGE)"/>
-    <define name="SONAR_MIN_RANGE" value="$(RANGEFINDER_I2C_MIN_RANGE)"/>
+    <define name="SONAR_MAX_RANGE" value="AGL_DIST_SONAR_MAX_RANGE"/>
+    <define name="SONAR_MIN_RANGE" value="AGL_DIST_SONAR_MIN_RANGE"/>
 
   </section>
 
   <section name="AGL" prefix="AGL_DIST_SONAR_">
     <!-- Accept the VB22A on hardware and AGL_SONAR_NPS_ID in simulation. -->
     <define name="ID" value="ABI_BROADCAST"/>
-    <define name="MAX_RANGE" value="$(RANGEFINDER_I2C_MAX_RANGE)/2" unit="m"/><!-- For AGL -->
-    <define name="MIN_RANGE" value="$(RANGEFINDER_I2C_MIN_RANGE)" unit="m"/>
+    <define name="MIN_RANGE" value="0.005" unit="m"/>
+    <define name="MAX_RANGE" value="6.0" unit="m"/><!-- For AGL -->
     <define name="FILTER" value="0.1"/>
   </section>
 
@@ -671,7 +643,7 @@
     <define name="PITCH_MIN_SETPOINT" value="-20" unit="deg"/>
 
     <define name="PITCH_PGAIN" value="6000"/>
-    <define name="PITCH_DGAIN" value="80"/>
+    <define name="PITCH_DGAIN" value="90"/>
     <!-- pitch reference model at 7 rad/s (default 5): the leading bank
          pitch feedforward must be delivered within the ~1 s roll-in -->
     <define name="REF_W_Q" value="7."/>
@@ -725,35 +697,33 @@
          the pure P law without touching airspeed (level-off 4.6 s vs
          17.8 s with the pure P law, overshoot +0.04 m) -->
     <define name="ALTITUDE_ACCEL_CAPTURE" value="0.8" unit="m/s2"/>
-    <!-- max climb: 4.3 m/s available at full throttle; 2.0 keeps climbs
-         gentle and leaves the speed loop plenty of throttle authority -->
-    <define name="ALTITUDE_MAX_CLIMB" value="1.1" unit="m/s"/>
+    <!-- max climb: 1.5 m/s available at full throttle; 1.2 keeps climbs
+         gentle and leaves the speed loop some throttle authority -->
+    <define name="ALTITUDE_MAX_CLIMB" value="1.2" unit="m/s"/>
     <!-- climb-setpoint acceleration limit (was hardcoded 2 m/s2 upstream):
-         4 lets the altitude feedback catch the turn-entry dip and unwind
+         3 lets the altitude feedback catch the turn-entry dip and unwind
          before it balloons, without overshooting the correction -->
-    <define name="ALTITUDE_MAX_CLIMB_DOT" value="4.0" unit="m/s2"/>
+    <define name="ALTITUDE_MAX_CLIMB_DOT" value="3.0" unit="m/s2"/>
     <!-- max level acceleration: (T-D)/W ~ 0.44 g at 10 m/s; bound below it -->
     <define name="MAX_ACCELERATION" value="0.15" unit="G"/>
     <!-- measured best glide (used for pitch-down when throttle is killed) -->
-    <define name="GLIDE_RATIO" value="3.4"/>
+    <define name="GLIDE_RATIO" value="3.8"/>
 
-    <!-- ETECS operating point (adaptive: these are initial values)
-         cruise 12 m/s: throttle 28 %, pitch ~ alpha = 3.5 deg = 0.06 rad -->
-    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.83" unit="%"/>
+    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.75" unit="%"/>
     <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.096" unit="rad"/>
 
     <!-- feedforwards, from the model:
          throttle per climb rate: (1.00-0.28)/4.3 m/s = 0.17 /(m/s)
          pitch per climb rate: gamma = Vz/V = 1/11.5 = 0.085 rad/(m/s) -->
-    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.1" unit="%/(m/s)"/>
+    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.13" unit="%/(m/s)"/>
     <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.047" unit="rad/(m/s)"/>
 
     <!-- speed error to desired acceleration: 0.2 -> 5 m/s error = 0.1 g -->
     <define name="AIRSPEED_PGAIN" value="0.20"/>
 
     <!-- throttle of airspeed: cruise throttle slope measured ~0.06 /(m/s) -->
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.033" unit="%/(m/s)"/>
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.01"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.036" unit="%/(m/s)"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.02"/>
     <!-- pitch of airspeed: converts overspeed into climb (in turns the
          energy tends to sit in speed while altitude sags: 0.03 trades it
          back to height promptly) -->
@@ -804,7 +774,7 @@
     <define name="AIRSPEED_MIN" value="8.0" unit="m/s"/>
   </section>
 
-    <!-- Skid Landing Configuration -->
+    <!-- UNUSED: Skid Landing Configuration -->
   <section name="LANDING" prefix="SKID_LANDING_">
     <define name="AF_HEIGHT" value="40" unit="m"/>
     <define name="FINAL_HEIGHT" value="30" unit="m"/>
@@ -871,10 +841,10 @@
 
     <define name="KILL_MODE_DISTANCE" value="MAX_DIST_FROM_HOME*1.1+HOME_RADIUS" unit="m"/>
     <!-- circle radius sized for <=30 deg bank at 12 m/s: R = V^2/(g tan30) = 25 m -->
-    <define name="DEFAULT_CIRCLE_RADIUS" value="40" unit="m"/>
+    <define name="DEFAULT_CIRCLE_RADIUS" value="32" unit="m"/>
     <define name="HOME_RADIUS" value="DEFAULT_CIRCLE_RADIUS" unit="m"/>
-    <define name="LANDING_CIRCLE_RADIUS" value="40" unit="m"/>
-    <define name="MIN_CIRCLE_RADIUS" value="40" unit="m"/>
+    <define name="LANDING_CIRCLE_RADIUS" value="32" unit="m"/>
+    <define name="MIN_CIRCLE_RADIUS" value="26" unit="m"/>
 
     <define name="CARROT" value="4.0" unit="s"/><!-- Optimum for DEFAULT_CIRCLE_RADIUS radius of 30m -->
 
@@ -904,15 +874,15 @@
     <define name="RESOLUTION" value="50" unit="mm pixel projection"/>--><!-- TODO -->
 
   <!-- Flight Safety Parameters-->
-    <define name="HEIGHT_MIN" value="10." unit="m"/>
+    <define name="HEIGHT_MIN" value="8." unit="m"/>
     <define name="HEIGHT_MAX" value="80." unit="m"/><!-- Parameter given by IMAV2026 -->
-    <define name="RADIUS_MIN" value="50." unit="m"/>
+    <define name="RADIUS_MIN" value="40." unit="m"/>
   </section>
 
   <!-- Can as well be your handlaunch, a.k.a. the human catapult ;) -->
   <section name="CATAPULT" prefix="NAV_CATAPULT_">
     <define name="MOTOR_DELAY" value="0." unit="s"/> <!-- Handlaunch with prop in front so 0s is OK -->
-    <define name="HEADING_DELAY" value="3.0" unit="s"/> <!-- Set to quite a lower value if MAG is working 100% and enabled for heading use -->
+    <define name="HEADING_DELAY" value="2.5" unit="s"/> <!-- Set to quite a lower value if MAG is working 100% and enabled for heading use -->
     <define name="ACCELERATION_THRESHOLD" value="1.1"/>
     <define name="INITIAL_PITCH" value="20.0" unit="deg"/>
     <define name="INITIAL_THROTTLE" value="0.99"/>
@@ -931,7 +901,7 @@
     <define name="FINAL_HEIGHT" value="17.0" unit="m"/>
     <define name="BRAKE_AGL" value="3.5" unit="m"/>
     <define name="FLARE_AGL" value="2.0" unit="m"/>
-    <define name="AIM_BEFORE_TD" value="6.0" unit="m"/>
+    <define name="AIM_BEFORE_TD" value="7.0" unit="m" description="Provisional NPS-derived aim for in-box first touch and final stop near TD; verify on the actual landing surface."/>
     <define name="TOUCHDOWN_PITCH" value="4.0"/><!-- Flight-plan variable is in degrees. -->
     <define name="FLARE_BRAKE" value="0.30"/>
   </section>
@@ -969,6 +939,7 @@
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">
+    <define name="USE_CROW_ACTUATORS" value="TRUE"/>
     <define name="JSBSIM_LAUNCHSPEED" value="10.0"/> <!-- firm hand toss, m/s -->
     <define name="JSBSIM_LAUNCH_HEIGHT" value="1.6" unit="m"/>
     <define name="JSBSIM_MODEL" value="openuas_jsbsim_zohd_talon_250g" type="string"/>

@@ -327,6 +327,7 @@ let () =
       (fun e -> Gen_modules.generate e "" abs_modules_h)
       [ abs_modules_h,
         Sys.executable_name
+        :: md5sum_file
         :: List.map (fun m -> m.Module.xml_filename) loaded_modules ];
     Printf.printf " done\n%!";
     
@@ -342,7 +343,7 @@ let () =
         in
         generate_config_element settings
           (fun e -> Gen_settings.generate e dep_list abs_settings_xml abs_settings_h)
-          [ (abs_settings_h, dep_list) ] end;
+          [ (abs_settings_h, Sys.executable_name :: md5sum_file :: dep_list) ] end;
     Printf.printf " done\n%!";
 
 
@@ -359,7 +360,7 @@ let () =
     | None -> Printf.printf "(skip)"
     | Some airframe ->
       let module_files = List.map (fun m -> m.Module.xml_filename) loaded_modules in
-      if is_older makefile_ac (airframe.Airframe.filename :: module_files)
+      if is_older makefile_ac (md5sum_file :: airframe.Airframe.filename :: module_files)
       then
         begin
           Printf.printf("(copying)");

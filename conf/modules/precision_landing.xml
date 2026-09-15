@@ -18,22 +18,29 @@
     <description>
       Fixed-Wing Autonomous Precision Landing System.
       Predicts touchdown point using 2D GNSS position/velocity and rangefinder AGL height.
-      Commands proportional aileron crow braking to eliminate predicted overshoot,
-      enforces stall safety airspeed limits, and triggers automatic go-arounds if
-      the approach strays outside precision scoring boundaries.
+      Commands bounded crow braking and rejects unsuitable approaches above commit height.
+      Experimental: prediction is not an accuracy or flight-safety guarantee.
+      Explicit start in AUTO2 is required after pilot takeover. Flare does not change
+      the global throttle-kill flag. Real sensor and aerodynamic validation is required.
+      RC and GCS mode changes must use the autopilot mode setter, never direct assignments.
+      The example validates live parameters and geometry before navigation. Its crow bench
+      test requires fresh near-ground range, near-zero motion, no launch and killed throttle.
     </description>
     
     <!-- Airspeed Safety Limits -->
     <define name="MIN_AIRSPEED" value="8.2" unit="m/s" description="Minimum safe approach airspeed. Braking is disengaged if airspeed falls below this margin to prevent stall."/>
+    <define name="AIRSPEED_TIMEOUT" value="0.5" unit="s" description="Maximum air-data sample age authorizing braking in final or flare."/>
+    <define name="APPROACH_CORRIDOR_SLOPE" value="0.25" description="Extra lateral corridor width per meter above brake_agl; converges to MAX_CROSS_TRACK."/>
     
     <!-- Precision Boundary Limits (Abort Triggers) -->
     <define name="MAX_CROSS_TRACK" value="1.2" unit="m" description="Maximum allowable lateral drift from runway centerline (leaves 0.3m safety margin inside official 1.5m half-box)."/>
     <define name="MAX_LONG_ERROR" value="8.0" unit="m" description="Maximum allowable longitudinal prediction error before confirming an abort."/>
+    <define name="MAX_AIM_DISTANCE" value="20.0" unit="m" description="Maximum upstream glide aim, independent of the unchanged touchdown rejection limits. This geometric intercept is not a predicted stopping distance."/>
     <define name="REJECT_DELAY" value="0.2" unit="s" description="Persistence time requirement for boundary violation before triggering go-around (filters sensor noise)."/>
     
     <!-- Altitude & Decision Bands -->
     <define name="BRAKE_ENABLE_AGL" value="4.0" unit="m" description="Highest rangefinder AGL height (m) where close-range predictive crow braking engages."/>
-    <define name="ABORT_AGL" value="2.5" unit="m" description="Commit altitude (m). Below this height, powered go-arounds are disengaged to prevent low-altitude stalls."/>
+    <define name="ABORT_AGL" value="2.5" unit="m" description="No-powered-abort latch height. Fresh AGL takes precedence; unknown height is conservative. Normal flare height is separate."/>
     <define name="AGL_TIMEOUT" value="0.25" unit="s" description="Maximum age of rangefinder measurement before falling back to barometric altitude."/>
     
     <!-- Filter & Controller Gains -->
@@ -48,7 +55,7 @@
   </doc>
   
   <dep>
-    <depends>agl_dist</depends>
+    <depends>agl_dist,air_data</depends>
   </dep>
   
   <header>
@@ -57,7 +64,8 @@
   
   <init fun="precision_landing_init()"/>
   
-  <makefile target="ap|nps">
+  <makefile target="ap|nps|sim">
+    <define name="USE_PRECISION_LANDING" value="TRUE"/>
     <file name="precision_landing.c"/>
   </makefile>
 </module>

@@ -15,6 +15,24 @@ advice for the next flight.
 
 Full documentation:
 
+Use `--auto1-only` to exclude AUTO2 and a three-second margin on either side of
+mode transitions. Course gains remain unchanged in this mode. The embedded
+airframe in the log is the source for flown hardware settings and mixer checks;
+`--base` is the current XML to preserve when preparing a new proposal, including
+fixes made since the flight. Explicit `--set NAME=VALUE` choices take precedence.
+
+Flight-derived trims and plant estimates are not flight validation. Level pitch
+does not identify IMU mounting error independently of angle of attack, and this
+tool does not identify pitch P/D gains or certify stall speed. Reject estimates
+from oscillatory or changing flight conditions; do not tune cruise performance
+from brake-on AUTO2 data.
+
+Run regression tests with:
+
+```bash
+python3 -m unittest discover -s sw/tools/autotune -p 'test_*.py' -v
+```
+
 - Sphinx user guide: `doc/sphinx/source/user_guide/airframe_autotune.md`
   (User Guide -> Airframe Auto-Tuning from Flight Logs)
 - Standalone HTML: `doc/tools/autotune/airframe_autotune.html`

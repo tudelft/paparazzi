@@ -32,6 +32,7 @@
 #include "modules/core/abi.h"
 #include "math/pprz_isa.h"
 #include "state.h"
+#include "mcu_periph/sys_time.h"
 #include "generated/airframe.h"
 #include "generated/modules.h"
 #include "pprzlink/dl_protocol.h"
@@ -109,6 +110,7 @@ PRINT_CONFIG_MSG("USE_AIRSPEED_AIR_DATA automatically set to TRUE")
 
 /** counter to check baro health */
 static uint8_t baro_health_counter;
+float air_data_airspeed_time = -1.f;
 
 
 static void pressure_abs_cb(uint8_t __attribute__((unused)) sender_id, uint32_t __attribute__((unused)) stamp, float pressure)
@@ -146,6 +148,7 @@ static void pressure_diff_cb(uint8_t __attribute__((unused)) sender_id, float pr
     air_data.tas = tas_from_eas(air_data.airspeed);
 #if USE_AIRSPEED_AIR_DATA
     stateSetAirspeed_f(MODULE_AIR_DATA_ID, air_data.airspeed);
+    air_data_airspeed_time = get_sys_time_float();
 #endif
   }
 }
@@ -167,6 +170,7 @@ static void airspeed_cb(uint8_t __attribute__((unused)) sender_id, float eas)
     air_data.tas = tas_from_eas(air_data.airspeed);
 #if USE_AIRSPEED_AIR_DATA
     stateSetAirspeed_f(MODULE_AIR_DATA_ID, air_data.airspeed);
+    air_data_airspeed_time = get_sys_time_float();
 #endif
   }
 }
@@ -217,6 +221,7 @@ static void send_amsl(struct transport_tx *trans, struct link_device *dev)
  */
 void air_data_init(void)
 {
+  air_data_airspeed_time = -1.f;
   air_data.calc_airspeed = AIR_DATA_CALC_AIRSPEED;
   air_data.calc_tas_factor = AIR_DATA_CALC_TAS_FACTOR;
   air_data.calc_amsl_baro = AIR_DATA_CALC_AMSL_BARO;

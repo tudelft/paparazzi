@@ -9,6 +9,10 @@
     To be able to use the I2C version of a Rangefinder, add this module to your airframe and set needed parameters.
 
     Notes:
+    + Transactions are asynchronous: periodic calls submit one request and event calls
+    mark completion. Only successful two-byte reads are parsed. A failed or pending
+    transaction never publishes a new AGL sample; consumers must check freshness.
+    Periodic frequency is a state-machine service rate, not a guaranteed measurement rate.
     + The maximum useful detection distance is 4m for common rangefinder based small sized sensors, even if datasheet e.g. states 7m.
     For most I2C ultrasonic type of devices, a sampling rate of at least 15Hz is supported. However, if measurements are taken at longer distances, 
     the time required for the ultrasonic pulse to return increases, which may limit the maximum achievable sampling rate. 
@@ -34,7 +38,7 @@
       Note that if rotation compensation is enabled, the effective maximum range will be reduced when the vehicle rolls or pitches.
       If it is impossible to measure the distance reliable, the distance value will be set to NAN (not a number).
 
-    + To restrict the AGL range define it in your airframefile with AGL_DIST_RANGEFINDER_MAX and AGL_DIST_RANGEFINDER_MIN
+    + To restrict the AGL consumer range use AGL_DIST_SONAR_MAX_RANGE and AGL_DIST_SONAR_MIN_RANGE.
 
     + To use this module with a Lightware Lidar SF11, SF20, SF23,SF30 VB50A, VB22A one has to add a define in module section a line like 
       READ_MODE_SINGLE with a value of 0. 
