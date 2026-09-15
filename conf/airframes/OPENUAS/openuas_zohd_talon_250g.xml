@@ -463,15 +463,14 @@
     <define name="RUDDERVATOR_YAW_FACTOR" value="0.9"/>
     <!-- not used yet, same for elevon as flaperon at the moment-->
     <!-- If brakes extended could change pitch, compensate here, Future separate flaperon elevon brake scaling, needs testing -->
-    <define name="BRAKE_PITCH_COMPENSATION" value="0.1f"/>
+    <define name="BRAKE_PITCH_COMPENSATION" value="0.25f"/>
     <!-- Full speed brake extending could overload servos and unfavorable sudden pitch change possible, so a slowed extending of brake is performed-->
-    <define name="BRAKE_ENABLED_SLOWDOWN_FACTOR_EXTEND" value="80"/>
+    <define name="BRAKE_ENABLED_SLOWDOWN_FACTOR_EXTEND" value="35"/>
     <!-- no unit yet, be warned test with var frequencies -->
     <define name="BRAKE_ENABLED_SLOWDOWN_FACTOR_RETRACT" value="420"/>
     <!-- no unit yet, be warned test with var frequencies -->
     <!-- If we would set to much brake pct then the elevons and flaperons have not enought authoity to make the AC roll n pitch, not so handy in landing phase -->
     <define name="BRAKE_MAX_PCT" value="0.75f"/>
-    <define name="BRAKE_PITCH_COMPENSATION" value="0.1f"/>
     <!-- Set up/down deflection differences, likely needs many in flight tests to find acceptable values-->
     <define name="AILERON_DIFF" value="0.3f"/>
     <define name="BRAKE_MOTOR_REVERSE" value="0.3f"/><!-- not used yet-->
@@ -482,7 +481,6 @@
     <set command="ROLL" value="@ROLL"/>
     <set command="PITCH" value="@PITCH"/>
     <set command="YAW" value="@YAW"/>
-    <!-- Landing code owns BRAKE; never carry the RC switch value into AUTO2. -->
     <set command="BRAKE" value="0"/>
     <set command="HATCH" value="@MANUALRELEASE"/>
     <set command="CLICKSHUTTER" value="@MANUALRELEASE"/>
@@ -514,8 +512,9 @@
     <set servo="S_THROTTLE" value="@THROTTLE"/>
     <set servo="S_AILERON_LEFT" value="@ROLL-$crowbrake"/>
     <set servo="S_AILERON_RIGHT" value="@ROLL+$crowbrake"/>
-    <set servo="S_RUDDERVATOR_LEFT" value="1.8*@PITCH+@YAW"/>
-    <set servo="S_RUDDERVATOR_RIGHT" value="1.8*@PITCH-@YAW"/>
+    <let var="mix_pitch" value="1.8*@PITCH-($crowbrake * BRAKE_PITCH_COMPENSATION)"/><!-- crowbrake * BRAKE_PITCH_COMPENSATION --><!-- FIXME apply brake pitch compensation -->
+    <set servo="S_RUDDERVATOR_LEFT" value="$mix_pitch+@YAW"/>
+    <set servo="S_RUDDERVATOR_RIGHT" value="$mix_pitch-@YAW"/>
     <set servo="S_HATCH" value="(Or((autopilot.mode == AP_MODE_AUTO1), (autopilot.mode == AP_MODE_AUTO2)) ? MAX_PPRZ : @HATCH)"/>
   </command_laws>
 
@@ -554,7 +553,7 @@
     <define name="MAG_Z_NEUTRAL" value="0"/>
 
     <define name="BODY_TO_IMU_PHI" value="0.0" unit="rad"/>
-    <define name="BODY_TO_IMU_THETA" value="0.13" unit="rad"/>
+    <define name="BODY_TO_IMU_THETA" value="0.065" unit="rad"/>
     <define name="BODY_TO_IMU_PSI" value="0.0" unit="rad"/>
 
   </section> 
@@ -599,12 +598,12 @@
   </section>
 
   <section name="INS" prefix="INS_">
-    <define name="BODY_TO_GPS_X" value="-0.8" unit="m"/>
+    <define name="BODY_TO_GPS_X" value="-0.08" unit="m"/>
     <define name="BODY_TO_GPS_Y" value="0.0" unit="m"/>
-    <define name="BODY_TO_GPS_Z" value="0.06" unit="m"/>
+    <define name="BODY_TO_GPS_Z" value="0.04" unit="m"/>
 
     <define name="ROLL_NEUTRAL_DEFAULT" value="0." unit="deg"/>
-    <define name="PITCH_NEUTRAL_DEFAULT" value="3." unit="deg"/><!-- TODO-->
+    <define name="PITCH_NEUTRAL_DEFAULT" value="6.6" unit="deg"/><!-- TODO: verify this value -->
     <define name="USE_GPS_ALT" value="TRUE"/>
     <!--<define name="USE_GPS_ALT_SPEED" value="FALSE"/>-->
     <!--<define name="VFF_R_GPS" value="0.03"/>--><!-- If one trusts baro a bit more -->
@@ -661,12 +660,12 @@
          COMMANDED bank (leading, this will remove the roll-in dip).
          (ELEVATOR_OF_ROLL is ignored by stabilization_adaptive - it is
          hardcoded to 0 there; PITCH_OF_ROLL is the supported knob.) -->
-    <define name="PITCH_OF_ROLL" value="0.04" unit="rad"/>
+    <define name="PITCH_OF_ROLL" value="0.044" unit="rad"/>
     <define name="ROLL_SLEW" value="0.2"/>
     <define name="ROLL_ATTITUDE_GAIN" value="11000."/>
     <define name="ROLL_RATE_GAIN" value="500."/>
     <!-- integrator: trims aileron in sustained circles (old 20. was inert) -->
-    <define name="ROLL_IGAIN" value="100."/>
+    <define name="ROLL_IGAIN" value="110."/>
     <!-- feedforward on reference roll acceleration: faster, cleaner
          roll-in for the oval turns (plant-inverse would be ~150) -->
     <define name="ROLL_KFFA" value="100."/>
@@ -705,7 +704,7 @@
          before it balloons, without overshooting the correction -->
     <define name="ALTITUDE_MAX_CLIMB_DOT" value="3.0" unit="m/s2"/>
     <!-- max level acceleration: (T-D)/W ~ 0.44 g at 10 m/s; bound below it -->
-    <define name="MAX_ACCELERATION" value="0.15" unit="G"/>
+    <define name="MAX_ACCELERATION" value="0.16" unit="G"/>
     <!-- measured best glide (used for pitch-down when throttle is killed) -->
     <define name="GLIDE_RATIO" value="3.8"/>
 
@@ -715,19 +714,19 @@
     <!-- feedforwards, from the model:
          throttle per climb rate: (1.00-0.28)/4.3 m/s = 0.17 /(m/s)
          pitch per climb rate: gamma = Vz/V = 1/11.5 = 0.085 rad/(m/s) -->
-    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.13" unit="%/(m/s)"/>
-    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.047" unit="rad/(m/s)"/>
+    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.14" unit="%/(m/s)"/>
+    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.048" unit="rad/(m/s)"/>
 
     <!-- speed error to desired acceleration: 0.2 -> 5 m/s error = 0.1 g -->
-    <define name="AIRSPEED_PGAIN" value="0.20"/>
+    <define name="AIRSPEED_PGAIN" value="0.22"/>
 
     <!-- throttle of airspeed: cruise throttle slope measured ~0.06 /(m/s) -->
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.036" unit="%/(m/s)"/>
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.02"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.037" unit="%/(m/s)"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.03"/>
     <!-- pitch of airspeed: converts overspeed into climb (in turns the
          energy tends to sit in speed while altitude sags: 0.03 trades it
          back to height promptly) -->
-    <define name="AUTO_PITCH_OF_AIRSPEED_PGAIN" value="0.03"/>
+    <define name="AUTO_PITCH_OF_AIRSPEED_PGAIN" value="0.035"/>
     <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.001"/>
     <define name="AUTO_PITCH_OF_AIRSPEED_DGAIN" value="0.03"/>
 
@@ -765,11 +764,11 @@
 
     <!-- full-range throttle change takes 0.25 s (motor lag is ~0.1 s):
          the bank feedforward must be delivered within the ~1 s roll-in -->
-    <define name="THROTTLE_SLEW_LIMITER" value="0.25" unit="s"/>
+    <define name="THROTTLE_SLEW_LIMITER" value="0.20" unit="s"/>
 
     <!-- envelope for the airspeed setpoint (GCS-adjustable):
          floor is auto-bounded by ETECS at 1.23 * STALL_AIRSPEED = 8.2 m/s -->
-    <define name="AUTO_AIRSPEED_SETPOINT" value="9" unit="m/s"/>
+    <define name="AUTO_AIRSPEED_SETPOINT" value="9.4" unit="m/s"/>
     <define name="AIRSPEED_MAX" value="16.0" unit="m/s"/>
     <define name="AIRSPEED_MIN" value="8.0" unit="m/s"/>
   </section>
@@ -794,7 +793,6 @@
   </section>
 
   <section name="BAT">
-
     <!-- <define name="CURRENT_ADC_CALIBRATION_ACCURATE_TO" value="0.50" unit="A"/> -->
     <define name="CURRENT_ADC_CALIBRATION_REPORTED" value="3.30" unit="A"/>
     <define name="CURRENT_ADC_CALIBRATION_ACTUAL" value="4.60" unit="A"/>
@@ -802,7 +800,6 @@
          Full-throttle current was measured at 8.0 V; electrical.c applies simple 
          linear voltage scaling. -->
     <define name="MILLIAMP_AT_FULL_THROTTLE_VOLTAGE" value="8.0" unit="V"/>
-
     <define name="MAX_BAT_CAPACITY" value="3300" unit="mAh"/>
     <define name="MILLIAMP_AT_IDLE_THROTTLE" value="500" unit="mA"/><!-- With RPI 500 when also ESPC3 and UWB likely 600mA-->
     <define name="MILLIAMP_AT_FULL_THROTTLE" value="4900" unit="mA"/>
@@ -818,16 +815,16 @@
 
   <section name="MISC">
     <!-- All from the validated JSBSim model with 2 blade 5x5 pusher prop -->
-    <define name="MINIMUM_AIRSPEED" value="8.0" unit="m/s"/>  <!-- 1.23 x stall -->
-    <define name="NOMINAL_AIRSPEED" value="9" unit="m/s"/> <!-- ~30% throttle -->
+    <define name="MINIMUM_AIRSPEED" value="8.2" unit="m/s"/>  <!-- 1.23 x stall -->
+    <define name="NOMINAL_AIRSPEED" value="9.4" unit="m/s"/> <!-- ~?% throttle -->
     <define name="MAXIMUM_AIRSPEED" value="15.0" unit="m/s"/> <!-- Vmax level is 16 -->
-    <define name="CLIMB_AIRSPEED" value="9.0" unit="m/s"/>   <!-- best climb, 4.3 m/s avail -->
+    <define name="CLIMB_AIRSPEED" value="9.0" unit="m/s"/>   <!-- best climb, ? m/s avail -->
     <define name="TRACKING_AIRSPEED" value="10" unit="m/s"/>
-    <define name="GLIDE_AIRSPEED" value="10.0" unit="m/s"/>   <!-- best L/D ~9 -->
-    <define name="STALL_AIRSPEED" value="6.7" unit="m/s"/>    <!-- 1g, power off -->
+    <define name="GLIDE_AIRSPEED" value="10.0" unit="m/s"/>   <!-- best L/D ~? -->
+    <define name="STALL_AIRSPEED" value="6.8" unit="m/s"/>    <!-- 1g, power off -->
     <define name="RACE_AIRSPEED" value="15.0" unit="m/s"/>
-    <define name="MIN_SPEED_FOR_TAKEOFF" value="8.5" unit="m/s"/> <!-- firm hand toss -->
-    <define name="AIRSPEED_SETPOINT_SLEW" value="0.3" unit="m/s/s"/>
+    <define name="MIN_SPEED_FOR_TAKEOFF" value="8.6" unit="m/s"/> <!-- firm hand toss -->
+    <define name="AIRSPEED_SETPOINT_SLEW" value="0.27" unit="m/s/s"/>
 
     <!--default is 1 -->
     <!--TODO:  maybe not needed anymore
@@ -931,8 +928,8 @@
   <section name="SIMU">
     <define name="JSBSIM_LAUNCHSPEED" value="NOMINAL_AIRSPEED" unit="m/s"/>
     <define name="WEIGHT" value="1."/>
-    <define name="JSBSIM_IR_ROLL_NEUTRAL" value="RadOfDeg(0.0)"/>
-    <define name="JSBSIM_IR_PITCH_NEUTRAL" value="RadOfDeg(0.0)"/>
+    <!-- <define name="JSBSIM_IR_ROLL_NEUTRAL" value="RadOfDeg(0.0)"/>
+    <define name="JSBSIM_IR_PITCH_NEUTRAL" value="RadOfDeg(0.0)"/> -->
     <define name="YAW_RESPONSE_FACTOR" value="0.9"/>
     <define name="PITCH_RESPONSE_FACTOR" value="3.0"/>
     <define name="ROLL_RESPONSE_FACTOR" value="20.0"/>
