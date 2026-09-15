@@ -393,9 +393,8 @@
       <define name="DIGITAL_CAM_UART_CAMERA_MASK" value="6"/><!-- AIcam + LWIR -->
       <!-- <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="5.0"/> --><!-- Unit: m -->
       <configure name="CAMERA_PORT" value="UART1"/> <!-- UART port on which the real Flightcontroller is connected to MORA -->
-      <!--<configure name="SITL_SERIAL" value="/tmp/catia-sim"/>--><!-- for local PC -->
-      <configure name="SITL_SERIAL" value="/dev/ttyUSB0"/><!-- full path to the USB device with by-id (e.g., /dev/serial/by-id/...) not possible due tue maxlength of string -->
-      <!-- <configure name="SITL_SERIAL" value="/dev/ttyUSB1"/> -->
+      <configure name="SITL_SERIAL" value="/tmp/catia-sim"/><!-- for local PC -->
+      <!-- <configure name="SITL_SERIAL" value="/dev/ttyUSB0"/>--><!-- full path to the USB device with by-id (e.g., /dev/serial/by-id/...) not possible due tue maxlength of string -->
     </module>
 
     <!-- RADIO_AUX3: high shoots immediately then at 1 Hz in any flight mode.
@@ -709,7 +708,7 @@
     <define name="GLIDE_RATIO" value="3.8"/>
 
     <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.75" unit="%"/>
-    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.096" unit="rad"/>
+    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.115" unit="rad"/>
 
     <!-- feedforwards, from the model:
          throttle per climb rate: (1.00-0.28)/4.3 m/s = 0.17 /(m/s)
@@ -773,7 +772,7 @@
     <define name="AIRSPEED_MIN" value="8.0" unit="m/s"/>
   </section>
 
-    <!-- UNUSED: Skid Landing Configuration -->
+  <!-- UNUSED ATM: Skid Landing Configuration -->
   <section name="LANDING" prefix="SKID_LANDING_">
     <define name="AF_HEIGHT" value="40" unit="m"/>
     <define name="FINAL_HEIGHT" value="30" unit="m"/>

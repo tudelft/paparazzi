@@ -213,6 +213,7 @@ static void stop_capture_server(void)
  * repeatedly hitting the same stale, already-dead connection. */
 /** @brief Send one newline-terminated server request and require an OK reply.
  * @return 0 on end-to-end success or -1 after fully resetting failed server state. */
+static int send_request_and_wait(const char *request, size_t request_size, int timeout_ms)
 {
   size_t sent = 0;
   while (sent < request_size) {

@@ -99,7 +99,7 @@
     <session name="Local PC CATIA mock test">
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
-        <arg flag="-a" constant="Easystar_3"/>
+        <arg flag="-a" constant="Adam"/>
       </program>
       <program name="Data Link">
         <arg flag="-udp"/>
