@@ -10,7 +10,9 @@
   - Waypoint 'AF' (Approach Fix) is positioned ~149 m upstream along the runway centerline into wind.
   - TD is the final-stop target; first touch inside the box is preferred too.
   - Upstream glide aim: Adam 7m, EasyStar 12m; validate actual contact and stop separately.
-  - Hard safety abort limits retain 2.0m longitudinal and 0.3m lateral margin inside the official scoring box.
+  - IMAV2026 v5 section 5.2.2 defines a 20x5m fixed-wing precision area and a 50x5m landing zone.
+  - A landing is valid only after the aircraft is stationary with its engine off inside the applicable area.
+  - Hard safety abort limits retain 2.0m longitudinal and 1.3m lateral margin inside the precision area.
   
   Field Execution & Tuning Quick Reference:
   - Select 'Land Right AF-TD' or 'Land Left AF-TD' from GCS to start landing sequence.
@@ -47,7 +49,7 @@
     <waypoint name="TANGUY" x="-54.0" y="62.0"/>
     <!-- Precision Landing Runway Waypoints -->
     <waypoint alt="312.0" name="AF" x="177.4" y="45.1"/> <!-- Approach Fix: ~149m upstream of TD -->
-    <waypoint alt="295.0" name="TD" x="28.8" y="57.0"/>  <!-- Touchdown Target: Center of 20 x 3 m box -->
+    <waypoint alt="295.0" name="TD" x="28.8" y="57.0"/>  <!-- Touchdown Target: Center of 20 x 5 m precision area -->
   </waypoints>
 
   <!-- Live Flight-Plan Variables (Real-time tuning via Paparazzi GCS) -->

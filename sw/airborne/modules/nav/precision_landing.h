@@ -70,6 +70,14 @@ static inline bool precision_landing_prediction_rejected(float longitudinal_erro
 				 || fabsf(longitudinal_error) > max_short_error || fabsf(lateral_error) > max_lateral_error;
 }
 
+static inline bool precision_landing_lateral_approach_rejected(float current_cross_track,
+		float predicted_cross_track, float approach_corridor, float touchdown_margin)
+{
+	return !isfinite(current_cross_track) || !isfinite(predicted_cross_track)
+				 || (fabsf(current_cross_track) > approach_corridor
+					 && fabsf(predicted_cross_track) > touchdown_margin);
+}
+
 /**
  * @brief Validates airspeed safety for drag device (crow brake) deployment.
  *

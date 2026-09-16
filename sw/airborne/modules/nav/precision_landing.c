@@ -37,7 +37,7 @@
  *
  * 5. **Safety Persistence & Abort State Machine**:
  *    - Aborts if airspeed drops below `MIN_AIRSPEED` (protecting stall margin).
- *    - Aborts if lateral drift prediction exceeds \f$1.2\,\text{m}\f$ (retaining \f$0.3\,\text{m}\f$ margin inside the official \f$1.5\,\text{m}\f$ half-box).
+ *    - Aborts if lateral drift prediction exceeds \f$1.2\,\text{m}\f$ (retaining \f$1.3\,\text{m}\f$ margin inside the v5 rules' \f$2.5\,\text{m}\f$ half-width).
  *    - Rejects close-range longitudinal predictions beyond 8 m on either side of TD.
  *    - Evaluates prediction rejection across a \f$0.2\,\text{s}\f$ persistence timer to prevent single-sample sensor noise from triggering premature go-arounds.
  *    - At/below commit height, latches no-powered-abort; failures then request flare.
@@ -68,7 +68,7 @@
 #define PRECISION_LANDING_MIN_AIRSPEED 8.2f
 #endif
 
-/** Maximum allowed predicted cross-track error at touchdown (m). Leaves 0.3m margin inside 1.5m box edge. */
+/** Maximum allowed predicted cross-track error at touchdown (m). Leaves 1.3m margin inside the 2.5m precision-area edge. */
 #ifndef PRECISION_LANDING_MAX_CROSS_TRACK
 #define PRECISION_LANDING_MAX_CROSS_TRACK 1.2f
 #endif
@@ -608,8 +608,9 @@ void precision_landing_run(void)
       precision_landing_predicted_cross_track_m = prediction.cross_track_error_m;
       const float approach_corridor = PRECISION_LANDING_MAX_CROSS_TRACK
           + PRECISION_LANDING_APPROACH_CORRIDOR_SLOPE * fmaxf(decision_height - brake_enable_agl_m, 0.f);
-      if (!isfinite(prediction.longitudinal_error_m) || !isfinite(prediction.cross_track_error_m)
-          || fabsf(precision_landing_cross_track_m) > approach_corridor) {
+      if (!isfinite(prediction.longitudinal_error_m)
+          || precision_landing_lateral_approach_rejected(precision_landing_cross_track_m,
+            prediction.cross_track_error_m, approach_corridor, PRECISION_LANDING_MAX_CROSS_TRACK)) {
         if (rejection_since < 0.f) {
           rejection_since = now;
         }

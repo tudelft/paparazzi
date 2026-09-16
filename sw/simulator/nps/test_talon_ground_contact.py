@@ -30,14 +30,31 @@ class TalonGroundContactTest(unittest.TestCase):
                              for index in range(len(contacts))]
                     seen = set()
                     peak_compression = 0.0
+                    first_contact = None
+                    peak_height_after_contact = 0.0
                     for step in range(math.ceil(8 / timestep)):
                         self.assertTrue(model.run())
+                        touching = set()
                         for index, base in enumerate(bases):
                             if model[base + "/WOW"]:
                                 seen.add(index)
+                                touching.add(index)
                             peak_compression = max(peak_compression, model[base + "/compression-ft"] * 0.3048)
+                        if touching and first_contact is None:
+                            first_contact = (model["position/h-agl-ft"] * 0.3048,
+                                             model["position/distance-from-start-lat-mt"],
+                                             model["position/distance-from-start-lon-mt"])
+                            peak_height_after_contact = first_contact[0]
+                        if first_contact is not None:
+                            peak_height_after_contact = max(peak_height_after_contact,
+                                                            model["position/h-agl-ft"] * 0.3048)
                     self.assertTrue(seen)
                     self.assertTrue(seen <= belly, f"Unexpected contacts: {seen - belly}")
+                    self.assertIsNotNone(first_contact)
+                    self.assertLessEqual(peak_height_after_contact - first_contact[0], 0.01)
+                    rollout = math.hypot(model["position/distance-from-start-lat-mt"] - first_contact[1],
+                                         model["position/distance-from-start-lon-mt"] - first_contact[2])
+                    self.assertLessEqual(rollout, 0.5 if speed else 0.05)
                     self.assertLess(peak_compression, 0.012)
                     self.assertLess(model["velocities/vg-fps"] * 0.3048, 0.1)
                     self.assertLess(abs(model["attitude/phi-deg"]), 0.5)

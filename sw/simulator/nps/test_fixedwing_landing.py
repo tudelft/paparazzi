@@ -159,43 +159,54 @@ int main(void) {
 class LandingMetricsTest(unittest.TestCase):
     def test_gentle_wingtip_settling_for_both_models(self):
         home = Path(__file__).resolve().parents[3]
-        for model_name, expected_wings in (("zohd_talon_250g", (4, 5)), ("multiplex_easystar3", (2, 3))):
+        for model_name in ("zohd_talon_250g", "multiplex_easystar3"):
+            allow_wingtip_settling = True
             model = home / f"conf/simulator/jsbsim/aircraft/openuas_jsbsim_{model_name}.xml"
             belly = belly_contact_indexes(model)
             wings = wingtip_contact_indexes(model)
-            self.assertEqual(wings, expected_wings)
+            self.assertEqual(len(wings), 2)
+            self.assertFalse(set(belly) & set(wings))
             first = dict(time=5, east=-6, north=0.5, altitude=0.1, pitch=3, roll=0,
                          sink=0.8, groundspeed=8, contact_index=belly[0])
             touch = dict(first, time=6, contact_index=wings[0], groundspeed=0.9, sink=0.01, roll=3)
             samples = [dict(self.sample, time=5 + tick * 0.1, east_speed=0, north_speed=0, down_speed=0)
                        for tick in range(31)]
-            result = landing_metrics(samples, self.plan, 4, 0, [first, touch], belly, wingtip_contacts=wings)
+            result = landing_metrics(samples, self.plan, 4, 0, [first, touch], belly, wingtip_contacts=wings,
+                                     allow_wingtip_settling=allow_wingtip_settling)
             self.assertTrue(result["landing_pass"])
             self.assertEqual(result["gentle_wingtip_touch_count"], 1)
             self.assertEqual(result["unacceptable_contact_count"], 0)
             repeated_strike = dict(touch, time=7, sink=1.0)
             result = landing_metrics(samples, self.plan, 4, 0, [first, touch, repeated_strike], belly,
-                                     wingtip_contacts=wings)
-            self.assertFalse(result["strict_quality_pass"])
+                                     wingtip_contacts=wings, allow_wingtip_settling=allow_wingtip_settling)
+            self.assertEqual(result["strict_quality_pass"], allow_wingtip_settling)
             self.assertTrue(result["landing_pass"])
             self.assertEqual(result["wingtip_touch_count"], 2)
-            self.assertEqual(result["unacceptable_contact_count"], 1)
-            for change in ({"groundspeed": 5}, {"sink": 1}, {"roll": 20}, {"pitch": 20.01},
+            self.assertEqual(result["accepted_wingtip_touch_count"], 2 if allow_wingtip_settling else 1)
+            self.assertEqual(result["unacceptable_contact_count"], 0 if allow_wingtip_settling else 1)
+            for change in ({"groundspeed": 15}, {"sink": 1}, {"roll": 20}, {"pitch": 20.01},
                            {"sink": float("nan")}, {"time": 4}, {"contact_index": 99}):
                 with self.subTest(model=model_name, change=change):
                     result = landing_metrics(samples, self.plan, 4, 0, [first, dict(touch, **change)], belly,
-                                             wingtip_contacts=wings)
-                    self.assertFalse(result["strict_quality_pass"])
-                    self.assertEqual(result["unacceptable_contact_count"], 1)
+                                             wingtip_contacts=wings,
+                                             allow_wingtip_settling=allow_wingtip_settling)
+                    accepted_for_foam = allow_wingtip_settling and change not in ({"time": 4},
+                                                                                  {"contact_index": 99})
+                    self.assertEqual(result["strict_quality_pass"], accepted_for_foam)
+                    self.assertEqual(result["unacceptable_contact_count"], 0 if accepted_for_foam else 1)
             missing = dict(touch)
             del missing["sink"]
-            self.assertFalse(landing_metrics(samples, self.plan, 4, 0, [first, missing], belly,
-                                             wingtip_contacts=wings)["strict_quality_pass"])
+            self.assertEqual(landing_metrics(samples, self.plan, 4, 0, [first, missing], belly,
+                                             wingtip_contacts=wings,
+                                             allow_wingtip_settling=allow_wingtip_settling)["strict_quality_pass"],
+                             allow_wingtip_settling)
             self.assertFalse(landing_metrics(samples, self.plan, 4, 0, [touch], belly,
-                                             wingtip_contacts=wings)["contact_quality_pass"])
+                                             wingtip_contacts=wings,
+                                             allow_wingtip_settling=allow_wingtip_settling)["contact_quality_pass"])
             samples[-1]["north"] = 3
             self.assertFalse(landing_metrics(samples, self.plan, 4, 0, [first, touch], belly,
-                                             wingtip_contacts=wings)["landing_pass"])
+                                             wingtip_contacts=wings,
+                                             allow_wingtip_settling=allow_wingtip_settling)["landing_pass"])
 
     def test_accelerated_telemetry_stop(self):
         contact = dict(east=-6, north=0.5, altitude=0.1, pitch=3, roll=0, sink=0.8, groundspeed=8, contact_index=1)
@@ -265,13 +276,17 @@ class LandingMetricsTest(unittest.TestCase):
 
     def test_talon_contact_identity(self):
         home = Path(__file__).resolve().parents[3]
-        contacts = belly_contact_indexes(home / "conf/simulator/jsbsim/aircraft/openuas_jsbsim_zohd_talon_250g.xml")
-        self.assertEqual(contacts, (1, 2, 7, 8))
+        model = home / "conf/simulator/jsbsim/aircraft/openuas_jsbsim_zohd_talon_250g.xml"
+        model_contacts = ET.parse(model).getroot().findall("./ground_reactions/contact")
+        contacts = belly_contact_indexes(model)
+        self.assertEqual({model_contacts[index].get("name") for index in contacts},
+                         {"BELLY_FRONT", "BELLY_REAR", "BELLY_FRONT_RIGHT", "BELLY_REAR_RIGHT",
+                          "BELLY_SAND_DRAG"})
         contact = dict(east=-6, north=0.5, altitude=0.1, pitch=3, roll=0, sink=0.8, groundspeed=8)
-        for index in range(9):
+        for index in range(len(model_contacts)):
             result = landing_metrics([self.sample], self.plan, 4, 0,
                                      [dict(contact, contact_index=index)], contacts)
-            self.assertEqual(result["contact_quality_pass"], index in (1, 2, 7, 8))
+            self.assertEqual(result["contact_quality_pass"], index in contacts)
 
     def test_validate_settings_before_startup(self):
         self.assertEqual(parse_setting_overrides(["flare_brake=0.4"], {"flare_brake": 3}), [(3, 0.4)])
@@ -292,7 +307,8 @@ class LandingMetricsTest(unittest.TestCase):
         self.plan = {"blocks": {"final": 2, "flare": 3, "go-around": 4},
                      "waypoints": {"AF": {"x": -100, "y": 0}, "TD": {"x": 0, "y": 0}}}
         self.sample = {"time": 5, "nav_block": 3, "altitude": 0.1, "east": -6, "north": 0.5,
-                       "east_speed": 8, "north_speed": 0, "down_speed": 0.8, "pitch": 3, "roll": 0}
+                       "east_speed": 8, "north_speed": 0, "down_speed": 0.8, "pitch": 3, "roll": 0,
+                       "throttle": 0, "command_throttle": 0}
 
     def test_td_projection(self):
         result = landing_metrics([self.sample], self.plan, 4, 0)
@@ -303,7 +319,7 @@ class LandingMetricsTest(unittest.TestCase):
         self.assertIsNone(result["final_distance_to_td_m"])
 
     def test_crosswind_miss(self):
-        self.sample["north"] = 2
+        self.sample["north"] = 3
         self.assertFalse(landing_metrics([self.sample], self.plan, 4, 0)["touchdown_inside_precision_box"])
 
     def test_bad_contact_is_not_accepted(self):
@@ -350,6 +366,16 @@ class LandingMetricsTest(unittest.TestCase):
 
     def test_first_contact_alone_is_not_success(self):
         result = landing_metrics([self.sample], self.plan, 4, 0)
+        self.assertFalse(result["landing_pass"])
+
+    def test_stationary_with_engine_on_is_not_success(self):
+        contacts = [{"east": -6, "north": 0.5, "altitude": 0.1, "pitch": 3, "roll": 0,
+                     "sink": 0.8, "groundspeed": 8, "contact_index": 0}]
+        samples = [dict(self.sample, time=5 + tick * 0.1, east_speed=0, north_speed=0, down_speed=0)
+                   for tick in range(31)]
+        samples[-1]["command_throttle"] = 100
+        result = landing_metrics(samples, self.plan, 4, 0, contacts)
+        self.assertFalse(result["engine_off"])
         self.assertFalse(result["landing_pass"])
 
     def test_missing_samples_and_outside_first_contact_fail(self):

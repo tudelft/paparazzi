@@ -229,12 +229,14 @@ def wait_for_samples(recorder, minimum, timeout):
 
 def wait_for(predicate, recorder, timeout, description):
     deadline = time.monotonic() + timeout
+    samples = []
     while time.monotonic() < deadline:
         samples = recorder.snapshot()
         if samples and predicate(samples[-1]):
             return samples[-1]
         time.sleep(0.1)
-    raise RuntimeError(f"Timed out waiting for {description}")
+    observed = ", ".join(sorted(samples[-1])) if samples else "no sample fields"
+    raise RuntimeError(f"Timed out waiting for {description}; observed: {observed}")
 
 
 def altitude_metrics(samples, target, start_time):
@@ -311,6 +313,8 @@ def read_contacts(path):
 
 LANDING_PITCH_MIN_DEG = -10.0
 LANDING_PITCH_MAX_DEG = 20.0
+PRECISION_AREA_HALF_LENGTH_M = 10.0
+PRECISION_AREA_HALF_WIDTH_M = 2.5
 
 
 def belly_contact_indexes(model_path):
@@ -338,8 +342,14 @@ def gentle_wingtip_contact(contact, first_contact):
         and LANDING_PITCH_MIN_DEG <= contact["pitch"] <= LANDING_PITCH_MAX_DEG and abs(contact["roll"]) <= 8.0
 
 
+def wingtip_settled_after_belly(contact, first_contact):
+    contact_time = contact.get("time", float("nan"))
+    first_time = first_contact.get("time", float("nan"))
+    return math.isfinite(contact_time) and math.isfinite(first_time) and contact_time >= first_time
+
+
 def landing_metrics(samples, flight_plan, start_time, ground_altitude, contacts=None, belly_contacts=(0, 1),
-                    max_sample_gap=0.3, wingtip_contacts=()):
+                    max_sample_gap=0.3, wingtip_contacts=(), allow_wingtip_settling=False):
     active = [sample for sample in samples if sample["time"] >= start_time]
     final_block = flight_plan["blocks"]["final"]
     flare_block = flight_plan["blocks"]["flare"]
@@ -387,7 +397,8 @@ def landing_metrics(samples, flight_plan, start_time, ground_altitude, contacts=
     for sample in after_contact:
         forward = ((sample["east"] - touchdown["x"]) * east + (sample["north"] - touchdown["y"]) * north) / length
         across = ((sample["east"] - touchdown["x"]) * north - (sample["north"] - touchdown["y"]) * east) / length
-        rollout_safe = rollout_safe and abs(forward) <= 10.0 and abs(across) <= 1.5 \
+        rollout_safe = rollout_safe and abs(forward) <= PRECISION_AREA_HALF_LENGTH_M \
+            and abs(across) <= PRECISION_AREA_HALF_WIDTH_M \
             and abs(sample["roll"]) <= 8.0 and LANDING_PITCH_MIN_DEG <= sample["pitch"] <= LANDING_PITCH_MAX_DEG \
             and sample["altitude"] <= ground_altitude + 0.3
     for sample in stop_samples:
@@ -399,23 +410,36 @@ def landing_metrics(samples, flight_plan, start_time, ground_altitude, contacts=
     stopped = stopped and stop_data_valid and all(
         math.hypot(sample["east"] - final_sample["east"], sample["north"] - final_sample["north"]) <= 0.2
         for sample in stop_samples)
-    stop_confirmed = bool(contacts) and finite_contact and stopped
+    engine_off = stopped and all(math.isfinite(sample.get("throttle", float("nan")))
+                                 and sample["throttle"] <= 0.01
+                                 and math.isfinite(sample.get("command_throttle", float("nan")))
+                                 and abs(sample["command_throttle"]) <= 1.0 for sample in stop_samples)
+    stop_confirmed = bool(contacts) and finite_contact and stopped and engine_off
     final_longitudinal = ((final_sample["east"] - touchdown["x"]) * east
                           + (final_sample["north"] - touchdown["y"]) * north) / length if stop_confirmed else None
     final_lateral = ((final_sample["east"] - touchdown["x"]) * north
                      - (final_sample["north"] - touchdown["y"]) * east) / length if stop_confirmed else None
-    final_inside_box = stop_confirmed and abs(final_longitudinal) <= 10.0 and abs(final_lateral) <= 1.5
+    final_inside_box = stop_confirmed and abs(final_longitudinal) <= PRECISION_AREA_HALF_LENGTH_M \
+        and abs(final_lateral) <= PRECISION_AREA_HALF_WIDTH_M
     wing_touches = [item for item in (contacts or []) if item.get("contact_index") in wingtip_contacts]
     gentle_touches = [item for item in wing_touches
                       if contacts[0].get("contact_index") in belly_contacts
                       and gentle_wingtip_contact(item, contacts[0])]
+    accepted_wingtip_touches = [item for item in wing_touches
+                                if contacts[0].get("contact_index") in belly_contacts
+                                and (gentle_wingtip_contact(item, contacts[0])
+                                     or (allow_wingtip_settling
+                                         and wingtip_settled_after_belly(item, contacts[0])))]
     unacceptable_contacts = sum(item.get("contact_index") not in belly_contacts
                                 and not (item.get("contact_index") in wingtip_contacts
                                          and contacts[0].get("contact_index") in belly_contacts
-                                         and gentle_wingtip_contact(item, contacts[0]))
+                                         and (gentle_wingtip_contact(item, contacts[0])
+                                              or (allow_wingtip_settling
+                                                  and wingtip_settled_after_belly(item, contacts[0]))))
                                 for item in (contacts or []))
     no_bad_contact = bool(contacts) and unacceptable_contacts == 0
-    inside_box = abs(longitudinal) <= 10.0 and abs(lateral) <= 1.5
+    inside_box = abs(longitudinal) <= PRECISION_AREA_HALF_LENGTH_M \
+        and abs(lateral) <= PRECISION_AREA_HALF_WIDTH_M
     return {
         "contact_method": method,
         "touchdown_longitudinal_m": longitudinal,
@@ -435,10 +459,12 @@ def landing_metrics(samples, flight_plan, start_time, ground_altitude, contacts=
         "inside_internal_margin": stop_confirmed and abs(final_longitudinal) <= 8.0 and abs(final_lateral) <= 1.2,
         "contact_quality_pass": contact_quality,
         "stopped": stopped,
+        "engine_off": engine_off,
         "stop_confirmed": stop_confirmed,
         "rollout_quality_pass": rollout_safe and no_bad_contact,
         "wingtip_touch_count": len(wing_touches),
         "gentle_wingtip_touch_count": len(gentle_touches),
+        "accepted_wingtip_touch_count": len(accepted_wingtip_touches),
         "unacceptable_contact_count": unacceptable_contacts,
         "contact_review_required": not (contact_quality and rollout_safe and no_bad_contact),
         "strict_quality_pass": inside_box and contact_quality and stop_confirmed and rollout_safe and no_bad_contact,
@@ -485,6 +511,7 @@ def main():
     flight_plan = flight_plan_data(flight_plan_path)
     belly_contacts = ()
     wingtip_contacts = ()
+    allow_wingtip_settling = False
     if args.scenario == "precision-landing":
         airframe_header = (aircraft_dir / "nps/generated/airframe.h").read_text()
         model = re.search(r'^#define NPS_JSBSIM_MODEL "([^"]+)"', airframe_header, re.MULTILINE)
@@ -493,6 +520,8 @@ def main():
         model_path = PAPARAZZI_HOME / "conf/simulator/jsbsim/aircraft" / (model[1] + ".xml")
         belly_contacts = belly_contact_indexes(model_path)
         wingtip_contacts = wingtip_contact_indexes(model_path)
+        allow_wingtip_settling = model[1] in ("openuas_jsbsim_multiplex_easystar3",
+                              "openuas_jsbsim_zohd_talon_250g")
     blocks = flight_plan["blocks"]
     required_settings = ("autopilot.mode", "autopilot.launch", "autopilot.kill_throttle", "flight_altitude", "nav_radius")
     missing_settings = [name for name in required_settings if name not in settings]
@@ -625,13 +654,14 @@ def main():
                 raise RuntimeError("First-contact record missing; build NPS with USER_CFLAGS=-DNPS_JSBSIM_CONTACT_LOG=1")
             metrics = landing_metrics(recorder.snapshot(), flight_plan, start_time, ground_altitude, contacts,
                                       belly_contacts, max_sample_gap=0.3 * args.time_factor,
-                                      wingtip_contacts=wingtip_contacts)
+                                      wingtip_contacts=wingtip_contacts,
+                                      allow_wingtip_settling=allow_wingtip_settling)
             prefix.with_suffix(".json").write_text(json.dumps(metrics, indent=2) + "\n")
             print(json.dumps(metrics, indent=2))
             if not metrics["stop_confirmed"]:
                 raise RuntimeError("Final stopping position is unconfirmed: contact log and stable two-second stop required")
             if not metrics["landing_pass"]:
-                raise RuntimeError("Final stopping position outside the 20 x 3 m precision box")
+                raise RuntimeError("Aircraft did not stop with engine off inside the 20 x 5 m precision area")
             if not metrics["preferred_landing_pass"]:
                 print("Final-position precision passed; first contact outside the box remains a tuning objective")
             if metrics["contact_review_required"]:

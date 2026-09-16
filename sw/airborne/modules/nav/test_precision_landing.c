@@ -14,6 +14,9 @@ int main(void)
   assert(precision_landing_prediction_rejected(0.f, -1.3f, 8.f, 1.2f));
   assert(precision_landing_prediction_rejected(NAN, 0.f, 8.f, 1.2f));
   assert(!precision_landing_prediction_rejected(-3.f, 0.5f, 8.f, 1.2f));
+  assert(!precision_landing_lateral_approach_rejected(-2.22f, 1.13f, 2.05f, 1.2f));
+  assert(precision_landing_lateral_approach_rejected(-2.40f, 1.74f, 2.33f, 1.2f));
+  assert(precision_landing_lateral_approach_rejected(NAN, 0.f, 2.f, 1.2f));
   assert(!precision_landing_airspeed_safe(false, 10.f, 8.f));
   assert(!precision_landing_airspeed_safe(true, NAN, 8.f));
   assert(!precision_landing_airspeed_safe(true, 7.f, 8.f));
