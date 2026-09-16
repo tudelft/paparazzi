@@ -389,9 +389,10 @@
     <!-- SITL = Software In The Loop-->
     <module name="digital_cam_uart">
       <define name="DC_IMAGE_BUFFER" value="65000" /><!--Be prepared for LOTS of photos -->
-      <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/>
+      <!-- <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/> -->
+      <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="40"/><!-- Unit: m -->
+      <!--FOR LWIR <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="26"/>--><!-- Unit: m -->
       <define name="DIGITAL_CAM_UART_CAMERA_MASK" value="6"/><!-- AIcam + LWIR -->
-      <!-- <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="5.0"/> --><!-- Unit: m -->
       <configure name="CAMERA_PORT" value="UART1"/> <!-- UART port on which the real Flightcontroller is connected to MORA -->
       <configure name="SITL_SERIAL" value="/tmp/catia-sim"/><!-- for local PC -->
       <!-- <configure name="SITL_SERIAL" value="/dev/ttyUSB0"/>--><!-- full path to the USB device with by-id (e.g., /dev/serial/by-id/...) not possible due tue maxlength of string -->

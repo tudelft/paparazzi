@@ -169,7 +169,7 @@ static bool m4_outside_fence(float x, float y)
     <waypoint name="_R_TURN" lat="48.81045" lon="7.85170" height="45."/>
 
     <!-- Release geometry, all computed in block drop_setup:
-           DROP      = the loudest spot at GROUND level (height 0 is the ground reference for
+           TANGUY    = the loudest spot at GROUND level (height 0 is the ground reference for
                        the fall height), so keep height 0 here.
            START     = 300 m before DROP on the run-in course. Its height (15 m) is where the
                        final glide starts from: high enough to clear the 5 to 8 m bushes in
@@ -181,7 +181,7 @@ static bool m4_outside_fence(float x, float y)
            _CLIMBOUT = end of the straight climb-out past DROP (fence limited, see header).
            _EXIT     = centre of the climbing exit circle beside _CLIMBOUT.
          The waypoint names START and RELEASE are REQUIRED by the nav_drop module. -->
-    <waypoint name="DROP" lat="48.81045" lon="7.85170" height="0."/>
+    <waypoint name="TANGUY" lat="48.81045" lon="7.85170" height="0."/> <!-- Where poor Tanguy with his MotionSCOUT making him almost deaf lies on the ground -->
     <waypoint name="START" lat="48.80990" lon="7.85170" height="15."/>
     <waypoint name="_LEVEL" lat="48.81020" lon="7.85170" height="1.5"/>
     <waypoint name="RELEASE" lat="48.81040" lon="7.85170" height="15."/>
@@ -521,9 +521,9 @@ static bool m4_outside_fence(float x, float y)
     </block>
 
     <!-- Approach layout, as flown at the OBC 2014 (include_obc2014_mission.xml). Also the
-         GCS "Drop" button, to re-fly the approach by hand on the current DROP position.
-           1. DROP <- loudest spot (lat/lon only; height stays 0 = ground).
-           2. START <- M4_RUN_IN_M = 300 m before DROP on the run-in course. THE COURSE IS THE LANE
+         GCS "Drop" button, to re-fly the approach by hand on the current TANGUY position.
+           1. TANGUY <- loudest spot (lat/lon only; height stays 0 = ground).
+           2. START <- M4_RUN_IN_M = 300 m before TANGUY on the run-in course. THE COURSE IS THE LANE
               (M4_LANE_COURSE_DEG, south to north between the tree lines), tilted by up to
               20 deg when that keeps a corridor 8 m either side of the track clear of the
               obstacle sectors from START to 120 m past the target; among equally clear
@@ -556,8 +556,8 @@ static bool m4_outside_fence(float x, float y)
               START -> RELEASE. -->
     <block name="drop_setup" strip_button="Drop" strip_icon="parachute.png">
       <set var="drop_approaches" value="drop_approaches + 1"/>
-      <call_once fun="earcam_result_to_waypoint(WP_DROP)"/>
-      <call_once fun="earcam_place_run_in_lane(WP_START, WP_DROP, M4_RUN_IN_M, M4_CLIMBOUT_MAX_M, M4_LANE_MARGIN_M, M4_LANE_COURSE_DEG, M4_LANE_MAX_TILT_DEG, 5, wind_circle_upwind_course(), m4_obstacle)"/>
+      <call_once fun="earcam_result_to_waypoint(WP_TANGUY)"/>
+      <call_once fun="earcam_place_run_in_lane(WP_START, WP_TANGUY, M4_RUN_IN_M, M4_CLIMBOUT_MAX_M, M4_LANE_MARGIN_M, M4_LANE_COURSE_DEG, M4_LANE_MAX_TILT_DEG, 5, wind_circle_upwind_course(), m4_obstacle)"/>
       <deroute block="drop_approach"/>
     </block>
     <!-- Separate block: exceptions are tested before the body, so the corridor verdict of
@@ -565,9 +565,9 @@ static bool m4_outside_fence(float x, float y)
     <block name="drop_approach">
       <exception cond="!earcam_run_in_clear" deroute="drop_no_corridor"/>
       <call_once fun="nav_move_waypoint_enu(WP_START, WaypointX(WP_START), WaypointY(WP_START), WaypointAlt(WP_DROP) + 15)"/>
-      <call_once fun="nav_drop_compute_approach(WP_DROP, WP_START, WP__DROPTURN, WP__CLIMBOUT, M4_DROPTURN_SIDE * fabsf(nav_radius))"/>
-      <call_once fun="earcam_place_climbout(WP_START, WP_DROP, WP__CLIMBOUT, WP__EXIT, M4_CLIMBOUT_MAX_M, M4_CLIMBOUT_MIN_M, M4_EXIT_TURN_RADIUS_M, M4_FENCE_MARGIN_M, M4_DROPTURN_SIDE, WaypointAlt(WP_DROP) + M4_SAFE_HEIGHT_M, m4_outside_fence)"/>
-      <call_once fun="earcam_drop_level_point(WP_START, WP_RELEASE, WP_DROP, WP__LEVEL, 50)"/>
+      <call_once fun="nav_drop_compute_approach(WP_TANGUY, WP_START, WP__DROPTURN, WP__CLIMBOUT, M4_DROPTURN_SIDE * fabsf(nav_radius))"/>
+      <call_once fun="earcam_place_climbout(WP_START, WP_TANGUY, WP__CLIMBOUT, WP__EXIT, M4_CLIMBOUT_MAX_M, M4_CLIMBOUT_MIN_M, M4_EXIT_TURN_RADIUS_M, M4_FENCE_MARGIN_M, M4_DROPTURN_SIDE, WaypointAlt(WP_TANGUY) + M4_SAFE_HEIGHT_M, m4_outside_fence)"/>
+      <call_once fun="earcam_drop_level_point(WP_START, WP_RELEASE, WP_TANGUY, WP__LEVEL, 50)"/>
       <set var="v_ctl_auto_airspeed_setpoint" value="12.0"/>
       <circle radius="M4_DROPTURN_SIDE * fabsf(nav_radius)" until="NavQdrCloseTo(DegOfRad(nav_drop_start_qdr)-15) @AND (fabsf(GetPosAlt() - WaypointAlt(WP_START)) @LT 5)" wp="_DROPTURN"/>
       <deroute block="drop_glide"/>
@@ -585,8 +585,8 @@ static bool m4_outside_fence(float x, float y)
          -> drop_go_around: motor on, climb straight ahead. -->
     <block name="drop_glide">
       <exception cond="m4_obstacle(GetPosX(), GetPosY()) @AND (GetPosHeight() @LT M4_ESCAPE_HEIGHT_M)" deroute="drop_go_around"/>
-      <exception cond="earcam_drop_too_low(WP_DROP)" deroute="drop_go_around"/>
-      <exception cond="nav_drop_update_release(WP_DROP)" deroute="Standby"/>
+      <exception cond="earcam_drop_too_low(WP_TANGUY)" deroute="drop_go_around"/>
+      <exception cond="nav_drop_update_release(WP_TANGUY)" deroute="Standby"/>
       <set var="v_ctl_auto_airspeed_setpoint" value="10.0"/>
       <go approaching_time="1" from="START" hmode="route" vmode="glide" wp="_LEVEL"/>
       <deroute block="drop_final"/>
@@ -596,7 +596,7 @@ static bool m4_outside_fence(float x, float y)
          THE RANGEFINDER (earcam_drop_altitude), so baro drift or a gentle slope do not
          matter. RELEASE is still updated every cycle.
          THE RELEASE is the third exception: in the cycle the aircraft crosses the line
-         through RELEASE perpendicular to the run-in (approaching_time 0), earcam_drop_shoot
+         through RELEASE perpendicular to the run-in (approaching_time 0), earcam_drop_shoot(WP_TANGUY)
          checks the height; at or below earcam_drop_max_agl_m (2 m) it opens the hatch and
          returns 0 -> drop_climbout. WHY an exception and not the next block: a block change
          costs 2-3 navigation cycles, i.e. 1-1.5 m along track at 10 m/s.
@@ -604,10 +604,10 @@ static bool m4_outside_fence(float x, float y)
          would land further away anyway), the <go> finishes and we go to drop_missed. -->
     <block name="drop_final">
       <exception cond="m4_obstacle(GetPosX(), GetPosY()) @AND (GetPosHeight() @LT M4_ESCAPE_HEIGHT_M)" deroute="drop_go_around"/>
-      <exception cond="earcam_drop_too_low(WP_DROP)" deroute="drop_go_around"/>
-      <exception cond="nav_drop_update_release(WP_DROP)" deroute="Standby"/>
-      <exception cond="NavApproachingFrom(WP_RELEASE, WP__LEVEL, 0) @AND (earcam_drop_shoot(WP_DROP) == 0)" deroute="drop_climbout"/>
-      <go approaching_time="0" from="_LEVEL" hmode="route" wp="RELEASE" vmode="alt" alt="earcam_drop_altitude(WP_DROP)"/>
+      <exception cond="earcam_drop_too_low(WP_TANGUY)" deroute="drop_go_around"/>
+      <exception cond="nav_drop_update_release(WP_TANGUY)" deroute="Standby"/>
+      <exception cond="NavApproachingFrom(WP_RELEASE, WP__LEVEL, 0) @AND (earcam_drop_shoot(WP_TANGUY) == 0)" deroute="drop_climbout"/>
+      <go approaching_time="0" from="_LEVEL" hmode="route" wp="RELEASE" vmode="alt" alt="earcam_drop_altitude(WP_TANGUY)"/>
       <deroute block="drop_missed"/>
     </block>
 
@@ -616,7 +616,7 @@ static bool m4_outside_fence(float x, float y)
          M4_CLIMBOUT_RATE_MPS (the airframe's 2 m/s limit is raised for this); approaching
          time 0 = fly all the way there, then the climbing exit circle (drop_exit). -->
     <block name="drop_climbout">
-      <call_once fun="earcam_drop_mark_impact(WP_DROP, WP_RELEASE, WP__IMPACT)"/>
+      <call_once fun="earcam_drop_mark_impact(WP_TANGUY, WP_RELEASE, WP__IMPACT)"/>
       <call_once fun="DownlinkSendWpNr(WP__IMPACT)"/>
       <call_once fun="DownlinkSendWpNr(WP_START)"/>
       <call_once fun="DownlinkSendWpNr(WP_RELEASE)"/>

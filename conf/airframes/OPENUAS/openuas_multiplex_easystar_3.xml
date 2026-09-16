@@ -10,10 +10,10 @@
     + IMU           Default Aspirin v2.1 
     + MAGNETOMETER: QMC5883L on GNSS module, optionally RM3100
     + ESC:          Default of set ROXXY BL-Control 720 S-BEC ESC
-    + RCRX:         OpenRXSR Receiver
+    + RCRX:         TBS Diversity Receiver
     + AIRSPEED:     Sensirion SDP33
     + BARO          Bosch BMP085
-    + TELEMETRY:    eByte E52-400NW22S
+    + TELEMETRY:    eByte E52-400NW22S or XBEE Pro S1
     + CURRENT:      N/A
     + RANGEFINDER:  Surertech VB22A
     + MOTOR:        Default of set ROXXY BL Outrunner C28-30 1100kV
@@ -36,7 +36,7 @@
     + Make sure v7.0 or higher of PPRZ autopilot release is used
     + SBUS receiver output must be set to non-inverted, this is done by soldering the RX SBus output wire on pad B of the OpenRXSR RC recever
     + SBUS RC RX on UART1 
-    + Telemetry on UART2 , use B9600 baudrate if using mesh network module else B57600
+    + Telemetry on UART2 , use B460800 baudrate if using mesh network module else B57600
     + UWB serial data via UART5 RX and TX (PC12)
     + Additional RM3100 Magnetometer to compare with the QMC5883L
   </description>
@@ -177,7 +177,7 @@
         <define name="TAKEOFF_DETECT_LAUNCH_PITCH" value="0.785398"/>
         <define name="TAKEOFF_DETECT_ABORT_PITCH" value="-0.349066"/>
         <define name="TAKEOFF_DETECT_TIMER" value="1.2"/>
-        <define name="TAKEOFF_DETECT_DISABLE_TIMER" value="5.0"/>
+        <define name="TAKEOFF_DETECT_DISABLE_TIMER" value="3.0"/>
         <define name="TAKEOFF_DETECT_ALSO_IN_AUTO1" value="TRUE"/> 
       </module>
       -->
@@ -193,10 +193,11 @@
         <define name="BENCHMARK_TOLERANCE_POSITION" value="6" unit="m"/>
       </module> -->
       
-
     </target>
 
     <target name="sim" board="pc">
+      <configure name="PERIODIC_FREQUENCY" value="500"/>
+      <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
       <!--<define name="AHRS_FC_MAG_IDS_BARO_ID" value="BARO_SIM_SENDER_ID"/>-->
       <!--<define name="INS_BARO_ID" value="BARO_SIM_SENDER_ID"/>-->
       <module name="radio_control" type="ppm"/>
@@ -209,36 +210,60 @@
       <module name="udp"/>
     </target>
 
+    <!-- NPS simulation target: flies the validated JSBSim model
+         openuas_jsbsim_easystar_3 with the same ETECS tuning -->
     <target name="nps" board="pc">
       <module name="fdm" type="jsbsim"/>
+          <!--<define name="AHRS_FC_MAG_IDS_BARO_ID" value="BARO_SIM_SENDER_ID"/>-->
+      <!--<define name="INS_BARO_ID" value="BARO_SIM_SENDER_ID"/>-->
+      <define name="NPS_ROLL_TRIM" value="0" description="The symmetric JSBSim model does not have the real airframe's roll-trim bias."/>
+      <configure name="PERIODIC_FREQUENCY" value="500"/>
+      <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
+      <configure name="AHRS_CORRECT_FREQUENCY" value="500"/>
+      <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="200"/>
+      <!-- <configure name="NAVIGATION_FREQUENCY" value="20"/> -->
+      <configure name="CONTROL_FREQUENCY" value="100"/>
+      <!-- <configure name="TELEMETRY_FREQUENCY" value="50"/> -->
+      <!-- <configure name="MODULES_FREQUENCY" value="500"/> -->
+      <!-- Note NPS needs the ppm type radio_control module -->
       <module name="radio_control" type="ppm"/>
-     <!-- <define name="RADIO_CONTROL_NB_CHANNEL" value="8"/> -->
-      <define name="INS_BARO_ID" value="BARO_SIM_SENDER_ID"/>
+      <!--<define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>-->
       <module name="telemetry" type="transparent"/>
-      <module name="imu" type="nps"/>
-      <module name="gps" type="sim"/>
+      <!-- <module name="imu" type="nps"/> -->
+      <!-- <module name="gps" type="sim"/> -->
       <define name="USE_NPS_AIRSPEED"/>
-       <!-- NPS "sonar" is the simulated downward rangefinder. -->
-       <define name="USE_SONAR"/>
-       <define name="NPS_SONAR_DT" value="0.01"/>
-       <define name="NPS_SONAR_NOISE_STD_DEV" value="0.005"/>
-       <!-- JSBSim AGL is referenced near CG; the centered sensor is about
-         2.5 in above the interpolated belly contact plane. -->
-       <define name="NPS_SONAR_OFFSET" value="-0.0635"/>
-       <define name="NPS_SONAR_MIN_DIST" value="0.005"/>
-      <define name="NPS_SONAR_MAX_DIST" value="6.0"/>
-       <!-- <define name="SENSOR_SYNC_SEND_SONAR"/> -->
+      <define name="USE_AIRSPEED" value="TRUE"/>
       <!--
-      <define name="USE_NPS_AIRSPEED"/>
       <define name="USE_NPS_AOA"/>
       <define name="USE_NPS_SIDESLIP"/>
       <define name="NPS_SYNC_INCIDENCE"/>
       -->
-      <!--<define name="INS_BARO_ID" value="BARO_SIM_SENDER_ID"/>-->
-      <!-- Note NPS needs the ppm type radio_control module -->
+
+      <!-- NPS "sonar" is the simulated downward rangefinder. -->
+      <define name="USE_SONAR"/>
+      <define name="NPS_SONAR_DT" value="0.01"/>
+      <define name="NPS_SONAR_NOISE_STD_DEV" value="0.005"/>
+      <!-- JSBSim AGL is referenced near CG; the centered sensor is about
+         2.5 in above the interpolated belly contact plane. -->
+      <define name="NPS_SONAR_OFFSET" value="-0.0635"/>
+      <define name="NPS_SONAR_MIN_DIST" value="0.005"/>
+      <define name="NPS_SONAR_MAX_DIST" value="6.0"/>
+      <define name="SENSOR_SYNC_SEND_SONAR"/>
+      <define name="INS_BARO_ID" value="BARO_SIM_SENDER_ID"/>
+      <module name="telemetry" type="transparent"/>
+      <module name="imu" type="nps"/>
+      <module name="gps" type="sim"/>
+      <!--<module name="gps" type="ublox"/>-->
       <!--<module name="radio_control" type="datalink"/>-->
       <module name="udp"/>
-    </target>
+    </target>  
+
+    <!-- Radio defines common for all targets AP,SIM, NPS-->
+    <define name="RADIO_MANUALLIGHT" value="RADIO_AUX2"/>
+    <define name="RADIO_MANUALSHUTTER" value="RADIO_AUX2"/>
+    <define name="RADIO_HATCH" value="RADIO_AUX3"/>
+    <define name="RADIO_BRAKE" value="RADIO_AUX4"/> <!--WARNING Different from Talon250g definition--> 
+    <!--<define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>-->
 
     <define name="USE_INS_MODULE" value="TRUE"/>
 
@@ -304,8 +329,10 @@
       <define name="NAV_DROP_USE_AGL_DIST" value="TRUE"/><!-- fall height from the rangefinder for the 2 m release -->
       <define name="NAV_DROP_RELEASE_WITH_DELAY" value="TRUE"/><!-- release on crossing RELEASE (approaching_time 0) -->
     </module>
-    <!-- <module name="nav" type="launcher"/> -->
     <!-- <module name="nav" type="skid_landing"/> -->
+
+    <!-- We have to choose on best suited for our takeoff-->
+    <!-- <module name="nav" type="launcher"/> -->
     <!-- <module name="nav" type="bungee_takeoff"/> -->
     <!-- <module name="nav" type="shakestart"/> -->
 
@@ -327,11 +354,18 @@
     <!-- When a compute board is connected -->
     <module name="digital_cam_uart">
       <define name="DC_IMAGE_BUFFER" value="65000" /><!--Be prepared for LOTS of photos -->
-      <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/>
-      <!-- <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="5.0"/> --><!-- Unit: m -->
+      <!-- <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/> -->
+      <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="40.0"/><!-- Unit: m --><!--Warning Depends on you CAMERA so find lowest denominator-->
+      <!--FOR LWIR <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="26.0"/>--><!-- Unit: m -->
       <configure name="CAMERA_PORT" value="UART5"/> <!-- For the real Flightcontroller to MORA connection-->
-      <!--<configure name="SITL_SERIAL" value="/tmp/catia-sim"/>--><!-- for local PC -->
-      <configure name="SITL_SERIAL" value="/dev/ttyUSB0"/><!-- for actual device via FTDI cable to MORA on desk -->
+      <configure name="SITL_SERIAL" value="/tmp/catia-sim"/><!-- for local PC -->
+      <!--<configure name="SITL_SERIAL" value="/dev/ttyUSB0"/>--><!-- for actual device via FTDI cable to MORA on desk -->
+    </module>
+
+    <!-- RADIO_AUX3: high shoots immediately then at 1 Hz in any flight mode.
+         Low or RC loss stops RC shots only; autonomous camera settings are unchanged. -->
+    <module name="digital_cam_shoot_rc">
+      <define name="DC_RADIO_SHOOT" value="RADIO_AUX3"/>
     </module>
 
     <!-- Acoustic loud-spot search with the EARcam microphone on MORA (CATIA started with the earcam option).
@@ -360,13 +394,8 @@
     
     <!-- <module name="tcas"/> -->
 
-    <module name="imu_quality_assessment"/><!-- Can be disabled after initial tuning -->
-    <!-- <module name="tune_airspeed"/>--><!-- Can be disabled after initial tuning -->
-
-    <define name="RADIO_MANUALLIGHT" value="RADIO_AUX2"/>
-    <define name="RADIO_HATCH" value="RADIO_AUX3"/>
-    <define name="RADIO_MANUALSHUTTER" value="RADIO_AUX2"/>
-    <define name="RADIO_BRAKE" value="RADIO_AUX4"/>
+    <!-- <module name="imu_quality_assessment"/> --> <!--Can be disabled after initial tuning -->
+    <module name="tune_airspeed"/><!-- we misuse it also to set airspeed parameters for the flight plan -->
 
     <!-- For relative localization and minimal inter-aircraft communication, use this UWB Swarm module 
     together with the appropriate code running on the MCU of the attached UWB MiniTag PCB -->
@@ -414,8 +443,8 @@
     <servo name="S_RUDDER"         no="3" min="1100" neutral="1500" max="1900"/>
     <servo name="S_AILERON_RIGHT"  no="4" min="1900" neutral="1500" max="1100"/>
     <servo name="S_LIGHT"          no="5" min="1100" neutral="1500" max="1900"/>
-    <servo name="S_HATCH"          no="6" min="1100" neutral="1500" max="1900"/>
-    <servo name="S_SHUTTER"        no="7" min="1100" neutral="1500" max="1900"/> 
+    <servo name="S_HATCH"          no="6" min="1100" neutral="1500" max="1900"/> <!-- Hatch servo pluggable -->
+    <servo name="S_SHUTTER"        no="7" min="1100" neutral="1500" max="1900"/> <!-- Shutter servo not available but could be added if needed -->
   </servos>
 
   <rc_commands>
@@ -495,8 +524,8 @@
     <set servo="S_AILERON_RIGHT" value="@ROLL+$crowbrake"/>
     <set servo="S_ELEVATOR" value="@PITCH"/>
     <set servo="S_RUDDER" value="$yaw_ctrl_sgl"/>
-    <!-- <set servo="S_LIGHT" value="((autopilot.mode == AP_MODE_AUTO2) ? MAX_PPRZ : @ACTIVELIGHTS)"/> -->
-    <set servo="S_LIGHT" value="((autopilot.mode == AP_MODE_AUTO2) ? MIN_PPRZ : MIN_PPRZ)"/><!-- Switched off Temporary while desktests debug it is annoying-->
+    <set servo="S_LIGHT" value="((autopilot.mode == AP_MODE_AUTO2) ? MAX_PPRZ : @ACTIVELIGHTS)"/>
+    <!--<set servo="S_LIGHT" value="((autopilot.mode == AP_MODE_AUTO2) ? MIN_PPRZ : MIN_PPRZ)"/>--><!-- Switched off Temporary while desktests debug it is annoying-->
     
     <!-- Enable bare values below for debugging to validate the basics first. Make sure to disable the calculated ones above -->
     <!-- <set servo="S_THROTTLE" value="@THROTTLE"/> -->
@@ -573,9 +602,9 @@
     <define name="ACCEL_Y_SENS" value="4.87" integer="16"/>
     <define name="ACCEL_Z_SENS" value="4.82" integer="16"/>
 
-    <define name="BODY_TO_IMU_PHI" value="0.0" unit="deg"/>
-    <define name="BODY_TO_IMU_THETA" value="2.9" unit="deg"/><!-- could be moved from AUTO_THROTTLE_NOMINAL_CRUISE_PITCH -->
-    <define name="BODY_TO_IMU_PSI" value="0.0" unit="deg"/><!--90-->
+    <define name="BODY_TO_IMU_PHI" value="0.0"/>
+    <define name="BODY_TO_IMU_THETA" value="0.050"/><!-- could be moved from AUTO_THROTTLE_NOMINAL_CRUISE_PITCH -->
+    <define name="BODY_TO_IMU_PSI" value="0.0"/><!--90-->
 
     <!-- Calibrated on 20260828 14:45 -->
     <define name="IMU_MAG_CALIB" type="array">
@@ -647,7 +676,7 @@
     <define name="BODY_TO_GPS_Z" value="0.005" unit="m"/>
 
     <define name="ROLL_NEUTRAL_DEFAULT" value="0." unit="deg"/>
-    <define name="PITCH_NEUTRAL_DEFAULT" value="3." unit="deg"/><!-- TODO-->
+    <define name="PITCH_NEUTRAL_DEFAULT" value="4." unit="deg"/><!-- TODO: determine best value -->
     <define name="USE_GPS_ALT" value="TRUE"/>
     <!--<define name="USE_GPS_ALT_SPEED" value="FALSE"/>-->
     <!--<define name="VFF_R_GPS" value="0.03"/>--><!-- If one trusts baro a bit more -->
@@ -712,8 +741,8 @@
     <define name="MAX_ACCELERATION" value="0.35" unit="G"/>
     <define name="GLIDE_RATIO" value="11."/>
 
-    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.28" unit="%"/>
-    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.056" unit="rad"/>
+    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.35" unit="%"/><!-- TODO: verify nominal cruise throttle -->
+    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.07" unit="rad"/><!-- 0.06981317 rad = 4 deg -->
     <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.16" unit="%/(m/s)"/>
     <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.083" unit="rad/(m/s)"/>
 
@@ -775,13 +804,23 @@
     <define name="DESCENT_NAV_RATIO" value="0.99" unit="%"/>
   </section>
 
-  <section name="BAT">
+
     <!--<define name="VoltageOfAdc(adc)" value="(0.00385 * adc)"/>--><!-- Modify if needed to get correct value-->
+  <!-- <section name="BAT">
     <define name="MAX_BAT_CAPACITY" value="2200" unit="mAh"/>
     <define name="MILLIAMP_AT_IDLE_THROTTLE" value="300" unit="mA"/>
     <define name="MILLIAMP_AT_FULL_THROTTLE" value="12000" unit="mA"/>
-    <!-- <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.01"/> -->
+    <define name="MAX_BAT_LEVEL" value="12.6" unit="V"/>
+    <define name="LOW_BAT_LEVEL" value="10.4" unit="V"/>
+    <define name="CRITIC_BAT_LEVEL" value="9.3" unit="V"/>
+    <define name="CATASTROPHIC_BAT_LEVEL" value="8.7" unit="V"/>
+  </section> -->
 
+<!-- For the LiIon 3S1P Pack -->
+  <section name="BAT">
+    <define name="MAX_BAT_CAPACITY" value="2200" unit="mAh"/>
+    <define name="MILLIAMP_AT_IDLE_THROTTLE" value="300" unit="mA"/>
+    <define name="MILLIAMP_AT_FULL_THROTTLE" value="12000" unit="mA"/>
     <define name="MAX_BAT_LEVEL" value="12.6" unit="V"/>
     <define name="LOW_BAT_LEVEL" value="10.4" unit="V"/>
     <define name="CRITIC_BAT_LEVEL" value="9.3" unit="V"/>
@@ -797,16 +836,14 @@
     <define name="CLIMB_AIRSPEED" value="10.0" unit="m/s"/>
     <define name="TRACKING_AIRSPEED" value="14.0" unit="m/s"/>
     <define name="GLIDE_AIRSPEED" value="7.5" unit="m/s"/>
-    <define name="STALL_AIRSPEED" value="5.6" unit="m/s"/>
+    <define name="STALL_AIRSPEED" value="5.7" unit="m/s"/>
     <define name="RACE_AIRSPEED" value="16.0" unit="m/s"/>
     <define name="MIN_SPEED_FOR_TAKEOFF" value="8.0" unit="m/s"/>
     <define name="AIRSPEED_SETPOINT_SLEW" value="0.25" unit="m/s/s"/>
 
-    <!--default is 1 -->
-    <!--TODO:  maybe not needed anymore
-    <define name="GLIDE_VSPEED" value="2." unit="m/s"/>
+    <define name="GLIDE_VSPEED" value="1.4" unit="m/s"/>
     <define name="GLIDE_PITCH" value="10." unit="deg"/>
--->
+
     <define name="TAKEOFF_PITCH_ANGLE" value="20" unit="deg"/>
     <define name="FLARE_PITCH_ANGLE" value="6" unit="deg"/>
     <define name="NAV_GLIDE_PITCH_TRIM" value="-2.0" unit="deg"/>
@@ -866,7 +903,7 @@
     <define name="ANGLE" value="4" unit="deg"/>
     <define name="INTERCEPT_AF_SD" value="80" unit="m"/>
     <!--<define name="INTERCEPT_RATE" value="0.624" unit="m/s/s"/>-->
-    <define name="TARGET_SPEED" value="GLIDE_AIRSPEED+1" unit="m/s"/>
+    <define name="TARGET_SPEED" value="GLIDE_AIRSPEED+.5" unit="m/s"/>
   </section>
 
   <section name="PRECISION_LANDING" prefix="PRECISION_LANDING_">
@@ -877,8 +914,8 @@
     <define name="BRAKE_AGL" value="3.5" unit="m"/>
     <define name="FLARE_AGL" value="1.2" unit="m"/>
     <define name="AIM_BEFORE_TD" value="12.0" unit="m"/>
-    <define name="TOUCHDOWN_PITCH" value="0.0"/><!-- Flight-plan variable is in degrees. -->
-    <define name="FLARE_BRAKE" value="0.65"/>
+    <define name="TOUCHDOWN_PITCH" value="-1.0"/><!-- Flight-plan variable is in degrees. -->
+    <define name="FLARE_BRAKE" value="0.67"/>
   </section>
 
   <!-- 

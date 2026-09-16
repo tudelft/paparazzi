@@ -58,10 +58,10 @@
     </module-->
 
     <!-- Logger -->
-    <module name="tlsf"/>
+    <!-- <module name="tlsf"/>
     <module name="pprzlog"/>
     <module name="logger" type="sd_chibios"/>
-    <module name="flight_recorder"/>
+    <module name="flight_recorder"/> -->
 
     <module name="lidar" type="tfmini"/>
     <module name="air_data"/>
