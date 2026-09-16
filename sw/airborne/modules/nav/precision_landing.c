@@ -142,6 +142,31 @@
 #define PRECISION_LANDING_REJECT_DELAY 0.2f
 #endif
 
+#ifndef PRECISION_LANDING_APPROACH_AIRSPEED
+#define PRECISION_LANDING_APPROACH_AIRSPEED 9.f
+#endif
+#ifndef PRECISION_LANDING_FINAL_HEIGHT
+#define PRECISION_LANDING_FINAL_HEIGHT 17.f
+#endif
+#ifndef PRECISION_LANDING_BRAKE_AGL
+#define PRECISION_LANDING_BRAKE_AGL 3.5f
+#endif
+#ifndef PRECISION_LANDING_FLARE_AGL
+#define PRECISION_LANDING_FLARE_AGL 1.2f
+#endif
+#ifndef PRECISION_LANDING_AIM_BEFORE_TD
+#define PRECISION_LANDING_AIM_BEFORE_TD 12.f
+#endif
+#ifndef PRECISION_LANDING_TOUCHDOWN_PITCH
+#define PRECISION_LANDING_TOUCHDOWN_PITCH 0.f
+#endif
+#ifndef PRECISION_LANDING_FLARE_BRAKE
+#define PRECISION_LANDING_FLARE_BRAKE 0.65f
+#endif
+#ifndef PRECISION_LANDING_MAX_RETRIES
+#define PRECISION_LANDING_MAX_RETRIES 2.f
+#endif
+
 /* --- Global Module State Definitions --- */
 
 float precision_landing_remaining_m;             /**< Along-track distance to TD (m) */
@@ -152,6 +177,14 @@ float precision_landing_brake_fraction;           /**< Currently commanded crow 
 bool precision_landing_agl_fresh;                 /**< Fresh rangefinder measurement available */
 bool precision_landing_abort;                     /**< True if approach safety boundary violated */
 bool precision_landing_commit_flare;              /**< True if below commit height (forces flare) */
+float precision_landing_approach_airspeed = PRECISION_LANDING_APPROACH_AIRSPEED;
+float precision_landing_final_height = PRECISION_LANDING_FINAL_HEIGHT;
+float precision_landing_brake_agl = PRECISION_LANDING_BRAKE_AGL;
+float precision_landing_flare_agl = PRECISION_LANDING_FLARE_AGL;
+float precision_landing_aim_before_td = PRECISION_LANDING_AIM_BEFORE_TD;
+float precision_landing_touchdown_pitch = PRECISION_LANDING_TOUCHDOWN_PITCH;
+float precision_landing_flare_brake = PRECISION_LANDING_FLARE_BRAKE;
+uint8_t precision_landing_max_retries = PRECISION_LANDING_MAX_RETRIES;
 
 /* --- Module Private Static Variables --- */
 
@@ -176,6 +209,24 @@ static bool landing_active;
 static bool bench_active;
 static bool roll_limit_owned;
 static float saved_roll_limit;
+static uint8_t landing_retry_count;
+
+void precision_landing_reset_retries(void)
+{
+  landing_retry_count = 0;
+}
+
+void precision_landing_record_retry(void)
+{
+  if (landing_retry_count < 6) {
+    landing_retry_count++;
+  }
+}
+
+bool precision_landing_retry_allowed(void)
+{
+  return landing_retry_count <= precision_landing_max_retries;
+}
 
 static bool airspeed_safe(void)
 {
@@ -228,30 +279,41 @@ static void cancel_invalid_geometry(void)
   precision_landing_abort = true;
 }
 
-bool precision_landing_parameters_valid(float airspeed, float height, float brake_height,
-    float flare_height, float aim, float pitch, float brake, float retries)
+bool precision_landing_parameters_valid(void)
 {
-  return isfinite(airspeed) && airspeed >= PRECISION_LANDING_MIN_AIRSPEED && airspeed <= 12.f
-         && isfinite(height) && height >= 10.f && height <= 25.f
-         && isfinite(brake_height) && brake_height >= PRECISION_LANDING_ABORT_AGL
-         && brake_height <= PRECISION_LANDING_BRAKE_ENABLE_AGL
-         && isfinite(flare_height) && flare_height >= 0.5f && flare_height <= PRECISION_LANDING_ABORT_AGL
-         && isfinite(aim) && aim >= 2.f && aim <= PRECISION_LANDING_MAX_AIM_DISTANCE
-         && isfinite(pitch) && pitch >= -5.f && pitch <= 10.f
-         && isfinite(brake) && brake >= 0.f && brake <= fminf(PRECISION_LANDING_MAX_BRAKE, 0.75f)
-         && isfinite(retries) && retries >= 0.f && retries <= 5.f && floorf(retries) == retries;
+  return isfinite(precision_landing_approach_airspeed)
+         && precision_landing_approach_airspeed >= PRECISION_LANDING_MIN_AIRSPEED
+         && precision_landing_approach_airspeed <= 12.f
+         && isfinite(precision_landing_final_height)
+         && precision_landing_final_height >= 10.f && precision_landing_final_height <= 25.f
+         && isfinite(precision_landing_brake_agl)
+         && precision_landing_brake_agl >= PRECISION_LANDING_ABORT_AGL
+         && precision_landing_brake_agl <= PRECISION_LANDING_BRAKE_ENABLE_AGL
+         && isfinite(precision_landing_flare_agl)
+         && precision_landing_flare_agl >= 0.5f
+         && precision_landing_flare_agl <= PRECISION_LANDING_ABORT_AGL
+         && isfinite(precision_landing_aim_before_td)
+         && precision_landing_aim_before_td >= 2.f
+         && precision_landing_aim_before_td <= PRECISION_LANDING_MAX_AIM_DISTANCE
+         && isfinite(precision_landing_touchdown_pitch)
+         && precision_landing_touchdown_pitch >= -5.f && precision_landing_touchdown_pitch <= 10.f
+         && isfinite(precision_landing_flare_brake)
+         && precision_landing_flare_brake >= 0.f
+         && precision_landing_flare_brake <= fminf(PRECISION_LANDING_MAX_BRAKE, 0.75f)
+         && precision_landing_max_retries <= 5;
 }
 
-bool precision_landing_entry_valid(uint8_t af_wp, uint8_t td_wp, float height, float radius)
+bool precision_landing_entry_valid(uint8_t af_wp, uint8_t td_wp, float radius)
 {
-  if (af_wp >= NB_WAYPOINT || td_wp >= NB_WAYPOINT || !isfinite(height) || height <= 0.f
+  if (af_wp >= NB_WAYPOINT || td_wp >= NB_WAYPOINT
+      || !isfinite(precision_landing_final_height) || precision_landing_final_height <= 0.f
       || !isfinite(radius) || fabsf(radius) < 1.f) {
     return false;
   }
   const float east = WaypointX(td_wp) - WaypointX(af_wp);
   const float north = WaypointY(td_wp) - WaypointY(af_wp);
   const float length = hypotf(east, north);
-  const float altitude = WaypointAlt(td_wp) + height;
+  const float altitude = WaypointAlt(td_wp) + precision_landing_final_height;
   if (!isfinite(length) || length <= 1.f || !isfinite(east * east + north * north)
       || !isfinite(radius * radius) || !isfinite(altitude) || altitude <= WaypointAlt(td_wp)) {
     return false;
@@ -420,14 +482,15 @@ void precision_landing_flare(float brake_fraction)
   h_ctl_roll_max_setpoint = fminf(saved_roll_limit, PRECISION_LANDING_FLARE_MAX_ROLL);
 }
 
-void precision_landing_flare_run(float pitch_deg, float brake_fraction)
+void precision_landing_flare_run(void)
 {
   if (!landing_active || precision_landing_cancelled || autopilot_get_mode() != AP_MODE_AUTO2) {
     precision_landing_cancelled = true;
     return;
   }
-  precision_landing_flare(brake_fraction);
-  float pitch = isfinite(pitch_deg) ? RadOfDeg(pitch_deg) : 0.f;
+  precision_landing_flare(precision_landing_flare_brake);
+  float pitch = isfinite(precision_landing_touchdown_pitch)
+                ? RadOfDeg(precision_landing_touchdown_pitch) : 0.f;
   Bound(pitch, H_CTL_PITCH_MIN_SETPOINT, H_CTL_PITCH_MAX_SETPOINT);
   /* Own the local throttle setpoint, not the global kill latch, so pilot takeover retains authority. */
   NavVerticalAutoThrottleMode(pitch);
@@ -442,7 +505,7 @@ void precision_landing_flare_run(float pitch_deg, float brake_fraction)
 #endif
 }
 
-void precision_landing_setup(uint8_t af_wp, uint8_t td_wp, float brake_enable_agl, float aim_before_td)
+void precision_landing_setup(uint8_t af_wp, uint8_t td_wp)
 {
   if (!landing_active || precision_landing_cancelled || autopilot_get_mode() != AP_MODE_AUTO2) {
     precision_landing_cancelled = true;
@@ -462,8 +525,8 @@ void precision_landing_setup(uint8_t af_wp, uint8_t td_wp, float brake_enable_ag
 
   /* Reject degenerate or non-descending geometry before navigation can consume its slope.
    * Invalid geometry requests flare if already committed, rather than a powered recovery. */
-  precision_landing_ready = isfinite(length) && length > 1.f && isfinite(brake_enable_agl)
-                           && isfinite(aim_before_td) && isfinite(WaypointAlt(af_wp))
+  precision_landing_ready = isfinite(length) && length > 1.f && isfinite(precision_landing_brake_agl)
+                           && isfinite(precision_landing_aim_before_td) && isfinite(WaypointAlt(af_wp))
                            && isfinite(WaypointAlt(td_wp)) && isfinite(altitude_difference)
                            && isfinite(slope) && slope > 0.f;
   touchdown_wp = td_wp;
@@ -490,9 +553,9 @@ void precision_landing_setup(uint8_t af_wp, uint8_t td_wp, float brake_enable_ag
   precision_landing_cross_track_m = 0.f;
   precision_landing_predicted_cross_track_m = 0.f;
   precision_landing_predicted_error_m = length;
-  brake_enable_agl_m = brake_enable_agl;
+  brake_enable_agl_m = precision_landing_brake_agl;
   Bound(brake_enable_agl_m, PRECISION_LANDING_ABORT_AGL, PRECISION_LANDING_BRAKE_ENABLE_AGL);
-  aim_before_td_m = aim_before_td;
+  aim_before_td_m = precision_landing_aim_before_td;
   Bound(aim_before_td_m, 0.f, PRECISION_LANDING_MAX_AIM_DISTANCE);
   precision_landing_agl_fresh = false;
   rejection_since = -1.f;

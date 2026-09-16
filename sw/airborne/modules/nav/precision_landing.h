@@ -175,13 +175,23 @@ extern bool precision_landing_agl_fresh;                 /**< Flag indicating if
 extern bool precision_landing_abort;                     /**< Flag set when safety limits are violated (triggers go-around) */
 extern bool precision_landing_commit_flare;              /**< Flag set when below commit height (forces flare) */
 extern bool precision_landing_cancelled; /**< Takeover latch cleared only by explicit start. */
+extern float precision_landing_approach_airspeed;
+extern float precision_landing_final_height;
+extern float precision_landing_brake_agl;
+extern float precision_landing_flare_agl;
+extern float precision_landing_aim_before_td;
+extern float precision_landing_touchdown_pitch;
+extern float precision_landing_flare_brake;
+extern uint8_t precision_landing_max_retries;
 /** @brief Arm a new landing sequence in AUTO2, without enabling throttle. */
 extern void precision_landing_start(void);
-/** @brief Check the example's live tuning values before navigation or integer conversion. */
-extern bool precision_landing_parameters_valid(float airspeed, float height, float brake_height,
-	float flare_height, float aim, float pitch, float brake, float retries);
+extern void precision_landing_reset_retries(void);
+extern void precision_landing_record_retry(void);
+extern bool precision_landing_retry_allowed(void);
+/** @brief Check the module's live tuning values before navigation. */
+extern bool precision_landing_parameters_valid(void);
 /** @brief Check approach geometry before the example mutates AF altitude or computes a baseleg. */
-extern bool precision_landing_entry_valid(uint8_t af_wp, uint8_t td_wp, float height, float radius);
+extern bool precision_landing_entry_valid(uint8_t af_wp, uint8_t td_wp, float radius);
 /** @brief True only while an explicitly started landing owns AUTO2 control. */
 extern bool precision_landing_is_active(void);
 /** @brief Start a ground-only crow check without changing throttle kill or launch state. */
@@ -206,10 +216,8 @@ extern void precision_landing_init(void);
  * @brief Configures touchdown geometry and parameters upon entering final approach.
  * @param af_wp Waypoint ID of Approach Fix (start of final approach).
  * @param td_wp Waypoint ID of Touchdown target (center of precision box).
- * @param brake_enable_agl Altitude below which predictive crow braking is activated (meters).
- * @param aim_before_td Upstream offset from TD used as the nominal zero-brake target (meters).
  */
-extern void precision_landing_setup(uint8_t af_wp, uint8_t td_wp, float brake_enable_agl, float aim_before_td);
+extern void precision_landing_setup(uint8_t af_wp, uint8_t td_wp);
 
 /**
  * @brief Main periodic routine called on every navigation step during final approach (`pre_call`).
@@ -226,8 +234,8 @@ extern void precision_landing_glide(void);
  * @param brake_fraction Normalized spoileron brake deflection to hold during flare (0.0 to 1.0).
  */
 extern void precision_landing_flare(float brake_fraction);
-/** @brief Apply zero throttle, bounded pitch (degrees), and GPS-aware lateral flare guidance. */
-extern void precision_landing_flare_run(float pitch_deg, float brake_fraction);
+/** @brief Apply configured zero throttle, bounded pitch, brake, and GPS-aware lateral flare guidance. */
+extern void precision_landing_flare_run(void);
 
 /**
  * @brief End the sequence, clear brake demand, and restore the previously owned roll limit.

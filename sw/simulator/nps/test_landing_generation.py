@@ -40,14 +40,20 @@ class LandingGenerationTest(unittest.TestCase):
             self.assertIn("autopilot_SetModeHandler( _value )", settings)
             self.assertNotIn("autopilot.mode = _value", settings)
             plan = (generated / "flight_plan.h").read_text()
-            self.assertIn("extern float landing_max_retries", plan)
+            self.assertNotIn("extern float landing_max_retries", plan)
+            self.assertNotIn("extern uint8_t landing_retry_count", plan)
             self.assertIn("precision_landing_bench_run()", plan)
-            self.assertIn("Min((landing_retry_count+1),6)", plan)
+            self.assertIn("precision_landing_reset_retries()", plan)
+            self.assertIn("precision_landing_record_retry()", plan)
+            self.assertIn("precision_landing_retry_allowed()", plan)
+            settings = (generated / "settings.h").read_text()
+            self.assertIn("precision_landing_approach_airspeed", settings)
+            self.assertIn("precision_landing_max_retries", settings)
             standby = plan[plan.index("Block(5) // Standby"):plan.index("Block(6) // Oval")]
             self.assertIn("v_ctl_auto_airspeed_setpoint = NOMINAL_AIRSPEED", standby)
             self.assertIn("nav_radius = DEFAULT_CIRCLE_RADIUS", standby)
             self.assertLess(standby.index("nav_radius ="), standby.index("NavCircleWaypoint"))
-            self.assertLess(plan.index("!(LandingParametersValid())"),
+            self.assertLess(plan.index("!(precision_landing_parameters_valid())"),
                             plan.index("WaypointAlt(WP_AF) ="))
 
 

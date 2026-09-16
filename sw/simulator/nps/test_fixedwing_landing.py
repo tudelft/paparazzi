@@ -289,11 +289,12 @@ class LandingMetricsTest(unittest.TestCase):
             self.assertEqual(result["contact_quality_pass"], index in contacts)
 
     def test_validate_settings_before_startup(self):
-        self.assertEqual(parse_setting_overrides(["flare_brake=0.4"], {"flare_brake": 3}), [(3, 0.4)])
+        name = "precision_landing_flare_brake"
+        self.assertEqual(parse_setting_overrides([f"{name}=0.4"], {name: 3}), [(3, 0.4)])
         with self.assertRaises(ValueError):
-            parse_setting_overrides(["flare_brake=0.4"], {})
+            parse_setting_overrides([f"{name}=0.4"], {})
         with self.assertRaises(ValueError):
-            parse_setting_overrides(["flare_brake=nan"], {"flare_brake": 3})
+            parse_setting_overrides([f"{name}=nan"], {name: 3})
 
     def test_landing_vector_from_ivy(self):
         recorder = FlightRecorder(135, 1)
@@ -469,9 +470,9 @@ class LandingControllerTest(unittest.TestCase):
     def test_talon_aim_stays_within_plan_limits(self):
         home = Path(__file__).resolve().parents[3]
         airframe = ET.parse(home / "conf/airframes/OPENUAS/openuas_zohd_talon_250g.xml").getroot()
-        plan = ET.parse(home / "conf/flight_plans/TUDELFT/tudelft_imav2026_o_test_pricise_landing.xml").getroot()
+        module = ET.parse(home / "conf/modules/precision_landing.xml").getroot()
         aim = float(airframe.find("./section[@name='PRECISION_LANDING']/define[@name='AIM_BEFORE_TD']").get("value"))
-        setting = plan.find("./variables/variable[@var='aim_before_td']")
+        setting = module.find(".//dl_setting[@var='precision_landing_aim_before_td']")
         self.assertEqual(aim, 7.0)
         self.assertLessEqual(float(setting.get("min")), aim)
         self.assertGreaterEqual(float(setting.get("max")), aim)

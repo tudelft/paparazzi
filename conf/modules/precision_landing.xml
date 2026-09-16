@@ -11,7 +11,7 @@
   - Main tuning parameters during field test:
       * BRAKE_GAIN: Increase (e.g. 0.08 -> 0.12) if aircraft floats too far past TD.
       * BRAKE_ENABLE_AGL: Altitude (m) where laser prediction starts controlling crow.
-      * FLARE_AGL: Altitude (m) where fixed pitch flare begins (configured in flight plan).
+      * FLARE_AGL: Altitude (m) where fixed pitch flare begins.
 -->
 <module name="precision_landing" dir="nav">
   <doc>
@@ -52,7 +52,32 @@
     
     <!-- Touchdown Flare Constraints -->
     <define name="FLARE_MAX_ROLL" value="8.0" unit="deg" description="Maximum roll setpoint allowed during flare to prevent wingtip strikes on belly-landing foam planes."/>
+
+    <!-- Operator-tunable defaults; override per aircraft. -->
+    <define name="APPROACH_AIRSPEED" value="9.0" unit="m/s" description="Target airspeed during final approach."/>
+    <define name="FINAL_HEIGHT" value="17.0" unit="m" description="Approach-fix height above the touchdown waypoint."/>
+    <define name="BRAKE_AGL" value="3.5" unit="m" description="AGL threshold for close-range predictive crow braking."/>
+    <define name="FLARE_AGL" value="1.2" unit="m" description="AGL threshold for entering the flare."/>
+    <define name="AIM_BEFORE_TD" value="12.0" unit="m" description="Upstream geometric aim offset from touchdown."/>
+    <define name="TOUCHDOWN_PITCH" value="0.0" unit="deg" description="Pitch command during flare."/>
+    <define name="FLARE_BRAKE" value="0.65" description="Crow brake fraction held during flare."/>
+    <define name="MAX_RETRIES" value="2" description="Maximum automatic go-around retries."/>
   </doc>
+
+  <settings>
+    <dl_settings>
+      <dl_settings name="Precision Landing">
+        <dl_setting var="precision_landing_approach_airspeed" shortname="airspeed" min="7.0" max="12.0" step="0.1" unit="m/s" param="PRECISION_LANDING_APPROACH_AIRSPEED" module="modules/nav/precision_landing"/>
+        <dl_setting var="precision_landing_final_height" shortname="final_height" min="10.0" max="25.0" step="0.5" unit="m" param="PRECISION_LANDING_FINAL_HEIGHT" module="modules/nav/precision_landing"/>
+        <dl_setting var="precision_landing_brake_agl" shortname="brake_agl" min="2.5" max="4.0" step="0.1" unit="m" param="PRECISION_LANDING_BRAKE_AGL" module="modules/nav/precision_landing"/>
+        <dl_setting var="precision_landing_flare_agl" shortname="flare_agl" min="0.5" max="2.5" step="0.1" unit="m" param="PRECISION_LANDING_FLARE_AGL" module="modules/nav/precision_landing"/>
+        <dl_setting var="precision_landing_aim_before_td" shortname="aim_before_td" min="2.0" max="20.0" step="0.5" unit="m" param="PRECISION_LANDING_AIM_BEFORE_TD" module="modules/nav/precision_landing"/>
+        <dl_setting var="precision_landing_touchdown_pitch" shortname="touchdown_pitch" min="-5.0" max="10.0" step="0.5" unit="deg" param="PRECISION_LANDING_TOUCHDOWN_PITCH" module="modules/nav/precision_landing"/>
+        <dl_setting var="precision_landing_flare_brake" shortname="flare_brake" min="0.0" max="0.75" step="0.05" param="PRECISION_LANDING_FLARE_BRAKE" module="modules/nav/precision_landing"/>
+        <dl_setting var="precision_landing_max_retries" shortname="max_retries" min="0" max="5" step="1" type="uint8" param="PRECISION_LANDING_MAX_RETRIES" module="modules/nav/precision_landing"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
   
   <dep>
     <depends>agl_dist,air_data</depends>

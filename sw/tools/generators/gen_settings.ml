@@ -49,6 +49,7 @@ let rec flatten = fun xml r ->
 
 let print_dl_settings = fun out settings settings_xml ->
   let settings_xml = flatten settings_xml [] in
+  let nb_settings = List.length settings_xml in
 
   (** include  headers **)
   lprintf out "\n";
@@ -75,7 +76,7 @@ let print_dl_settings = fun out settings settings_xml ->
     fprintf out " \"%s\" , \\\n" shorted
   ) settings_xml;
   lprintf out "};\n";
-  Xml2h.define_out out "NB_SETTING" (string_of_int (List.length settings_xml));
+  Xml2h.define_out out "NB_SETTING" (string_of_int nb_settings);
 
   (** Macro to call to set one variable *)
   lprintf out "#define DlSetting(_idx, _value) { \\\n";
@@ -120,7 +121,8 @@ let print_dl_settings = fun out settings settings_xml ->
     right ();
     lprintf out "static uint8_t i;\\\n";
     lprintf out "float var;\\\n";
-    lprintf out "if (i >= %d) i = 0;\\\n" nb_values;
+    if nb_values < 256 then
+      lprintf out "if (i >= %d) i = 0;\\\n" nb_values;
     let idx = ref 0 in
     lprintf out "switch (i) { \\\n";
     right ();
@@ -237,10 +239,14 @@ let print_persistent_settings = fun out settings settings_xml ->
 let h_name = "SETTINGS_H"
 
 let generate = fun settings xml_files out_xml out_file ->
+  let xml = Settings.get_settings_xml settings in
+  let nb_settings = List.length (flatten xml []) in
+  if nb_settings > 256 then
+    failwith (sprintf "Too many settings (%d); the datalink setting index is uint8" nb_settings);
+
   let out = open_out out_file in
 
   (* generate XML concatenated file *)
-  let xml = Settings.get_settings_xml settings in
   let f = open_out out_xml in
   fprintf f "%s\n" (ExtXml.to_string_fmt xml);
   close_out f;

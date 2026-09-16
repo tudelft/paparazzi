@@ -340,6 +340,8 @@
 
     <module name="agl_dist"/>
 
+    <module name="precision_landing"/>
+
     <!-- Quite a good alternative for the catapult module in this case -->
     <!--<module name="takeoff_detect">-->
     <!--<define name="TAKEOFF_DETECT_LAUNCH_PITCH" value="0.785398"/>-->
