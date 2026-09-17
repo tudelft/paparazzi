@@ -726,10 +726,11 @@ Do not optimize several values at once. Start every new test campaign from this 
 | `final_height` | 17.0 m | 17.0 m | 10.0-25.0 m | Energy-controlled path over the 149 m final |
 | `brake_agl` | 3.5 m | 3.5 m | 2.5-4.0 m | Highest AGL where predictive crow may engage |
 | `flare_agl` | 2.0 m | 1.2 m | 0.5-2.5 m | Start of fixed-pitch flare |
-| `aim_before_td` | 7.0 m | 12.0 m | 2.0-20.0 m | Upstream geometric aim; not a calibrated stopping distance |
-| `touchdown_pitch` | 4.0 deg | 0.0 deg | -5.0 to 10.0 deg | Commanded flare pitch; measured contact pitch differs |
-| `flare_brake` | 0.30 | 0.65 | 0.0-0.75 | Flare demand before mixer cap |
-| `landing_max_retries` | 2 | 2 | 0-5 | Automatic retries after the initial attempt |
+| `aim_before_td` | 7.0 m | 11.8 m | 2.0-20.0 m | Upstream geometric glide lead; TD remains the final-stop target |
+| `stop_distance` | 7.0 m provisional | 0.45 m | 0.0-20.0 m | Calibrated travel from predicted first contact to final rest |
+| `touchdown_pitch` | 4.0 deg | -1.0 deg | -5.0 to 10.0 deg | Commanded flare pitch; measured contact pitch differs |
+| `flare_brake` | 0.30 | 0.30 | 0.0-0.75 | Flare demand before mixer cap |
+| `landing_max_retries` | 0 | 0 | 0-5 | Automatic retries after the initial attempt |
 | Crow mixer cap | 75% | 70% | Build-time | Preserve roll authority |
 | Predictor brake gain | 0.08 | 0.05 | Build-time | Initial response; replace from flight data |
 | Flare bank limit | 8 deg | 8 deg | Build-time | Correct drift without wingtip strike risk |
@@ -1223,6 +1224,7 @@ The safety pilot may always intervene to prevent injury or damage. Record that i
 | `brake_agl` | |
 | `flare_agl` | |
 | `aim_before_td` | |
+| `stop_distance` | |
 | `touchdown_pitch` | |
 | Maximum brake fraction reached | |
 | AGL acquired height | |

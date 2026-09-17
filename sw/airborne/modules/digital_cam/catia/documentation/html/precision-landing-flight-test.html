@@ -1164,28 +1164,35 @@ and aerodynamic authority must still be verified on the aircraft.</p>
 <tr>
 <td><code>aim_before_td</code></td>
 <td style="text-align: right;">7.0 m</td>
-<td style="text-align: right;">12.0 m</td>
+<td style="text-align: right;">11.8 m</td>
 <td style="text-align: right;">2.0-20.0 m</td>
-<td>Upstream geometric aim; not a calibrated stopping distance</td>
+<td>Upstream geometric glide lead; TD remains the final-stop target</td>
+</tr>
+<tr>
+<td><code>stop_distance</code></td>
+<td style="text-align: right;">7.0 m provisional</td>
+<td style="text-align: right;">0.45 m</td>
+<td style="text-align: right;">0.0-20.0 m</td>
+<td>Calibrated travel from predicted first contact to final rest</td>
 </tr>
 <tr>
 <td><code>touchdown_pitch</code></td>
 <td style="text-align: right;">4.0 deg</td>
-<td style="text-align: right;">0.0 deg</td>
+<td style="text-align: right;">-1.0 deg</td>
 <td style="text-align: right;">-5.0 to 10.0 deg</td>
 <td>Commanded flare pitch; measured contact pitch differs</td>
 </tr>
 <tr>
 <td><code>flare_brake</code></td>
 <td style="text-align: right;">0.30</td>
-<td style="text-align: right;">0.65</td>
+<td style="text-align: right;">0.30</td>
 <td style="text-align: right;">0.0-0.75</td>
 <td>Flare demand before mixer cap</td>
 </tr>
 <tr>
 <td><code>landing_max_retries</code></td>
-<td style="text-align: right;">2</td>
-<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
 <td style="text-align: right;">0-5</td>
 <td>Automatic retries after the initial attempt</td>
 </tr>
@@ -1779,6 +1786,10 @@ envelope or a closed-loop stopping-distance controller.</p>
 </tr>
 <tr>
 <td><code>aim_before_td</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>stop_distance</code></td>
 <td></td>
 </tr>
 <tr>

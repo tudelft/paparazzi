@@ -35,6 +35,11 @@ class LandingGenerationTest(unittest.TestCase):
             airframe.write(airframe_path)
             subprocess.run(command, cwd=home, env=environment, capture_output=True, text=True, check=True)
             self.assertNotIn("auto1_commands", (generated / "modules.h").read_text())
+            dumped_plan = ET.parse(work / "config/flight_plan.xml").getroot().find("flight_plan")
+            flare_exception = next(exception for exception in
+                                   dumped_plan.findall("./blocks/block[@name='Testing.final']/exception")
+                                   if "precision_landing_agl_fresh" in exception.get("cond"))
+            self.assertIn("&&", flare_exception.get("cond"))
             settings = (generated / "settings.h").read_text()
             self.assertNotIn("auto1_commands", settings)
             self.assertIn("autopilot_SetModeHandler( _value )", settings)
@@ -42,14 +47,15 @@ class LandingGenerationTest(unittest.TestCase):
             plan = (generated / "flight_plan.h").read_text()
             self.assertNotIn("extern float landing_max_retries", plan)
             self.assertNotIn("extern uint8_t landing_retry_count", plan)
-            self.assertIn("precision_landing_bench_run()", plan)
+            self.assertIn("precision_landing_start()", plan)
             self.assertIn("precision_landing_reset_retries()", plan)
             self.assertIn("precision_landing_record_retry()", plan)
             self.assertIn("precision_landing_retry_allowed()", plan)
             settings = (generated / "settings.h").read_text()
             self.assertIn("precision_landing_approach_airspeed", settings)
             self.assertIn("precision_landing_max_retries", settings)
-            standby = plan[plan.index("Block(5) // Standby"):plan.index("Block(6) // Oval")]
+            standby = plan[plan.index("Block(5) // Testing.Standby"):
+                           plan.index("Block(6) // Testing.Land Right AF-TD")]
             self.assertIn("v_ctl_auto_airspeed_setpoint = NOMINAL_AIRSPEED", standby)
             self.assertIn("nav_radius = DEFAULT_CIRCLE_RADIUS", standby)
             self.assertLess(standby.index("nav_radius ="), standby.index("NavCircleWaypoint"))

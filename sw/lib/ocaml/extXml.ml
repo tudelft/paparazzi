@@ -90,24 +90,27 @@ let attrib_or_default = fun x a default ->
 
 (** Code patched from xml.ml from xml-light package: PC Data formatting removed *)
 let tmp = Buffer.create 200
+let buffer_escaped = fun attribute text ->
+  String.iter (function
+      | '&' -> Buffer.add_string tmp "&amp;"
+      | '<' -> Buffer.add_string tmp "&lt;"
+      | '>' -> Buffer.add_string tmp "&gt;"
+      | '"' when attribute -> Buffer.add_string tmp "&quot;"
+      | c -> Buffer.add_char tmp c)
+    text
+
 let buffer_attr = fun indent tab (n,v) ->
   if indent then
     Buffer.add_string tmp tab;
   Buffer.add_char tmp ' ';
   Buffer.add_string tmp n;
   Buffer.add_string tmp "=\"";
-  let l = String.length v in
-  for p = 0 to l-1 do
-    match v.[p] with
-      | '\\' -> Buffer.add_string tmp "\\\\"
-      | '"' -> Buffer.add_string tmp "\\\""
-    | c -> Buffer.add_char tmp c
-        done;
+  buffer_escaped true v;
   Buffer.add_char tmp '"';
         if indent then
           Buffer.add_char tmp '\n'
 
-let buffer_pcdata = Buffer.add_string tmp
+let buffer_pcdata = buffer_escaped false
 let my_to_string_fmt = fun tab_attribs x ->
   let rec loop ?(newl=false) tab = function
     | Xml.Element (tag,alist,[]) ->

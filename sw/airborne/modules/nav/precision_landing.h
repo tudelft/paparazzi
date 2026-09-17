@@ -32,7 +32,8 @@
  * - \f$e_{cross}\f$: predicted lateral displacement from runway centerline at contact.
  *
  * Predictive crow braking (spoileron deflection) is commanded proportionally to
- * predicted overshoot beyond a user-configured aim point (\f$d_{aim}\f$ upstream of \f$TD\f$).
+ * predicted final-stop overshoot beyond \f$TD\f$. A calibrated stop distance advances
+ * the first-contact projection to the expected final resting position.
  */
 
 #ifndef PRECISION_LANDING_H
@@ -51,7 +52,7 @@
  *
  * @param longitudinal_error Predicted distance upstream (+) or downstream (-) of TD (meters).
  * @param lateral_error Predicted cross-track offset from runway centerline (meters).
- * @param max_short_error Maximum absolute longitudinal error (meters).
+ * @param max_longitudinal_error Maximum final-stop error on either side of TD (meters).
  * @param max_lateral_error Maximum acceptable lateral cross-track error (meters).
  * @return true If the prediction is non-finite or outside allowable spatial bounds.
  * @return false If the contact prediction is within bounds; this does not guarantee a safe final stop.
@@ -61,13 +62,12 @@
  *       single-sample optical or GNSS noise spikes from interrupting a valid approach.
  */
 static inline bool precision_landing_prediction_rejected(float longitudinal_error, float lateral_error,
-		float max_short_error, float max_lateral_error)
+		float max_longitudinal_error, float max_lateral_error)
 {
-	/* Non-finite check prevents undefined comparison behavior if sensor state becomes NaN.
-	 * Negative longitudinal error means landing past TD (overshoot); error > max_short_error
-	 * means landing too far short of the box. */
+	/* Non-finite check prevents undefined comparison behavior if sensor state becomes NaN. */
 	return !isfinite(longitudinal_error) || !isfinite(lateral_error)
-				 || fabsf(longitudinal_error) > max_short_error || fabsf(lateral_error) > max_lateral_error;
+				 || fabsf(longitudinal_error) > max_longitudinal_error
+				 || fabsf(lateral_error) > max_lateral_error;
 }
 
 static inline bool precision_landing_lateral_approach_rejected(float current_cross_track,
@@ -169,7 +169,7 @@ static inline struct PrecisionLandingPrediction precision_landing_predict(float 
 extern float precision_landing_remaining_m;             /**< Current along-track distance to TD (m) */
 extern float precision_landing_cross_track_m;            /**< Current cross-track distance to runway centerline (m) */
 extern float precision_landing_predicted_cross_track_m;  /**< Projected cross-track offset at touchdown (m) */
-extern float precision_landing_predicted_error_m;        /**< Projected longitudinal offset from TD at touchdown (m) */
+extern float precision_landing_predicted_error_m;        /**< Projected longitudinal offset from TD at final rest (m) */
 extern float precision_landing_brake_fraction;           /**< Currently commanded crow brake fraction (0.0 to 1.0) */
 extern bool precision_landing_agl_fresh;                 /**< Flag indicating if rangefinder data was updated recently */
 extern bool precision_landing_abort;                     /**< Flag set when safety limits are violated (triggers go-around) */
@@ -180,9 +180,22 @@ extern float precision_landing_final_height;
 extern float precision_landing_brake_agl;
 extern float precision_landing_flare_agl;
 extern float precision_landing_aim_before_td;
+extern float precision_landing_stop_distance;
 extern float precision_landing_touchdown_pitch;
 extern float precision_landing_flare_brake;
 extern uint8_t precision_landing_max_retries;
+
+enum PrecisionLandingPhase {
+  PRECISION_LANDING_PHASE_IDLE,
+  PRECISION_LANDING_PHASE_APPROACH,
+  PRECISION_LANDING_PHASE_FLARE_COMMITTED,
+  PRECISION_LANDING_PHASE_GO_AROUND_COMMITTED,
+  PRECISION_LANDING_PHASE_CANCELLED,
+  PRECISION_LANDING_PHASE_BENCH
+};
+
+/** @brief Return the module-owned landing phase for diagnostics and tests. */
+extern enum PrecisionLandingPhase precision_landing_get_phase(void);
 /** @brief Arm a new landing sequence in AUTO2, without enabling throttle. */
 extern void precision_landing_start(void);
 extern void precision_landing_reset_retries(void);
@@ -218,6 +231,9 @@ extern void precision_landing_init(void);
  * @param td_wp Waypoint ID of Touchdown target (center of precision box).
  */
 extern void precision_landing_setup(uint8_t af_wp, uint8_t td_wp);
+/** @brief Configure final geometry and use a four-corner flight-plan sector for contact acceptance. */
+extern void precision_landing_setup_zone(uint8_t af_wp, uint8_t td_wp, uint8_t corner_1_wp,
+		uint8_t corner_2_wp, uint8_t corner_3_wp, uint8_t corner_4_wp);
 
 /**
  * @brief Main periodic routine called on every navigation step during final approach (`pre_call`).

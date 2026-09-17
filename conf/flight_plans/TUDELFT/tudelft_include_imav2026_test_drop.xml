@@ -84,6 +84,14 @@
     <!-- <waypoint name="EL2" x="49.5" y="100.1"/> -->
     <waypoint name="EL3" x="99.5" y="110.1"/>
 
+    <!-- EL = Entry and Exit Lanes -->
+    <!-- <waypoint name="EL1" lat="48.8076808564" lon="7.8453890000"/>
+    <waypoint name="EL2" lat="48.8074980000" lon="7.8435670000"/>
+    <waypoint name="EL3" lat="48.8073650000" lon="7.8497880000"/>
+    <waypoint name="EL4" lat="48.8070920000" lon="7.8516460000"/> -->
+
+    <!-- <waypoint lat="48.8065940360000" lon="7.8427090000" name="AMAZED"/> -->
+
   </waypoints>
   <exceptions>
     <exception cond="datalink_time @GT 15" deroute="Standby"/><!-- For own tests-->

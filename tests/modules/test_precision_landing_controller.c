@@ -7,7 +7,11 @@
 #include <state.h>
 #include "autopilot.h"
 
-struct TestWaypoint test_waypoints[2] = {{-150.f, 0.f, 17.f}, {0.f, 0.f, 0.f}};
+struct TestWaypoint test_waypoints[6] = {
+  {-150.f, 0.f, 17.f}, {0.f, 0.f, 0.f},
+  {-75.f, -25.f, 0.f}, {10.f, -25.f, 0.f},
+  {10.f, 25.f, 0.f}, {-75.f, 25.f, 0.f}
+};
 struct EnuCoor_f test_position, test_speed;
 pprz_t commands[1];
 float h_ctl_roll_max_setpoint, test_altitude, test_target_altitude, test_preclimb;
@@ -29,6 +33,7 @@ static void set_parameters(float airspeed, float height, float brake_height, flo
   precision_landing_brake_agl = brake_height;
   precision_landing_flare_agl = flare_height;
   precision_landing_aim_before_td = aim;
+  precision_landing_stop_distance = 0.45f;
   precision_landing_touchdown_pitch = pitch;
   precision_landing_flare_brake = brake;
   precision_landing_max_retries = retries;
@@ -75,6 +80,15 @@ int main(void)
   assert(test_preclimb < 0.f);
 
   reset();
+  test_position.x = -200.f;
+  test_altitude = agl_dist_value_filtered = 17.f;
+  precision_landing_run();
+  precision_landing_glide();
+  assert(!precision_landing_abort);
+  assert(fabsf(test_target_altitude - 17.f) < 0.001f);
+  assert(test_preclimb == 0.f);
+
+  reset();
   test_altitude = 3.4f;
   agl_dist_value_filtered = 3.55f;
   precision_landing_run();
@@ -86,7 +100,8 @@ int main(void)
   assert(precision_landing_abort && !precision_landing_commit_flare && commands[0] == 0);
   test_altitude = 1.f;
   precision_landing_run();
-  assert(!precision_landing_abort && precision_landing_commit_flare);
+  assert(precision_landing_abort && !precision_landing_commit_flare);
+  assert(precision_landing_get_phase() == PRECISION_LANDING_PHASE_GO_AROUND_COMMITTED);
 
   reset();
   agl_measurement_time = test_time + 1.f;
@@ -99,7 +114,8 @@ int main(void)
   assert(precision_landing_abort && commands[0] == 0);
   test_altitude = agl_dist_value_filtered = 1.f;
   precision_landing_run();
-  assert(!precision_landing_abort && precision_landing_commit_flare && commands[0] == 0);
+  assert(precision_landing_abort && !precision_landing_commit_flare && commands[0] == 0);
+  assert(precision_landing_get_phase() == PRECISION_LANDING_PHASE_GO_AROUND_COMMITTED);
 
   reset();
   test_speed.x = NAN;
@@ -144,7 +160,14 @@ int main(void)
   assert(commands[0] == 0);
   reset();
   test_altitude = agl_dist_value_filtered = 2.2f;
-  test_position.x = 1.f;
+  test_position.x = -20.f;
+  precision_landing_run();
+  assert(!precision_landing_commit_flare && !precision_landing_abort);
+  test_gps_valid = false;
+  precision_landing_run();
+  assert(precision_landing_commit_flare && !precision_landing_abort);
+  reset();
+  test_altitude = agl_dist_value_filtered = 1.9f;
   precision_landing_run();
   assert(precision_landing_commit_flare && !precision_landing_abort);
   reset();
@@ -183,6 +206,12 @@ int main(void)
   test_gps_valid = false;
   precision_landing_run();
   assert(precision_landing_abort && !precision_landing_commit_flare);
+  assert(precision_landing_get_phase() == PRECISION_LANDING_PHASE_GO_AROUND_COMMITTED);
+  agl_dist_value_filtered = 1.f;
+  test_altitude = 1.f;
+  precision_landing_check_abort();
+  assert(precision_landing_abort && !precision_landing_commit_flare);
+  assert(precision_landing_get_phase() == PRECISION_LANDING_PHASE_GO_AROUND_COMMITTED);
   reset();
   agl_dist_value_filtered = 1.f;
   test_altitude = 20.f;
@@ -313,7 +342,8 @@ int main(void)
   const float invalid[] = {NAN, INFINITY, -INFINITY, FLT_MAX, -FLT_MAX};
   float *params[] = {&precision_landing_approach_airspeed, &precision_landing_final_height,
                      &precision_landing_brake_agl, &precision_landing_flare_agl,
-                     &precision_landing_aim_before_td, &precision_landing_touchdown_pitch,
+                     &precision_landing_aim_before_td, &precision_landing_stop_distance,
+                     &precision_landing_touchdown_pitch,
                      &precision_landing_flare_brake};
   for (unsigned field = 0; field < sizeof(params) / sizeof(params[0]); field++) {
     for (unsigned value = 0; value < sizeof(invalid) / sizeof(invalid[0]); value++) {
@@ -360,10 +390,11 @@ int main(void)
   assert(precision_landing_commit_flare && !precision_landing_cancelled);
   test_waypoints[1].altitude = 0.f;
   reset();
+  precision_landing_flare_agl = 0.5f;
   test_altitude = agl_dist_value_filtered = 1.f;
   test_position.x = -3.f;
   precision_landing_run();
-  assert(!precision_landing_abort && precision_landing_brake_fraction > 0.9f);
+  assert(!precision_landing_abort && precision_landing_brake_fraction > 0.5f);
   test_airspeed_valid = false;
   precision_landing_run();
   assert(commands[0] == 0 && precision_landing_commit_flare);
@@ -373,12 +404,42 @@ int main(void)
   assert(!precision_landing_parameters_valid());
   reset();
   precision_landing_aim_before_td = 12.f;
+  precision_landing_stop_distance = 0.45f;
+  test_position.x = -30.f;
   precision_landing_setup(0, 1);
   precision_landing_run();
   precision_landing_glide();
-  assert(fabsf(test_target_altitude - 8.f * 17.f / 150.f) < 0.001f);
+  assert(fabsf(test_target_altitude - 18.f * 17.f / 150.f) < 0.001f);
+  assert(precision_landing_brake_fraction == 0.f);
   assert(precision_landing_prediction_rejected(8.1f, 0.f, 8.f, 1.2f));
   assert(precision_landing_prediction_rejected(-8.1f, 0.f, 8.f, 1.2f));
+  assert(precision_landing_prediction_rejected(11.09f, 0.736f, 8.f, 1.2f));
+  assert(!precision_landing_prediction_rejected(3.066f, 0.261f, 8.f, 1.2f));
+  assert(precision_landing_prediction_rejected(20.1f, 0.f, 8.f, 1.2f));
+
+  /* Reproduce the live 3.5m band crossing: a +52m short prediction is valid
+   * when its projected contact remains inside the configured landing sector. */
+  reset();
+  precision_landing_setup_zone(0, 1, 2, 3, 4, 5);
+  test_position = (struct EnuCoor_f){-86.514f, 0.f, 3.573f};
+  test_speed = (struct EnuCoor_f){7.04f, 0.f, -0.33f};
+  test_altitude = agl_dist_value_filtered = 3.573f;
+  precision_landing_run();
+  float previous_prediction = precision_landing_predicted_error_m;
+  float max_prediction_step = 0.f;
+  for (unsigned sample = 0; sample < 12; sample++) {
+    test_time += 0.05f;
+    air_data_airspeed_time = test_time;
+    agl_measurement_time = test_time;
+    agl_dist_value_filtered -= 0.03425f;
+    precision_landing_run();
+    max_prediction_step = fmaxf(max_prediction_step,
+                                fabsf(precision_landing_predicted_error_m - previous_prediction));
+    previous_prediction = precision_landing_predicted_error_m;
+  }
+  assert(precision_landing_predicted_error_m > 20.f && precision_landing_predicted_error_m < 30.f);
+  assert(max_prediction_step < 5.f);
+  assert(!precision_landing_abort);
   puts("Precision landing controller checks passed");
   return 0;
 }

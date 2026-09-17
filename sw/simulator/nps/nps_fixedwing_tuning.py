@@ -148,7 +148,7 @@ def setting_indexes(settings_header_path):
     return {name: index for index, name in enumerate(names)}
 
 
-def flight_plan_data(flight_plan_path):
+def flight_plan_data(flight_plan_path, flight_plan_header_path=None):
     indexes = {}
     root = ET.parse(flight_plan_path).getroot()
     flight_plan = root if root.tag == "flight_plan" else root.find("flight_plan")
@@ -157,10 +157,41 @@ def flight_plan_data(flight_plan_path):
         raise RuntimeError(f"No blocks found in {flight_plan_path}")
     for index, block in enumerate(blocks.findall("block")):
         indexes[block.get("name")] = int(block.get("no", index))
+    aliases = {}
+    ambiguous = set()
+    for name, index in indexes.items():
+        short_name = name.rsplit(".", 1)[-1]
+        for alias in (short_name, short_name.replace("_", "-")):
+            if alias in aliases and aliases[alias] != index:
+                ambiguous.add(alias)
+            else:
+                aliases[alias] = index
+    indexes.update({name: index for name, index in aliases.items()
+                    if name not in ambiguous and name not in indexes})
+    waypoints = {waypoint.get("name"): {axis: float(waypoint.get(axis, "0")) for axis in ("x", "y", "alt")}
+                 for waypoint in flight_plan.find("waypoints")}
+    if flight_plan_header_path is not None:
+        source = flight_plan_header_path.read_text()
+        waypoint_ids = {name: int(index) for name, index in
+                        re.findall(r"^#define WP_(\S+) (\d+)$", source, re.MULTILINE)}
+        match = re.search(r"#define WAYPOINTS_ENU \{ \\\n(.*?)\n\};", source, re.DOTALL)
+        if match is None:
+            raise RuntimeError(f"WAYPOINTS_ENU not found in {flight_plan_header_path}")
+        enu = re.findall(r"\{\s*([-+\d.eE]+),\s*([-+\d.eE]+),\s*[-+\d.eE]+\s*\}", match.group(1))
+        for name, waypoint in waypoints.items():
+            if name not in waypoint_ids or waypoint_ids[name] >= len(enu):
+                raise RuntimeError(f"Waypoint {name!r} absent from {flight_plan_header_path}")
+            waypoint["x"], waypoint["y"] = map(float, enu[waypoint_ids[name]])
+    sectors = flight_plan.find("sectors")
+    landing_sector = None
+    if sectors is not None:
+        sector = sectors.find("./sector[@name='Takeoff_Landing_zone_Fixedwing']")
+        if sector is not None:
+            landing_sector = [waypoints[corner.get("name")] for corner in sector.findall("corner")]
     return {
         "blocks": indexes,
-        "waypoints": {waypoint.get("name"): {axis: float(waypoint.get(axis, "0")) for axis in ("x", "y", "alt")}
-                      for waypoint in flight_plan.find("waypoints")},
+        "waypoints": waypoints,
+        "landing_sector": landing_sector,
         "altitude": float(flight_plan.get("alt")),
         "ground_altitude": float(flight_plan.get("ground_alt")),
     }
@@ -313,8 +344,22 @@ def read_contacts(path):
 
 LANDING_PITCH_MIN_DEG = -10.0
 LANDING_PITCH_MAX_DEG = 20.0
-PRECISION_AREA_HALF_LENGTH_M = 10.0
-PRECISION_AREA_HALF_WIDTH_M = 2.5
+LANDING_PRECISION_RADIUS_M = 1.0
+
+def point_inside_polygon(east, north, polygon):
+    if polygon is None or len(polygon) < 3 or not math.isfinite(east) or not math.isfinite(north):
+        return False
+    inside = False
+    previous = len(polygon) - 1
+    for corner, point in enumerate(polygon):
+        preceding = polygon[previous]
+        north_delta = preceding["y"] - point["y"]
+        if (point["y"] > north) != (preceding["y"] > north) and abs(north_delta) > 1e-9:
+            boundary_east = (preceding["x"] - point["x"]) * (north - point["y"]) / north_delta + point["x"]
+            if east < boundary_east:
+                inside = not inside
+        previous = corner
+    return inside
 
 
 def belly_contact_indexes(model_path):
@@ -370,6 +415,9 @@ def landing_metrics(samples, flight_plan, start_time, ground_altitude, contacts=
         method = "JSBSim first structural contact at physics timestep (CG position)"
     touchdown = flight_plan["waypoints"]["TD"]
     approach = flight_plan["waypoints"]["AF"]
+    landing_sector = flight_plan.get("landing_sector")
+    if landing_sector is None:
+        raise ValueError("Takeoff_Landing_zone_Fixedwing is required for precision-landing validation")
     east = touchdown["x"] - approach["x"]
     north = touchdown["y"] - approach["y"]
     length = math.hypot(east, north)
@@ -397,8 +445,7 @@ def landing_metrics(samples, flight_plan, start_time, ground_altitude, contacts=
     for sample in after_contact:
         forward = ((sample["east"] - touchdown["x"]) * east + (sample["north"] - touchdown["y"]) * north) / length
         across = ((sample["east"] - touchdown["x"]) * north - (sample["north"] - touchdown["y"]) * east) / length
-        rollout_safe = rollout_safe and abs(forward) <= PRECISION_AREA_HALF_LENGTH_M \
-            and abs(across) <= PRECISION_AREA_HALF_WIDTH_M \
+        rollout_safe = rollout_safe and point_inside_polygon(sample["east"], sample["north"], landing_sector) \
             and abs(sample["roll"]) <= 8.0 and LANDING_PITCH_MIN_DEG <= sample["pitch"] <= LANDING_PITCH_MAX_DEG \
             and sample["altitude"] <= ground_altitude + 0.3
     for sample in stop_samples:
@@ -419,8 +466,10 @@ def landing_metrics(samples, flight_plan, start_time, ground_altitude, contacts=
                           + (final_sample["north"] - touchdown["y"]) * north) / length if stop_confirmed else None
     final_lateral = ((final_sample["east"] - touchdown["x"]) * north
                      - (final_sample["north"] - touchdown["y"]) * east) / length if stop_confirmed else None
-    final_inside_box = stop_confirmed and abs(final_longitudinal) <= PRECISION_AREA_HALF_LENGTH_M \
-        and abs(final_lateral) <= PRECISION_AREA_HALF_WIDTH_M
+    final_inside_sector = stop_confirmed \
+        and point_inside_polygon(final_sample["east"], final_sample["north"], landing_sector)
+    go_around_samples = sum(sample.get("nav_block") == flight_plan["blocks"]["go-around"] for sample in active)
+    uninterrupted_landing = go_around_samples == 0
     wing_touches = [item for item in (contacts or []) if item.get("contact_index") in wingtip_contacts]
     gentle_touches = [item for item in wing_touches
                       if contacts[0].get("contact_index") in belly_contacts
@@ -438,8 +487,11 @@ def landing_metrics(samples, flight_plan, start_time, ground_altitude, contacts=
                                                   and wingtip_settled_after_belly(item, contacts[0]))))
                                 for item in (contacts or []))
     no_bad_contact = bool(contacts) and unacceptable_contacts == 0
-    inside_box = abs(longitudinal) <= PRECISION_AREA_HALF_LENGTH_M \
-        and abs(lateral) <= PRECISION_AREA_HALF_WIDTH_M
+    contact_inside_sector = point_inside_polygon(contact["east"], contact["north"], landing_sector)
+    touchdown_distance = math.hypot(longitudinal, lateral)
+    final_distance = math.hypot(final_longitudinal, final_lateral) if stop_confirmed else None
+    touchdown_inside_precision = contact_inside_sector and touchdown_distance <= LANDING_PRECISION_RADIUS_M
+    final_inside_precision = final_inside_sector and final_distance <= LANDING_PRECISION_RADIUS_M
     return {
         "contact_method": method,
         "touchdown_longitudinal_m": longitudinal,
@@ -448,15 +500,19 @@ def landing_metrics(samples, flight_plan, start_time, ground_altitude, contacts=
         "touchdown_sink_mps": contact["down_speed"],
         "touchdown_pitch_deg": contact["pitch"],
         "touchdown_roll_deg": contact["roll"],
-        "touchdown_inside_precision_box": inside_box,
-        "touchdown_inside_internal_margin": abs(longitudinal) <= 8.0 and abs(lateral) <= 1.2,
+        "touchdown_inside_landing_sector": contact_inside_sector,
+        "touchdown_inside_precision_box": touchdown_inside_precision,
+        "touchdown_inside_precision_radius": touchdown_inside_precision,
+        "touchdown_inside_internal_margin": contact_inside_sector and abs(lateral) <= 1.2,
         "final_longitudinal_m": final_longitudinal,
         "final_cross_track_m": final_lateral,
-        "final_distance_to_td_m": math.hypot(final_longitudinal, final_lateral) if stop_confirmed else None,
+        "final_distance_to_td_m": final_distance,
         "touchdown_to_stop_distance_m": math.hypot(final_sample["east"] - contact["east"],
                                final_sample["north"] - contact["north"]) if stop_confirmed else None,
-        "inside_precision_box": final_inside_box,
-        "inside_internal_margin": stop_confirmed and abs(final_longitudinal) <= 8.0 and abs(final_lateral) <= 1.2,
+        "inside_landing_sector": final_inside_sector,
+        "inside_precision_box": final_inside_precision,
+        "inside_precision_radius": final_inside_precision,
+        "inside_internal_margin": final_inside_sector and abs(final_lateral) <= 1.2,
         "contact_quality_pass": contact_quality,
         "stopped": stopped,
         "engine_off": engine_off,
@@ -467,11 +523,12 @@ def landing_metrics(samples, flight_plan, start_time, ground_altitude, contacts=
         "accepted_wingtip_touch_count": len(accepted_wingtip_touches),
         "unacceptable_contact_count": unacceptable_contacts,
         "contact_review_required": not (contact_quality and rollout_safe and no_bad_contact),
-        "strict_quality_pass": inside_box and contact_quality and stop_confirmed and rollout_safe and no_bad_contact,
-        "landing_pass": final_inside_box,
-        "preferred_landing_pass": final_inside_box and inside_box,
+        "strict_quality_pass": uninterrupted_landing and contact_inside_sector and contact_quality
+                       and stop_confirmed and rollout_safe and no_bad_contact,
+        "landing_pass": uninterrupted_landing and final_inside_sector,
+        "preferred_landing_pass": uninterrupted_landing and final_inside_precision and contact_inside_sector,
         "max_brake_fraction": max(sample.get("brake_fraction", 0.0) for sample in final_samples),
-        "go_around_samples": sum(sample.get("nav_block") == flight_plan["blocks"]["go-around"] for sample in active),
+        "go_around_samples": go_around_samples,
     }
 
 
@@ -508,7 +565,7 @@ def main():
 
     settings = setting_indexes(settings_header_path)
     overrides = parse_setting_overrides(args.setting, settings)
-    flight_plan = flight_plan_data(flight_plan_path)
+    flight_plan = flight_plan_data(flight_plan_path, aircraft_dir / "nps/generated/flight_plan.h")
     belly_contacts = ()
     wingtip_contacts = ()
     allow_wingtip_settling = False
@@ -527,7 +584,7 @@ def main():
     missing_settings = [name for name in required_settings if name not in settings]
     if missing_settings:
         raise RuntimeError(f"Missing settings: {', '.join(missing_settings)}")
-    if "Oval 1-2" not in blocks:
+    if args.scenario == "oval" and "Oval 1-2" not in blocks:
         raise RuntimeError("Flight plan must provide an 'Oval 1-2' block")
     launch_block = blocks.get("Takeoff")
     if launch_block is None:
@@ -651,7 +708,7 @@ def main():
             time.sleep(args.measure_seconds / args.time_factor)
             contacts = read_contacts(prefix.with_suffix(".simulator.log"))
             if not contacts:
-                raise RuntimeError("First-contact record missing; build NPS with USER_CFLAGS=-DNPS_JSBSIM_CONTACT_LOG=1")
+                raise RuntimeError("First-contact record missing; the aircraft NPS target must define NPS_JSBSIM_CONTACT_LOG=1")
             metrics = landing_metrics(recorder.snapshot(), flight_plan, start_time, ground_altitude, contacts,
                                       belly_contacts, max_sample_gap=0.3 * args.time_factor,
                                       wingtip_contacts=wingtip_contacts,
@@ -660,12 +717,14 @@ def main():
             print(json.dumps(metrics, indent=2))
             if not metrics["stop_confirmed"]:
                 raise RuntimeError("Final stopping position is unconfirmed: contact log and stable two-second stop required")
+            if metrics["go_around_samples"]:
+                raise RuntimeError("Normal landing entered the go-around block")
             if not metrics["landing_pass"]:
-                raise RuntimeError("Aircraft did not stop with engine off inside the 20 x 5 m precision area")
+                raise RuntimeError("Aircraft did not stop with engine off inside Takeoff_Landing_zone_Fixedwing")
             if not metrics["preferred_landing_pass"]:
-                print("Final-position precision passed; first contact outside the box remains a tuning objective")
-            if metrics["contact_review_required"]:
-                print("Final-position precision passed; contact/settling diagnostics require separate review")
+                raise RuntimeError(f"Aircraft stopped more than {LANDING_PRECISION_RADIUS_M:.1f} m from TD")
+            if not metrics["strict_quality_pass"]:
+                raise RuntimeError("Landing contact or rollout failed strict quality checks")
             return
         settled_sample = recorder.snapshot()[-1]
         desired_altitude = settled_sample.get("desired_altitude")

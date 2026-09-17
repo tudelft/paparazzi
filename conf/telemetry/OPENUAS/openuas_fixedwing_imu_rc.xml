@@ -37,6 +37,7 @@
       <message name="RANGEFINDER"         period="0.3"/>
       <message name="FLIGHT_BENCHMARK"    period="0.6"/>
       <message name="WIND_INFO_RET"       period="2.3"/>
+      <message name="DEBUG_VECT"          period="0.2"/>
     </mode>
     <mode name="mesh" key_press="h">
       <message name="MESH_STATE"        period="1.5"     phase="0.006667"/>  <!-- t0=   0.00 s, 30 B on the wire; hybrid MAC gates actual emission. -->

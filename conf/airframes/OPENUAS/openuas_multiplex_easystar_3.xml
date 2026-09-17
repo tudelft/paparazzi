@@ -214,6 +214,7 @@
          openuas_jsbsim_easystar_3 with the same ETECS tuning -->
     <target name="nps" board="pc">
       <module name="fdm" type="jsbsim"/>
+      <define name="NPS_JSBSIM_CONTACT_LOG" value="1"/>
           <!--<define name="AHRS_FC_MAG_IDS_BARO_ID" value="BARO_SIM_SENDER_ID"/>-->
       <!--<define name="INS_BARO_ID" value="BARO_SIM_SENDER_ID"/>-->
       <define name="NPS_ROLL_TRIM" value="0" description="The symmetric JSBSim model does not have the real airframe's roll-trim bias."/>
@@ -915,9 +916,11 @@
     <define name="FINAL_HEIGHT" value="17.0" unit="m"/>
     <define name="BRAKE_AGL" value="3.5" unit="m"/>
     <define name="FLARE_AGL" value="1.2" unit="m"/>
-    <define name="AIM_BEFORE_TD" value="12.0" unit="m"/>
+    <define name="AIM_BEFORE_TD" value="11.8" unit="m"/>
+    <define name="STOP_DISTANCE" value="0.45" unit="m"/>
     <define name="TOUCHDOWN_PITCH" value="-1.0"/><!-- Flight-plan variable is in degrees. -->
-    <define name="FLARE_BRAKE" value="0.67"/>
+    <define name="FLARE_BRAKE" value="0.30"/>
+    <define name="MAX_RETRIES" value="0"/>
   </section>
 
   <!-- 

@@ -4,10 +4,62 @@ import tempfile
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
-from nps_fixedwing_tuning import FlightRecorder, PprzMessage, landing_metrics, parse_setting_overrides, belly_contact_indexes, wingtip_contact_indexes
+from nps_fixedwing_tuning import FlightRecorder, PprzMessage, landing_metrics, parse_setting_overrides, belly_contact_indexes, flight_plan_data, wingtip_contact_indexes
 
 
 class LandingBrakeOwnershipTest(unittest.TestCase):
+    def test_landing_simulation_diagnostics_are_enabled(self):
+        home = Path(__file__).resolve().parents[3]
+        for name in ("openuas_zohd_talon_250g", "openuas_multiplex_easystar_3"):
+            with self.subTest(airframe=name):
+                airframe = ET.parse(home / "conf/airframes/OPENUAS" / f"{name}.xml").getroot()
+                nps = airframe.find("./firmware/target[@name='nps']")
+                contact_log = nps.find("./define[@name='NPS_JSBSIM_CONTACT_LOG']")
+                self.assertEqual(contact_log.get("value"), "1")
+        telemetry = ET.parse(home / "conf/telemetry/OPENUAS/openuas_fixedwing_imu_rc.xml").getroot()
+        debug = telemetry.find("./process/mode[@name='default']/message[@name='DEBUG_VECT']")
+        self.assertIsNotNone(debug)
+
+    def test_generated_include_block_names_are_resolved_from_valid_xml(self):
+        source = """<flight_plan alt="50" ground_alt="0">
+  <waypoints><waypoint name="AF" x="0" y="0" alt="10"/></waypoints>
+  <blocks>
+    <block name="Testing.final" no="9" cond="ready&amp;&amp;valid"/>
+    <block name="Testing.go_around" no="11"/>
+  </blocks>
+</flight_plan>"""
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "flight_plan.xml"
+            path.write_text(source)
+            blocks = flight_plan_data(path)["blocks"]
+        self.assertEqual(blocks["final"], 9)
+        self.assertEqual(blocks["go_around"], 11)
+        self.assertEqual(blocks["go-around"], 11)
+
+    def test_generated_enu_waypoints_replace_xml_utm_coordinates(self):
+        source = """<flight_plan alt="50" ground_alt="0">
+    <waypoints>
+        <waypoint name="AF" x="-13.1" y="52.3" alt="20"/>
+        <waypoint name="TD" x="-22.0" y="201.0" alt="0"/>
+    </waypoints>
+    <blocks><block name="final" no="9"/></blocks>
+</flight_plan>"""
+        header = """#define WP_AF 0
+#define WP_TD 1
+#define WAYPOINTS_ENU { \\
+ {-13.89, 52.11, 20.00}, \\
+ {-25.04, 200.71, -0.00}, \\
+};
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "flight_plan.xml"
+            header_path = Path(directory) / "flight_plan.h"
+            path.write_text(source)
+            header_path.write_text(header)
+            waypoints = flight_plan_data(path, header_path)["waypoints"]
+        self.assertEqual(waypoints["AF"], {"x": -13.89, "y": 52.11, "alt": 20.0})
+        self.assertEqual(waypoints["TD"], {"x": -25.04, "y": 200.71, "alt": 0.0})
+
     def test_manual_rc_cannot_latch_autonomous_brakes(self):
         home = Path(__file__).resolve().parents[3]
         for name in ("openuas_zohd_talon_250g", "openuas_multiplex_easystar_3"):
@@ -135,25 +187,22 @@ int main(void) {
 
     def test_braking_blocks_retract_on_exit(self):
         home = Path(__file__).resolve().parents[3]
-        plan = ET.parse(home / "conf/flight_plans/TUDELFT/tudelft_imav2026_o_test_pricise_landing.xml").getroot()
-        for name in ("Crow brake bench test", "flare"):
-            with self.subTest(block=name):
-                self.assertEqual(plan.find(f"./blocks/block[@name='{name}']").get("on_exit"),
-                                 "precision_landing_stop()")
-                final = plan.find("./blocks/block[@name='final']")
-                self.assertEqual(final.get("on_exit"), "precision_landing_release()")
-                self.assertEqual(final.get("pre_call"), "precision_landing_run()")
-                self.assertEqual(plan.find("./blocks/block[@name='go-around']").get("on_enter"),
+        plan = ET.parse(home / "conf/flight_plans/TUDELFT/tudelft_include_imav2026_test_precision_landing.xml").getroot()
+        final = plan.find("./blocks/block[@name='final']")
+        self.assertEqual(final.get("on_exit"), "precision_landing_release()")
+        self.assertEqual(final.get("pre_call"), "precision_landing_run()")
+        self.assertEqual(plan.find("./blocks/block[@name='flare']").get("on_exit"),
+                         "precision_landing_stop()")
+        self.assertEqual(plan.find("./blocks/block[@name='go_around']").get("on_enter"),
                          "precision_landing_check_abort()")
-                self.assertIsNone(plan.find("./blocks/block[@name='flare']/set[@var='autopilot.kill_throttle']"))
-                self.assertNotIn("NavSetGroundReferenceHere()", ET.tostring(plan, encoding="unicode"))
-                for name in ("Wait GPS", "Geo init", "Holding point", "Takeoff", "Standby",
-                             "Oval 1-2", "XOval 1-2", "Survey S1-S2"):
-                    self.assertEqual(plan.find(f"./blocks/block[@name='{name}']").get("on_enter"),
-                                     "precision_landing_stop()")
-                for name in ("land", "retry decision"):
-                    self.assertEqual(plan.find(f"./blocks/block[@name='{name}']/exception").get("cond"),
-                                     "!precision_landing_is_active()")
+        self.assertIsNone(plan.find("./blocks/block[@name='flare']/set[@var='autopilot.kill_throttle']"))
+        self.assertNotIn("NavSetGroundReferenceHere()", ET.tostring(plan, encoding="unicode"))
+        for name in ("Wait GPS", "Geo init", "Holding point", "Takeoff", "Standby"):
+            self.assertEqual(plan.find(f"./blocks/block[@name='{name}']").get("on_enter"),
+                             "precision_landing_stop()")
+        for name in ("land", "retry decision"):
+            self.assertEqual(plan.find(f"./blocks/block[@name='{name}']/exception").get("cond"),
+                             "!precision_landing_is_active()")
 
 
 class LandingMetricsTest(unittest.TestCase):
@@ -306,7 +355,11 @@ class LandingMetricsTest(unittest.TestCase):
 
     def setUp(self):
         self.plan = {"blocks": {"final": 2, "flare": 3, "go-around": 4},
-                     "waypoints": {"AF": {"x": -100, "y": 0}, "TD": {"x": 0, "y": 0}}}
+                     "waypoints": {"AF": {"x": -100, "y": 0}, "TD": {"x": 0, "y": 0}},
+                     "landing_sector": [
+                         {"x": -10, "y": -2.5}, {"x": 10, "y": -2.5},
+                         {"x": 10, "y": 2.5}, {"x": -10, "y": 2.5}
+                     ]}
         self.sample = {"time": 5, "nav_block": 3, "altitude": 0.1, "east": -6, "north": 0.5,
                        "east_speed": 8, "north_speed": 0, "down_speed": 0.8, "pitch": 3, "roll": 0,
                        "throttle": 0, "command_throttle": 0}
@@ -315,13 +368,25 @@ class LandingMetricsTest(unittest.TestCase):
         result = landing_metrics([self.sample], self.plan, 4, 0)
         self.assertEqual(result["touchdown_longitudinal_m"], -6)
         self.assertEqual(result["touchdown_cross_track_m"], -0.5)
-        self.assertTrue(result["touchdown_inside_precision_box"])
+        self.assertTrue(result["touchdown_inside_landing_sector"])
+        self.assertFalse(result["touchdown_inside_precision_box"])
         self.assertFalse(result["inside_precision_box"])
         self.assertIsNone(result["final_distance_to_td_m"])
 
     def test_crosswind_miss(self):
         self.sample["north"] = 3
         self.assertFalse(landing_metrics([self.sample], self.plan, 4, 0)["touchdown_inside_precision_box"])
+
+    def test_go_around_cannot_pass_as_landing(self):
+        samples = [dict(self.sample, time=5 + tick * 0.1, east_speed=0, north_speed=0, down_speed=0)
+                   for tick in range(31)]
+        samples[0]["nav_block"] = self.plan["blocks"]["go-around"]
+        contact = {"time": 5, "east": -6, "north": 0.5, "altitude": 0.1,
+                   "pitch": 3, "roll": 0, "sink": 0.8, "groundspeed": 8}
+        result = landing_metrics(samples, self.plan, 4, 0, [contact])
+        self.assertEqual(result["go_around_samples"], 1)
+        self.assertFalse(result["landing_pass"])
+        self.assertFalse(result["strict_quality_pass"])
 
     def test_bad_contact_is_not_accepted(self):
         self.sample["down_speed"] = 2.0
@@ -416,16 +481,16 @@ class LandingMetricsTest(unittest.TestCase):
         self.assertFalse(result["preferred_landing_pass"])
 
     def test_both_touch_and_stop_inside_is_preferred(self):
-        contact = dict(time=5, east=-6, north=0.5, altitude=0.1, pitch=-8, roll=0,
+        contact = dict(time=5, east=0, north=0.5, altitude=0.1, pitch=-8, roll=0,
                        sink=2, groundspeed=8, contact_index=1)
-        samples = [dict(self.sample, time=5 + tick * 0.1, east=1, north=0.5,
+        samples = [dict(self.sample, time=5 + tick * 0.1, east=0.5, north=0.5,
                         east_speed=0, north_speed=0, down_speed=0) for tick in range(31)]
         result = landing_metrics(samples, self.plan, 4, 0, [contact], (1, 2))
         self.assertTrue(result["landing_pass"])
         self.assertTrue(result["preferred_landing_pass"])
         self.assertFalse(result["strict_quality_pass"])
         self.assertTrue(result["contact_review_required"])
-        self.assertEqual(result["touchdown_to_stop_distance_m"], 7)
+        self.assertEqual(result["touchdown_to_stop_distance_m"], 0.5)
         samples[-1]["east_speed"] = 1
         result = landing_metrics(samples, self.plan, 4, 0, [contact], (1, 2))
         self.assertFalse(result["preferred_landing_pass"])

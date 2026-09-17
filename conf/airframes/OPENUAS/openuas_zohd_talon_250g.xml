@@ -287,6 +287,7 @@
       <!-- <configure name="TELEMETRY_FREQUENCY" value="50"/> -->
       <!-- <configure name="MODULES_FREQUENCY" value="500"/> -->
       <module name="fdm" type="jsbsim"/>
+      <define name="NPS_JSBSIM_CONTACT_LOG" value="1"/>
       <module name="radio_control" type="ppm"/>
       <define name="RADIO_MANUALRELEASE" value="RADIO_AUX2"/>
       <define name="RADIO_BRAKE" value="RADIO_AUX4"/>
@@ -895,7 +896,8 @@
     <define name="FINAL_HEIGHT" value="17.0" unit="m"/>
     <define name="BRAKE_AGL" value="3.5" unit="m"/>
     <define name="FLARE_AGL" value="2.0" unit="m"/>
-    <define name="AIM_BEFORE_TD" value="7.0" unit="m" description="Provisional NPS-derived aim for in-box first touch and final stop near TD; verify on the actual landing surface."/>
+    <define name="AIM_BEFORE_TD" value="7.0" unit="m" description="Provisional NPS-derived glide lead; verify on the actual landing surface."/>
+    <define name="STOP_DISTANCE" value="7.0" unit="m" description="Legacy effective stop correction retained until Talon-specific final-stop calibration is repeated."/>
     <define name="TOUCHDOWN_PITCH" value="4.0"/><!-- Flight-plan variable is in degrees. -->
     <define name="FLARE_BRAKE" value="0.30"/>
   </section>
