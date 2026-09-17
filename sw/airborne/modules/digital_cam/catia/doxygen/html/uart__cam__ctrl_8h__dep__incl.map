@@ -1,0 +1,5 @@
+<map id="uart_cam_ctrl.h" name="uart_cam_ctrl.h">
+<area shape="poly" id="Node000001" title="Public API for CATIA digital&#45;camera control over UART." alt="" coords="163,24,159,18,148,13,130,9,108,6,84,5,60,6,38,9,20,13,9,18,5,24,9,30,20,35,38,39,60,42,84,43,108,42,130,39,148,35,159,30"/>
+<area shape="poly" id="Node000002" href="$uart__cam__ctrl_8c.html" title="CATIA camera control and payload exchange over a serial link." alt="" coords="163,110,159,104,148,99,130,95,108,92,84,91,60,92,38,95,20,99,9,104,5,110,9,116,20,121,38,125,60,128,84,129,108,128,130,125,148,121,159,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="86,57,87,91,82,90,82,61"/>
+</map>
