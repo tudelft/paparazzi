@@ -20,6 +20,6 @@ var searchData=
   ['msg_5fid_17',['msg_id',['../structcatia__transport.html#a1fcc1fc1234c1624c957c10b2666d92f',1,'catia_transport']]],
   ['msg_5freceived_18',['msg_received',['../structcatia__transport.html#a3544eba977e978c5cd570ba3fe35c3b6',1,'catia_transport']]],
   ['mut_19',['mut',['../catia_8c.html#a61d8a205b71d88c28835fa36cfb254ac',1,'catia.c']]],
-  ['mutex_20',['mutex',['../pose__log_8c.html#a4acff8232e4aec9cd5c6dc200ac55ef3',1,'pose_log.c']]],
+  ['mutex_20',['mutex',['../structprogress__reporter.html#a189cdc76bc8e2263a0c79be979ada1d0',1,'progress_reporter::mutex'],['../pose__log_8c.html#a4acff8232e4aec9cd5c6dc200ac55ef3',1,'mutex:&#160;pose_log.c']]],
   ['mutex_5f_21',['mutex_',['../classFrameMailbox.html#ae0fb51809b0ebb8d39d58c5d47681040',1,'FrameMailbox']]]
 ];

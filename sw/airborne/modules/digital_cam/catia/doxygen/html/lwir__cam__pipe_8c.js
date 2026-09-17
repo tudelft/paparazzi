@@ -10,6 +10,7 @@ var lwir__cam__pipe_8c =
     [ "lwir_cam_pipe_process_mock", "lwir__cam__pipe_8c.html#a26db227b5f16ba500c36be4da6f134ad", null ],
     [ "lwir_cam_pipe_set_calibration", "lwir__cam__pipe_8c.html#aa66ad9d3fcd9ec67663eb151c58f6700", null ],
     [ "lwir_cam_pipe_set_native_raw", "lwir__cam__pipe_8c.html#a521267767395fefabd3db07491db68a0", null ],
+    [ "lwir_cam_pipe_set_photo_directory", "lwir__cam__pipe_8c.html#a521371d2d7a90c4eb51a63e1ebd9d92d", null ],
     [ "lwir_cam_pipe_shoot", "lwir__cam__pipe_8c.html#a16f290df8b2ead4aaa26a5bd0eaf6a83", null ],
     [ "lwir_cam_pipe_warmup", "lwir__cam__pipe_8c.html#a35df80f37f5a753ae2baef9d8eab6443", null ],
     [ "parse_capture_timing", "lwir__cam__pipe_8c.html#a79786091268d8b487e9c8110fa8ec451", null ],
@@ -25,6 +26,7 @@ var lwir__cam__pipe_8c =
     [ "capture_times", "lwir__cam__pipe_8c.html#ad2d5dedf5e57dc17bbcbdee9f61b6dbb", null ],
     [ "environ", "lwir__cam__pipe_8c.html#aa006daaf11f1e2e45a6ababaf463212b", null ],
     [ "native_raw_enabled", "lwir__cam__pipe_8c.html#ae58a1599e40c32a8c6af1435908c73f5", null ],
+    [ "photo_directory", "lwir__cam__pipe_8c.html#a095bc18d7a7fd917d84752f0bf8dc59a", null ],
     [ "status_buffer", "lwir__cam__pipe_8c.html#a9ccf3bf4ea342f2c79c447f109c8dd1e", null ],
     [ "status_buffer_pos", "lwir__cam__pipe_8c.html#af53674c96fc06634ebac1765033b4386", null ],
     [ "status_buffer_size", "lwir__cam__pipe_8c.html#a3e8e4fe82a3ce375912b4a808e0d0300", null ]

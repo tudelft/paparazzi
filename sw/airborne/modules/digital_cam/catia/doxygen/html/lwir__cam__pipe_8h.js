@@ -8,6 +8,7 @@ var lwir__cam__pipe_8h =
     [ "lwir_cam_pipe_process_mock", "lwir__cam__pipe_8h.html#a26db227b5f16ba500c36be4da6f134ad", null ],
     [ "lwir_cam_pipe_set_calibration", "lwir__cam__pipe_8h.html#aa66ad9d3fcd9ec67663eb151c58f6700", null ],
     [ "lwir_cam_pipe_set_native_raw", "lwir__cam__pipe_8h.html#a521267767395fefabd3db07491db68a0", null ],
+    [ "lwir_cam_pipe_set_photo_directory", "lwir__cam__pipe_8h.html#a521371d2d7a90c4eb51a63e1ebd9d92d", null ],
     [ "lwir_cam_pipe_shoot", "lwir__cam__pipe_8h.html#a16f290df8b2ead4aaa26a5bd0eaf6a83", null ],
     [ "lwir_cam_pipe_warmup", "lwir__cam__pipe_8h.html#a35df80f37f5a753ae2baef9d8eab6443", null ]
 ];

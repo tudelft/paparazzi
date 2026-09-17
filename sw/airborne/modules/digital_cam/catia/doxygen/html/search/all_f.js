@@ -11,13 +11,14 @@ var searchData=
   ['org_5fenv_5fparam_8',['org_env_param',['../structTempCalInfo__t.html#a61b4e6c7d2f79557632bb9f8586ec764',1,'TempCalInfo_t::org_env_param'],['../temperature_8cpp.html#a0260c112ea2fac58d3e6892a7bda51bd',1,'org_env_param:&#160;temperature.cpp']]],
   ['output_9',['output',['../pose__log_8c.html#ab41bf19330e50c3c7bf3544c53f30971',1,'pose_log.c']]],
   ['output_5ferror_10',['output_error',['../serial__tx_8c.html#a08f95f52b5ffd5149960f6e6461916ab',1,'serial_tx.c']]],
-  ['output_5ffd_11',['output_fd',['../serial__tx_8c.html#a64b3d5cd64cf39d736548d644bc73079',1,'serial_tx.c']]],
-  ['output_5ffmt_5fbgr888_12',['OUTPUT_FMT_BGR888',['../data_8h.html#aac50bdbfde8d2132ffaaacec1e496902a6cc037a050cda714e310976c53e0191b',1,'data.h']]],
-  ['output_5ffmt_5frgb888_13',['OUTPUT_FMT_RGB888',['../data_8h.html#aac50bdbfde8d2132ffaaacec1e496902a70ee2122e3867eb2485de7ea41e75297',1,'data.h']]],
-  ['output_5ffmt_5fy14_14',['OUTPUT_FMT_Y14',['../data_8h.html#aac50bdbfde8d2132ffaaacec1e496902ad59b3c989039586e9326b4633dfddb76',1,'data.h']]],
-  ['output_5ffmt_5fyuv422_15',['OUTPUT_FMT_YUV422',['../data_8h.html#aac50bdbfde8d2132ffaaacec1e496902ab391129504762bd43d3e05a5ccb4ac2d',1,'data.h']]],
-  ['output_5ffmt_5fyuv444_16',['OUTPUT_FMT_YUV444',['../data_8h.html#aac50bdbfde8d2132ffaaacec1e496902a674ab4af8214d0154c954b9b0362f005',1,'data.h']]],
-  ['output_5fformat_17',['output_format',['../structFrameInfo__t.html#a78ea3addab2f848ddb2110366a9c2c5e',1,'FrameInfo_t']]],
-  ['outputformat_5ft_18',['OutputFormat_t',['../data_8h.html#aac50bdbfde8d2132ffaaacec1e496902',1,'data.h']]],
-  ['overexposure_5fframe_5fcnt_19',['overexposure_frame_cnt',['../camera_8cpp.html#ad7b3885f06d431655b031b8b1aeef43c',1,'camera.cpp']]]
+  ['output_5ffailed_11',['output_failed',['../structprogress__reporter.html#a1bdd08ecca5e0a74e0ba654171c2b948',1,'progress_reporter']]],
+  ['output_5ffd_12',['output_fd',['../structprogress__reporter.html#a282e31f744730ebdfcb3d774c2ed2c41',1,'progress_reporter::output_fd'],['../serial__tx_8c.html#a64b3d5cd64cf39d736548d644bc73079',1,'output_fd:&#160;serial_tx.c']]],
+  ['output_5ffmt_5fbgr888_13',['OUTPUT_FMT_BGR888',['../data_8h.html#aac50bdbfde8d2132ffaaacec1e496902a6cc037a050cda714e310976c53e0191b',1,'data.h']]],
+  ['output_5ffmt_5frgb888_14',['OUTPUT_FMT_RGB888',['../data_8h.html#aac50bdbfde8d2132ffaaacec1e496902a70ee2122e3867eb2485de7ea41e75297',1,'data.h']]],
+  ['output_5ffmt_5fy14_15',['OUTPUT_FMT_Y14',['../data_8h.html#aac50bdbfde8d2132ffaaacec1e496902ad59b3c989039586e9326b4633dfddb76',1,'data.h']]],
+  ['output_5ffmt_5fyuv422_16',['OUTPUT_FMT_YUV422',['../data_8h.html#aac50bdbfde8d2132ffaaacec1e496902ab391129504762bd43d3e05a5ccb4ac2d',1,'data.h']]],
+  ['output_5ffmt_5fyuv444_17',['OUTPUT_FMT_YUV444',['../data_8h.html#aac50bdbfde8d2132ffaaacec1e496902a674ab4af8214d0154c954b9b0362f005',1,'data.h']]],
+  ['output_5fformat_18',['output_format',['../structFrameInfo__t.html#a78ea3addab2f848ddb2110366a9c2c5e',1,'FrameInfo_t']]],
+  ['outputformat_5ft_19',['OutputFormat_t',['../data_8h.html#aac50bdbfde8d2132ffaaacec1e496902',1,'data.h']]],
+  ['overexposure_5fframe_5fcnt_20',['overexposure_frame_cnt',['../camera_8cpp.html#ad7b3885f06d431655b031b8b1aeef43c',1,'camera.cpp']]]
 ];

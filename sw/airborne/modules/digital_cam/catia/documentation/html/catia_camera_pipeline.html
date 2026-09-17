@@ -2517,6 +2517,11 @@ described by its <code>ExecStart</code> line.</p>
 <td>Capture happens slightly after the trigger pose; this bounded correction can reduce that offset, but it is unvalidated, so it is off by default</td>
 </tr>
 <tr>
+<td><code>--speedtest</code></td>
+<td>Take one warm-up plus ten timed still photos with one selected real camera, report throughput, then exit</td>
+<td>Measures the camera's actual acquisition-and-JPEG-save path without confusing UART queueing, EXIF, or SODA time with camera speed</td>
+</tr>
+<tr>
 <td><code>--help</code> / <code>--version</code></td>
 <td>Print help or the build version</td>
 <td>Confirms which build is actually installed on MORA</td>
@@ -2525,6 +2530,46 @@ described by its <code>ExecStart</code> line.</p>
 </table>
 <p>Defaults are deliberately the safe, lean choice: no extra files, no extra UART
 traffic, no unvalidated corrections. Every option above only <em>adds</em> behavior.</p>
+<h3 id="camera-still-capture-speed-test">Camera Still-Capture Speed Test</h3>
+<p>Use <code>--speedtest</code> on the bench with exactly one real optical backend:</p>
+<pre><code class="language-sh">./catia --chdk --speedtest
+./catia --aicam --speedtest
+./catia --lwircam --speedtest
+</code></pre>
+<p>This is a standalone mode. Serial/local transport, mock/test, EARcam, debug,
+pose, clock, raw, calibration, and motion-compensation options are rejected. It
+claims CATIA's fixed loopback endpoint before opening the camera, preventing a
+race with the managed daemon. On MORA, stop and later restore that daemon:</p>
+<pre><code class="language-sh">sudo -n systemctl stop catia.service
+/home/air/digital_cam/catia --lwircam --speedtest
+sudo -n systemctl start catia.service
+</code></pre>
+<p>CATIA reports initialization separately, takes one untimed warm-up photo, then
+takes ten sequential timed photos through the selected backend's normal quality,
+timeout, JPEG validation, and recovery path. Any failed or invalid image aborts
+the run with nonzero status. <code>SIGINT</code>/<code>SIGTERM</code> stops after the current bounded
+backend call and still deinitializes the camera.</p>
+<p>Progress is emitted for every capture without putting terminal writes in the
+capture loop: that loop only queues fixed-size records, while a separate reporter
+uses bounded, nonblocking output. Monotonic timestamps immediately surround each
+<code>camera.shoot()</code> call.</p>
+<p>The report prints both photos per second and time per photo. For example,
+<code>0.150 photos/s (1 photo every 6.651 s)</code> means one photo takes about 6.65 seconds;
+it does not mean a 0.150-second capture. Conversely, <code>12.729 photos/s (1 photo
+every 0.079 s)</code> means about 12.7 photos per second, or 79 ms per photo.</p>
+<p><strong>Practical sustained speed</strong> is the main result and spans the first measured
+request through final completion. <strong>Average camera-call speed</strong> uses only summed
+backend capture time, excluding progress output. Average, fastest, and slowest
+capture times are also printed. <strong>Fastest single capture</strong> describes one observed
+sample and its equivalent rate, not a guaranteed continuous rate.</p>
+<p>The result measures camera acquisition and JPEG save, not complete flight-pipeline
+throughput. UART, worker queueing, EXIF, LWIR geolocation, SODA, and initialization
+are excluded. Repeat tests under representative light, storage, temperature, and
+camera settings before choosing an operational trigger interval.</p>
+<p>Each run atomically creates a private mode-0700 <code>speedtest-*</code> directory beneath
+the configured photo root and keeps its warm-up plus completed images there for
+quality inspection. Unused numbers from <code>900000</code> through <code>999999</code> are selected;
+normal mission photographs are not replaced or deleted.</p>
 <h3 id="sub-application-parameters">Sub-Application Parameters</h3>
 <p>CATIA starts these helpers itself and passes the matching options, so you
 normally only configure CATIA. Run them directly for bench work and analysis.</p>

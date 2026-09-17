@@ -16,6 +16,8 @@
  * @param unused Reserved common backend argument.
  * @return 0 after the server reports ready, otherwise -1. */
 int lwir_cam_pipe_init(const char *unused);
+/** @brief Override the output directory for an isolated standalone benchmark. */
+void lwir_cam_pipe_set_photo_directory(const char *directory);
 /** @brief Open, stabilize, and close the sensor without writing an image.
  * @return 0 after a stable warmup frame, otherwise -1. */
 int lwir_cam_pipe_warmup(void);

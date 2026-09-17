@@ -2203,10 +2203,78 @@ described by its `ExecStart` line.
 | `--lwir-calibration FILE` | Camera YAML used to turn LWIR hotspots into coordinates | Without measured optics and mounting, no hotspot can become a trustworthy latitude/longitude; naming the file prevents silently using a stale or wrong calibration |
 | `--lwir-raw` | Keep `photos/lNNNNNN.jpg.raw` instead of storing temperatures in the JPEG | Calibration and evidence work may want the untouched combined sensor frame; the default single file is smaller and simpler to recover |
 | `--lwir-motion-compensation` | Advance LWIR GPS over the measured capture delay | Capture happens slightly after the trigger pose; this bounded correction can reduce that offset, but it is unvalidated, so it is off by default |
+| `--speedtest` | Take one warm-up plus ten timed still photos with one selected real camera, report throughput, then exit | Measures the camera's actual acquisition-and-JPEG-save path without confusing UART queueing, EXIF, or SODA time with camera speed |
 | `--help` / `--version` | Print help or the build version | Confirms which build is actually installed on MORA |
 
 Defaults are deliberately the safe, lean choice: no extra files, no extra UART
 traffic, no unvalidated corrections. Every option above only *adds* behavior.
+
+### Camera Still-Capture Speed Test
+
+Use `--speedtest` on the bench to measure the maximum observed and sustained
+still-photo rate of one real optical camera:
+
+```sh
+./catia --chdk --speedtest
+./catia --aicam --speedtest
+./catia --lwircam --speedtest
+```
+
+The option is deliberately standalone. It requires exactly one of `--chdk`,
+`--aicam`, or `--lwircam` and rejects serial/local transport, mock/test,
+EARcam, debug, pose, clock, raw, calibration, and motion-compensation options.
+It claims CATIA's fixed loopback endpoint before touching the camera, so it
+cannot race the managed daemon or another benchmark. On MORA, stop the managed
+service first and restore it after the test:
+
+```sh
+sudo -n systemctl stop catia.service
+/home/air/digital_cam/catia --lwircam --speedtest
+sudo -n systemctl start catia.service
+```
+
+The selected backend is initialized once. Initialization is timed and reported
+separately, then one untimed warm-up photo is taken before ten sequential timed
+photos. Each call uses the normal backend's quality settings, timeout, JPEG/file
+validation, and recovery behavior; notably, LWIR exercises the persistent warm
+capture server and its one bounded restart retry. The test aborts on the first
+failed or invalid image and returns nonzero rather than averaging a failure away.
+`SIGINT`/`SIGTERM` stops after the current bounded backend call and always runs
+backend cleanup.
+
+Every capture prints started/completed progress, but terminal I/O is not in the
+capture path. The capture thread only enqueues fixed-size in-memory records. A
+separate reporter uses bounded, nonblocking writes; a stalled terminal therefore
+cannot delay the next camera request or camera cleanup. `CLOCK_MONOTONIC` timestamps
+are recorded immediately around `camera.shoot()`.
+
+The report always gives speed in both directions: **photos per second** and
+**time for one photo**. Read them as reciprocals, not as the same unit:
+
+- `0.150 photos/s (1 photo every 6.651 s)` means one photo takes about 6.65
+   seconds. It does **not** mean one photo takes 0.150 seconds;
+- `12.729 photos/s (1 photo every 0.079 s)` means about 12.7 photos fit in one
+   second, or about 79 ms for each photo.
+
+The **practical sustained speed** is the main result. It spans the first timed
+request through the final completion, including the tiny in-memory gaps between
+requests. **Average camera-call speed** uses only time inside the ten backend
+capture calls, so progress printing is excluded. The report also shows average,
+fastest, and slowest capture times. **Fastest single capture** is one observed
+sample and its equivalent rate; it is not a guaranteed continuous rate.
+
+These are acquisition-and-JPEG-save measurements. They intentionally exclude
+UART reception, CATIA worker queueing, flight EXIF, LWIR hotspot geolocation,
+SODA, and camera initialization. They therefore do not claim complete mission
+pipeline throughput. One run also cannot guarantee a camera's physical maximum;
+repeat under representative lighting, storage, temperature, and camera settings.
+
+Photos are never silently deleted. Each run atomically creates a private mode-0700
+`speedtest-*` directory under the configured camera photo root, then uses unused
+numbers in the `900000` through `999999` range. The warm-up and all completed
+samples remain there for focus, exposure, motion-blur, and thermal-quality review.
+The private directory plus CATIA's exclusive ownership prevents replacement of
+normal mission images.
 
 One behavior is not a flag because it always applies: at every startup (outside
 `--test`/`--local`), CATIA briefly opens the LWIR sensor, waits past its

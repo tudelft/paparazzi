@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['sample_0',['sample',['../structpose__record.html#a2ab7c0722d3c4fc51fd4bcd6edfc00c2',1,'pose_record::sample'],['../unioncatia__pose__clocked__union.html#a8717c483732343bd27018e467ef35a0a',1,'catia_pose_clocked_union::sample']]],
+  ['sample_0',['sample',['../structprogress__record.html#af5d5b635c72775e2537879a136b5a31e',1,'progress_record::sample'],['../structpose__record.html#a2ab7c0722d3c4fc51fd4bcd6edfc00c2',1,'pose_record::sample'],['../unioncatia__pose__clocked__union.html#a8717c483732343bd27018e467ef35a0a',1,'catia_pose_clocked_union::sample']]],
   ['sample_5fbegin_5fus_1',['sample_begin_us',['../unioncatia__pose__sample__union.html#aee1a4d8c7f8023873c676e0d23ff4b79',1,'catia_pose_sample_union']]],
   ['sample_5fcount_2',['sample_count',['../structear__loudest__spot.html#ac0d288a8c2749fa29defb457704d1e74',1,'ear_loudest_spot::sample_count'],['../unioncatia__ear__result__union.html#afcf87bb318c7e197fff8e915b7b7b3ab',1,'catia_ear_result_union::sample_count']]],
   ['sample_5fend_5fus_3',['sample_end_us',['../unioncatia__pose__sample__union.html#a2485b196f1d38f821dd4cb2a77c1dddb',1,'catia_pose_sample_union']]],
@@ -23,7 +23,7 @@ var searchData=
   ['session_5flog_20',['session_log',['../ear__cam__pipe_8c.html#aff2359f7dd6c4bf1d53b708b9817643d',1,'ear_cam_pipe.c']]],
   ['session_5flog_5fpath_21',['session_log_path',['../ear__cam__pipe_8c.html#a3b34f4dfa84e4df8f09a9004e651a9b1',1,'ear_cam_pipe.c']]],
   ['setup_22',['setup',['../chdk__pipe_8c.html#a37b99b49068f3fa73935b0879c41a536',1,'chdk_pipe.c']]],
-  ['shoot_23',['shoot',['../structcamera__backend.html#a7ed0be57dfd68f60bfa5b18abc437e9b',1,'camera_backend']]],
+  ['shoot_23',['shoot',['../structcamera__speedtest__config.html#afd72e372e9d96db5812484577061e8fc',1,'camera_speedtest_config::shoot'],['../structcamera__backend.html#a7ed0be57dfd68f60bfa5b18abc437e9b',1,'camera_backend::shoot']]],
   ['shooting_5fcount_24',['shooting_count',['../catia_8c.html#af9c5b87af2f39d1a4e10419cf18363fe',1,'catia.c']]],
   ['shooting_5fthread_5fcount_25',['shooting_thread_count',['../catia_8c.html#a7c3a5c2a110101301be69c3533d846d7',1,'catia.c']]],
   ['shot_26',['shot',['../structcapture__job.html#a19d05c2bcdab998a925eb1f030923913',1,'capture_job::shot'],['../uniondc__shot__mask__union.html#a3d078fb4f8c346c6b4d279d157ff506d',1,'dc_shot_mask_union::shot'],['../uniondc__shot__targeted__union.html#af2346912ee0c4a0f3dd942e1f650b868',1,'dc_shot_targeted_union::shot'],['../unioncatia__pose__sample__union.html#a7c72e9cbb79cd6331ee929c748ffe365',1,'catia_pose_sample_union::shot']]],
@@ -47,10 +47,12 @@ var searchData=
   ['status_5fbuffer_44',['status_buffer',['../lwir__cam__pipe_8c.html#a9ccf3bf4ea342f2c79c447f109c8dd1e',1,'lwir_cam_pipe.c']]],
   ['status_5fbuffer_5fpos_45',['status_buffer_pos',['../lwir__cam__pipe_8c.html#af53674c96fc06634ebac1765033b4386',1,'lwir_cam_pipe.c']]],
   ['status_5fbuffer_5fsize_46',['status_buffer_size',['../lwir__cam__pipe_8c.html#a3e8e4fe82a3ce375912b4a808e0d0300',1,'lwir_cam_pipe.c']]],
-  ['stopped_5f_47',['stopped_',['../classFrameMailbox.html#a8bf2640f85efb8267a213e424744d84a',1,'FrameMailbox']]],
-  ['stopping_48',['stopping',['../pose__log_8c.html#a3065b71ea2455fb184ad978b7a8bd496',1,'pose_log.c']]],
-  ['stream_5ftime_49',['stream_time',['../camera_8cpp.html#a2b31a8161cda409044bab675506e673b',1,'stream_time:&#160;camera.cpp'],['../data_8h.html#a2b31a8161cda409044bab675506e673b',1,'stream_time:&#160;camera.cpp']]],
-  ['switch_5fframe_5fcnt_50',['switch_frame_cnt',['../structAutoGainSwitchInfo__t.html#af4a26ffdd0bf8bf744cb5c4a914f59f8',1,'AutoGainSwitchInfo_t']]],
-  ['switched_5fflag_51',['switched_flag',['../structAutoGainSwitchInfo__t.html#acc1a803791dbc66d330a577ea16fb6fc',1,'AutoGainSwitchInfo_t']]],
-  ['synced_52',['synced',['../structpose__log__stats.html#afed057fdb1c82c64cb39674c2f35e1ba',1,'pose_log_stats::synced'],['../pose__log_8c.html#af0275b5a7e07ba6eac104c8402e0ce34',1,'synced:&#160;pose_log.c']]]
+  ['stdout_5fflags_47',['stdout_flags',['../structprogress__reporter.html#a2105da9362c6a638e635ec432b4e43ba',1,'progress_reporter']]],
+  ['stopped_5f_48',['stopped_',['../classFrameMailbox.html#a8bf2640f85efb8267a213e424744d84a',1,'FrameMailbox']]],
+  ['stopping_49',['stopping',['../structprogress__reporter.html#ac710b4e48f529262d5fc7b8f5cfcc637',1,'progress_reporter::stopping'],['../pose__log_8c.html#a3065b71ea2455fb184ad978b7a8bd496',1,'stopping:&#160;pose_log.c']]],
+  ['stream_5ftime_50',['stream_time',['../camera_8cpp.html#a2b31a8161cda409044bab675506e673b',1,'stream_time:&#160;camera.cpp'],['../data_8h.html#a2b31a8161cda409044bab675506e673b',1,'stream_time:&#160;camera.cpp']]],
+  ['succeeded_51',['succeeded',['../structprogress__record.html#abb78e1bf92b610d67bab0e21af80d84f',1,'progress_record']]],
+  ['switch_5fframe_5fcnt_52',['switch_frame_cnt',['../structAutoGainSwitchInfo__t.html#af4a26ffdd0bf8bf744cb5c4a914f59f8',1,'AutoGainSwitchInfo_t']]],
+  ['switched_5fflag_53',['switched_flag',['../structAutoGainSwitchInfo__t.html#acc1a803791dbc66d330a577ea16fb6fc',1,'AutoGainSwitchInfo_t']]],
+  ['synced_54',['synced',['../structpose__log__stats.html#afed057fdb1c82c64cb39674c2f35e1ba',1,'pose_log_stats::synced'],['../pose__log_8c.html#af0275b5a7e07ba6eac104c8402e0ce34',1,'synced:&#160;pose_log.c']]]
 ];

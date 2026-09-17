@@ -12,6 +12,8 @@ var searchData=
   ['source_5flevel_5fdb_5fspl_9',['SOURCE_LEVEL_DB_SPL',['../earcam_8c.html#a071b637a75949e358a4d65b86017bce9',1,'earcam.c']]],
   ['source_5freference_5fmeters_10',['SOURCE_REFERENCE_METERS',['../earcam_8c.html#add7437aa3fd7ca7052c2fea6038b2612',1,'earcam.c']]],
   ['speed_5fbfp_5fscale_11',['SPEED_BFP_SCALE',['../catia_8c.html#a2f8846a3a9f183a27fb10a1987f8be7a',1,'SPEED_BFP_SCALE:&#160;catia.c'],['../image__exif_8c.html#a2f8846a3a9f183a27fb10a1987f8be7a',1,'SPEED_BFP_SCALE:&#160;image_exif.c'],['../image__mock__transform_8c.html#a2f8846a3a9f183a27fb10a1987f8be7a',1,'SPEED_BFP_SCALE:&#160;image_mock_transform.c']]],
-  ['stx_12',['STX',['../protocol_8h.html#aacd744a917e61146ec8b7175b4761683',1,'protocol.h']]],
-  ['success_13',['SUCCESS',['../cmd_8h.html#aa90cac659d18e8ef6294c7ae337f6b58',1,'cmd.h']]]
+  ['speedtest_5ffilename_5fsize_12',['SPEEDTEST_FILENAME_SIZE',['../camera__speedtest_8c.html#ad2b102d8cdf54159f37003c077c7d828',1,'camera_speedtest.c']]],
+  ['speedtest_5fprogress_5fcapacity_13',['SPEEDTEST_PROGRESS_CAPACITY',['../camera__speedtest_8c.html#ad68ba529467f62b361db494ffbededae',1,'camera_speedtest.c']]],
+  ['stx_14',['STX',['../protocol_8h.html#aacd744a917e61146ec8b7175b4761683',1,'protocol.h']]],
+  ['success_15',['SUCCESS',['../cmd_8h.html#aa90cac659d18e8ef6294c7ae337f6b58',1,'cmd.h']]]
 ];

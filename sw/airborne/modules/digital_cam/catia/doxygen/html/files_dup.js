@@ -3,6 +3,8 @@ var files_dup =
     [ "ai_cam_pipe.c", "ai__cam__pipe_8c.html", "ai__cam__pipe_8c" ],
     [ "ai_cam_pipe.h", "ai__cam__pipe_8h.html", "ai__cam__pipe_8h" ],
     [ "boot_id.h", "boot__id_8h.html", "boot__id_8h" ],
+    [ "camera_speedtest.c", "camera__speedtest_8c.html", "camera__speedtest_8c" ],
+    [ "camera_speedtest.h", "camera__speedtest_8h.html", "camera__speedtest_8h" ],
     [ "capture_timing.h", "capture__timing_8h.html", "capture__timing_8h" ],
     [ "catia.c", "catia_8c.html", "catia_8c" ],
     [ "chdk_pipe.c", "chdk__pipe_8c.html", "chdk__pipe_8c" ],

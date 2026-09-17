@@ -126,6 +126,8 @@ This graph shows which files directly or indirectly include this file:</div>
 Functions</h2></td></tr>
 <tr class="memitem:a07758eee81f96bfb66b71629c078a02e" id="r_a07758eee81f96bfb66b71629c078a02e"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a07758eee81f96bfb66b71629c078a02e">ai_cam_pipe_init</a> (const char *unused)</td></tr>
 <tr class="memdesc:a07758eee81f96bfb66b71629c078a02e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Validate configured AICam storage before shots are accepted.  <br /></td></tr>
+<tr class="memitem:ac3ee22a8e70b13f96bc766854f8e7164" id="r_ac3ee22a8e70b13f96bc766854f8e7164"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac3ee22a8e70b13f96bc766854f8e7164">ai_cam_pipe_set_photo_directory</a> (const char *directory)</td></tr>
+<tr class="memdesc:ac3ee22a8e70b13f96bc766854f8e7164"><td class="mdescLeft">&#160;</td><td class="mdescRight">Override the output directory for an isolated standalone benchmark.  <br /></td></tr>
 <tr class="memitem:a33d4fed2f707102886f97354c2387d3e" id="r_a33d4fed2f707102886f97354c2387d3e"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a33d4fed2f707102886f97354c2387d3e">ai_cam_pipe_shoot</a> (char *filename, size_t filename_size, int image_number)</td></tr>
 <tr class="memdesc:a33d4fed2f707102886f97354c2387d3e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Capture a JPEG with rpicam-still.  <br /></td></tr>
 <tr class="memitem:a84eaefcc456ee9d4f2c8f595e16259b8" id="r_a84eaefcc456ee9d4f2c8f595e16259b8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a84eaefcc456ee9d4f2c8f595e16259b8">ai_cam_pipe_deinit</a> (void)</td></tr>
@@ -178,6 +180,25 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>0 on readiness or -1 on configuration/storage failure. </dd></dl>
+
+</div>
+</div>
+<a id="ac3ee22a8e70b13f96bc766854f8e7164" name="ac3ee22a8e70b13f96bc766854f8e7164"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac3ee22a8e70b13f96bc766854f8e7164">&#9670;&#160;</a></span>ai_cam_pipe_set_photo_directory()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ai_cam_pipe_set_photo_directory </td>
+          <td>(</td>
+          <td class="paramtype">const char *</td>          <td class="paramname"><span class="paramname"><em>directory</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Override the output directory for an isolated standalone benchmark. </p>
 
 </div>
 </div>

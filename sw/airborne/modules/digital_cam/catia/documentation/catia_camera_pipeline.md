@@ -2202,10 +2202,64 @@ described by its `ExecStart` line.
 | `--lwir-calibration FILE` | Camera YAML used to turn LWIR hotspots into coordinates | Without measured optics and mounting, no hotspot can become a trustworthy latitude/longitude; naming the file prevents silently using a stale or wrong calibration |
 | `--lwir-raw` | Keep `photos/lNNNNNN.jpg.raw` instead of storing temperatures in the JPEG | Calibration and evidence work may want the untouched combined sensor frame; the default single file is smaller and simpler to recover |
 | `--lwir-motion-compensation` | Advance LWIR GPS over the measured capture delay | Capture happens slightly after the trigger pose; this bounded correction can reduce that offset, but it is unvalidated, so it is off by default |
+| `--speedtest` | Take one warm-up plus ten timed still photos with one selected real camera, report throughput, then exit | Measures the camera's actual acquisition-and-JPEG-save path without confusing UART queueing, EXIF, or SODA time with camera speed |
 | `--help` / `--version` | Print help or the build version | Confirms which build is actually installed on MORA |
 
 Defaults are deliberately the safe, lean choice: no extra files, no extra UART
 traffic, no unvalidated corrections. Every option above only *adds* behavior.
+
+### Camera Still-Capture Speed Test
+
+Use `--speedtest` on the bench with exactly one real optical backend:
+
+```sh
+./catia --chdk --speedtest
+./catia --aicam --speedtest
+./catia --lwircam --speedtest
+```
+
+This is a standalone mode. Serial/local transport, mock/test, EARcam, debug,
+pose, clock, raw, calibration, and motion-compensation options are rejected. It
+claims CATIA's fixed loopback endpoint before opening the camera, preventing a
+race with the managed daemon. On MORA, stop and later restore that daemon:
+
+```sh
+sudo -n systemctl stop catia.service
+/home/air/digital_cam/catia --lwircam --speedtest
+sudo -n systemctl start catia.service
+```
+
+CATIA reports initialization separately, takes one untimed warm-up photo, then
+takes ten sequential timed photos through the selected backend's normal quality,
+timeout, JPEG validation, and recovery path. Any failed or invalid image aborts
+the run with nonzero status. `SIGINT`/`SIGTERM` stops after the current bounded
+backend call and still deinitializes the camera.
+
+Progress is emitted for every capture without putting terminal writes in the
+capture loop: that loop only queues fixed-size records, while a separate reporter
+uses bounded, nonblocking output. Monotonic timestamps immediately surround each
+`camera.shoot()` call.
+
+The report prints both photos per second and time per photo. For example,
+`0.150 photos/s (1 photo every 6.651 s)` means one photo takes about 6.65 seconds;
+it does not mean a 0.150-second capture. Conversely, `12.729 photos/s (1 photo
+every 0.079 s)` means about 12.7 photos per second, or 79 ms per photo.
+
+**Practical sustained speed** is the main result and spans the first measured
+request through final completion. **Average camera-call speed** uses only summed
+backend capture time, excluding progress output. Average, fastest, and slowest
+capture times are also printed. **Fastest single capture** describes one observed
+sample and its equivalent rate, not a guaranteed continuous rate.
+
+The result measures camera acquisition and JPEG save, not complete flight-pipeline
+throughput. UART, worker queueing, EXIF, LWIR geolocation, SODA, and initialization
+are excluded. Repeat tests under representative light, storage, temperature, and
+camera settings before choosing an operational trigger interval.
+
+Each run atomically creates a private mode-0700 `speedtest-*` directory beneath
+the configured photo root and keeps its warm-up plus completed images there for
+quality inspection. Unused numbers from `900000` through `999999` are selected;
+normal mission photographs are not replaced or deleted.
 
 ### Sub-Application Parameters
 

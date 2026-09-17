@@ -47,6 +47,12 @@ static double capture_delay_s = -1;
 static struct capture_timing capture_times;
 static bool native_raw_enabled;
 static const char *calibration_path;
+static const char *photo_directory = CATIA_LWIR_CAM_PHOTO_DIR;
+
+void lwir_cam_pipe_set_photo_directory(const char *directory)
+{
+  photo_directory = directory == NULL ? CATIA_LWIR_CAM_PHOTO_DIR : directory;
+}
 
 void lwir_cam_pipe_set_native_raw(int enabled)
 {
@@ -237,7 +243,7 @@ int lwir_cam_pipe_init(const char *unused)
 {
   (void)unused;
   char resolved_dir[PATH_MAX];
-  const char *photo_dir = catia_resolve_path(CATIA_LWIR_CAM_PHOTO_DIR, resolved_dir, sizeof(resolved_dir));
+  const char *photo_dir = catia_resolve_path(photo_directory, resolved_dir, sizeof(resolved_dir));
 
   if (catia_ensure_directory(photo_dir) != 0) {
     fprintf(stderr, "LWIR_CAM_PIPE:\tfailed to create photo directory %s: %s\n",
@@ -444,7 +450,7 @@ int lwir_cam_pipe_shoot(char *filename, size_t filename_size, int image_number)
   }
 
   char resolved_dir[PATH_MAX];
-  const char *photo_dir = catia_resolve_path(CATIA_LWIR_CAM_PHOTO_DIR, resolved_dir, sizeof(resolved_dir));
+  const char *photo_dir = catia_resolve_path(photo_directory, resolved_dir, sizeof(resolved_dir));
 
   int length = snprintf(filename, filename_size, "%s/l%06d.jpg",
                         photo_dir, image_number);

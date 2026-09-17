@@ -173,6 +173,8 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:a521371d2d7a90c4eb51a63e1ebd9d92d" id="r_a521371d2d7a90c4eb51a63e1ebd9d92d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a521371d2d7a90c4eb51a63e1ebd9d92d">lwir_cam_pipe_set_photo_directory</a> (const char *directory)</td></tr>
+<tr class="memdesc:a521371d2d7a90c4eb51a63e1ebd9d92d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Override the output directory for an isolated standalone benchmark.  <br /></td></tr>
 <tr class="memitem:a521267767395fefabd3db07491db68a0" id="r_a521267767395fefabd3db07491db68a0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a521267767395fefabd3db07491db68a0">lwir_cam_pipe_set_native_raw</a> (int enabled)</td></tr>
 <tr class="memdesc:a521267767395fefabd3db07491db68a0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Select whether successful captures keep an explicit .raw companion.  <br /></td></tr>
 <tr class="memitem:aa66ad9d3fcd9ec67663eb151c58f6700" id="r_aa66ad9d3fcd9ec67663eb151c58f6700"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa66ad9d3fcd9ec67663eb151c58f6700">lwir_cam_pipe_set_calibration</a> (const char *path)</td></tr>
@@ -217,6 +219,7 @@ Variables</h2></td></tr>
 <tr class="memitem:ad2d5dedf5e57dc17bbcbdee9f61b6dbb" id="r_ad2d5dedf5e57dc17bbcbdee9f61b6dbb"><td class="memItemLeft" align="right" valign="top">static struct <a class="el" href="structcapture__timing.html">capture_timing</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad2d5dedf5e57dc17bbcbdee9f61b6dbb">capture_times</a></td></tr>
 <tr class="memitem:ae58a1599e40c32a8c6af1435908c73f5" id="r_ae58a1599e40c32a8c6af1435908c73f5"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae58a1599e40c32a8c6af1435908c73f5">native_raw_enabled</a></td></tr>
 <tr class="memitem:a08f5f9d85b780b65adcbc992a518a73f" id="r_a08f5f9d85b780b65adcbc992a518a73f"><td class="memItemLeft" align="right" valign="top">static const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a08f5f9d85b780b65adcbc992a518a73f">calibration_path</a></td></tr>
+<tr class="memitem:a095bc18d7a7fd917d84752f0bf8dc59a" id="r_a095bc18d7a7fd917d84752f0bf8dc59a"><td class="memItemLeft" align="right" valign="top">static const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a095bc18d7a7fd917d84752f0bf8dc59a">photo_directory</a> = <a class="el" href="#ad999c70545ac1bfbe1913c978e251ee5">CATIA_LWIR_CAM_PHOTO_DIR</a></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>CATIA-side supervisor for the persistent LWIR capture-server process. </p>
@@ -438,6 +441,25 @@ Variables</h2></td></tr>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="a521371d2d7a90c4eb51a63e1ebd9d92d" name="a521371d2d7a90c4eb51a63e1ebd9d92d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a521371d2d7a90c4eb51a63e1ebd9d92d">&#9670;&#160;</a></span>lwir_cam_pipe_set_photo_directory()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void lwir_cam_pipe_set_photo_directory </td>
+          <td>(</td>
+          <td class="paramtype">const char *</td>          <td class="paramname"><span class="paramname"><em>directory</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Override the output directory for an isolated standalone benchmark. </p>
 
 </div>
 </div>
@@ -857,6 +879,28 @@ Variables</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">bool native_raw_enabled</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a095bc18d7a7fd917d84752f0bf8dc59a" name="a095bc18d7a7fd917d84752f0bf8dc59a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a095bc18d7a7fd917d84752f0bf8dc59a">&#9670;&#160;</a></span>photo_directory</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char* photo_directory = <a class="el" href="#ad999c70545ac1bfbe1913c978e251ee5">CATIA_LWIR_CAM_PHOTO_DIR</a></td>
         </tr>
       </table>
   </td>

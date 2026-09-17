@@ -36,12 +36,18 @@
 #endif
 
 extern char **environ;
+static const char *photo_directory = CATIA_AI_CAM_PHOTO_DIR;
+
+void ai_cam_pipe_set_photo_directory(const char *directory)
+{
+  photo_directory = directory == NULL ? CATIA_AI_CAM_PHOTO_DIR : directory;
+}
 
 int ai_cam_pipe_init(const char *unused)
 {
   (void)unused;
   char resolved_dir[PATH_MAX];
-  const char *photo_dir = catia_resolve_path(CATIA_AI_CAM_PHOTO_DIR, resolved_dir, sizeof(resolved_dir));
+  const char *photo_dir = catia_resolve_path(photo_directory, resolved_dir, sizeof(resolved_dir));
 
   if (catia_ensure_directory(photo_dir) != 0) {
     fprintf(stderr, "AI_CAM_PIPE:\tfailed to create photo directory %s: %s\n",
@@ -68,7 +74,7 @@ int ai_cam_pipe_shoot(char *filename, size_t filename_size, int image_number)
   }
 
   char resolved_dir[PATH_MAX];
-  const char *photo_dir = catia_resolve_path(CATIA_AI_CAM_PHOTO_DIR, resolved_dir, sizeof(resolved_dir));
+  const char *photo_dir = catia_resolve_path(photo_directory, resolved_dir, sizeof(resolved_dir));
 
   int length = snprintf(filename, filename_size, "%s/a%06d.jpg",
                         photo_dir, image_number);
@@ -86,10 +92,13 @@ int ai_cam_pipe_shoot(char *filename, size_t filename_size, int image_number)
   char *const arguments[] = {
     (char *)CATIA_AI_CAM_COMMAND,
     (char *)"-o", filename,
-    (char *)"--width", (char *)"4056",
-    (char *)"--height", (char *)"3040",
-    (char *)"--hflip",
-    (char *)"--vflip",
+    // (char *)"--width", (char *)"4056",
+    // (char *)"--height", (char *)"3040",
+    (char *)"--width", (char *)"2048",
+    (char *)"--height", (char *)"1520",  
+    (char *)"-t", (char *)"200",
+    // (char *)"--hflip",
+    // (char *)"--vflip",
     NULL
   };
   pid_t camera_pid;
@@ -135,7 +144,8 @@ int ai_cam_pipe_shoot(char *filename, size_t filename_size, int image_number)
       kill(camera_pid, SIGKILL);
       killed = true;
     }
-    usleep(20000);
+    //usleep(20000);
+    //usleep(10000);
   }
   if (killed) {
     unlink(filename);

@@ -69,6 +69,7 @@ DEPFLAGS = -MMD -MP
 LDFLAGS += -static
 LDLIBS = -lpthread -lm
 CFILES = ai_cam_pipe.c \
+	 camera_speedtest.c \
 	 ear_cam_pipe.c \
 	 ear_heatmap.c \
 	 lwir_cam_pipe.c \

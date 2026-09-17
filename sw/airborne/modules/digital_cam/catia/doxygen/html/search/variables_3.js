@@ -10,5 +10,6 @@ var searchData=
   ['digital_5fcam_5fuart_5fstatus_7',['digital_cam_uart_status',['../group__digital__cam__uart.html#ga93bd26e96235117bb093e511e4569464',1,'digital_cam_uart_status:&#160;uart_cam_ctrl.c'],['../group__digital__cam__uart.html#ga93bd26e96235117bb093e511e4569464',1,'digital_cam_uart_status:&#160;uart_cam_ctrl.c']]],
   ['digital_5fcam_5fuart_5fthumbnails_8',['digital_cam_uart_thumbnails',['../group__digital__cam__uart.html#ga73a611e337229c8b07ceeb32381e92cb',1,'digital_cam_uart_thumbnails:&#160;uart_cam_ctrl.c'],['../group__digital__cam__uart.html#ga73a611e337229c8b07ceeb32381e92cb',1,'digital_cam_uart_thumbnails:&#160;uart_cam_ctrl.c']]],
   ['dropped_9',['dropped',['../structpose__record.html#ac22003b16eb82392b80e68a147dfa221',1,'pose_record::dropped'],['../structpose__log__stats.html#a68b80082842b2be91d9cef2c70fd72d6',1,'pose_log_stats::dropped'],['../pose__log_8c.html#a538f51527d80891a26b062c6e178b008',1,'dropped:&#160;pose_log.c']]],
-  ['dropped_5f_10',['dropped_',['../classFrameMailbox.html#af606cb2352295e0c44f468bde0d0f346',1,'FrameMailbox']]]
+  ['dropped_5f_10',['dropped_',['../classFrameMailbox.html#af606cb2352295e0c44f468bde0d0f346',1,'FrameMailbox']]],
+  ['duration_5fns_11',['duration_ns',['../structprogress__record.html#a45d8b949eaaffcd2dd7b0c365db10158',1,'progress_record']]]
 ];

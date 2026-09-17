@@ -18,6 +18,6 @@ var searchData=
   ['arrival_5fus_15',['arrival_us',['../structFrameStamp.html#a21da48f91ad094d46d62e5d427f71c74',1,'FrameStamp']]],
   ['aspect_5fratio_16',['aspect_ratio',['../structFireCandidate.html#af696471857fd8a666e9fbade09796ac0',1,'FireCandidate']]],
   ['auto_5fgain_5fswitch_5fframe_5fcnt_17',['auto_gain_switch_frame_cnt',['../camera_8cpp.html#aece2b4ec45b78a5977dfb00725578fdf',1,'camera.cpp']]],
-  ['available_18',['available',['../pose__log_8c.html#a0aae488ce7fe7cb212ef3a94f9579c85',1,'pose_log.c']]],
+  ['available_18',['available',['../structprogress__reporter.html#a4b5070e097850606f93ced3011e1b383',1,'progress_reporter::available'],['../pose__log_8c.html#a0aae488ce7fe7cb212ef3a94f9579c85',1,'available:&#160;pose_log.c']]],
   ['available_5f_19',['available_',['../classFrameMailbox.html#a5ac99e8960c1009fe3b0339998d42a8f',1,'FrameMailbox']]]
 ];

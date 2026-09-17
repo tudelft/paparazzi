@@ -8,9 +8,10 @@ var searchData=
   ['mirror_5fflip_5fdemo_5',['mirror_flip_demo',['../display_8cpp.html#a0aeb427ac7e6f2a17618be0f3cbb86b1',1,'display.cpp']]],
   ['mock_5ftemperature_5fraw_6',['mock_temperature_raw',['../mock__temperature_8h.html#a97c0945593622e5ae775b2188e652823',1,'mock_temperature.h']]],
   ['monotonic_5fms_7',['monotonic_ms',['../ear__cam__pipe_8c.html#a9cd152f10e344623f059b1268ac3245e',1,'monotonic_ms(void):&#160;ear_cam_pipe.c'],['../earcam_8c.html#a9cd152f10e344623f059b1268ac3245e',1,'monotonic_ms(void):&#160;earcam.c']]],
-  ['monotonic_5ftime_5fus_8',['monotonic_time_us',['../catia_8c.html#a6aef848e5cbde93152d3a1d2ff3b756c',1,'catia.c']]],
-  ['monotonic_5fus_9',['monotonic_us',['../classFrameMailbox.html#aa3b347c7f9b41c94a7176787a069675f',1,'FrameMailbox']]],
-  ['move_5ffile_10',['move_file',['../catia_8c.html#ab71d8c52a979dbd0c099329cca25456a',1,'catia.c']]],
-  ['multi_5fpoint_5fcalibration_11',['multi_point_calibration',['../cmd_8cpp.html#a00af4ebef5a20a6fcbaf33c32431a89d',1,'cmd.cpp']]],
-  ['multi_5fpoint_5fcalibration_5fone_5fpoint_5fcorrect_12',['multi_point_calibration_one_point_correct',['../cmd_8cpp.html#a13b6b139bfe9acd661cb203ca7f1f7b6',1,'cmd.cpp']]]
+  ['monotonic_5ftime_5fns_8',['monotonic_time_ns',['../camera__speedtest_8c.html#aa6395cfbc66f2d466384892b7fed549d',1,'camera_speedtest.c']]],
+  ['monotonic_5ftime_5fus_9',['monotonic_time_us',['../catia_8c.html#a6aef848e5cbde93152d3a1d2ff3b756c',1,'catia.c']]],
+  ['monotonic_5fus_10',['monotonic_us',['../classFrameMailbox.html#aa3b347c7f9b41c94a7176787a069675f',1,'FrameMailbox']]],
+  ['move_5ffile_11',['move_file',['../catia_8c.html#ab71d8c52a979dbd0c099329cca25456a',1,'catia.c']]],
+  ['multi_5fpoint_5fcalibration_12',['multi_point_calibration',['../cmd_8cpp.html#a00af4ebef5a20a6fcbaf33c32431a89d',1,'cmd.cpp']]],
+  ['multi_5fpoint_5fcalibration_5fone_5fpoint_5fcorrect_13',['multi_point_calibration_one_point_correct',['../cmd_8cpp.html#a13b6b139bfe9acd661cb203ca7f1f7b6',1,'cmd.cpp']]]
 ];

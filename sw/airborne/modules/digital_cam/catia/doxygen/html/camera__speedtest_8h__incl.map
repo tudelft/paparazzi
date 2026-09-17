@@ -1,0 +1,7 @@
+<map id="camera_speedtest.h" name="camera_speedtest.h">
+<area shape="poly" id="Node000001" title="Standalone, backend&#45;neutral still&#45;camera throughput benchmark." alt="" coords="209,24,205,18,191,13,169,9,141,6,111,5,80,6,53,9,31,13,17,18,12,24,17,30,31,35,53,39,80,42,111,43,141,42,169,39,191,35,205,30"/>
+<area shape="poly" id="Node000002" title=" " alt="" coords="99,110,97,104,90,99,80,95,67,92,52,91,38,92,25,95,14,99,8,104,5,110,8,116,14,121,25,125,38,128,52,129,67,128,80,125,90,121,97,116"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="100,42,75,80,71,77,96,45"/>
+<area shape="poly" id="Node000003" title=" " alt="" coords="219,110,217,104,210,99,199,95,186,92,171,91,156,92,143,95,132,99,125,104,123,110,125,116,132,121,143,125,156,128,171,129,186,128,199,125,210,121,217,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="125,41,152,79,147,79,123,46"/>
+</map>

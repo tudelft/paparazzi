@@ -32,6 +32,7 @@
 #include <unistd.h>
 
 #include "ai_cam_pipe.h"
+#include "camera_speedtest.h"
 #include "ear_cam_pipe.h"
 #include "lwir_cam_pipe.h"
 #include "serial.h"
@@ -84,6 +85,14 @@
 
 #ifndef CATIA_CHDK_PHOTO_DIR
 #define CATIA_CHDK_PHOTO_DIR "photos"
+#endif
+
+#ifndef CATIA_AI_CAM_PHOTO_DIR
+#define CATIA_AI_CAM_PHOTO_DIR "photos"
+#endif
+
+#ifndef CATIA_LWIR_CAM_PHOTO_DIR
+#define CATIA_LWIR_CAM_PHOTO_DIR "photos"
 #endif
 
 #ifndef CATIA_SODA
@@ -180,6 +189,7 @@ static bool clock_probes_enabled;
 #endif
 static const char *pose_log_dir = CATIA_POSE_LOG_DIR;
 static bool motion_compensation_enabled;
+static const char *chdk_photo_directory = CATIA_CHDK_PHOTO_DIR;
 static uint64_t next_clock_probe_us, clock_probe_count, clock_reply_count, clock_rejected_count;
 
 /** @brief Read CATIA's monotonic clock for local latency and event ordering.
@@ -254,6 +264,13 @@ int main(int argc, char *argv[])
   bool serial_was_selected = false;
   bool mock_image_was_selected = false;
   bool test_mode = false;
+  bool speedtest_enabled = false;
+  bool earcam_option_selected = false;
+  bool pose_log_selected = false;
+  bool clock_align_selected = false;
+  bool lwir_raw_selected = false;
+  bool lwir_calibration_selected = false;
+  bool motion_compensation_selected = false;
   uint64_t serial_byte_count = 0;
   uint64_t valid_frame_count = 0;
   uint64_t rejected_frame_count = 0;
@@ -281,6 +298,7 @@ int main(int argc, char *argv[])
     {"lwir-motion-compensation", no_argument, NULL, 'm'},
     {"help", no_argument, NULL, 'h'},
     {"version", no_argument, NULL, 1000},
+    {"speedtest", no_argument, NULL, 1001},
     {NULL, 0, NULL, 0}
   };
 
@@ -317,6 +335,7 @@ int main(int argc, char *argv[])
         break;
       case 'e':
         earcam_requested = true;
+        earcam_option_selected = true;
         break;
       case 'E': {
         double sim_lat = 0.0;
@@ -330,6 +349,7 @@ int main(int argc, char *argv[])
         ear_cam_pipe_set_simulated_source(sim_lat, sim_lon, sim_level);
         earcam_requested = true;
         earcam_simulated = true;
+        earcam_option_selected = true;
         break;
       }
       case 'B': {
@@ -341,6 +361,7 @@ int main(int argc, char *argv[])
           return 2;
         }
         ear_cam_pipe_set_band(low_hz, high_hz);
+        earcam_option_selected = true;
         break;
       }
       case 't':
@@ -362,25 +383,33 @@ int main(int argc, char *argv[])
           return 2;
         }
         pose_log_dir = optarg;
+        pose_log_selected = true;
         break;
       case 'k':
         clock_probes_enabled = true;
+        clock_align_selected = true;
         break;
       case 'r':
         lwir_cam_pipe_set_native_raw(1);
+        lwir_raw_selected = true;
         break;
       case 'y':
         if (lwir_cam_pipe_set_calibration(optarg) != 0) {
           fprintf(stderr, "CATIA:\t--lwir-calibration expects a camera YAML file\n");
           return 2;
         }
+        lwir_calibration_selected = true;
         break;
       case 'm':
         motion_compensation_enabled = true;
+        motion_compensation_selected = true;
         break;
       case 1000:
         puts(CATIA_BUILD_VERSION);
         return 0;
+      case 1001:
+        speedtest_enabled = true;
+        break;
       case 'h':
         print_usage(argv[0]);
         return 0;
@@ -403,6 +432,19 @@ int main(int argc, char *argv[])
   if (mock_transform_enabled && !test_mode) {
     fprintf(stderr, "CATIA:\t--mocktransform requires --test\n");
     return 2;
+  }
+  if (speedtest_enabled) {
+    if (requested_camera_backend == CAMERA_BACKEND_UNSELECTED) {
+      fprintf(stderr, "CATIA:\t--speedtest requires --chdk, --aicam, or --lwircam\n");
+      return 2;
+    }
+    if (serial_was_selected || local_mode || test_mode || mock_image_was_selected
+      || mock_transform_enabled || debug_enabled || earcam_option_selected || pose_log_selected
+        || clock_align_selected || lwir_raw_selected || lwir_calibration_selected
+        || motion_compensation_selected) {
+      fprintf(stderr, "CATIA:\t--speedtest cannot be combined with daemon, mock, EARcam, pose, or LWIR processing options\n");
+      return 2;
+    }
   }
 
   if (debug_enabled) {
@@ -452,6 +494,77 @@ int main(int argc, char *argv[])
   }
   test_capture_enabled = test_mode;
 
+  switch (selected_camera_backend) {
+    case CAMERA_BACKEND_CHDK: optical_camera_id = CATIA_CAMERA_CHDK; break;
+    case CAMERA_BACKEND_AI_CAM: optical_camera_id = CATIA_CAMERA_AICAM; break;
+    case CAMERA_BACKEND_LWIR_CAM: optical_camera_id = CATIA_CAMERA_LWIRCAM; break;
+    default: optical_camera_id = CATIA_CAMERA_ALL; break;
+  }
+
+  if (speedtest_enabled) {
+    const char *photo_root = NULL;
+    char filename_prefix = '\0';
+    switch (selected_camera_backend) {
+      case CAMERA_BACKEND_CHDK:
+        photo_root = CATIA_CHDK_PHOTO_DIR;
+        filename_prefix = 'c';
+        break;
+      case CAMERA_BACKEND_AI_CAM:
+        photo_root = CATIA_AI_CAM_PHOTO_DIR;
+        filename_prefix = 'a';
+        break;
+      case CAMERA_BACKEND_LWIR_CAM:
+        photo_root = CATIA_LWIR_CAM_PHOTO_DIR;
+        filename_prefix = 'l';
+        break;
+      default:
+        return 2;
+    }
+    char speedtest_directory[PATH_MAX];
+    if (camera_speedtest_create_output_directory(photo_root, speedtest_directory,
+                                                 sizeof(speedtest_directory)) != 0) {
+      fprintf(stderr, "CATIA SPEEDTEST:\tunable to create isolated output directory: %s\n",
+              strerror(errno));
+      return 1;
+    }
+    chdk_photo_directory = speedtest_directory;
+    ai_cam_pipe_set_photo_directory(speedtest_directory);
+    lwir_cam_pipe_set_photo_directory(speedtest_directory);
+    struct camera_speedtest_config speedtest = {
+      .backend_name = camera.name,
+      .photo_directory = speedtest_directory,
+      .filename_prefix = filename_prefix,
+      .shoot = camera.shoot,
+      .keep_running = &keep_running
+    };
+    int first_image;
+    if (camera_speedtest_find_image_block(&speedtest, &first_image) != 0) {
+      fprintf(stderr, "CATIA SPEEDTEST:\tunable to reserve an unused image-number block: %s\n",
+              strerror(errno));
+      return 1;
+    }
+    signal(SIGPIPE, SIG_IGN);
+    signal(SIGINT, handle_signal);
+    signal(SIGTERM, handle_signal);
+    printf("CATIA:\tStarting Camera Speed Test\n");
+    printf("CATIA:\tcamera backend: %s\n", camera.name);
+    uint64_t initialization_started_us = monotonic_time_us();
+    int prepare_result = camera_prepare(optical_camera_id);
+    uint64_t initialization_completed_us = monotonic_time_us();
+    if (prepare_result != 0 || initialization_started_us == 0
+        || initialization_completed_us < initialization_started_us) {
+      fprintf(stderr, "CATIA SPEEDTEST:\tcamera initialization failed\n");
+      cameras_deinit();
+      return 1;
+    }
+    printf("CATIA SPEEDTEST:\tinitialization: %.3f ms (excluded from capture rate)\n",
+           (initialization_completed_us - initialization_started_us) / 1000.0);
+    int speedtest_result = camera_speedtest_run(&speedtest, first_image);
+    cameras_deinit();
+    printf("CATIA:\tSpeed test shutdown\n");
+    return speedtest_result == 0 ? 0 : 1;
+  }
+
   // Initialization
   printf("CATIA:\tStarting Camera Application Triggering Image Analysis\n");
   printf("CATIA:\tserial device: %s\n", serial_device);
@@ -484,12 +597,6 @@ int main(int argc, char *argv[])
     return 1;
   }
   local_capture_only = selected_camera_backend == CAMERA_BACKEND_LOCAL && !test_mode;
-  switch (selected_camera_backend) {
-    case CAMERA_BACKEND_CHDK: optical_camera_id = CATIA_CAMERA_CHDK; break;
-    case CAMERA_BACKEND_AI_CAM: optical_camera_id = CATIA_CAMERA_AICAM; break;
-    case CAMERA_BACKEND_LWIR_CAM: optical_camera_id = CATIA_CAMERA_LWIRCAM; break;
-    default: optical_camera_id = CATIA_CAMERA_ALL; break;
-  }
   camera_initialized[optical_camera_id] = test_mode || local_capture_only;
   if (earcam_requested) {
     if (ear_cam_pipe_init(NULL) != 0) {
@@ -1242,6 +1349,7 @@ static void print_usage(const char *program)
 {
   puts(CATIA_BUILD_VERSION);
   printf("Usage: %s [--serial DEVICE | --local] [--chdk | --aicam | --lwircam] [--earcam] [--test] [OPTIONS]\n", program);
+  printf("       %s (--chdk | --aicam | --lwircam) --speedtest\n", program);
   printf("  --serial DEVICE   serial endpoint (default: %s)\n", CATIA_SERIAL_DEVICE);
   printf("  --local           create local serial bridge %s <-> %s\n",
          CATIA_LOCAL_SIM_DEVICE, CATIA_LOCAL_APP_DEVICE);
@@ -1262,6 +1370,8 @@ static void print_usage(const char *program)
   printf("  --lwir-raw        keep the full sensor frame as photos/lNNNNNN.jpg.raw instead of\n");
   printf("                    storing the temperatures inside the JPEG\n");
   printf("  --lwir-motion-compensation  advance LWIR GPS over the measured capture delay\n");
+    printf("  --speedtest       capture one warm-up plus %d timed photos, report photos/s and time/photo, and exit\n",
+      CAMERA_SPEEDTEST_SAMPLE_COUNT);
   printf("  --help            show this help\n");
   printf("  --version         show application version and build Git revision\n");
 }
@@ -1317,7 +1427,7 @@ static int chdk_backend_init(const char *source_image)
 {
   (void)source_image;
   char resolved_dir[PATH_MAX];
-  const char *photo_dir = catia_resolve_path(CATIA_CHDK_PHOTO_DIR, resolved_dir, sizeof(resolved_dir));
+  const char *photo_dir = catia_resolve_path(chdk_photo_directory, resolved_dir, sizeof(resolved_dir));
 
   if (catia_ensure_directory(photo_dir) != 0) {
     fprintf(stderr, "CATIA:\tfailed to create CHDK photo directory %s: %s\n",
@@ -1349,7 +1459,7 @@ static int chdk_backend_shoot(char *filename, size_t filename_size, int image_nu
   }
 
   char resolved_dir[PATH_MAX];
-  const char *photo_dir = catia_resolve_path(CATIA_CHDK_PHOTO_DIR, resolved_dir, sizeof(resolved_dir));
+  const char *photo_dir = catia_resolve_path(chdk_photo_directory, resolved_dir, sizeof(resolved_dir));
 
   int length = snprintf(filename, filename_size, "%s/c%06d.jpg",
                         photo_dir, image_number);

@@ -15,7 +15,8 @@ int main(void)
   char directory[] = "/tmp/lwir-shoot-recovery-test.XXXXXX";
   assert(mkdtemp(directory) != NULL);
   assert(chdir(directory) == 0);
-  assert(mkdir("photos", 0700) == 0);
+  assert(mkdir("speedtest-output", 0700) == 0);
+  lwir_cam_pipe_set_photo_directory("speedtest-output");
 
   char counter_path[PATH_MAX];
   int written = snprintf(counter_path, sizeof(counter_path), "%s/counter", directory);
@@ -25,11 +26,13 @@ int main(void)
   char filename[PATH_MAX];
 
   assert(lwir_cam_pipe_shoot(filename, sizeof(filename), 1) == 0);
+  assert(strcmp(filename, "speedtest-output/l000001.jpg") == 0);
   assert(access(filename, R_OK) == 0);
 
   /* The server that just answered shot 1 has already exited; shot 2 must
    * transparently respawn a fresh one and still succeed. */
   assert(lwir_cam_pipe_shoot(filename, sizeof(filename), 2) == 0);
+  assert(strcmp(filename, "speedtest-output/l000002.jpg") == 0);
   assert(access(filename, R_OK) == 0);
 
   FILE *counter = fopen(counter_path, "r");

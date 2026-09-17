@@ -8,7 +8,8 @@ var searchData=
   ['org_5fenv_5fparam_5',['org_env_param',['../structTempCalInfo__t.html#a61b4e6c7d2f79557632bb9f8586ec764',1,'TempCalInfo_t::org_env_param'],['../temperature_8cpp.html#a0260c112ea2fac58d3e6892a7bda51bd',1,'org_env_param:&#160;temperature.cpp']]],
   ['output_6',['output',['../pose__log_8c.html#ab41bf19330e50c3c7bf3544c53f30971',1,'pose_log.c']]],
   ['output_5ferror_7',['output_error',['../serial__tx_8c.html#a08f95f52b5ffd5149960f6e6461916ab',1,'serial_tx.c']]],
-  ['output_5ffd_8',['output_fd',['../serial__tx_8c.html#a64b3d5cd64cf39d736548d644bc73079',1,'serial_tx.c']]],
-  ['output_5fformat_9',['output_format',['../structFrameInfo__t.html#a78ea3addab2f848ddb2110366a9c2c5e',1,'FrameInfo_t']]],
-  ['overexposure_5fframe_5fcnt_10',['overexposure_frame_cnt',['../camera_8cpp.html#ad7b3885f06d431655b031b8b1aeef43c',1,'camera.cpp']]]
+  ['output_5ffailed_8',['output_failed',['../structprogress__reporter.html#a1bdd08ecca5e0a74e0ba654171c2b948',1,'progress_reporter']]],
+  ['output_5ffd_9',['output_fd',['../structprogress__reporter.html#a282e31f744730ebdfcb3d774c2ed2c41',1,'progress_reporter::output_fd'],['../serial__tx_8c.html#a64b3d5cd64cf39d736548d644bc73079',1,'output_fd:&#160;serial_tx.c']]],
+  ['output_5fformat_10',['output_format',['../structFrameInfo__t.html#a78ea3addab2f848ddb2110366a9c2c5e',1,'FrameInfo_t']]],
+  ['overexposure_5fframe_5fcnt_11',['overexposure_frame_cnt',['../camera_8cpp.html#ad7b3885f06d431655b031b8b1aeef43c',1,'camera.cpp']]]
 ];

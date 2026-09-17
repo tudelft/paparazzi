@@ -164,6 +164,8 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:ac3ee22a8e70b13f96bc766854f8e7164" id="r_ac3ee22a8e70b13f96bc766854f8e7164"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac3ee22a8e70b13f96bc766854f8e7164">ai_cam_pipe_set_photo_directory</a> (const char *directory)</td></tr>
+<tr class="memdesc:ac3ee22a8e70b13f96bc766854f8e7164"><td class="mdescLeft">&#160;</td><td class="mdescRight">Override the output directory for an isolated standalone benchmark.  <br /></td></tr>
 <tr class="memitem:a07758eee81f96bfb66b71629c078a02e" id="r_a07758eee81f96bfb66b71629c078a02e"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a07758eee81f96bfb66b71629c078a02e">ai_cam_pipe_init</a> (const char *unused)</td></tr>
 <tr class="memdesc:a07758eee81f96bfb66b71629c078a02e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Validate configured AICam storage before shots are accepted.  <br /></td></tr>
 <tr class="memitem:a33d4fed2f707102886f97354c2387d3e" id="r_a33d4fed2f707102886f97354c2387d3e"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a33d4fed2f707102886f97354c2387d3e">ai_cam_pipe_shoot</a> (char *filename, size_t filename_size, int image_number)</td></tr>
@@ -174,6 +176,7 @@ Functions</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
 <tr class="memitem:aa006daaf11f1e2e45a6ababaf463212b" id="r_aa006daaf11f1e2e45a6ababaf463212b"><td class="memItemLeft" align="right" valign="top">char **&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa006daaf11f1e2e45a6ababaf463212b">environ</a></td></tr>
+<tr class="memitem:a095bc18d7a7fd917d84752f0bf8dc59a" id="r_a095bc18d7a7fd917d84752f0bf8dc59a"><td class="memItemLeft" align="right" valign="top">static const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a095bc18d7a7fd917d84752f0bf8dc59a">photo_directory</a> = <a class="el" href="#af53b21a8549d0b67c32eeb6fec4d95cb">CATIA_AI_CAM_PHOTO_DIR</a></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Raspberry Pi AI Camera adapter backed by one rpicam-still process per shot. </p>
@@ -269,6 +272,25 @@ Variables</h2></td></tr>
 
 </div>
 </div>
+<a id="ac3ee22a8e70b13f96bc766854f8e7164" name="ac3ee22a8e70b13f96bc766854f8e7164"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac3ee22a8e70b13f96bc766854f8e7164">&#9670;&#160;</a></span>ai_cam_pipe_set_photo_directory()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ai_cam_pipe_set_photo_directory </td>
+          <td>(</td>
+          <td class="paramtype">const char *</td>          <td class="paramname"><span class="paramname"><em>directory</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Override the output directory for an isolated standalone benchmark. </p>
+
+</div>
+</div>
 <a id="a33d4fed2f707102886f97354c2387d3e" name="a33d4fed2f707102886f97354c2387d3e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a33d4fed2f707102886f97354c2387d3e">&#9670;&#160;</a></span>ai_cam_pipe_shoot()</h2>
 
@@ -324,6 +346,28 @@ Variables</h2></td></tr>
   </td>
   <td class="mlabels-right">
 <span class="mlabels"><span class="mlabel extern">extern</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a095bc18d7a7fd917d84752f0bf8dc59a" name="a095bc18d7a7fd917d84752f0bf8dc59a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a095bc18d7a7fd917d84752f0bf8dc59a">&#9670;&#160;</a></span>photo_directory</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char* photo_directory = <a class="el" href="#af53b21a8549d0b67c32eeb6fec4d95cb">CATIA_AI_CAM_PHOTO_DIR</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

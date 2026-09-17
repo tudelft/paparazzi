@@ -12,6 +12,8 @@
  * @param unused Reserved common backend argument.
  * @return 0 on readiness or -1 on configuration/storage failure. */
 int ai_cam_pipe_init(const char *unused);
+/** @brief Override the output directory for an isolated standalone benchmark. */
+void ai_cam_pipe_set_photo_directory(const char *directory);
 /** @brief Capture a JPEG with rpicam-still.
  * @param filename Output path buffer, cleared on failure.
  * @param filename_size Output path capacity.
