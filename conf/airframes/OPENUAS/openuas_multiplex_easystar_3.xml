@@ -145,11 +145,6 @@
 
       <module name="radio_control" type="sbus">
         <configure name="SBUS_PORT" value="UART1"/> <!-- NOTE not the same uart ID as in Talon250g -->
-        <define name="RADIO_HATCH" value="RADIO_AUX4"/>
-        <define name="RADIO_BRAKE" value="RADIO_AUX2"/> 
-        <define name="RADIO_MANUALLIGHT" value="RADIO_AUX3"/>
-        <define name="RADIO_MANUALSHUTTER" value="RADIO_AUX3"/>
-        <define name="RADIO_MANUALRELEASE" value="RADIO_AUX4"/>
         <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/><!--TBS Nano RX only 12 actually-->
       </module>
 
@@ -266,12 +261,12 @@
 
     <!-- Radio defines common for all targets AP,SIM, NPS-->
     <!--WARNING BRAKE Different from Talon250g definition--> 
-    <!-- <define name="RADIO_HATCH" value="RADIO_AUX4"/>
-    <define name="RADIO_BRAKE" value="RADIO_AUX3"/> 
-    <define name="RADIO_MANUALLIGHT" value="RADIO_AUX2"/>
-    <define name="RADIO_MANUALSHUTTER" value="RADIO_AUX2"/>
-    <define name="RADIO_MANUALRELEASE" value="RADIO_AUX4"/> -->
-  <!--<define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>-->
+    <define name="RADIO_HATCH" value="RADIO_AUX4"/>
+    <define name="RADIO_BRAKE" value="RADIO_AUX2"/> 
+    <define name="RADIO_MANUALLIGHT" value="RADIO_AUX3"/>
+    <define name="RADIO_MANUALSHUTTER" value="RADIO_AUX3"/>
+    <define name="RADIO_MANUALRELEASE" value="RADIO_AUX4"/>
+    <!--<define name="RADIO_CONTROL_NB_CHANNEL" value="12"/>-->
 
     <define name="USE_INS_MODULE" value="TRUE"/>
 

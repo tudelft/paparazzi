@@ -162,10 +162,7 @@
 
       <module name="radio_control" type="sbus">
         <configure name="SBUS_PORT" value="UART2"/>
-        <define name="RADIO_HATCH" value="RADIO_AUX2"/>
-        <define name="RADIO_MANUALRELEASE" value="RADIO_AUX2"/>
-        <!-- <define name="RADIO_SHUTTER" value="RADIO_AUX3"/> -->
-        <define name="RADIO_BRAKE" value="RADIO_AUX4"/>
+        <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/><!--TBS Nano RX only 12 actually-->
       </module>
 
       <module name="telemetry" type="transparent">
@@ -262,10 +259,7 @@
       <!--<define name="AHRS_FC_MAG_IDS_BARO_ID" value="BARO_SIM_SENDER_ID"/>-->
       <!--<define name="INS_BARO_ID" value="BARO_SIM_SENDER_ID"/>-->
       <module name="radio_control" type="ppm"/>
-      <!--<define name="RADIO_CONTROL_NB_CHANNEL" value="8"/>-->
-      <define name="RADIO_MANUALRELEASE" value="RADIO_AUX4"/>
-      <define name="RADIO_BRAKE" value="RADIO_AUX4"/>
-      <define name="DC_RADIO_SHOOT" value="RADIO_AUX3"/>
+      <!--<define name="RADIO_CONTROL_NB_CHANNEL" value="12"/>-->
       <module name="telemetry" type="transparent"/>
       <module name="imu" type="sim"/>
       <module name="baro_sim"/>
@@ -289,9 +283,7 @@
       <module name="fdm" type="jsbsim"/>
       <define name="NPS_JSBSIM_CONTACT_LOG" value="1"/>
       <module name="radio_control" type="ppm"/>
-      <define name="RADIO_MANUALRELEASE" value="RADIO_AUX2"/>
-      <define name="RADIO_BRAKE" value="RADIO_AUX4"/>
-      <define name="DC_RADIO_SHOOT" value="RADIO_AUX3"/>
+      <!--<define name="RADIO_CONTROL_NB_CHANNEL" value="12"/>-->
       <module name="telemetry" type="transparent"/>
       <!-- <module name="imu" type="nps"/> -->
       <!-- <module name="gps" type="sim"/> -->
@@ -309,6 +301,10 @@
       <define name="SENSOR_SYNC_SEND_SONAR"/>
       <module name="udp"/>
     </target>
+
+    <define name="RADIO_HATCH" value="RADIO_AUX2"/><!-- Note: There is no real release mechanism -->
+    <define name="RADIO_MANUALRELEASE" value="RADIO_AUX2"/>
+    <define name="RADIO_BRAKE" value="RADIO_AUX4"/><!-- When testflying manually to see behaviour -->
 
     <define name="USE_INS_MODULE" value="TRUE"/>
 
