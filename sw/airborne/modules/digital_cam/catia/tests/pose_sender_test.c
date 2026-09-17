@@ -23,6 +23,7 @@
 #define DC_OFF 5
 
 struct test_device {
+  int (*check_free_space)(void *, long *, uint16_t);
   void *periph;
   void (*put_byte)(void *, long, uint8_t);
   int (*char_available)(void *);
@@ -62,14 +63,22 @@ static void put_byte(void *unused, long descriptor, uint8_t value)
 }
 static int char_available(void *unused) { (void)unused; return incoming_index < incoming_size; }
 static uint8_t get_byte(void *unused) { (void)unused; return incoming[incoming_index++]; }
-static struct uart_periph test_uart = {{NULL, put_byte, char_available, get_byte}};
 
-int uart_check_free_space(struct uart_periph *uart, long *descriptor, uint16_t length)
+static int check_free_space(void *parent, long *descriptor, uint16_t length)
 {
-  assert(uart == &test_uart && descriptor == NULL);
+  assert(parent != NULL && descriptor == NULL);
   space_requested = length;
   return free_space >= length ? free_space : 0;
 }
+static struct uart_periph test_uart = {
+  .device = {
+    .check_free_space = check_free_space,
+    .periph = &test_uart,
+    .put_byte = put_byte,
+    .char_available = char_available,
+    .get_byte = get_byte
+  }
+};
 uint32_t get_sys_time_usec(void) { ++clock_reads; return clock_value++; }
 struct test_position *stateGetPositionLla_i(void) { return &position; }
 struct test_attitude *stateGetNedToBodyEulers_i(void) { return &attitude; }

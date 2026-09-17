@@ -40,6 +40,8 @@ var files_dup =
     [ "version.h", "allthings__paparazzi_2paparazzi__main_2sw_2airborne_2modules_2digital__cam_2catia_2version_8h.html", "allthings__paparazzi_2paparazzi__main_2sw_2airborne_2modules_2digital__cam_2catia_2version_8h" ],
     [ "version.h", "allthings__tiny1c__lwir__camera_2lwircam_2version_8h.html", "allthings__tiny1c__lwir__camera_2lwircam_2version_8h" ],
     [ "version.h", "get__maxsoundlevel__app_2version_8h.html", "get__maxsoundlevel__app_2version_8h" ],
+    [ "uart_cam_ctrl.c", "uart__cam__ctrl_8c.html", "uart__cam__ctrl_8c" ],
+    [ "uart_cam_ctrl.h", "uart__cam__ctrl_8h.html", "uart__cam__ctrl_8h" ],
     [ "camera.cpp", "camera_8cpp.html", "camera_8cpp" ],
     [ "camera.h", "camera_8h.html", "camera_8h" ],
     [ "cmd.cpp", "cmd_8cpp.html", "cmd_8cpp" ],

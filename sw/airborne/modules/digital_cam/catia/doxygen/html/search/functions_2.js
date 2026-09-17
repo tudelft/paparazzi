@@ -8,7 +8,7 @@ var searchData=
   ['camera_5fpara_5fset_5',['camera_para_set',['../camera_8cpp.html#ab65dadb3483527de52b5e1f7b6324ed0',1,'camera.cpp']]],
   ['camera_5fprepare_6',['camera_prepare',['../catia_8c.html#a081c37276e61ed6a18ee2b1ff65417e9',1,'catia.c']]],
   ['cameras_5fdeinit_7',['cameras_deinit',['../catia_8c.html#a3aeb644b6aae42028f67cda0d367c046',1,'catia.c']]],
-  ['capture_5fimage_8',['capture_image',['../catia_8c.html#a79842ce9e3a759e53ef4c9d14c42168b',1,'catia.c']]],
+  ['capture_5fimage_8',['capture_image',['../catia_8c.html#afffdc24bc236c669783866441e11213d',1,'catia.c']]],
   ['capture_5ftiming_5fvalid_9',['capture_timing_valid',['../capture__timing_8h.html#a1297814535155071b7528617af192444',1,'capture_timing.h']]],
   ['catia_5fboot_5fid_10',['catia_boot_id',['../boot__id_8h.html#acffbd660dffca2895b280bad6b3f5870',1,'boot_id.h']]],
   ['catia_5fensure_5fdirectory_11',['catia_ensure_directory',['../path__utils_8h.html#abaf8484b6eeb90cc8ea1c9bd7cc30d4d',1,'path_utils.h']]],

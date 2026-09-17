@@ -44,6 +44,12 @@
       exposure synchronization or a geolocation correction. Review link load and
       UART capacity before enabling.
 
+      On sim and nps targets, this module owns its serial transport. It prefers
+      DIGITAL_CAM_UART_LOCAL_DEVICE (/tmp/catia-sim) whenever local CATIA is
+      available and otherwise uses DIGITAL_CAM_UART_FALLBACK_DEVICE
+      (/dev/ttyUSB0). It checks every 200 ms and switches at runtime; hardware
+      targets continue to use CAMERA_PORT.
+
       The linux program used to parse the UART command is given in the subdirectory.
     </description>
   </doc>
@@ -73,18 +79,24 @@
   <makefile target="ap|sim|nps">
     <file name="uart_cam_ctrl.c"/>
     <file name="catia/protocol.c"/>
-    <configure name="CAMERA_PORT" case="upper|lower"/>
-    <define name="USE_$(CAMERA_PORT_UPPER)"/>
-    <define name="CAMERA_LINK" value="$(CAMERA_PORT_LOWER)"/>
-    <define name="$(CAMERA_PORT_UPPER)_BAUD" value="B115200"/>
     <test>
       <define name="CAMERA_LINK" value="uart0"/>
       <define name="USE_UART0"/>
     </test>
   </makefile>
+  <makefile target="ap">
+    <configure name="CAMERA_PORT" case="upper|lower"/>
+    <define name="USE_$(CAMERA_PORT_UPPER)"/>
+    <define name="CAMERA_LINK" value="$(CAMERA_PORT_LOWER)"/>
+    <define name="$(CAMERA_PORT_UPPER)_BAUD" value="B115200"/>
+  </makefile>
   <makefile target="sim|nps">
-    <configure name="SITL_SERIAL" default="/dev/ttyUSB0"/>
-    <define name="$(CAMERA_PORT_UPPER)_DEV" value="$(SITL_SERIAL)"/>
+    <configure name="DIGITAL_CAM_UART_LOCAL_DEVICE" default="/tmp/catia-sim"/>
+    <configure name="DIGITAL_CAM_UART_FALLBACK_DEVICE" default="/dev/ttyUSB0"/>
+    <define name="DIGITAL_CAM_UART_SIM_BACKEND"/>
+    <define name="DIGITAL_CAM_UART_LOCAL_DEVICE" value="$(DIGITAL_CAM_UART_LOCAL_DEVICE)"/>
+    <define name="DIGITAL_CAM_UART_FALLBACK_DEVICE" value="$(DIGITAL_CAM_UART_FALLBACK_DEVICE)"/>
+    <define name="CAMERA_LINK" value="digital_cam_uart_sim_link"/>
   </makefile>
 </module>
 

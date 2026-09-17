@@ -11,5 +11,8 @@ var searchData=
   ['deg_5fto_5frad_8',['DEG_TO_RAD',['../ear__cam__pipe_8c.html#a212460e743fecb084d717bb2180c5a56',1,'DEG_TO_RAD:&#160;ear_cam_pipe.c'],['../ear__heatmap_8c.html#a212460e743fecb084d717bb2180c5a56',1,'DEG_TO_RAD:&#160;ear_heatmap.c'],['../test__loudestspot_8c.html#a212460e743fecb084d717bb2180c5a56',1,'DEG_TO_RAD:&#160;test_loudestspot.c']]],
   ['dev_5fstatus_5fcache_9',['DEV_STATUS_CACHE',['../cmd_8h.html#a00c8edb147b2cd4ca62721bde8367975',1,'cmd.h']]],
   ['dev_5fstatus_5fnull_10',['DEV_STATUS_NULL',['../cmd_8h.html#a4dc7ced816b5f5e1d3d1d9d4f7215d78',1,'cmd.h']]],
-  ['dev_5fstatus_5from_11',['DEV_STATUS_ROM',['../cmd_8h.html#a7c85200c161c42fbcaada6d287810e55',1,'cmd.h']]]
+  ['dev_5fstatus_5from_11',['DEV_STATUS_ROM',['../cmd_8h.html#a7c85200c161c42fbcaada6d287810e55',1,'cmd.h']]],
+  ['digital_5fcam_5fuart_5fcamera_5fid_12',['DIGITAL_CAM_UART_CAMERA_ID',['../uart__cam__ctrl_8c.html#ae134ca6b10a7291bf72f721b4d778bae',1,'uart_cam_ctrl.c']]],
+  ['digital_5fcam_5fuart_5fcamera_5fmask_13',['DIGITAL_CAM_UART_CAMERA_MASK',['../uart__cam__ctrl_8c.html#afc3c636ac2bd7bfd28f6d0bcb1fcb40a',1,'uart_cam_ctrl.c']]],
+  ['digital_5fcam_5fuart_5fpose_5fstream_14',['DIGITAL_CAM_UART_POSE_STREAM',['../uart__cam__ctrl_8c.html#abc3f1698b0a950a67faa033da4dd3402',1,'uart_cam_ctrl.c']]]
 ];

@@ -361,8 +361,6 @@
       <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="40.0"/><!-- Unit: m --><!--Warning Depends on you CAMERA so find lowest denominator-->
       <!--FOR LWIR <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="26.0"/>--><!-- Unit: m -->
       <configure name="CAMERA_PORT" value="UART5"/> <!-- For the real Flightcontroller to MORA connection-->
-      <configure name="SITL_SERIAL" value="/tmp/catia-sim"/><!-- for local PC -->
-      <!--<configure name="SITL_SERIAL" value="/dev/ttyUSB0"/>--><!-- for actual device via FTDI cable to MORA on desk -->
     </module>
 
     <!-- RADIO_AUX3: high shoots immediately then at 1 Hz in any flight mode.

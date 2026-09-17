@@ -19,6 +19,7 @@ flow SVG, and HTML page are generated files.
 [Documentation Hub](html/index.html) |
 [Camera Pipeline](html/catia_camera_pipeline.html) |
 [AI Camera](html/raspberry_pi_ai_camera.html) |
+[Pi Zero 2 W Setup](html/setup_os_rpi_zero_2w.html) |
 [LWIR Calibration](html/lwir-calibration.html) |
 [EARcam Guide](html/earcam-loudest-spot-explained.html) |
 [EARcam Data Flow](html/earcam-dataflow.html) |
@@ -432,9 +433,18 @@ The important startup line is:
 Started OK
 ```
 
-CATIA and a Simulated Flight of Paparazzi aircraft may start in either order. The simulation UART retries while
-`/tmp/catia-sim` is absent and reconnects automatically after CATIA is stopped
-and started again. This allows CATIA sourcecode to be changed, then rebuilt, redeployed and restarted without even the need interrupting a running simulation.
+CATIA and a simulated Paparazzi aircraft may start in either order. On `sim` and
+`nps`, `digital_cam_uart` checks its endpoints every 200 ms. It prefers the local
+CATIA PTY `/tmp/catia-sim`; if that PTY is unavailable, it uses the desk FTDI at
+`/dev/ttyUSB0`. Starting local CATIA switches a running simulation from FTDI to
+the local PTY, and stopping CATIA switches it back without interrupting flight.
+Buffered bytes and parser state are cleared at each switch so a partial frame
+cannot cross endpoints.
+
+The private build settings `DIGITAL_CAM_UART_LOCAL_DEVICE` and
+`DIGITAL_CAM_UART_FALLBACK_DEVICE` override these defaults when a different test
+path is needed. `SITL_SERIAL` and the hardware `CAMERA_PORT` are not used for this
+simulation selection; hardware firmware continues to use `CAMERA_PORT` normally.
 
 ### 3. Trigger a photo from Paparazzi
 
@@ -510,6 +520,12 @@ On the local PC the adapter device is likely `/dev/ttyUSB0`. On MORA, CATIA uses
 `/dev/serial0` device. Both ends run at 115200 baud. The example `Easystar_3` simulated airframe
 already configures these local PC-side settings. See the
 `<module name="digital_cam_uart">` block of the airframe.
+
+Do not swap `SITL_SERIAL` between local and desk tests. Set it once to the local
+PC's FTDI device. Running `run_local_demo.sh` creates `/tmp/catia-sim`, which is
+selected automatically; stopping local CATIA makes the simulation return to the
+FTDI device. This selection changes only the PC-side simulation UART and does not
+change MORA's `/dev/serial0` service configuration.
 
 ### 2. First run: real UART with a mock image
 
@@ -2454,20 +2470,6 @@ node permissions. It must be writable by `plugdev`. The bus/device numbers can
 change after reconnecting; use `lsusb -d 0bda:5840` to find the current node.
 Re-run `deploy_mora.sh` or reload `/etc/udev/rules.d/99-tiny1c.rules` if its
 group or mode is wrong.
-
-### Restart CATIA without restarting NPS
-
-The simulation UART checks for `/tmp/catia-sim` every 200 ms. When CATIA stops,
-NPS detects the closed PTY and keeps flying. Use this development loop:
-
-```sh
-# Stop CATIA with Ctrl+C, then rebuild and restart it:
-make -C sw/airborne/modules/digital_cam/catia
-sw/airborne/modules/digital_cam/catia/run_local_demo.sh
-```
-
-NPS remains running throughout. Camera commands issued while CATIA is stopped
-cannot be recovered, but later commands are delivered after reconnection.
 
 ### Build shows libexif or libjpeg warnings
 

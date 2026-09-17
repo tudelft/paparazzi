@@ -305,7 +305,7 @@ Enumerations</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a874ad24e30fa71665c1f2397d84af5e2" id="r_a874ad24e30fa71665c1f2397d84af5e2"><td class="memItemLeft" align="right" valign="top">static void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a874ad24e30fa71665c1f2397d84af5e2">handle_msg_shoot</a> (void *ptr)</td></tr>
-<tr class="memitem:a79842ce9e3a759e53ef4c9d14c42168b" id="r_a79842ce9e3a759e53ef4c9d14c42168b"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a79842ce9e3a759e53ef4c9d14c42168b">capture_image</a> (const union <a class="el" href="uniondc__shot__union.html">dc_shot_union</a> *shoot, bool multiple)</td></tr>
+<tr class="memitem:afffdc24bc236c669783866441e11213d" id="r_afffdc24bc236c669783866441e11213d"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afffdc24bc236c669783866441e11213d">capture_image</a> (const union <a class="el" href="uniondc__shot__union.html">dc_shot_union</a> *shoot)</td></tr>
 <tr class="memitem:a8dd565912fe7ca68221ca65ef5946751" id="r_a8dd565912fe7ca68221ca65ef5946751"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8dd565912fe7ca68221ca65ef5946751">handle_received_message</a> (void)</td></tr>
 <tr class="memitem:ab22206e8b1d99f308805aa134191ea55" id="r_ab22206e8b1d99f308805aa134191ea55"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab22206e8b1d99f308805aa134191ea55">start_shoot_worker</a> (const union <a class="el" href="uniondc__shot__union.html">dc_shot_union</a> *shoot, uint8_t camera_mask)</td></tr>
 <tr class="memitem:a0176775cddfb4c5ae5de433734c25baf" id="r_a0176775cddfb4c5ae5de433734c25baf"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0176775cddfb4c5ae5de433734c25baf">handle_targeted_stop</a> (int32_t camera_id)</td></tr>
@@ -326,6 +326,7 @@ Functions</h2></td></tr>
 <tr class="memitem:a89ac64aa9070887c41a340c260689862" id="r_a89ac64aa9070887c41a340c260689862"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a89ac64aa9070887c41a340c260689862">camera_backend_select</a> (enum <a class="el" href="#a046362c43458cf0d94d6eaeea736b435">camera_backend_type</a> type, bool test_mode)</td></tr>
 <tr class="memitem:a081c37276e61ed6a18ee2b1ff65417e9" id="r_a081c37276e61ed6a18ee2b1ff65417e9"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a081c37276e61ed6a18ee2b1ff65417e9">camera_prepare</a> (int camera_id)</td></tr>
 <tr class="memitem:a3aeb644b6aae42028f67cda0d367c046" id="r_a3aeb644b6aae42028f67cda0d367c046"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3aeb644b6aae42028f67cda0d367c046">cameras_deinit</a> (void)</td></tr>
+<tr class="memitem:a537437f0da0c7835d7f26790d3a73270" id="r_a537437f0da0c7835d7f26790d3a73270"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a537437f0da0c7835d7f26790d3a73270">local_backend_shoot</a> (char *filename, size_t filename_size, int image_number)</td></tr>
 <tr class="memitem:adaed55ac1d189476b5de24dbd4b9a590" id="r_adaed55ac1d189476b5de24dbd4b9a590"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adaed55ac1d189476b5de24dbd4b9a590">chdk_backend_init</a> (const char *<a class="el" href="local__pipe_8c.html#aec53682ada56f22135124a6d19ebd296">source_image</a>)</td></tr>
 <tr class="memitem:a24b2e840582f64c24a1fabb7ace5aaae" id="r_a24b2e840582f64c24a1fabb7ace5aaae"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a24b2e840582f64c24a1fabb7ace5aaae">chdk_backend_shoot</a> (char *filename, size_t filename_size, int image_number)</td></tr>
 <tr class="memitem:a6aef848e5cbde93152d3a1d2ff3b756c" id="r_a6aef848e5cbde93152d3a1d2ff3b756c"><td class="memItemLeft" align="right" valign="top">static uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6aef848e5cbde93152d3a1d2ff3b756c">monotonic_time_us</a> (void)</td></tr>
@@ -372,6 +373,7 @@ Variables</h2></td></tr>
 <tr class="memitem:a2b2c3f90d222b7b311f2496e560aa871" id="r_a2b2c3f90d222b7b311f2496e560aa871"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2b2c3f90d222b7b311f2496e560aa871">earcam_requested</a></td></tr>
 <tr class="memitem:aa7f8f2d426b44f95d36c8e8e939d37ee" id="r_aa7f8f2d426b44f95d36c8e8e939d37ee"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa7f8f2d426b44f95d36c8e8e939d37ee">earcam_active</a></td></tr>
 <tr class="memitem:a0d5bc6eafd93ff435fa697b49bb172f6" id="r_a0d5bc6eafd93ff435fa697b49bb172f6"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0d5bc6eafd93ff435fa697b49bb172f6">earcam_unavailable</a></td></tr>
+<tr class="memitem:af240711e1b48fa88b62f2ccf0e66a38a" id="r_af240711e1b48fa88b62f2ccf0e66a38a"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af240711e1b48fa88b62f2ccf0e66a38a">earcam_simulated</a></td></tr>
 <tr class="memitem:a330148ef8e4376e77564bc582763c885" id="r_a330148ef8e4376e77564bc582763c885"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a330148ef8e4376e77564bc582763c885">optical_camera_id</a> = <a class="el" href="protocol_8h.html#a02ba3339bccdb23e25f98841687766d0">CATIA_CAMERA_ALL</a></td></tr>
 <tr class="memitem:a12268fdb50013dd3f538cb08ed705e2f" id="r_a12268fdb50013dd3f538cb08ed705e2f"><td class="memItemLeft" align="right" valign="top">static uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a12268fdb50013dd3f538cb08ed705e2f">serial_receive_monotonic_us</a></td></tr>
 <tr class="memitem:ac512f3dc8135ea39801f60c135c7f414" id="r_ac512f3dc8135ea39801f60c135c7f414"><td class="memItemLeft" align="right" valign="top">static struct <a class="el" href="structclock__alignment.html">clock_alignment</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac512f3dc8135ea39801f60c135c7f414">fc_clock</a></td></tr>
@@ -814,8 +816,8 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a id="a79842ce9e3a759e53ef4c9d14c42168b" name="a79842ce9e3a759e53ef4c9d14c42168b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a79842ce9e3a759e53ef4c9d14c42168b">&#9670;&#160;</a></span>capture_image()</h2>
+<a id="afffdc24bc236c669783866441e11213d" name="afffdc24bc236c669783866441e11213d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afffdc24bc236c669783866441e11213d">&#9670;&#160;</a></span>capture_image()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -826,12 +828,8 @@ Variables</h2></td></tr>
         <tr>
           <td class="memname">void capture_image </td>
           <td>(</td>
-          <td class="paramtype">const union <a class="el" href="uniondc__shot__union.html">dc_shot_union</a> *</td>          <td class="paramname"><span class="paramname"><em>shoot</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramtype">const union <a class="el" href="uniondc__shot__union.html">dc_shot_union</a> *</td>          <td class="paramname"><span class="paramname"><em>shoot</em></span></td><td>)</td>
           <td></td>
-          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>multiple</em></span>&#160;)</td>
         </tr>
       </table>
   </td>
@@ -1016,6 +1014,40 @@ Variables</h2></td></tr>
           <td>(</td>
           <td class="paramtype">int32_t</td>          <td class="paramname"><span class="paramname"><em>camera_id</em></span></td><td>)</td>
           <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a537437f0da0c7835d7f26790d3a73270" name="a537437f0da0c7835d7f26790d3a73270"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a537437f0da0c7835d7f26790d3a73270">&#9670;&#160;</a></span>local_backend_shoot()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int local_backend_shoot </td>
+          <td>(</td>
+          <td class="paramtype">char *</td>          <td class="paramname"><span class="paramname"><em>filename</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t</td>          <td class="paramname"><span class="paramname"><em>filename_size</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>image_number</em></span>&#160;)</td>
         </tr>
       </table>
   </td>
@@ -1757,6 +1789,28 @@ Variables</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">bool earcam_requested</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af240711e1b48fa88b62f2ccf0e66a38a" name="af240711e1b48fa88b62f2ccf0e66a38a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af240711e1b48fa88b62f2ccf0e66a38a">&#9670;&#160;</a></span>earcam_simulated</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool earcam_simulated</td>
         </tr>
       </table>
   </td>

@@ -128,8 +128,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:ad9c642557579c20426c799954b68f672"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize a deterministic mock image source for local camera simulation.  <br /></td></tr>
 <tr class="memitem:a422b4621b268c3e25fca6d2fa521d2f5" id="r_a422b4621b268c3e25fca6d2fa521d2f5"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a422b4621b268c3e25fca6d2fa521d2f5">local_pipe_test_init</a> (const char *<a class="el" href="catia_8c.html#a2879173def5758a73c064cce3b9e7c1f">mock_image</a>)</td></tr>
 <tr class="memdesc:a422b4621b268c3e25fca6d2fa521d2f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize test mode with a supplied JPEG or a random fixture beside CATIA.  <br /></td></tr>
-<tr class="memitem:a471a9859809faf303a09f51f57eabc1d" id="r_a471a9859809faf303a09f51f57eabc1d"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a471a9859809faf303a09f51f57eabc1d">local_pipe_shoot</a> (char *filename, size_t filename_size, int image_number)</td></tr>
-<tr class="memdesc:a471a9859809faf303a09f51f57eabc1d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a mock capture file for a shot.  <br /></td></tr>
+<tr class="memitem:ad08cab6c88ed100e7c5092969443adda" id="r_ad08cab6c88ed100e7c5092969443adda"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad08cab6c88ed100e7c5092969443adda">local_pipe_shoot</a> (char *filename, size_t filename_size, int image_number, char camera_suffix)</td></tr>
+<tr class="memdesc:ad08cab6c88ed100e7c5092969443adda"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a mock capture file for a shot.  <br /></td></tr>
 <tr class="memitem:a5fa11aa8bf9ddd7bbb729d1c8ecc9271" id="r_a5fa11aa8bf9ddd7bbb729d1c8ecc9271"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5fa11aa8bf9ddd7bbb729d1c8ecc9271">local_pipe_deinit</a> (void)</td></tr>
 <tr class="memdesc:a5fa11aa8bf9ddd7bbb729d1c8ecc9271"><td class="mdescLeft">&#160;</td><td class="mdescRight">Forget selected local sources; no persistent process is owned.  <br /></td></tr>
 </table>
@@ -181,8 +181,8 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a471a9859809faf303a09f51f57eabc1d" name="a471a9859809faf303a09f51f57eabc1d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a471a9859809faf303a09f51f57eabc1d">&#9670;&#160;</a></span>local_pipe_shoot()</h2>
+<a id="ad08cab6c88ed100e7c5092969443adda" name="ad08cab6c88ed100e7c5092969443adda"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad08cab6c88ed100e7c5092969443adda">&#9670;&#160;</a></span>local_pipe_shoot()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -200,7 +200,12 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>image_number</em></span>&#160;)</td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>image_number</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">char</td>          <td class="paramname"><span class="paramname"><em>camera_suffix</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -211,6 +216,7 @@ Functions</h2></td></tr>
     <tr><td class="paramname">filename</td><td>Destination path buffer. </td></tr>
     <tr><td class="paramname">filename_size</td><td>Destination capacity. </td></tr>
     <tr><td class="paramname">image_number</td><td>Shot sequence. </td></tr>
+    <tr><td class="paramname">camera_suffix</td><td>Real-camera filename prefix (<span class="tt">c</span>, <span class="tt">a</span>, <span class="tt">l</span>, or <span class="tt">e</span>). </td></tr>
   </table>
   </dd>
 </dl>

@@ -49,6 +49,14 @@ DOCUMENTS = (
         "Connect and test the Raspberry Pi AI Camera, then integrate optical "
         "capture with CATIA on MORA.",
     ),
+      (
+        "setup_os_rpi_zero_2w.md",
+        "setup_os_rpi_zero_2w.html",
+        "Raspberry Pi Zero 2 W OS Setup",
+        "Pi Zero 2 W Setup",
+        "Headless Raspberry Pi Zero 2 W imaging, networking, UART, cloning, and power-management setup",
+        "Prepare a Raspberry Pi Zero 2 W for CATIA and camera work before deploying the MORA software stack.",
+      ),
     (
         "lwir-calibration.md",
         "lwir-calibration.html",

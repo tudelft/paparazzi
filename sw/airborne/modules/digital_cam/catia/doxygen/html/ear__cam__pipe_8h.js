@@ -9,7 +9,7 @@ var ear__cam__pipe_8h =
     [ "ear_cam_pipe_last_shot_nr", "ear__cam__pipe_8h.html#af8dc579cb0563101679e0a7c1408be06", null ],
     [ "ear_cam_pipe_ready", "ear__cam__pipe_8h.html#a1c7d0a10d955ab19badc3525052a665b", null ],
     [ "ear_cam_pipe_record", "ear__cam__pipe_8h.html#a9861737bfc3041a6d61c7fe00b5b28c3", null ],
-    [ "ear_cam_pipe_render", "ear__cam__pipe_8h.html#a20dac968dbd5b9187bcc62ab851a8bc1", null ],
+    [ "ear_cam_pipe_render", "ear__cam__pipe_8h.html#a79f5234a2b1649c91c7d1a151b137eb8", null ],
     [ "ear_cam_pipe_set_band", "ear__cam__pipe_8h.html#aa4482330e9cf0f2597cfe88e8a883a99", null ],
     [ "ear_cam_pipe_set_simulated_source", "ear__cam__pipe_8h.html#aff02dd02372e2706104cf25a36d8446a", null ],
     [ "ear_cam_pipe_solve", "ear__cam__pipe_8h.html#a769a8f567bbcbf2ea892269b7e8ac1f5", null ]

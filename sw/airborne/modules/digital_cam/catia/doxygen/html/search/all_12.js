@@ -32,8 +32,8 @@ var searchData=
   ['request_29',['request',['../unioncatia__clock__reply__union.html#aeababd303cf109919b0eebcd176304c2',1,'catia_clock_reply_union::request'],['../unioncatia__pose__clocked__union.html#aea07d45bcefd94bbc0ccd5e2f67ced66',1,'catia_pose_clocked_union::request']]],
   ['request_5fmonotonic_5fus_30',['request_monotonic_us',['../structcapture__timing.html#a587283f712a4e4b6e5312540f9fe8715',1,'capture_timing']]],
   ['requested_5fcamera_5fbackend_31',['requested_camera_backend',['../catia_8c.html#ab8a039df1e89261d524793bb8a483c8b',1,'catia.c']]],
-  ['restart_5fserver_5fif_5fdead_32',['restart_server_if_dead',['../ear__cam__pipe_8c.html#ad8e106d4e4d4633a929b2f065f003349',1,'ear_cam_pipe.c']]],
-  ['return_33',['return',['../lwir__cam__pipe_8c.html#a9717e7bbecb906637e86cef6da3d83c2',1,'lwir_cam_pipe.c']]],
+  ['resolve_5fphoto_5fdirectory_32',['resolve_photo_directory',['../local__pipe_8c.html#a688a67e7681a255eea597b27d9a6d51a',1,'local_pipe.c']]],
+  ['restart_5fserver_5fif_5fdead_33',['restart_server_if_dead',['../ear__cam__pipe_8c.html#ad8e106d4e4d4633a929b2f065f003349',1,'ear_cam_pipe.c']]],
   ['reverse_5ftemp_5fframe_5fto_5fnuc_34',['reverse_temp_frame_to_nuc',['../temperature_8cpp.html#a7b688f0096feaf28abfab10af53a03a2',1,'reverse_temp_frame_to_nuc(uint16_t *org_temp, NucFactor_t *nuc_factor, int pix_num, uint16_t *nuc_data):&#160;temperature.cpp'],['../temperature_8h.html#a7b688f0096feaf28abfab10af53a03a2',1,'reverse_temp_frame_to_nuc(uint16_t *org_temp, NucFactor_t *nuc_factor, int pix_num, uint16_t *nuc_data):&#160;temperature.cpp']]],
   ['rewrite_5fjpeg_35',['rewrite_jpeg',['../image__exif_8c.html#af696d015e74bf5ee4a61e712f9d96507',1,'image_exif.c']]],
   ['right_5f90d_36',['RIGHT_90D',['../data_8h.html#aeaddb01002b13f7fbd6e8cbb9bf0d7b3abbde6b3be6598d94073e7e5d422f499d',1,'data.h']]],
@@ -47,5 +47,6 @@ var searchData=
   ['run_5fmission4_5fcase_44',['run_mission4_case',['../test__loudestspot_8c.html#a7927dde782e86bbc1d8f32154e14d804',1,'test_loudestspot.c']]],
   ['run_5frefinement_5fcase_45',['run_refinement_case',['../test__loudestspot_8c.html#af53c7fc4a6297d4c5082716b979f3434',1,'test_loudestspot.c']]],
   ['run_5fself_5ftest_46',['run_self_test',['../earcam_8c.html#aa5a3ff6e07ed515bed9703b774b7416d',1,'earcam.c']]],
-  ['run_5fsoda_47',['run_soda',['../catia_8c.html#a9d5c76e6792cbfcefb6ce4c03234b24e',1,'catia.c']]]
+  ['run_5fsoda_47',['run_soda',['../catia_8c.html#a9d5c76e6792cbfcefb6ce4c03234b24e',1,'catia.c']]],
+  ['rx_5fhandler_48',['rx_handler',['../uart__cam__ctrl_8c.html#afa864000a1a3fd67a3930bb1f922aba8',1,'uart_cam_ctrl.c']]]
 ];

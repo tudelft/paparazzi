@@ -189,6 +189,7 @@ footer { padding: 25px 20px; color: var(--surface); background: var(--black); bo
         <a href="index.html" class="site-nav-link">Documentation Hub</a>
       <a href="catia_camera_pipeline.html" class="site-nav-link">Camera Pipeline</a>
       <a href="raspberry_pi_ai_camera.html" class="site-nav-link active">AI Camera (IMX500)</a>
+      <a href="setup_os_rpi_zero_2w.html" class="site-nav-link">Pi Zero 2 W Setup</a>
       <a href="lwir-calibration.html" class="site-nav-link">LWIR Calibration</a>
       <a href="earcam-loudest-spot-explained.html" class="site-nav-link">EARcam Guide</a>
       <a href="earcam-dataflow.html" class="site-nav-link">EARcam Data Flow</a>
@@ -208,6 +209,7 @@ footer { padding: 25px 20px; color: var(--surface); background: var(--black); bo
           <li><a href="index.html" class="">Documentation Hub</a></li>
         <li><a href="catia_camera_pipeline.html" class="">Camera Pipeline</a></li>
         <li><a href="raspberry_pi_ai_camera.html" class="active">AI Camera (IMX500)</a></li>
+        <li><a href="setup_os_rpi_zero_2w.html" class="">Pi Zero 2 W Setup</a></li>
         <li><a href="lwir-calibration.html" class="">LWIR Calibration</a></li>
         <li><a href="earcam-loudest-spot-explained.html" class="">EARcam Guide</a></li>
         <li><a href="earcam-dataflow.html" class="">EARcam Data Flow</a></li>
@@ -228,6 +230,7 @@ footer { padding: 25px 20px; color: var(--surface); background: var(--black); bo
 <li><a href="#parameters-and-why-they-matter">Parameters and Why They Matter</a></li>
 <li><a href="#picamera2-programming">Picamera2 Programming</a></li>
 <li><a href="#use-with-catia-on-mora">Use With CATIA on MORA</a></li>
+<li><a href="#prevent-chatter-in-camera">Prevent chatter in camera</a></li>
 <li><a href="#troubleshooting">Troubleshooting</a></li>
 <li><a href="#sources-and-regeneration">Sources and Regeneration</a></li>
 <li><a href="#backup">Backup</a></li>
@@ -565,6 +568,11 @@ the foreground run with <code>Ctrl+C</code>, restore the configured service:</p>
 <p>This tests optical capture, not IMX500 neural-network result ingestion. The
 standalone detection demos above do not establish that CATIA consumes their
 bounding boxes, classifications, or poses. Do not run them alongside CATIA.</p>
+<h2 id="prevent-chatter-in-camera">Prevent chatter in camera</h2>
+<p>On a headless Raspberry Pi Zero 2 W, prevent suspend and power-management state
+changes that can interrupt camera operation. See the <a href="setup_os_rpi_zero_2w.html#preventing-sleep-and-suspend-states-on-raspberry-pi-zero-2-w">Preventing Sleep and
+Suspend States on Raspberry Pi Zero 2 W</a>
+section in the board OS setup guide.</p>
 <h2 id="troubleshooting">Troubleshooting</h2>
 <table>
 <thead>

@@ -189,6 +189,7 @@ footer { padding: 25px 20px; color: var(--surface); background: var(--black); bo
         <a href="index.html" class="site-nav-link">Documentation Hub</a>
       <a href="catia_camera_pipeline.html" class="site-nav-link">Camera Pipeline</a>
       <a href="raspberry_pi_ai_camera.html" class="site-nav-link">AI Camera (IMX500)</a>
+      <a href="setup_os_rpi_zero_2w.html" class="site-nav-link">Pi Zero 2 W Setup</a>
       <a href="lwir-calibration.html" class="site-nav-link">LWIR Calibration</a>
       <a href="earcam-loudest-spot-explained.html" class="site-nav-link">EARcam Guide</a>
       <a href="earcam-dataflow.html" class="site-nav-link">EARcam Data Flow</a>
@@ -208,6 +209,7 @@ footer { padding: 25px 20px; color: var(--surface); background: var(--black); bo
           <li><a href="index.html" class="">Documentation Hub</a></li>
         <li><a href="catia_camera_pipeline.html" class="">Camera Pipeline</a></li>
         <li><a href="raspberry_pi_ai_camera.html" class="">AI Camera (IMX500)</a></li>
+        <li><a href="setup_os_rpi_zero_2w.html" class="">Pi Zero 2 W Setup</a></li>
         <li><a href="lwir-calibration.html" class="">LWIR Calibration</a></li>
         <li><a href="earcam-loudest-spot-explained.html" class="">EARcam Guide</a></li>
         <li><a href="earcam-dataflow.html" class="">EARcam Data Flow</a></li>
@@ -932,7 +934,7 @@ python3 sw/simulator/nps/nps_fixedwing_tuning.py \
    --settle-seconds 20 --measure-seconds 15 --bus 127.255.255.255:2165 \
   --udp-port 42270 --udp-uplink-port 42271 --output-dir var/nps_precision_landing/easystar_new
 </code></pre>
-<p>Use a new output directory per run. <code>--setting NAME=VALUE</code> supports controlled parameter trials; <code>--wind-speed</code> and <code>--wind-direction</code> set simulator wind. To reproduce rejection, add <code>--setting landing_airspeed=7.5 --setting final_height=10 --expect-go-around</code> to the EasyStar command. Do not lower the harness's 20 m climb gate to make a failed launch pass. Both models launch at 1.6 m and 10 m/s without a fabricated vertical throw. The flight plan converts the radian-valued <code>TAKEOFF_PITCH_ANGLE</code> to degrees before the flight-plan generator applies its normal degree-to-radian conversion.</p>
+<p>Use a new output directory per run. <code>--setting NAME=VALUE</code> supports controlled parameter trials; <code>--wind-speed</code> and <code>--wind-direction</code> set simulator wind. To reproduce rejection, add <code>--setting precision_landing_approach_airspeed=7.5 --setting precision_landing_final_height=10 --expect-go-around</code> to the EasyStar command. Do not lower the harness's 20 m climb gate to make a failed launch pass. Both models launch at 1.6 m and 10 m/s without a fabricated vertical throw. The flight plan converts the radian-valued <code>TAKEOFF_PITCH_ANGLE</code> to degrees before the flight-plan generator applies its normal degree-to-radian conversion.</p>
 <p>The generator can retain a stale settings header when flight-plan variables change. If a known variable is absent, mark only the corresponding generated <a href="var/aircrafts/Adam_Precision_Landing_Test/nps/generated/settings.h">var/aircrafts/Adam_Precision_Landing_Test/nps/generated/settings.h</a> or <a href="var/aircrafts/Easystar_3_Precision_Landing_Test/nps/generated/settings.h">var/aircrafts/Easystar_3_Precision_Landing_Test/nps/generated/settings.h</a> older (for example with <code>touch -d '1970-01-02'</code>) and rebuild. The harness rejects unsupported settings before starting processes. Never reset the source harness to solve a build issue.</p>
 <pre><code class="language-sh">python3 -m unittest discover -s sw/simulator/nps -p test_fixedwing_landing.py -v
 gcc -std=c11 -Wall -Wextra -Werror \

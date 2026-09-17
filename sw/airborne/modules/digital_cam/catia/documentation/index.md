@@ -6,6 +6,7 @@ subsystems for Paparazzi UAV.
 
 [Camera Pipeline](catia_camera_pipeline.html) |
 [AI Camera](raspberry_pi_ai_camera.html) |
+[Pi Zero 2 W Setup](setup_os_rpi_zero_2w.html) |
 [LWIR Calibration](lwir-calibration.html) |
 [EARcam Guide](earcam-loudest-spot-explained.html) |
 [EARcam Data Flow](earcam-dataflow.html) |
@@ -40,6 +41,14 @@ Explore the detailed technical guides for each subsystem:
   - [Testing Commands & Demos](raspberry_pi_ai_camera.html#run-imx500-inference-demos)
   - [Camera Parameter Reference](raspberry_pi_ai_camera.html#parameters-and-why-they-matter)
   - [OS Image Backup & Restore Tools](raspberry_pi_ai_camera.html#backup)
+
+- **[Raspberry Pi Zero 2 W OS Setup](setup_os_rpi_zero_2w.html)**
+  Headless Raspberry Pi OS imaging and first-boot configuration for CATIA:
+  Wi-Fi credentials, SSH keys, board identity, access-point mode, UART setup,
+  cloning precautions, and sleep prevention.
+  - [Flash and Customize the OS](setup_os_rpi_zero_2w.html#flash-and-customize-the-os)
+  - [Configure UART for CATIA](setup_os_rpi_zero_2w.html#get-os-to-work-with-uart)
+  - [Prepare a Cloneable Master Image](setup_os_rpi_zero_2w.html#master-sd-card-preparation-checklist)
 
 - **[LWIR Thermal Camera Calibration](lwir-calibration.html)**
   Step-by-step workshop procedure for calibrating the Tiny 1-C thermal camera.

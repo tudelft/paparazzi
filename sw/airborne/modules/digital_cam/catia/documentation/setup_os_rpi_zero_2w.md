@@ -1,18 +1,15 @@
-!Getting you OS ready from scratch
+#Getting you OS ready from scratch
 
-!First make sure you router is setu so it can accepp the connection request from RPI
+First make sure you router is setu so it can accepp the connection request from RPI
 
 WPA2 (NOT WPA2 with SHA256) and NO TKIP bit 
-!
 
 To flash Raspberry Pi OS onto a microSD card for a Raspberry Pi Zero 2 W with preconfigured credentials, network settings, and SSH keys, use the official **Raspberry Pi Imager** software.
 You can download it here Download https://www.raspberrypi.com/software/ MUST be .appimage since the official Ubuntu 26.04 still has OLD version
 
-So 
+So for more future luxury when you still conditioned to type rpi-imager .. this below with start the new one everytime your conditioned finger or scripps call it:
 
-for more future luxury when you still conditioned to type rpi-imager .. this below with start the new one everytime your conditioned finger or scripps call it:
-
-cd /usr/bin && sudo mv rpi-imager rpi-imager.old && sudo ln -s rpi-imager -> /opt/imager_2.0.11.1_amd64.AppImage
+`cd /usr/bin && sudo mv rpi-imager rpi-imager.old && sudo ln -s rpi-imager -> /opt/imager_2.0.11.1_amd64.AppImage`
 
 1. **Select Device and OS:** Target Selection.
 Launch Raspberry Pi Imager on your computer. Click **CHOOSE DEVICE** and select **Raspberry Pi Zero 2 W**. Click **CHOOSE OS** and select **Raspberry Pi OS** (64-bit or 32-bit Lite/Desktop).
@@ -30,7 +27,6 @@ To verify: Ensure the storage capacity and drive name displayed match your micro
 Press **Ctrl + Shift + X** on your keyboard (or click **NEXT** and select **EDIT SETTINGS** when the prompt appears) to open the OS Customization window.
 
 To verify: Confirm that a modal window titled "OS Customization" opens displaying the **GENERAL** and **SERVICES** tabs.
-
 
 4. **Configure Username and Wi-Fi Access:** GENERAL Tab.
 In the **GENERAL** tab, set up your primary user and wireless configuration:
@@ -53,12 +49,10 @@ Select the **SERVICES** tab to set up remote command-line access:
 
 To verify: Ensure the "Enable SSH" checkbox is marked and your key string begins with `ssh-rsa` or `ssh-ed25519`.
 
-
 6. **Save and Flash:** Writing to SD Card.
 Click **SAVE** at the bottom of the OS Customization window, then click **WRITE** (or **NEXT** then **YES**). Confirm the warning prompt that all data on the SD card will be overwritten.
 
 To verify: Wait until the write and verification progress bar reaches 100% and displays a "Write Successful" modal before removing the card.
-
 
 Once finished, eject the microSD card, insert it into your Raspberry Pi Zero 2 W, and connect power. The device will automatically connect to your 2.4 GHz Wi-Fi network and apply your username and SSH configurations on first boot. Refer to the [Raspberry Pi Official Documentation](https://www.raspberrypi.com/documentation/computers/getting-started.html) for video guidance on software installation.
 
@@ -160,22 +154,75 @@ Method 1: The Pre-configured NetworkManager File (Headless Fix)If you cannot plu
  method=auto
 
 
-----
 #Get OS to work with UART
 
-On MORA (theatre), disable Bluetooth and dedicate the full UART to CATIA
+On MORA, disable Bluetooth and dedicate the full UART to CATIA
 
 Open and edit the boot configuration:
 
  sudo nano /boot/firmware/config.txt
 
-Under [all], add:
+Under [all] add:
 
- enable_uart=1
- dtoverlay=disable-bt
+   ```text
+   enable_uart=1
+   dtoverlay=disable-bt
+   ```
 
 Then run sudo raspi-config → Interface Options → Serial Port:
 
 Serial login shell: No
 Serial hardware: Yes
+
 Reboot, then check:
+
+## Preventing Sleep and Suspend States
+
+Configure a headless Raspberry Pi Zero 2 W to run continuously without ever entering a sleep, suspend, hibernate, or standby state**.
+It keeps the system awake indefinitely, when powerd, while allowing normal, safe hardware speeds.
+
+This is need to avoid issues with e.g. a RPI AI Camera
+
+**Step 1:** 
+Block All Systemd Sleep & Suspend StatesThe most secure way to stop a Linux system from sleeping is to **mask** its power-saving targets. This completely disconnects the sleep commands from the operating system, making it impossible for background processes to trigger them.
+
+Run the following command in your terminal:
+```bash
+sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+```
+**Step 2:**
+Disable Kernel-Level Console BlankingBy default, the Linux kernel triggers a low-power "blanking" standby mode after 10 minutes of inactivity. Even on a headless system, disabling this prevents the kernel from spinning down display architectures.
+1. Open the boot command configuration file:
+   ```bash
+   sudo nano /boot/firmware/cmdline.txt
+   ```
+   *(Note: If you are using an older OS version, this file is located at `/boot/cmdline.txt`).*
+2. Append the following argument to the end of the existing text block.
+   **Crucial:** Keep everything on a **single, continuous line**. Do not press Enter or add a new line.
+   ```text
+   consoleblank=0
+   ```
+
+3. Save and exit (`Ctrl + O`, `Enter`, then `Ctrl + X`).
+
+**Step 3:**
+Ensure Normal, Non-Overclocked Settings (Optional)If you previously added aggressive hardware-forcing settings to your configuration file, you should remove them to let the Pi manage its temperatures naturally while staying awake.
+1. Open the boot configuration file:
+   ```bash
+   sudo nano /boot/firmware/config.txt
+   ```
+
+2. Look at the bottom of the file and ensure these lines are either **removed** or commented out with a `#`:
+   ```ini
+   # force_turbo=1
+   # arm_freq_min=1000
+   ```
+
+3. Save and exit (`Ctrl + O`, `Enter`, then `Ctrl + X`).
+
+**Step 4:** Apply ChangesReboot your Raspberry Pi to firmly lock all of these configurations into place:
+```bash
+sudo reboot
+```
+
+The Raspberry Pi Zero 2 W is now permanently awake and will never go to sleep!

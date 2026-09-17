@@ -25,6 +25,7 @@
 var NAVTREE =
 [
   [ "CATIA Camera Pipeline", "index.html", [
+    [ "Topics", "topics.html", "topics" ],
     [ "Namespaces", "namespaces.html", [
       [ "Namespace List", "namespaces.html", "namespaces_dup" ],
       [ "Namespace Members", "namespacemembers.html", [
@@ -47,9 +48,10 @@ var NAVTREE =
         [ "All", "globals.html", "globals_dup" ],
         [ "Functions", "globals_func.html", "globals_func" ],
         [ "Variables", "globals_vars.html", null ],
+        [ "Typedefs", "globals_type.html", null ],
         [ "Enumerations", "globals_enum.html", null ],
         [ "Enumerator", "globals_eval.html", null ],
-        [ "Macros", "globals_defs.html", null ]
+        [ "Macros", "globals_defs.html", "globals_defs" ]
       ] ]
     ] ]
   ] ]
@@ -58,11 +60,11 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "ai__cam__pipe_8c.html",
-"cmd_8h.html#aa90cac659d18e8ef6294c7ae337f6b58",
-"functions_d.html",
-"lwir__cam__pipe_8h.html#a9d0912e9d43a0fd25f2a0dea0a396998",
-"structFireCandidate.html#a88b0b32e99ef81d3883ee588b4a24e22",
-"temperature_8h.html#a14f7c17a90006a4f9d7aabf3513ef79e"
+"cmd_8h.html#a9e8f8c20b882ca0ed6e619aab47216aa",
+"functions_b.html",
+"lwir__cam__pipe_8c.html",
+"std_8h.html#aa8cecfc5c5c054d2875c03e77b7be15d",
+"structpose__record.html#af8e8e4a257f7bed208d5218bb74c4fbf"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronization';

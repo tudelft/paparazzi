@@ -2,7 +2,6 @@ var lwir__cam__pipe_8c =
 [
     [ "CATIA_LWIR_CAM_COMMAND", "lwir__cam__pipe_8c.html#acd24f5c98e5c9c2831ec73e67dcfdc00", null ],
     [ "CATIA_LWIR_CAM_PHOTO_DIR", "lwir__cam__pipe_8c.html#ad999c70545ac1bfbe1913c978e251ee5", null ],
-    [ "if", "lwir__cam__pipe_8c.html#ab2f22481d2de6b2e7fe3439d61753f20", null ],
     [ "lwir_cam_pipe_capture_delay", "lwir__cam__pipe_8c.html#a67e3b9d518fb69b8697c75e6ffada341", null ],
     [ "lwir_cam_pipe_capture_timing", "lwir__cam__pipe_8c.html#a90cdd7804a1b65490ea6f8d1413ee0f5", null ],
     [ "lwir_cam_pipe_deinit", "lwir__cam__pipe_8c.html#a9d0912e9d43a0fd25f2a0dea0a396998", null ],
@@ -16,8 +15,8 @@ var lwir__cam__pipe_8c =
     [ "parse_capture_timing", "lwir__cam__pipe_8c.html#a79786091268d8b487e9c8110fa8ec451", null ],
     [ "process_image", "lwir__cam__pipe_8c.html#a1f8b38c3b265c88f799725d7db349bd6", null ],
     [ "read_server_status", "lwir__cam__pipe_8c.html#ac5969d399296dd7b904e3e2aac063510", null ],
+    [ "send_request_and_wait", "lwir__cam__pipe_8c.html#a88906a86781dd0333229b682c1d3dbfb", null ],
     [ "stop_capture_server", "lwir__cam__pipe_8c.html#a8687187825da6923af778136f5088889", null ],
-    [ "while", "lwir__cam__pipe_8c.html#aa1008bc89d121806fdd24824c743059f", null ],
     [ "calibration_path", "lwir__cam__pipe_8c.html#a08f5f9d85b780b65adcbc992a518a73f", null ],
     [ "capture_delay_s", "lwir__cam__pipe_8c.html#a8056466a01ff55e82f610b90b4267c4e", null ],
     [ "capture_server_input", "lwir__cam__pipe_8c.html#a6e5c995e5119f284faa0dbbbd8ad00e6", null ],
@@ -26,7 +25,6 @@ var lwir__cam__pipe_8c =
     [ "capture_times", "lwir__cam__pipe_8c.html#ad2d5dedf5e57dc17bbcbdee9f61b6dbb", null ],
     [ "environ", "lwir__cam__pipe_8c.html#aa006daaf11f1e2e45a6ababaf463212b", null ],
     [ "native_raw_enabled", "lwir__cam__pipe_8c.html#ae58a1599e40c32a8c6af1435908c73f5", null ],
-    [ "return", "lwir__cam__pipe_8c.html#a9717e7bbecb906637e86cef6da3d83c2", null ],
     [ "status_buffer", "lwir__cam__pipe_8c.html#a9ccf3bf4ea342f2c79c447f109c8dd1e", null ],
     [ "status_buffer_pos", "lwir__cam__pipe_8c.html#af53674c96fc06634ebac1765033b4386", null ],
     [ "status_buffer_size", "lwir__cam__pipe_8c.html#a3e8e4fe82a3ce375912b4a808e0d0300", null ]

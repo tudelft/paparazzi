@@ -291,6 +291,13 @@ This tests optical capture, not IMX500 neural-network result ingestion. The
 standalone detection demos above do not establish that CATIA consumes their
 bounding boxes, classifications, or poses. Do not run them alongside CATIA.
 
+## Prevent chatter in camera
+
+On a headless Raspberry Pi Zero 2 W, prevent suspend and power-management state
+changes that can interrupt camera operation. See the [Preventing Sleep and
+Suspend States on Raspberry Pi Zero 2 W](setup_os_rpi_zero_2w.html#preventing-sleep-and-suspend-states-on-raspberry-pi-zero-2-w)
+section in the board OS setup guide.
+
 ## Troubleshooting
 
 | Symptom | Check |
