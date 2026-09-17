@@ -487,7 +487,18 @@ messages used by the aircraft.
 
 First complete [Deploy to MORA](#deploy-to-mora). **Stop `catia.service` before
 the foreground commands below** using step 6 of that guide; otherwise two
-processes compete for the same UART/camera. Restart the service after testing.
+processes would compete for the same UART/camera. CATIA now rejects the second
+instance before opening either resource and prints the service stop command.
+Use this complete foreground-test sequence:
+
+```sh
+ssh -t air@theatre \
+   'sudo -n systemctl stop catia.service && \
+    /home/air/digital_cam/catia --aicam --debug; \
+    status=$?; sudo -n systemctl start catia.service; exit $status'
+```
+
+This restarts the managed service even when foreground CATIA reports an error.
 
 ### Naming: CATIA service, MORA board
 
@@ -2048,6 +2059,7 @@ bash tests/capture_motion_test.sh
 bash tests/pose_sender_test.sh
 bash tests/pose_log_test.sh
 bash tests/clock_alignment_test.sh
+bash tests/socket_ownership_test.sh
 ```
 
 The EXIF test needs ExifTool, ImageMagick and g++; `EXIFTOOL` can select a local

@@ -242,9 +242,12 @@ extern char **environ;
 
 /** @brief Configure CATIA and run its multiplexed UART/local-UDP event loop.
  * @return Process status suitable for systemd restart policy.
- * @details Startup validates selected backends, starts optional persistent services,
- * initializes non-blocking transport, then drains serial bytes into the protocol parser.
- * Shutdown wakes and drains detached workers before releasing backend resources. */
+ * @details After argument validation, startup claims the fixed local payload endpoint
+ * before touching shared UART or camera resources. This rejects a second process early
+ * when the systemd service is already active. CATIA then validates selected backends,
+ * starts optional persistent services, initializes non-blocking transport, and drains
+ * serial bytes into the protocol parser. Shutdown wakes and drains detached workers
+ * before releasing backend resources. */
 int main(int argc, char *argv[])
 {
   const char *serial_device = CATIA_SERIAL_DEVICE;
@@ -407,6 +410,13 @@ int main(int argc, char *argv[])
     setvbuf(stderr, NULL, _IOLBF, 0);
   }
 
+  /* The fixed loopback payload endpoint is also the physical-mode instance
+   * claim. Acquire it before opening UART or camera resources so a foreground
+   * invocation cannot compete with the systemd-managed CATIA service. */
+  if (socket_init(1) != 0) {
+    return 1;
+  }
+
   if (!local_mode && !serial_was_selected && access(CATIA_SERIAL_DEVICE, R_OK | W_OK) != 0
       && access(CATIA_LOCAL_SIM_DEVICE, F_OK) == 0 && access(CATIA_LOCAL_APP_DEVICE, F_OK) == 0) {
     local_mode = true;
@@ -498,13 +508,6 @@ int main(int argc, char *argv[])
     cameras_deinit();
     stop_local_serial_bridge();
     return -1;
-  }
-  if (socket_init(1) != 0) {
-    close(fd);
-    if (earcam_active) ear_cam_pipe_deinit();
-    cameras_deinit();
-    stop_local_serial_bridge();
-    return 1;
   }
   if (serial_tx_start(fd) != 0) {
     fprintf(stderr, "CATIA:\tunable to initialize nonblocking UART output: %s\n", strerror(errno));

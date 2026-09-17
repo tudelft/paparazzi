@@ -1105,7 +1105,7 @@ Variables</h2></td></tr>
 
 <p>Configure CATIA and run its multiplexed UART/local-UDP event loop. </p>
 <dl class="section return"><dt>Returns</dt><dd>Process status suitable for systemd restart policy.</dd></dl>
-<p>Startup validates selected backends, starts optional persistent services, initializes non-blocking transport, then drains serial bytes into the protocol parser. Shutdown wakes and drains detached workers before releasing backend resources. </p>
+<p>After argument validation, startup claims the fixed local payload endpoint before touching shared UART or camera resources. This rejects a second process early when the systemd service is already active. CATIA then validates selected backends, starts optional persistent services, initializes non-blocking transport, and drains serial bytes into the protocol parser. Shutdown wakes and drains detached workers before releasing backend resources. </p>
 
 </div>
 </div>

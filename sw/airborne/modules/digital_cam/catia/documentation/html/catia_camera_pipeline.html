@@ -701,7 +701,15 @@ while simulation runs on a local PC. The USB-to-UART link carries the same CATIA
 messages used by the aircraft.</p>
 <p>First complete <a href="#deploy-to-mora">Deploy to MORA</a>. <strong>Stop <code>catia.service</code> before
 the foreground commands below</strong> using step 6 of that guide; otherwise two
-processes compete for the same UART/camera. Restart the service after testing.</p>
+processes would compete for the same UART/camera. CATIA now rejects the second
+instance before opening either resource and prints the service stop command.
+Use this complete foreground-test sequence:</p>
+<pre><code class="language-sh">ssh -t air@theatre \
+   'sudo -n systemctl stop catia.service &amp;&amp; \
+    /home/air/digital_cam/catia --aicam --debug; \
+    status=$?; sudo -n systemctl start catia.service; exit $status'
+</code></pre>
+<p>This restarts the managed service even when foreground CATIA reports an error.</p>
 <h3 id="naming-catia-service-mora-board">Naming: CATIA service, MORA board</h3>
 <p><strong>MORA</strong> (Magic Onboard Recognition Apparatus) is the companion compute board with
 one or more cameras. <strong>CATIA</strong> is the camera service running on that board or, for
@@ -2266,6 +2274,7 @@ bash tests/capture_motion_test.sh
 bash tests/pose_sender_test.sh
 bash tests/pose_log_test.sh
 bash tests/clock_alignment_test.sh
+bash tests/socket_ownership_test.sh
 </code></pre>
 <p>The EXIF test needs ExifTool, ImageMagick and g++; <code>EXIFTOOL</code> can select a local
 executable. Coverage includes combined attitude, distortion, lever arms,

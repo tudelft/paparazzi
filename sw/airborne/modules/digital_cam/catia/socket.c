@@ -7,6 +7,7 @@
  */
 
 #include <arpa/inet.h>
+#include <errno.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -37,9 +38,22 @@ int socket_init(int is_server)
 
   if (is_server) {
     if (bind(socket_fd, (struct sockaddr *)&socket_server, sizeof(socket_server)) != 0) {
-      perror("Socket: bind");
+      int bind_errno = errno;
+      if (bind_errno == EADDRINUSE) {
+        fprintf(stderr,
+                "CATIA:\tanother CATIA instance or payload listener already owns "
+                "127.0.0.1:%d\n"
+                "CATIA:\tstop the existing process before starting another instance\n"
+                "CATIA:\tfor the managed MORA service, use: "
+                "sudo -n systemctl stop catia.service\n",
+                SOCKET_PORT);
+      } else {
+        fprintf(stderr, "CATIA:\tfailed to bind local payload port 127.0.0.1:%d: %s\n",
+                SOCKET_PORT, strerror(bind_errno));
+      }
       close(socket_fd);
       socket_fd = -1;
+      errno = bind_errno;
       return -1;
     }
   }

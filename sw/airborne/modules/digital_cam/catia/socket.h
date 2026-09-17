@@ -9,9 +9,12 @@
  * simulator integration, not a network-facing control protocol.
  */
 
-/** @brief Create the loopback UDP endpoint.
+/** @brief Create the loopback UDP endpoint and, for a server, claim CATIA ownership.
  * @param is_server Nonzero to bind the fixed local port; zero for an unbound sender.
- * @return 0 on success or -1 when socket creation/binding fails. */
+ * @return 0 on success or -1 when socket creation/binding fails.
+ * @details The server bind doubles as the physical-mode single-instance claim.
+ * A second CATIA must fail rather than share the port because it would also
+ * compete for the same UART and camera resources. */
 int socket_init(int is_server);
 /** @brief Return the active UDP descriptor for polling.
  * @return Descriptor, or a negative value before successful initialization. */
