@@ -564,7 +564,7 @@ static bool m4_outside_fence(float x, float y)
          drop_setup can only be acted on here. -->
     <block name="drop_approach">
       <exception cond="!earcam_run_in_clear" deroute="drop_no_corridor"/>
-      <call_once fun="nav_move_waypoint_enu(WP_START, WaypointX(WP_START), WaypointY(WP_START), WaypointAlt(WP_DROP) + 15)"/>
+      <call_once fun="nav_move_waypoint_enu(WP_START, WaypointX(WP_START), WaypointY(WP_START), WaypointAlt(WP_TANGUY) + 15)"/>
       <call_once fun="nav_drop_compute_approach(WP_TANGUY, WP_START, WP__DROPTURN, WP__CLIMBOUT, M4_DROPTURN_SIDE * fabsf(nav_radius))"/>
       <call_once fun="earcam_place_climbout(WP_START, WP_TANGUY, WP__CLIMBOUT, WP__EXIT, M4_CLIMBOUT_MAX_M, M4_CLIMBOUT_MIN_M, M4_EXIT_TURN_RADIUS_M, M4_FENCE_MARGIN_M, M4_DROPTURN_SIDE, WaypointAlt(WP_TANGUY) + M4_SAFE_HEIGHT_M, m4_outside_fence)"/>
       <call_once fun="earcam_drop_level_point(WP_START, WP_RELEASE, WP_TANGUY, WP__LEVEL, 50)"/>

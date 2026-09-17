@@ -67,11 +67,12 @@
     </dl_settings>
   </settings>
   <dep>
-    <depends>digital_cam_common,uart</depends>
+    <depends>digital_cam_common,mcu,threads</depends>
     <conflicts>digital_cam_gpio,digital_cam_servo,digital_cam_i2c,digital_cam_pprzlink</conflicts>
   </dep>
   <header>
     <file name="uart_cam_ctrl.h"/>
+    <file name="uart.h" dir="mcu_periph"/>
   </header>
   <init fun="digital_cam_uart_init()"/>
   <periodic fun="digital_cam_uart_periodic()" freq="10" autorun="TRUE"/>
@@ -89,8 +90,13 @@
     <define name="USE_$(CAMERA_PORT_UPPER)"/>
     <define name="CAMERA_LINK" value="$(CAMERA_PORT_LOWER)"/>
     <define name="$(CAMERA_PORT_UPPER)_BAUD" value="B115200"/>
+    <file name="uart.c" dir="mcu_periph"/>
+    <file_arch name="uart_arch.c" dir="mcu_periph"/>
+    <file name="serial_port.c" dir="arch/linux" cond="ifeq ($(ARCH), linux)"/>
+    <file_arch name="usb_ser_hw.c" dir="." cond="ifneq ($(filter $(ARCH),chibios stm32),)"/>
   </makefile>
   <makefile target="sim|nps">
+    <file name="serial_port.c" dir="arch/linux"/>
     <configure name="DIGITAL_CAM_UART_LOCAL_DEVICE" default="/tmp/catia-sim"/>
     <configure name="DIGITAL_CAM_UART_FALLBACK_DEVICE" default="/dev/ttyUSB0"/>
     <define name="DIGITAL_CAM_UART_SIM_BACKEND"/>

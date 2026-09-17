@@ -1,48 +1,4 @@
-<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
-<!-- This is the Flightplan of Team OpenUAS for use in the
-     Australian UAV Outback Challenge of 2014.
 
-     Read about this challenge here:
-     http://www.uavoutbackchallenge.com.au/
-
-     Thanks to all involved, specifically all the help from CdW, DD, BR, GdC, AvdL
-     * TU Delft University of Technology, L&R http://www.tudelft.nl
-     * MAVLab - http://mavlab.info
-     * 1 bit squared http://1bitsquesred.com
-     * everyone else who helped out
-
-TYPE 1 OPERATION Flightplan, fully autonomous in-air joe detection integration
-
-Now with integrated TYPE2 operations option (soon...)
-TYPE 2 OPERATION Flightplan, fully autonomous search, but on ground joe detection integration
-
-STRATEGY:
-
-# Have one flightplan which does it all, no need to upload anything!
-
-USAGE:
-
-NOTES:
-
-# This flightplan contains both the SR, as default mission and the Scruteneering flight.
-# Mission boundary coodinates are for both Scrutineering and SnR the same
-# Alert boundaries are different for Scrutineering and SnR Missions
-
-TODO:
-# Latest coordinates of KMZ of 20131017, a 100% validationcheck.
-# TODO:
-# add times to blocks to prevent to early forcedcrash. e.g after 2 second from tkeof border cannot be crossed in reality, so if triggered do a softcircledown or so
-# or mabye calculate distance and look at airframe REAL max ground speed(with wind in backeve) and deduct time it would take, if within < margin it cannot be missionborder
-# but if scrutineering day, than it can be since we test it closeby mission boundary
-
-TESTS:
-#If we set the air crowbrake make sure it is retracted again when contining normal ops (maybe or above a certain airspeed?)
-
--->
-
-<!-- Test via command xmlwf yourfligtplanname.xml for welformedness of the xml document -->
-<!-- The base lat lon of the flightplan is the AIRFIELDHOME point -->
-<!-- The ground_alt will be set later on also with real testflight, mind the ground height profile please -->
 <procedure>
 <!-- ******************************** HEADERS ****************************** -->
 <header>
@@ -165,14 +121,6 @@ TST-3 = -26° 35' 23.2" * 151° 50' 45.9"
 <!--  <exception cond="electrical.bat_low @AND !(nav_block == IndexOfBlock('Setting_home_location')) @AND !(nav_block == IndexOfBlock('Holding_point') @AND !(nav_block == IndexOfBlock('Land')))" deroute="Land"/>-->
 <!--<TODO: Add somethin like pre_call="if (!InsideRed(GetPosX(), GetPosY())) NavKillThrottle();-->
   </exceptions>
-
-
-
-
-
-
-
-
 
 <!-- *********************************************************************** -->
 <!-- ********************** FLIGHTPLAN STARTINGPOINT *********************** -->
@@ -320,7 +268,7 @@ to “Airfield Home” and orbit for either a landing or regain of Data Link.
       <set value="0" var="commands[COMMAND_CAMBER]"/>-->
 
 <!-- *********** Track to EL-1 *********** -->
-    <block name="EntryLane1" strip_button="Joe" strip_icon="lookdown.png" group="Mission">
+    <block name="EntryLane1" strip_button="Turguy" strip_icon="lookdown.png" group="Mission">
       <set value="nav_airspeed_tracking_setting" var="v_ctl_auto_airspeed_setpoint"/>
       <go from="AIRFIELDHOME" wp="EL1" hmode="route"/>
     </block>
