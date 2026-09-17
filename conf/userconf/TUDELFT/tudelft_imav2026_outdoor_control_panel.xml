@@ -67,7 +67,7 @@
   <section name="sessions">
     <session name="Desktest">
       <program name="Data Link">
-        <arg flag="-d" constant="/dev/ttyACM0"/>
+        <arg flag="-d" constant="/dev/ttyACM1"/>
         <arg flag="-s" constant="57600"/>
       </program>
       <program name="Server"/>
@@ -193,6 +193,28 @@
         <arg flag="-d123"/>
       </program>
     </session>
+    <session name="SIM Test Drop">
+      <program name="Simulator">
+        <arg flag="-t" constant="nps"/>
+        <arg flag="-a" constant="Easystar_3"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Real-time Plotter"/>
+      <program name="GCS Classic">
+        <arg flag="--maximize"/>
+      </program>
+      <program name="Environment Simulator (Legacy)">
+        <arg flag="-w3"/>
+        <arg flag="-d123"/>
+      </program>
+    </session>
     <session name="SIM test ES3">
       <program name="Simulator">
         <arg flag="-t" constant="sim"/>
@@ -265,28 +287,6 @@
       <program name="Environment Simulator (Legacy)">
         <arg flag="-w3"/>
         <arg flag="-d220"/>
-      </program>
-    </session>
-    <session name="SIM Test Drop">
-      <program name="Simulator">
-        <arg flag="-t" constant="nps"/>
-        <arg flag="-a" constant="Easystar_3"/>
-      </program>
-      <program name="Data Link">
-        <arg flag="-udp"/>
-        <arg flag="-udp_broadcast"/>
-      </program>
-      <program name="Server">
-        <arg flag="-n"/>
-      </program>
-      <program name="Messages"/>
-      <program name="Real-time Plotter"/>
-      <program name="GCS Classic">
-        <arg flag="--maximize"/>
-      </program>
-      <program name="Environment Simulator (Legacy)">
-        <arg flag="-w3"/>
-        <arg flag="-d123"/>
       </program>
     </session>
   </section>

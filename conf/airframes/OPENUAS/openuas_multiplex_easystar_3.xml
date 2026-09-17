@@ -144,8 +144,13 @@
       </module>
 
       <module name="radio_control" type="sbus">
-        <configure name="SBUS_PORT" value="UART1"/>
-        <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>
+        <configure name="SBUS_PORT" value="UART1"/> <!-- NOTE not the same uart ID as in Talon250g -->
+        <define name="RADIO_HATCH" value="RADIO_AUX4"/>
+        <define name="RADIO_BRAKE" value="RADIO_AUX2"/> 
+        <define name="RADIO_MANUALLIGHT" value="RADIO_AUX3"/>
+        <define name="RADIO_MANUALSHUTTER" value="RADIO_AUX3"/>
+        <define name="RADIO_MANUALRELEASE" value="RADIO_AUX4"/>
+        <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/><!--TBS Nano RX only 12 actually-->
       </module>
 
       <module name="telemetry" type="transparent">
@@ -260,11 +265,13 @@
     </target>  
 
     <!-- Radio defines common for all targets AP,SIM, NPS-->
+    <!--WARNING BRAKE Different from Talon250g definition--> 
+    <!-- <define name="RADIO_HATCH" value="RADIO_AUX4"/>
+    <define name="RADIO_BRAKE" value="RADIO_AUX3"/> 
     <define name="RADIO_MANUALLIGHT" value="RADIO_AUX2"/>
     <define name="RADIO_MANUALSHUTTER" value="RADIO_AUX2"/>
-    <define name="RADIO_HATCH" value="RADIO_AUX3"/>
-    <define name="RADIO_BRAKE" value="RADIO_AUX4"/> <!--WARNING Different from Talon250g definition--> 
-    <!--<define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>-->
+    <define name="RADIO_MANUALRELEASE" value="RADIO_AUX4"/> -->
+  <!--<define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>-->
 
     <define name="USE_INS_MODULE" value="TRUE"/>
 
@@ -365,9 +372,9 @@
 
     <!-- RADIO_AUX3: high shoots immediately then at 1 Hz in any flight mode.
          Low or RC loss stops RC shots only; autonomous camera settings are unchanged. -->
-    <module name="digital_cam_shoot_rc">
-      <define name="DC_RADIO_SHOOT" value="RADIO_AUX3"/>
-    </module>
+    <!-- <module name="digital_cam_shoot_rc">
+      <define name="DC_RADIO_SHOOT" value="RADIO_AUX2"/>
+    </module> -->
 
     <!-- Acoustic loud-spot search with the EARcam microphone on MORA (CATIA started with the earcam option).
          IMAV 2026 Mission 4 (easystar3_imav2026_mission4_earcam.xml): star of low legs around the given
@@ -516,7 +523,7 @@
     <let var="gyro_active" value="(1 > AP_MODE ? 0 : 1)"/><!-- yes a bit puzzling is it ;)-->
     <let var="gyro_yaw" value="$gyro_active * (stateGetBodyRates_i()->r)"/>
     <let var="yaw_ctrl_sgl" value="@YAW - ($k_rudder_gyro * ($gyro_yaw)) - @ROLL * ASSIST_ROLL_WITH_RUDDER"/>
-    <let var="manual_crow" value="((autopilot.mode == AP_MODE_MANUAL || autopilot.mode == AP_MODE_AUTO1) ? ((radio_control.status == RC_OK) ? Clip(-radio_control_get(RADIO_BRAKE), 0, MAX_PPRZ) : 0) : 0)"/>
+    <let var="manual_crow" value="((autopilot.mode == AP_MODE_MANUAL || autopilot.mode == AP_MODE_AUTO1) ? ((radio_control.status == RC_OK) ? Clip(radio_control_get(RADIO_BRAKE), 0, MAX_PPRZ) : 0) : 0)"/>
     <let var="brake_value_nofilt" value="((autopilot.mode == AP_MODE_AUTO2) ? Clip(-@BRAKE, 0, MAX_PPRZ) : $manual_crow)"/>
     <ratelimit var="brake_value" value="$brake_value_nofilt" rate_min="-BRAKE_ENABLED_SLOWDOWN_FACTOR_RETRACT" rate_max="BRAKE_ENABLED_SLOWDOWN_FACTOR_EXTEND"/>
     <let var="crowbrake" value="$brake_value * BRAKE_MAX_PCT"/>
