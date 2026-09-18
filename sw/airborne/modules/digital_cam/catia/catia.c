@@ -870,14 +870,18 @@ static void *handle_msg_shoot(void *ptr)
 
   /* Only the captures hold the camera slot. EXIF and SODA for optical images run
    * after it is released, so the next shot can capture meanwhile. LWIR is finished
-   * inside the slot because its geolocation reads the backend's last-capture state. */
+   * inside the slot because its geolocation reads the backend's last-capture state;
+   * --aicam-detect has the same hazard (vehicle_detect_pipe's last-detection state is
+   * likewise a single static slot, not part of `image`), so it is finished inside too. */
   struct captured_image images[CATIA_CAMERA_LWIRCAM];
   int image_count_ready = 0;
   for (int camera_id = CATIA_CAMERA_CHDK; camera_id <= CATIA_CAMERA_LWIRCAM && keep_running; ++camera_id) {
     if ((job->camera_mask & (1U << (camera_id - 1))) != 0 && camera_prepare(camera_id) == 0) {
       struct captured_image *image = &images[image_count_ready];
       if (!capture_image(&job->shot, image)) continue;
-      if (image->camera_id == CATIA_CAMERA_LWIRCAM) finish_image(&job->shot, image);
+      bool finish_in_slot = image->camera_id == CATIA_CAMERA_LWIRCAM
+        || (image->camera_id == CATIA_CAMERA_AICAM && aicam_detect_enabled);
+      if (finish_in_slot) finish_image(&job->shot, image);
       else ++image_count_ready;
     }
   }
@@ -967,7 +971,7 @@ static void finish_image(const union dc_shot_union *shoot, struct captured_image
             fprintf(stderr, "CATIA-%d:\tfailed to record hotspot analysis failure\n", shoot->data.nr);
           }
         }
-      } else if (optical_camera_id == CATIA_CAMERA_AICAM && aicam_detect_enabled) {
+      } else if (image->camera_id == CATIA_CAMERA_AICAM && aicam_detect_enabled) {
         /** The detection result (if any) was already produced by vehicle_detect_pipe_shoot()
          * as part of this same capture, unlike LWIR's separate post-capture geolocate() pass;
          * just format and record it, mirroring image_exif_write_hotspots()'s convention. */
