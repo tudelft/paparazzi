@@ -70,6 +70,7 @@
 #include "autopilot.h"
 #include "firmwares/fixedwing/guidance/energy_ctrl.h"
 #include "modules/digital_cam/dc.h"
+#include "modules/digital_cam/uart_cam_ctrl.h"
 #include "modules/nav/nav_survey_poly_osam.h"
 #include "modules/nav/nav_mission4_geofence.h"
 
@@ -499,6 +500,8 @@ static inline void mission1_shoot_in_area(float max_roll_deg, float lookahead,
   <blocks>
     <!-- ── Pre-flight ───────────────────────────────────────────────────── -->
     <block name="Wait_GPS">
+      <!-- Mission 1 uses the AI camera only, from boot (airframe default is AIcam+LWIR). -->
+      <call_once fun="uart_cam_ctrl_set_camera_mask(CATIA_CAMERA_MASK_AICAM)"/>
       <set value="1" var="autopilot.kill_throttle"/>
       <while cond="!GpsFixValid()"/>
     </block>
@@ -511,6 +514,18 @@ static inline void mission1_shoot_in_area(float max_roll_deg, float lookahead,
     <block name="Holding_point">
       <set value="1" var="autopilot.kill_throttle"/>
       <exception cond="NavBlockTime() @GT holding_delay" deroute="Takeoff"/>
+      <attitude roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+
+    <!-- Bench check of the FC -> CATIA -> rpicam-still chain: one AI camera
+         shot per click, then hold. Expect a new /home/air/Pictures/aNNNNNN.jpg
+         on MORA. Not part of the mission sequence. -->
+    <block name="Test_AIcam_Shot" strip_button="Test AIcam shot" strip_icon="survey.png" group="mission">
+      <call_once fun="uart_cam_ctrl_set_camera_mask(CATIA_CAMERA_MASK_AICAM)"/>
+      <call_once fun="dc_send_command(DC_SHOOT)"/>
+      <!-- Hold with the motor killed; do not return to Holding_point, whose
+           timeout deroutes to Takeoff. -->
+      <set value="1" var="autopilot.kill_throttle"/>
       <attitude roll="0" throttle="0" vmode="throttle" until="FALSE"/>
     </block>
 
@@ -536,6 +551,8 @@ static inline void mission1_shoot_in_area(float max_roll_deg, float lookahead,
            mapping_overrun) midway between the two lines; the outer line of
            each pair ends there too. Set once, the module keeps it. -->
       <set var="Poly_Turn_On_Edge" value="TRUE"/>
+      <!-- Mapping uses the AI camera only (airframe default mask is AIcam+LWIR). -->
+      <call_once fun="uart_cam_ctrl_set_camera_mask(CATIA_CAMERA_MASK_AICAM)"/>
       <set var="dc_photo_nr" value="1 * MISSION1_PHOTO_BLOCK"/>
       <call_once fun="dc_distance(mapping_shot_interval)"/>
       <!-- dc_distance() arms the camera; disarm so the in-area gate decides
@@ -566,6 +583,7 @@ static inline void mission1_shoot_in_area(float max_roll_deg, float lookahead,
       <set var="v_ctl_auto_airspeed_setpoint" value="mapping_airspeed"/>
       <set var="Half_Sweep_Enabled" value="FALSE"/>
       <set var="Poly_Turn_On_Edge" value="TRUE"/>
+      <call_once fun="uart_cam_ctrl_set_camera_mask(CATIA_CAMERA_MASK_AICAM)"/>
       <set var="dc_photo_nr" value="2 * MISSION1_PHOTO_BLOCK"/>
       <call_once fun="dc_distance(mapping_shot_interval)"/>
       <set var="dc_autoshoot" value="DC_AUTOSHOOT_STOP"/>

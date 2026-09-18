@@ -17,9 +17,9 @@ int posix_spawnp(pid_t *pid, const char *file,
   assert(strcmp(arguments[1], "-o") == 0);
   assert(strcmp(arguments[2], "photos/a000042.jpg") == 0);
   assert(strcmp(arguments[3], "--width") == 0);
-  assert(strcmp(arguments[4], "4056") == 0);
+  assert(strcmp(arguments[4], "2048") == 0);
   assert(strcmp(arguments[5], "--height") == 0);
-  assert(strcmp(arguments[6], "3040") == 0);
+  assert(strcmp(arguments[6], "1520") == 0);
   FILE *image = fopen(arguments[2], "wb");
   assert(image != NULL);
   assert(fputs("capture fixture", image) >= 0);
