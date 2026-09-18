@@ -112,7 +112,7 @@ Include dependency graph for ear_cam_pipe.h:</div>
 <area shape="poly" title=" " alt="" coords="116,45,94,81,89,78,119,41"/>
 <area shape="poly" title=" " alt="" coords="234,110,231,104,225,99,215,95,202,92,188,91,174,92,161,95,151,99,145,104,143,110,145,116,151,121,161,125,174,128,188,129,202,128,215,125,225,121,231,116"/>
 <area shape="poly" title=" " alt="" coords="143,41,170,79,165,79,141,46"/>
-<area shape="poly" href="protocol_8h.html" title=" " alt="" coords="369,110,366,104,358,99,346,95,331,92,314,91,296,92,281,95,269,99,261,104,258,110,261,116,269,121,281,125,296,128,314,129,331,128,346,125,358,121,366,116"/>
+<area shape="poly" href="protocol_8h.html" title="CATIA&#39;s byte&#45;stream UART framing, messages, and wire&#45;compatible payload layouts." alt="" coords="369,110,366,104,358,99,346,95,331,92,314,91,296,92,281,95,269,99,261,104,258,110,261,116,269,121,281,125,296,128,314,129,331,128,346,125,358,121,366,116"/>
 <area shape="poly" title=" " alt="" coords="165,39,270,87,265,89,165,44"/>
 <area shape="poly" title=" " alt="" coords="278,127,135,179,134,174,275,122"/>
 <area shape="poly" title=" " alt="" coords="369,196,366,190,358,185,346,180,331,178,314,177,296,178,281,180,269,185,261,190,258,196,261,201,269,207,281,211,296,214,314,214,331,214,346,211,358,207,366,201"/>
@@ -152,25 +152,27 @@ Data Structures</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a23619e6ec8833c82e2868f01249397d0" id="r_a23619e6ec8833c82e2868f01249397d0"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a23619e6ec8833c82e2868f01249397d0">ear_cam_pipe_init</a> (const char *unused)</td></tr>
-<tr class="memdesc:a23619e6ec8833c82e2868f01249397d0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocate session storage and start or configure the acoustic backend.  <br /></td></tr>
+<tr class="memdesc:a23619e6ec8833c82e2868f01249397d0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start EARcam sampling or its deterministic simulated-source replacement.  <br /></td></tr>
 <tr class="memitem:a62fd6aea34ee6761e6aece7bca1271ae" id="r_a62fd6aea34ee6761e6aece7bca1271ae"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a62fd6aea34ee6761e6aece7bca1271ae">ear_cam_pipe_deinit</a> (void)</td></tr>
-<tr class="memdesc:a62fd6aea34ee6761e6aece7bca1271ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stop the child and release all bounded session resources.  <br /></td></tr>
+<tr class="memdesc:a62fd6aea34ee6761e6aece7bca1271ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stop EARcam activity and release its process, descriptors, and session storage.  <br /></td></tr>
 <tr class="memitem:a1c7d0a10d955ab19badc3525052a665b" id="r_a1c7d0a10d955ab19badc3525052a665b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1c7d0a10d955ab19badc3525052a665b">ear_cam_pipe_ready</a> (void)</td></tr>
-<tr class="memdesc:a1c7d0a10d955ab19badc3525052a665b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Report whether an actual or simulated measurement source is ready.  <br /></td></tr>
+<tr class="memdesc:a1c7d0a10d955ab19badc3525052a665b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Report whether the live microphone server completed its ready handshake.  <br /></td></tr>
 <tr class="memitem:aff02dd02372e2706104cf25a36d8446a" id="r_aff02dd02372e2706104cf25a36d8446a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aff02dd02372e2706104cf25a36d8446a">ear_cam_pipe_set_simulated_source</a> (double lat_deg, double lon_deg, double level_db_at_1m)</td></tr>
-<tr class="memdesc:aff02dd02372e2706104cf25a36d8446a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Select deterministic virtual acoustic measurements for simulation.  <br /></td></tr>
+<tr class="memdesc:aff02dd02372e2706104cf25a36d8446a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Replace microphone input with a virtual fixed loudspeaker for NPS or desk tests.  <br /></td></tr>
 <tr class="memitem:aa4482330e9cf0f2597cfe88e8a883a99" id="r_aa4482330e9cf0f2597cfe88e8a883a99"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa4482330e9cf0f2597cfe88e8a883a99">ear_cam_pipe_set_band</a> (double low_cut_hz, double high_cut_hz)</td></tr>
-<tr class="memdesc:aa4482330e9cf0f2597cfe88e8a883a99"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the detector band forwarded to a subsequently spawned EARcam child.  <br /></td></tr>
+<tr class="memdesc:aa4482330e9cf0f2597cfe88e8a883a99"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the live EARcam tone-search band.  <br /></td></tr>
 <tr class="memitem:a9861737bfc3041a6d61c7fe00b5b28c3" id="r_a9861737bfc3041a6d61c7fe00b5b28c3"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9861737bfc3041a6d61c7fe00b5b28c3">ear_cam_pipe_record</a> (const union <a class="el" href="uniondc__shot__union.html">dc_shot_union</a> *shot)</td></tr>
-<tr class="memdesc:a9861737bfc3041a6d61c7fe00b5b28c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Associate the newest fresh acoustic measurement with a camera shot.  <br /></td></tr>
+<tr class="memdesc:a9861737bfc3041a6d61c7fe00b5b28c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Associate the newest sound window with one flight-controller shot pose.  <br /></td></tr>
 <tr class="memitem:a4ec5b90c603695459590af5ae96ac16c" id="r_a4ec5b90c603695459590af5ae96ac16c"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4ec5b90c603695459590af5ae96ac16c">ear_cam_pipe_finish</a> (struct <a class="el" href="structear__loudest__spot.html">ear_loudest_spot</a> *result)</td></tr>
-<tr class="memdesc:a4ec5b90c603695459590af5ae96ac16c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Solve and close the current session, clearing accumulated samples afterward.  <br /></td></tr>
+<tr class="memdesc:a4ec5b90c603695459590af5ae96ac16c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fuse the session into its final loudest-spot result and clear stored samples.  <br /></td></tr>
 <tr class="memitem:a769a8f567bbcbf2ea892269b7e8ac1f5" id="r_a769a8f567bbcbf2ea892269b7e8ac1f5"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a769a8f567bbcbf2ea892269b7e8ac1f5">ear_cam_pipe_solve</a> (struct <a class="el" href="structear__loudest__spot.html">ear_loudest_spot</a> *result)</td></tr>
-<tr class="memdesc:a769a8f567bbcbf2ea892269b7e8ac1f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Solve the current session without consuming it, for intermediate mission feedback.  <br /></td></tr>
+<tr class="memdesc:a769a8f567bbcbf2ea892269b7e8ac1f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Solve the accumulated session without clearing it.  <br /></td></tr>
 <tr class="memitem:a79f5234a2b1649c91c7d1a151b137eb8" id="r_a79f5234a2b1649c91c7d1a151b137eb8"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a79f5234a2b1649c91c7d1a151b137eb8">ear_cam_pipe_render</a> (const struct <a class="el" href="structear__loudest__spot.html">ear_loudest_spot</a> *result, char *filename, size_t filename_size, bool <a class="el" href="ear__cam__pipe_8c.html#a7cd628b80bf1b75f359ff3adc61ce0e8">simulated</a>)</td></tr>
-<tr class="memdesc:a79f5234a2b1649c91c7d1a151b137eb8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Render the current acoustic session into a north-up JPEG before it is cleared.  <br /></td></tr>
+<tr class="memdesc:a79f5234a2b1649c91c7d1a151b137eb8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Render the current session as a north-up acoustic evidence JPEG.  <br /></td></tr>
 <tr class="memitem:af8dc579cb0563101679e0a7c1408be06" id="r_af8dc579cb0563101679e0a7c1408be06"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af8dc579cb0563101679e0a7c1408be06">ear_cam_pipe_last_shot_nr</a> (void)</td></tr>
+<tr class="memdesc:af8dc579cb0563101679e0a7c1408be06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the shot number associated with the newest stored acoustic sample.  <br /></td></tr>
 <tr class="memitem:a721dd73317aca4cdfabf84ff9219ffb9" id="r_a721dd73317aca4cdfabf84ff9219ffb9"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a721dd73317aca4cdfabf84ff9219ffb9">calculated_loudestspot</a> (const struct <a class="el" href="structear__sample.html">ear_sample</a> *samples, size_t <a class="el" href="pose__log_8c.html#a76d971a3c552bc58ba9f0d5fceae9806">count</a>, struct <a class="el" href="structear__loudest__spot.html">ear_loudest_spot</a> *result)</td></tr>
+<tr class="memdesc:a721dd73317aca4cdfabf84ff9219ffb9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Estimate the loudest ground position from a supplied geotagged sample set.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>CATIA API for persistent EARcam sampling, fusion, and acoustic image rendering. </p>
@@ -199,6 +201,18 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Estimate the loudest ground position from a supplied geotagged sample set. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">samples</td><td>Immutable acoustic samples ordered by collection time. </td></tr>
+    <tr><td class="paramname">count</td><td>Number of entries in <code class="param">samples</code>. </td></tr>
+    <tr><td class="paramname">result</td><td>Destination for the valid estimate or invalid-result marker. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 when the calculation completed; -1 for invalid arguments or insufficient data.</dd></dl>
+<p>This pure function has no process, filesystem, or global-session dependency, which makes it appropriate for deterministic tests and offline replay as well as live sessions. </p>
+
 </div>
 </div>
 <a id="a62fd6aea34ee6761e6aece7bca1271ae" name="a62fd6aea34ee6761e6aece7bca1271ae"></a>
@@ -216,7 +230,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Stop the child and release all bounded session resources. </p>
+<p>Stop EARcam activity and release its process, descriptors, and session storage. </p>
+<p>Safe after a partially successful initialization. Call this after the final render or solve because it discards unfinalized session samples.</p>
+<p>Stop EARcam activity and release its process, descriptors, and session storage. </p>
 
 </div>
 </div>
@@ -235,8 +251,16 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Solve and close the current session, clearing accumulated samples afterward. </p>
-<p>Finalize the session: fuse all samples into the loudest spot and clear the buffer. </p>
+<p>Fuse the session into its final loudest-spot result and clear stored samples. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">result</td><td>Destination for the solved or invalid result. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 when processing completed; -1 for invalid arguments or internal failure.</dd></dl>
+<p>Finalization consumes the session so the next survey cannot accidentally mix old and new flight legs. Render before this call if an acoustic evidence image is required.</p>
+<p>Fuse the session into its final loudest-spot result and clear stored samples. </p>
 
 </div>
 </div>
@@ -255,8 +279,16 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Allocate session storage and start or configure the acoustic backend. </p>
-<p>Start the earcam server. Returns -1 only for configuration errors (missing executable, no memory); a microphone that is not (yet) present is not fatal, the server is restarted periodically from <a class="el" href="ear__cam__pipe_8c.html#a9861737bfc3041a6d61c7fe00b5b28c3" title="Associate the newest fresh acoustic measurement with a camera shot.">ear_cam_pipe_record()</a>.</p>
+<p>Start EARcam sampling or its deterministic simulated-source replacement. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">unused</td><td>Reserved for the common camera-backend initialization signature; ignored. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 on usable initialization; -1 for configuration or allocation failure.</dd></dl>
+<p>A missing microphone is deliberately not fatal. The optical pipeline can continue operating while <code><a class="el" href="#a9861737bfc3041a6d61c7fe00b5b28c3" title="Associate the newest sound window with one flight-controller shot pose.">ear_cam_pipe_record()</a></code> periodically retries the server. Configure the simulated source and frequency band before calling this function.</p>
+<p>Start EARcam sampling or its deterministic simulated-source replacement.</p>
 <dl class="section return"><dt>Returns</dt><dd>-1 only for unrecoverable setup errors; missing hardware stays retryable. </dd></dl>
 
 </div>
@@ -275,7 +307,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Shot number of the newest recorded sample (0 when empty). </p>
+
+<p>Get the shot number associated with the newest stored acoustic sample. </p>
+<dl class="section return"><dt>Returns</dt><dd>The newest shot number, or 0 when the session is empty. </dd></dl>
 
 </div>
 </div>
@@ -294,7 +328,10 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Report whether an actual or simulated measurement source is ready. </p>
+<p>Report whether the live microphone server completed its ready handshake. </p>
+<dl class="section return"><dt>Returns</dt><dd>True only when the persistent EARcam server is ready to provide samples.</dd></dl>
+<p>Simulated mode has no microphone process; callers should use this as live-hardware readiness evidence rather than as a general indication that simulation is configured.</p>
+<p>Report whether the live microphone server completed its ready handshake. </p>
 
 </div>
 </div>
@@ -313,8 +350,16 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Associate the newest fresh acoustic measurement with a camera shot. </p>
-<p>Geotag the newest microphone measurement with a shot message.</p>
+<p>Associate the newest sound window with one flight-controller shot pose. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">shot</td><td>Flight pose and shot number received from CATIA transport. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 when a usable sample was recorded; -1 for invalid input or unavailable data.</dd></dl>
+<p>The newest bounded-age sound window is used rather than waiting for a future one, preserving trigger-time positioning. Calls also provide the server-restart opportunity when live hardware is temporarily unavailable.</p>
+<p>Associate the newest sound window with one flight-controller shot pose.</p>
 <dl class="section return"><dt>Returns</dt><dd>0 when appended, -1 when no current measurement is safe to use.</dd></dl>
 <p>The session discards its oldest half at capacity, retaining recent location evidence while bounding memory for unattended multi-day operation. </p>
 
@@ -349,8 +394,19 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Render the current acoustic session into a north-up JPEG before it is cleared. </p>
-<p>Render the current session as an acoustic "photo" photos/e%06d.jpg (north-up intensity map with the loudest spot marked). Fills filename; returns 0 on success. Must be called before <a class="el" href="#a4ec5b90c603695459590af5ae96ac16c" title="Solve and close the current session, clearing accumulated samples afterward.">ear_cam_pipe_finish()</a> clears the session. </p>
+<p>Render the current session as a north-up acoustic evidence JPEG. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">result</td><td>Solved loudest-spot estimate to mark on the image. </td></tr>
+    <tr><td class="paramname">filename</td><td>Destination buffer receiving the JPEG path. </td></tr>
+    <tr><td class="paramname">filename_size</td><td>Capacity of <code class="param">filename</code>. </td></tr>
+    <tr><td class="paramname">simulated</td><td>True when rendering NPS/desk simulated data. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 on success; -1 if inputs, session data, or output creation fail.</dd></dl>
+<p>Must be called before <code><a class="el" href="#a4ec5b90c603695459590af5ae96ac16c" title="Fuse the session into its final loudest-spot result and clear stored samples.">ear_cam_pipe_finish()</a></code> clears the session. The JPEG and sidecar preserve the sampled field and final estimate for post-flight review.</p>
+<p>Render the current session as a north-up acoustic evidence JPEG. </p>
 
 </div>
 </div>
@@ -373,8 +429,16 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Set the detector band forwarded to a subsequently spawned EARcam child. </p>
-<p>Tone search band passed to earcam (&ndash;low-cut/&ndash;high-cut); 0 keeps the earcam defaults. Must be called before <a class="el" href="#a23619e6ec8833c82e2868f01249397d0" title="Allocate session storage and start or configure the acoustic backend.">ear_cam_pipe_init()</a>. </p>
+<p>Set the live EARcam tone-search band. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">low_cut_hz</td><td>Lower cutoff in hertz, or zero to retain EARcam's default. </td></tr>
+    <tr><td class="paramname">high_cut_hz</td><td>Upper cutoff in hertz, or zero to retain EARcam's default.</td></tr>
+  </table>
+  </dd>
+</dl>
+<p>Must be called before <code><a class="el" href="#a23619e6ec8833c82e2868f01249397d0" title="Start EARcam sampling or its deterministic simulated-source replacement.">ear_cam_pipe_init()</a></code> because the values become arguments of the persistent external process. Invalid ordering is rejected by the caller's CLI path.</p>
+<p>Set the live EARcam tone-search band. </p>
 
 </div>
 </div>
@@ -402,8 +466,17 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Select deterministic virtual acoustic measurements for simulation. </p>
-<p>Replace the microphone by a virtual loudspeaker (for NPS/desk simulation). Must be called before <a class="el" href="ear__cam__pipe_8c.html#a23619e6ec8833c82e2868f01249397d0" title="Allocate session storage and start or configure the acoustic backend.">ear_cam_pipe_init()</a>; no earcam process is started.</p>
+<p>Replace microphone input with a virtual fixed loudspeaker for NPS or desk tests. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">lat_deg</td><td>Source latitude in degrees. </td></tr>
+    <tr><td class="paramname">lon_deg</td><td>Source longitude in degrees. </td></tr>
+    <tr><td class="paramname">level_db_at_1m</td><td>Sound level at one metre in decibels.</td></tr>
+  </table>
+  </dd>
+</dl>
+<p>Must be called before <code><a class="el" href="#a23619e6ec8833c82e2868f01249397d0" title="Start EARcam sampling or its deterministic simulated-source replacement.">ear_cam_pipe_init()</a></code>. Simulation avoids ALSA and the external EARcam process while preserving the same geotagging and fusion interface.</p>
+<p>Replace microphone input with a virtual fixed loudspeaker for NPS or desk tests.</p>
 <p>Must precede initialization so no microphone child is launched. </p>
 
 </div>
@@ -423,8 +496,16 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Solve the current session without consuming it, for intermediate mission feedback. </p>
-<p>Intermediate solve over the samples so far; the session keeps accumulating. </p>
+<p>Solve the accumulated session without clearing it. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">result</td><td>Destination for the current estimate. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 when processing completed; -1 for invalid arguments or internal failure.</dd></dl>
+<p>Use for refinement decisions. Unlike <code><a class="el" href="#a4ec5b90c603695459590af5ae96ac16c" title="Fuse the session into its final loudest-spot result and clear stored samples.">ear_cam_pipe_finish()</a></code>, subsequent records remain part of the same survey session.</p>
+<p>Solve the accumulated session without clearing it. </p>
 
 </div>
 </div>

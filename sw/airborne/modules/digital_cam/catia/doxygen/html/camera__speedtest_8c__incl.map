@@ -1,5 +1,5 @@
 <map id="camera_speedtest.c" name="camera_speedtest.c">
-<area shape="poly" id="Node000001" title=" " alt="" coords="971,24,966,18,952,13,930,9,903,6,872,5,842,6,814,9,793,13,779,18,774,24,779,30,793,35,814,39,842,42,872,43,903,42,930,39,952,35,966,30"/>
+<area shape="poly" id="Node000001" title="Backend&#45;neutral still&#45;image throughput benchmark and asynchronous progress reporter." alt="" coords="971,24,966,18,952,13,930,9,903,6,872,5,842,6,814,9,793,13,779,18,774,24,779,30,793,35,814,39,842,42,872,43,903,42,930,39,952,35,966,30"/>
 <area shape="poly" id="Node000002" href="$camera__speedtest_8h.html" title="Standalone, backend&#45;neutral still&#45;camera throughput benchmark." alt="" coords="269,110,265,104,251,99,229,95,201,92,171,91,140,92,113,95,91,99,77,104,72,110,77,116,91,121,113,125,140,128,171,129,201,128,229,125,251,121,265,116"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="790,38,268,100,267,94,791,33"/>
 <area shape="poly" id="Node000005" href="$path__utils_8h.html" title="Small path and writable&#45;directory helpers shared by CATIA backends." alt="" coords="784,110,781,104,772,99,758,95,741,92,722,91,702,92,685,95,671,99,662,104,659,110,662,116,671,121,685,125,702,128,722,129,741,128,758,125,772,121,781,116"/>

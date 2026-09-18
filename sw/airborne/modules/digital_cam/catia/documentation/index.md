@@ -40,15 +40,14 @@ Explore the detailed technical guides for each subsystem:
   - [CSI Ribbon Wiring & Orientation](raspberry_pi_ai_camera.html#hardware-and-connections)
   - [Testing Commands & Demos](raspberry_pi_ai_camera.html#run-imx500-inference-demos)
   - [Camera Parameter Reference](raspberry_pi_ai_camera.html#parameters-and-why-they-matter)
-  - [OS Image Backup & Restore Tools](raspberry_pi_ai_camera.html#backup)
+  - [OS Image Backup & Restore Tools](raspberry_pi_ai_camera.html#backup-and-restore)
 
 - **[Raspberry Pi Zero 2 W OS Setup](setup_os_rpi_zero_2w.html)**
   Headless Raspberry Pi OS imaging and first-boot configuration for CATIA:
-  Wi-Fi credentials, SSH keys, board identity, access-point mode, UART setup,
-  cloning precautions, and sleep prevention.
-  - [Flash and Customize the OS](setup_os_rpi_zero_2w.html#flash-and-customize-the-os)
-  - [Configure UART for CATIA](setup_os_rpi_zero_2w.html#get-os-to-work-with-uart)
-  - [Prepare a Cloneable Master Image](setup_os_rpi_zero_2w.html#master-sd-card-preparation-checklist)
+  Wi-Fi credentials, SSH keys, UART setup, and sleep prevention.
+  - [Flash Raspberry Pi OS](setup_os_rpi_zero_2w.html#prepare-a-pi-zero-2-w-for-catia)
+  - [Configure UART for CATIA](setup_os_rpi_zero_2w.html#configure-uart-for-catia)
+  - [Prevent Sleep and Suspend](setup_os_rpi_zero_2w.html#preventing-sleep-and-suspend-states)
 
 - **[LWIR Thermal Camera Calibration](lwir-calibration.html)**
   Step-by-step workshop procedure for calibrating the Tiny 1-C thermal camera.

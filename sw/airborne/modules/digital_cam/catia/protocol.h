@@ -21,7 +21,11 @@
  */
 
 /**
- * @file modules/digital_cam/catia/protocol.h
+ * @file protocol.h
+ * @brief CATIA's byte-stream UART framing, messages, and wire-compatible payload layouts.
+ * @details All multi-byte fields use the historic CATIA native layout and must remain wire
+ * compatible with deployed flight-controller firmware. Callers should treat the unions as
+ * serialization storage, not a portable network byte-order protocol.
  *
  * |STX|length|... payload=(length-4) bytes ...|Checksum A|Checksum B|
  *
@@ -251,21 +255,43 @@ extern uint8_t catia_ck_a, catia_ck_b;
 /////////////////////////////////////////////////////////////////////
 // PARSING
 
+/**
+ * @brief Persistent state for incremental CATIA UART frame parsing.
+ * @details One instance must remain associated with one ordered byte stream. A completed
+ * message remains in @c payload until its consumer clears @c msg_received; feeding later
+ * bytes before that acknowledgement is counted as an error to avoid silently overwriting it.
+ */
 struct catia_transport {
-  // generic interface
+  /** Storage for the validated payload of the most recently completed message. */
   uint8_t payload[256];
+  /** Count of framing or checksum faults observed while consuming this stream. */
   uint8_t error;
+  /** Message identifier from the current or most recently completed frame. */
   uint8_t msg_id;
+  /** True when @c payload contains one complete validated message awaiting dispatch. */
   bool    msg_received;
+  /** Number of payload bytes expected in the current frame. */
   uint8_t payload_len;
-  // specific pprz transport variables
+  /** Internal parser state: the next expected position in the frame. */
   uint8_t status;
+  /** Internal offset into @c payload while a frame is being assembled. */
   uint8_t payload_idx;
+  /** Running Fletcher-style checksum accumulators for the in-progress frame. */
   uint8_t ck_a, ck_b;
 };
 
 extern struct catia_transport catia_protocol;
 
+/**
+ * @brief Consume one byte from a CATIA UART stream.
+ * @param t Persistent parser state for that stream.
+ * @param c Newly received byte.
+ * @details Frames may be arbitrarily split across calls. On a valid complete frame this sets
+ * @c t->msg_received and leaves the decoded bytes in @c t->payload. The caller must dispatch
+ * the message and clear that flag before supplying bytes for the next frame.
+ * @warning This function is not thread-safe. Serialize access to each @p t instance and do not
+ * alter its fields while a frame is in progress.
+ */
 void parse_catia(struct catia_transport *t, uint8_t c);
 
 

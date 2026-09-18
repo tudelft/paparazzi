@@ -103,7 +103,7 @@ Include dependency graph for image_mock_transform.h:</div>
 <div class="center"><img src="image__mock__transform_8h__incl.png" border="0" usemap="#aimage__mock__transform_8h" loading="lazy" alt=""/></div>
 <map name="aimage__mock__transform_8h" id="aimage__mock__transform_8h">
 <area shape="poly" title="Local&#45;simulation JPEG attitude transform API." alt="" coords="245,24,239,18,222,13,196,9,163,6,126,5,89,6,56,9,30,13,13,18,7,24,13,30,30,35,56,39,89,42,126,43,163,42,196,39,222,35,239,30"/>
-<area shape="poly" href="protocol_8h.html" title=" " alt="" coords="181,110,179,104,171,99,159,95,143,92,126,91,109,92,93,95,81,99,73,104,71,110,73,116,81,121,93,125,109,128,126,129,143,128,159,125,171,121,179,116"/>
+<area shape="poly" href="protocol_8h.html" title="CATIA&#39;s byte&#45;stream UART framing, messages, and wire&#45;compatible payload layouts." alt="" coords="181,110,179,104,171,99,159,95,143,92,126,91,109,92,93,95,81,99,73,104,71,110,73,116,81,121,93,125,109,128,126,129,143,128,159,125,171,121,179,116"/>
 <area shape="poly" title=" " alt="" coords="127,41,129,76,123,75,125,46"/>
 <area shape="poly" title=" " alt="" coords="116,196,113,190,106,185,93,180,78,178,61,177,44,178,28,180,16,185,8,190,5,196,8,201,16,207,28,211,44,214,61,214,78,214,93,211,106,207,113,201"/>
 <area shape="poly" title=" " alt="" coords="115,127,86,167,82,163,110,130"/>
@@ -129,11 +129,14 @@ This graph shows which files directly or indirectly include this file:</div>
 <tr class="heading"><td colspan="2"><h2 id="header-define-members" class="groupheader"><a id="define-members" name="define-members"></a>
 Macros</h2></td></tr>
 <tr class="memitem:a8b5cabe5a5b76f8f19bdad7060e9bd73" id="r_a8b5cabe5a5b76f8f19bdad7060e9bd73"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8b5cabe5a5b76f8f19bdad7060e9bd73">IMAGE_MOCK_TRANSFORM_APPLIED</a>&#160;&#160;&#160;0</td></tr>
+<tr class="memdesc:a8b5cabe5a5b76f8f19bdad7060e9bd73"><td class="mdescLeft">&#160;</td><td class="mdescRight">Successful result: the JPEG was rewritten with the simulated attitude transform.  <br /></td></tr>
 <tr class="memitem:a74844ee5e3d2e82a21e23e3447d50f6b" id="r_a74844ee5e3d2e82a21e23e3447d50f6b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a74844ee5e3d2e82a21e23e3447d50f6b">IMAGE_MOCK_TRANSFORM_SKIPPED</a>&#160;&#160;&#160;1</td></tr>
+<tr class="memdesc:a74844ee5e3d2e82a21e23e3447d50f6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Successful result: transform was intentionally skipped for a near-horizon attitude.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a65f50d420e81d34a2e60d5659ace9bd8" id="r_a65f50d420e81d34a2e60d5659ace9bd8"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a65f50d420e81d34a2e60d5659ace9bd8">image_mock_transform</a> (const char *filename, const union <a class="el" href="uniondc__shot__union.html">dc_shot_union</a> *shot)</td></tr>
+<tr class="memdesc:a65f50d420e81d34a2e60d5659ace9bd8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rewrite a local test JPEG to simulate the shot attitude.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Local-simulation JPEG attitude transform API. </p>
@@ -150,6 +153,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Successful result: the JPEG was rewritten with the simulated attitude transform. </p>
+
 </div>
 </div>
 <a id="a74844ee5e3d2e82a21e23e3447d50f6b" name="a74844ee5e3d2e82a21e23e3447d50f6b"></a>
@@ -163,6 +168,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Successful result: transform was intentionally skipped for a near-horizon attitude. </p>
 
 </div>
 </div>
@@ -185,6 +192,17 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Rewrite a local test JPEG to simulate the shot attitude. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">filename</td><td>Writable path to the JPEG to transform in place. </td></tr>
+    <tr><td class="paramname">shot</td><td>Flight pose containing fixed-point roll, pitch, yaw, and position fields. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><code>IMAGE_MOCK_TRANSFORM_APPLIED</code>, <code>IMAGE_MOCK_TRANSFORM_SKIPPED</code>, or -1 on failure.</dd></dl>
+<p>The transform uses a perspective projection and an atomic temporary-file rename so consumers never observe a partial JPEG. Near-horizon frames are skipped or synthesized by configured policy because planar image projection becomes numerically untrustworthy there. </p><dl class="section warning"><dt>Warning</dt><dd>This is simulation evidence only; it does not model a calibrated physical camera. </dd></dl>
 
 </div>
 </div>

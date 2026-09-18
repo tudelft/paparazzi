@@ -1,6 +1,16 @@
 #include "camera_speedtest.h"
 #include "path_utils.h"
 
+/**
+ * @file camera_speedtest.c
+ * @brief Backend-neutral still-image throughput benchmark and asynchronous progress reporter.
+ * @details The benchmark performs one untimed warm-up followed by ten sequential synchronous
+ * captures. It validates each returned JPEG before accepting it as evidence. Timing uses
+ * @c CLOCK_MONOTONIC around only the backend capture call, excluding setup, UART, EXIF, SODA,
+ * and terminal I/O. Progress is copied into a fixed-size queue and written by a separate
+ * bounded-I/O thread so an unread pipe or slow terminal cannot throttle capture requests.
+ */
+
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
@@ -59,6 +69,14 @@ static int format_image_path(const struct camera_speedtest_config *config,
   return length >= 0 && (size_t)length < path_size ? 0 : -1;
 }
 
+/**
+ * @brief Read a non-negative monotonic timestamp in nanoseconds.
+ * @param time_ns Destination for the timestamp.
+ * @return 0 on success; -1 if the clock is unavailable, invalid, or overflows conversion.
+ * @details Nanoseconds retain sub-millisecond capture differences without requiring floating
+ * point arithmetic in the measurement loop. The conversion rejects impossible values rather
+ * than silently wrapping and publishing a plausible but false rate.
+ */
 static int monotonic_time_ns(uint64_t *time_ns)
 {
   struct timespec now;
@@ -98,6 +116,15 @@ int camera_speedtest_create_output_directory(const char *base_directory,
   return -1;
 }
 
+/**
+ * @brief Confirm that a backend produced exactly the requested usable image.
+ * @param actual_filename Path returned by the backend capture operation.
+ * @param expected_filename Deterministic path reserved before capture began.
+ * @return 0 when the path matches and names a nonempty regular file; -1 otherwise.
+ * @details Path equality prevents a backend fallback or stale output from being counted as a
+ * benchmark sample. Regular-file and size checks catch missing, directory, FIFO, and empty
+ * outputs while leaving image decoding to the normal backend contract.
+ */
 static int validate_capture(const char *actual_filename, const char *expected_filename)
 {
   if (actual_filename == NULL || strcmp(actual_filename, expected_filename) != 0) {
@@ -118,6 +145,15 @@ static int validate_capture(const char *actual_filename, const char *expected_fi
   return 0;
 }
 
+/**
+ * @brief Write one progress record without waiting indefinitely for stdout.
+ * @param reporter Reporter owning the nonblocking output descriptor.
+ * @param record Immutable event to render.
+ * @return 0 if the complete line was written; -1 when output is unavailable or partial.
+ * @details The 100 ms poll bound is a reporting policy, not a capture timeout. On failure the
+ * reporter records the condition and the benchmark fails after draining, rather than blocking
+ * the capture loop behind a terminal or pipe consumer.
+ */
 static int write_progress(struct progress_reporter *reporter,
                           const struct progress_record *record)
 {
@@ -153,6 +189,14 @@ static int write_progress(struct progress_reporter *reporter,
   return written == length ? 0 : -1;
 }
 
+/**
+ * @brief Drain queued progress records on the dedicated reporter thread.
+ * @param argument Pointer to the initialized @c progress_reporter.
+ * @return Always @c NULL when the stop request is observed.
+ * @details Records are removed under the mutex, then formatted and written without holding it.
+ * This keeps producer critical sections constant-time and ensures slow output never prevents
+ * the benchmark thread from issuing its next capture.
+ */
 static void *report_progress(void *argument)
 {
   struct progress_reporter *reporter = argument;
@@ -178,6 +222,14 @@ static void *report_progress(void *argument)
   }
 }
 
+/**
+ * @brief Initialize and launch the bounded progress reporter.
+ * @param reporter Storage owned by the caller for the reporter lifetime.
+ * @return 0 on success; -1 after cleaning up any partially initialized resources.
+ * @details Regular redirected stdout is temporarily opened with append semantics so the
+ * reporter cannot overwrite buffered summary output. The duplicate nonblocking descriptor
+ * isolates progress backpressure from the benchmark's normal stdout stream.
+ */
 static int reporter_start(struct progress_reporter *reporter)
 {
   reporter->read_index = 0;
@@ -246,6 +298,19 @@ static int reporter_start(struct progress_reporter *reporter)
   return 0;
 }
 
+/**
+ * @brief Queue one capture lifecycle event without performing output I/O.
+ * @param reporter Running reporter.
+ * @param kind Start or completion event.
+ * @param sample One-based measured sample number, or zero for warm-up.
+ * @param warmup True for the excluded warm-up capture.
+ * @param succeeded Completion success state.
+ * @param duration_ns Measured duration for completion records.
+ * @param filename Expected output path copied into the fixed-size event.
+ * @return 0 if queued; -1 when the bounded queue or filename capacity is exhausted.
+ * @details The queue has room for every planned start and completion event. Exhaustion is an
+ * invariant breach, so failing explicitly is safer than silently dropping operator progress.
+ */
 static int reporter_enqueue(struct progress_reporter *reporter, enum progress_kind kind,
                             unsigned sample, bool warmup, bool succeeded,
                             uint64_t duration_ns, const char *filename)
@@ -277,6 +342,14 @@ static int reporter_enqueue(struct progress_reporter *reporter, enum progress_ki
   return 0;
 }
 
+/**
+ * @brief Request reporter shutdown, drain queued output, and release its resources.
+ * @param reporter Running reporter.
+ * @return 0 only when the thread joined and all queued progress was written.
+ * @details Joining before closing the descriptor preserves event order and prevents a writer
+ * from racing descriptor reuse. Restoring redirected stdout flags keeps benchmark setup from
+ * leaking output-mode changes into callers that continue running after a failed test.
+ */
 static int reporter_stop(struct progress_reporter *reporter)
 {
   pthread_mutex_lock(&reporter->mutex);

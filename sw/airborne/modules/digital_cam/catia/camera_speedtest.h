@@ -13,12 +13,23 @@
 #define CAMERA_SPEEDTEST_FIRST_IMAGE 900000
 #define CAMERA_SPEEDTEST_LAST_IMAGE 999999
 
-/** Inputs needed to exercise one already-selected CATIA camera backend. */
+/**
+ * @brief Immutable dependencies for one selected and initialized camera backend.
+ * @details The benchmark deliberately receives only the synchronous capture operation
+ * and output naming information. It does not own backend initialization, UART traffic,
+ * EXIF processing, or SODA; including them would turn a camera measurement into a
+ * system-load measurement.
+ */
 struct camera_speedtest_config {
+  /** Human-readable backend name included in the final report. */
   const char *backend_name;
+  /** Directory receiving the private benchmark subdirectory and retained JPEGs. */
   const char *photo_directory;
+  /** Backend-specific filename prefix, such as @c a for AIcam or @c l for LWIRcam. */
   char filename_prefix;
+  /** Synchronous backend capture operation; returns its actual output path in @p filename. */
   int (*shoot)(char *filename, size_t filename_size, int image_number);
+  /** Shared shutdown flag set by signal handling; checked between bounded captures. */
   volatile sig_atomic_t *keep_running;
 };
 

@@ -81,7 +81,8 @@ for generated_file in "$HTML_DIR/catia-flow.svg" "$HTML_DIR/catia-flow.png" \
                       "$HTML_DIR/lwir-calibration-target.png" "$HTML_DIR/lwir-calibration-target.svg" \
                       "$HTML_DIR/lwir-calibration-coverage.png" "$HTML_DIR/lwir-calibration-coverage.svg" \
                       "$HTML_DIR/lwir-calibration-mount.png" "$HTML_DIR/lwir-calibration-mount.svg" \
-                      "$HTML_DIR/earcam-sound-picture-example.jpg"; do
+                      "$HTML_DIR/earcam-sound-picture-example.jpg" \
+                      "$HTML_DIR/imav2026_m4_nps_overview.jpg"; do
   if [[ ! -s "$generated_file" ]]; then
     echo "update-documentation.sh: failed to generate $generated_file" >&2
     exit 1
