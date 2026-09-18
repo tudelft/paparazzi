@@ -20,7 +20,7 @@ void ai_cam_pipe_set_photo_directory(const char *directory);
  * @param image_number CATIA shot number.
  * @return 0 only for a verified output file; otherwise -1. */
 int ai_cam_pipe_shoot(char *filename, size_t filename_size, int image_number);
-/** @brief Release backend state; currently a no-op because captures are synchronous. */
+/** @brief Stop the persistent rpicam-still started by ai_cam_pipe_init(), if any. */
 void ai_cam_pipe_deinit(void);
 
 #endif

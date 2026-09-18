@@ -123,8 +123,17 @@ struct capture_job {
   uint64_t ticket;
 };
 
+/** A captured file waiting for EXIF and SODA, with what they need from capture time. */
+struct captured_image {
+  char filename[MAX_FILENAME];
+  int camera_id;
+  double capture_delay;
+  struct capture_timing capture_times;
+};
+
 static void *handle_msg_shoot(void *ptr);
-static void capture_image(const union dc_shot_union *shoot);
+static bool capture_image(const union dc_shot_union *shoot, struct captured_image *image);
+static void finish_image(const union dc_shot_union *shoot, struct captured_image *image);
 static void handle_received_message(void);
 static void start_shoot_worker(const union dc_shot_union *shoot, uint8_t camera_mask);
 static void handle_targeted_stop(int32_t camera_id);
@@ -859,9 +868,17 @@ static void *handle_msg_shoot(void *ptr)
   shooting_count++;
   pthread_mutex_unlock(&mut);
 
+  /* Only the captures hold the camera slot. EXIF and SODA for optical images run
+   * after it is released, so the next shot can capture meanwhile. LWIR is finished
+   * inside the slot because its geolocation reads the backend's last-capture state. */
+  struct captured_image images[CATIA_CAMERA_LWIRCAM];
+  int image_count_ready = 0;
   for (int camera_id = CATIA_CAMERA_CHDK; camera_id <= CATIA_CAMERA_LWIRCAM && keep_running; ++camera_id) {
     if ((job->camera_mask & (1U << (camera_id - 1))) != 0 && camera_prepare(camera_id) == 0) {
-      capture_image(&job->shot);
+      struct captured_image *image = &images[image_count_ready];
+      if (!capture_image(&job->shot, image)) continue;
+      if (image->camera_id == CATIA_CAMERA_LWIRCAM) finish_image(&job->shot, image);
+      else ++image_count_ready;
     }
   }
 
@@ -870,15 +887,20 @@ static void *handle_msg_shoot(void *ptr)
   ++next_capture_ticket;
   pthread_cond_broadcast(&camera_available);
   pthread_mutex_unlock(&mut);
+  for (int index = 0; index < image_count_ready; ++index) {
+    finish_image(&job->shot, &images[index]);
+  }
   release_worker_slot();
   free(job);
   return NULL;
 }
 
-static void capture_image(const union dc_shot_union *shoot)
+/** Capture into `image`; true when a file is ready for finish_image(). */
+static bool capture_image(const union dc_shot_union *shoot, struct captured_image *image)
 {
-  char filename[MAX_FILENAME] = "";
-  bool image_ready = false;
+  char *filename = image->filename;
+  filename[0] = '\0';
+  image->camera_id = optical_camera_id;
   printf("CATIA-%d:\tShooting: start\n", shoot->data.nr);
   if (debug_enabled) {
     if (test_capture_enabled) {
@@ -888,7 +910,7 @@ static void capture_image(const union dc_shot_union *shoot)
       printf("CATIA-%d DEBUG:\trequesting image from %s backend\n", shoot->data.nr, camera.name);
     }
   }
-  if (camera.shoot(filename, sizeof(filename), shoot->data.nr) != 0) {
+  if (camera.shoot(filename, sizeof(image->filename), shoot->data.nr) != 0) {
     fprintf(stderr, "CATIA-%d:\t%s camera capture failed\n", shoot->data.nr, camera.name);
     camera.deinit();
     camera_initialized[optical_camera_id] = false;
@@ -914,19 +936,27 @@ static void capture_image(const union dc_shot_union *shoot)
     fprintf(stderr, "CATIA-%d:\tLWIR mock processing failed\n", shoot->data.nr);
     filename[0] = '\0';
   }
-  if (filename[0] != '\0') {
+  const bool live_lwir = image->camera_id == CATIA_CAMERA_LWIRCAM && !test_capture_enabled;
+  image->capture_delay = live_lwir ? lwir_cam_pipe_capture_delay() : -1;
+  image->capture_times = live_lwir ? lwir_cam_pipe_capture_timing() : (struct capture_timing){0};
+  return filename[0] != '\0';
+}
+
+/** EXIF, LWIR hotspot geolocation and SODA for a captured image. */
+static void finish_image(const union dc_shot_union *shoot, struct captured_image *image)
+{
+  char *filename = image->filename;
+  bool image_ready = false;
+  {
     if (debug_enabled) {
       printf("CATIA-%d DEBUG:\twriting flight metadata to captured JPEG\n", shoot->data.nr);
     }
-    const double capture_delay = optical_camera_id == CATIA_CAMERA_LWIRCAM && !test_capture_enabled
-                   ? lwir_cam_pipe_capture_delay() : -1;
     const int compensate = motion_compensation_enabled;
-    const struct capture_timing capture_times = optical_camera_id == CATIA_CAMERA_LWIRCAM && !test_capture_enabled
-      ? lwir_cam_pipe_capture_timing() : (struct capture_timing){0};
-    if (image_exif_write_capture(filename, shoot, capture_delay, compensate, &capture_times) == 0) {
+    if (image_exif_write_capture(filename, shoot, image->capture_delay, compensate,
+                                 &image->capture_times) == 0) {
       image_ready = true;
       printf("CATIA-%d:\tShooting: EXIF metadata added\n", shoot->data.nr);
-      if (optical_camera_id == CATIA_CAMERA_LWIRCAM) {
+      if (image->camera_id == CATIA_CAMERA_LWIRCAM) {
         if (mock_transform_enabled) {
           if (image_exif_write_hotspots(filename, "status=unsupported_mock_transform; coordinates_omitted=true") != 0) {
             fprintf(stderr, "CATIA-%d:\tfailed to record unsupported thermal transform\n", shoot->data.nr);
@@ -956,7 +986,7 @@ static void capture_image(const union dc_shot_union *shoot)
   }
 
   if (image_ready) {
-    int soda_result = run_soda(filename, shoot, optical_camera_id);
+    int soda_result = run_soda(filename, shoot, image->camera_id);
     printf("CATIA-%d:\tShooting: soda return %d of image %s\n",
            shoot->data.nr, soda_result, filename);
   }

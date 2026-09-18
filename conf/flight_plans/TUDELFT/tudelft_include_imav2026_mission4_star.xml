@@ -1,0 +1,1201 @@
+<!DOCTYPE procedure SYSTEM "../flight_plan.dtd">
+<!--
+  IMAV 2026 Mission 4 (star) - dead man search and first-aid kit drop.
+  Procedure version of flight_plans/MS/mission4_star_strasbourg.xml (see that file for
+  the full design notes), included from tudelft_imav2026_strasbourg.xml:
+
+    <include name="Mission" procedure="tudelft_include_imav2026_mission4_star.xml"/>
+
+  x/y are the MS values shifted into the main plan's frame (dx -24.923, dy +233.862);
+  lat/lon waypoints are unchanged. alt= became height= (MS ground_alt 140).
+  The MS plan's geofence_sector="M4_FENCE" cannot be set from an include.
+-->
+<procedure>
+  <header>
+#include "autopilot.h"
+#include "firmwares/fixedwing/guidance/energy_ctrl.h"
+/* Quoted include, and NO angle brackets, ampersands or comparison operators
+   anywhere in this header - not even inside a C comment, and not even
+   correctly escaped. Xml-light (the OCaml parser the paparazzi generators
+   use) fails outright on a raw angle bracket in element text: this file
+   passed 'xmllint --valid' and still died with Xml_error until some arrows
+   in these comments were reworded. Downstream, gen_aircraft does not
+   re-escape header text on output, so even a properly escaped entity
+   round-trips back out unescaped and corrupts the generated flight_plan.xml.
+   So: signbit() on a subtraction does the comparisons, '!=' does the loop
+   bounds, nested ifs replace logical and (a logical OR is spelled with two
+   pipes and is safe; a logical AND needs the forbidden character, so it is
+   written as nested ifs instead), and a 1-element array replaces taking an
+   address. Inherited from mission4_strasbourg.xml. */
+#include "stdio.h"
+#include "stdlib.h"
+#include "time.h"
+#include "modules/datalink/datalink.h"
+#include "modules/relative_localization_filter/relative_localization_filter.h"
+#include "modules/core/abi.h"
+
+/* ===================================================================
+   SITE MODEL. The sectors below are generated into InsideM4_* tests
+   further down in the generated flight_plan.h, so they are forward
+   declared here to be usable from this header's own functions.
+   =================================================================== */
+#ifndef FBW
+static inline bool InsideM4_OW(float _x, float _y);
+static inline bool InsideM4_OE(float _x, float _y);
+static inline bool InsideM4_ON(float _x, float _y);
+static inline bool InsideM4_FENCE(float _x, float _y);
+
+/* Trees, or outside the geofence: both are places the low run-in corridor
+   may not touch. Logical OR only - see the header note on operators. */
+static bool m4_obstacle(float x, float y) __attribute__((unused));
+static bool m4_obstacle(float x, float y)
+{
+  return InsideM4_OW(x, y) || InsideM4_OE(x, y) || InsideM4_ON(x, y) || !InsideM4_FENCE(x, y);
+}
+#endif
+
+/* Run-in lane, from their v2. Course is south to north between the tree
+   lines; the tilt search about it is what actually finds a clear corridor
+   (course 0 itself is blocked 111 m south of the target - see the file
+   header), so MAX_TILT is load bearing, not a refinement. */
+#define M4_LANE_COURSE_DEG 0.f
+#define M4_LANE_MAX_TILT_DEG 20.f
+#define M4_LANE_TILT_STEP_DEG 2.f
+#define M4_RUN_IN_M 300.f
+#define M4_LANE_MARGIN_M 8.f
+/* +1 = base turn and exit circle on the right (east) side, over the open
+   meadow rather than towards the west forest. */
+#define M4_DROPTURN_SIDE 1.f
+/* Climb-out straight ahead past the target, then the exit circle. */
+#define M4_CLIMBOUT_MAX_M 120.f
+#define M4_CLIMBOUT_MIN_M 40.f
+#define M4_CLIMBOUT_RATE_MPS 3.0f
+#define M4_CLIMBOUT_AIRSPEED_MPS 11.f
+#define M4_EXIT_TURN_RADIUS_M 30.f
+/* The exit circle stays this far inside the geofence: turn-entry overshoot
+   plus tailwind, GPS error and the fence's own accuracy. */
+#define M4_FENCE_MARGIN_M 40.f
+/* Above this height nothing at the site can be hit. The star flies here. */
+#define M4_SAFE_HEIGHT_M 45.f
+/* Below this height inside an obstacle sector = emergency climb. */
+#define M4_ESCAPE_HEIGHT_M 25.f
+
+/* ===================================================================
+   Sonar AGL for the release gate. Unchanged from mission4_strasbourg.xml -
+   see that file for why the gate cannot run on GPS/baro on real hardware,
+   and why this subscribes to the Abi message directly.
+   =================================================================== */
+static float mission4_sonar_agl = -1.0f;
+static float mission4_sonar_agl_time = -1000.0f;
+static abi_event mission4_agl_ev[1];
+
+static void mission4_agl_cb(uint8_t sender_id __attribute__((unused)),
+                            uint32_t stamp __attribute__((unused)),
+                            float distance)
+{
+  mission4_sonar_agl = distance;
+  mission4_sonar_agl_time = autopilot.flight_time;
+}
+
+static inline void mission4_agl_sonar_init(void)
+{
+  AbiBindMsgAGL(AGL_RANGEFINDER_I2C_ID, mission4_agl_ev, mission4_agl_cb);
+}
+
+/* rangefinder_i2c is only loaded on the ap target; skip its report in NPS. */
+static inline void mission4_rangefinder_report_start(void)
+{
+#ifdef RANGEFINDER_I2C_ADDR
+  rangefinder_i2c_rangefinder_i2c_report_status = MODULES_START;
+#endif
+}
+
+static inline float mission4_agl(void)
+{
+  if (!signbit(autopilot.flight_time - mission4_sonar_agl_time - 0.5f)) {
+    return GetPosAlt() - GetAltRef();
+  }
+  return mission4_sonar_agl;
+}
+
+/* ===================================================================
+   Release lead, drag, payload integration and logging. Unchanged from
+   mission4_strasbourg.xml, which carries the measured numbers behind every
+   term (the 13.3 m release that produced the formula, the drag and
+   half-tick corrections).
+   =================================================================== */
+static float mission4_prev_d2 = 1.0e9f;
+
+static inline bool mission4_closing(uint8_t drop_wp)
+{
+  float dx = GetPosX() - waypoints[drop_wp].x;
+  float dy = GetPosY() - waypoints[drop_wp].y;
+  float d2 = dx * dx + dy * dy;
+  bool closing = signbit(d2 - mission4_prev_d2);
+  mission4_prev_d2 = d2;
+  return closing;
+}
+
+static inline float mission4_dist2_to_wp(uint8_t wp) {
+  float dx = GetPosX() - waypoints[wp].x;
+  float dy = GetPosY() - waypoints[wp].y;
+  return dx * dx + dy * dy;
+}
+
+static inline float mission4_release_lead(void)
+{
+  float _v = stateGetHorizontalSpeedNorm_f();
+  float _w = -(stateGetSpeedEnu_f()[0].z);
+  if (signbit(_w)) { _w = 0.f; }
+
+  float _h = mission4_agl() - _w * TRIGGER_DELAY;
+  if (signbit(_h)) { _h = 0.f; }
+
+  float _t = (-_w + sqrtf(_w * _w + 2.f * 9.81f * _h)) / 9.81f;
+
+  float _dir = stateGetHorizontalSpeedDir_f();
+  float _wn = stateGetHorizontalWindspeed_f()[0].x;
+  float _we = stateGetHorizontalWindspeed_f()[0].y;
+  float _walong = _we * sinf(_dir) + _wn * cosf(_dir);
+  float _vrel = _v - _walong;
+
+  float _throw = _v * _t;
+  float _drag = 0.5f * ((float)ALPHA / (float)MASS) * _vrel * _vrel * _t * _t;
+  if (!signbit(_drag - _throw)) { _drag = 0.f; }
+
+  float _tick = _v / (2.0f * (float)NAVIGATION_FREQUENCY);
+
+  return _v * TRIGGER_DELAY + (_throw - _drag) + _tick;
+}
+
+#ifdef SITL
+static inline void mission4_sim_payload(uint8_t impact_wp)
+{
+  float dir = stateGetHorizontalSpeedDir_f();
+  float v = stateGetHorizontalSpeedNorm_f();
+  float x = GetPosX(), y = GetPosY(), z = mission4_agl();
+  float vx = v * sinf(dir), vy = v * cosf(dir);
+  float vz = stateGetSpeedEnu_f()[0].z;
+  float we = stateGetHorizontalWindspeed_f()[0].y;
+  float wn = stateGetHorizontalWindspeed_f()[0].x;
+  float am = (float)ALPHA / (float)MASS;
+  float dt = 0.005f;
+  int k;
+
+  int n = (int)(TRIGGER_DELAY / dt);
+  for (k = 0; k != n; k++) { x += vx * dt; y += vy * dt; z += vz * dt; }
+
+  for (k = 0; k != 4000; k++) {
+    if (signbit(z)) { break; }
+    float rx = vx - we, ry = vy - wn, rz = vz;
+    float sp = sqrtf(rx * rx + ry * ry + rz * rz);
+    float b = am * sp;
+    vx -= rx * b * dt;
+    vy -= ry * b * dt;
+    vz -= rz * b * dt + 9.81f * dt;
+    x += vx * dt; y += vy * dt; z += vz * dt;
+  }
+  waypoints[impact_wp].x = x;
+  waypoints[impact_wp].y = y;
+}
+#endif
+
+#ifndef SwitchServoOn
+#define SwitchServoOn(_x) {}
+#endif
+#ifndef SwitchServoOff
+#define SwitchServoOff(_x) {}
+#endif
+#define DropOpen SwitchServoOff
+#define DropClose SwitchServoOn
+
+/* ===================================================================
+   Acoustic sampling and the multilateration solver. Unchanged from
+   mission4_strasbourg.xml. Kept rather than replaced by their v2's
+   "loudest spot": that is an argmax over AIRCRAFT positions, the rule
+   mission4_strasbourg.xml measured at 2.3 m and abandoned.
+   =================================================================== */
+#define MISSION4_MAX_SAMPLES 600
+#define MISSION4_SAMPLE_PERIOD 0.05f
+#define MISSION4_KTR_REF_SPL 95.0f
+#define MISSION4_KTR_REF_DIST 3.0f
+
+static float mission4_sample_x[MISSION4_MAX_SAMPLES];
+static float mission4_sample_y[MISSION4_MAX_SAMPLES];
+static float mission4_sample_spl[MISSION4_MAX_SAMPLES];
+static float mission4_sample_z[MISSION4_MAX_SAMPLES];
+static uint16_t mission4_sample_count = 0;
+static float mission4_last_sample_time = -1000.0f;
+static float mission4_best_horiz = 1.0e6f;
+
+/* ---- SPL MEASUREMENT NOISE -------------------------------------------
+   The model above is an exact, noiseless inverse-square formula. That
+   flatters every search pattern equally and makes them impossible to tell
+   apart: geometry that suppresses error buys nothing when there is no
+   error to suppress. Four flights comparing this file with
+   mission4_strasbourg.xml produced miss distances that differed by less
+   than the run-to-run scatter, for exactly that reason.
+
+   Two terms, both of which a real single microphone has:
+
+     WHITE, independent per sample - sensor, quantisation, ambient. It
+     averages out as 1/sqrt(N) in the least-squares fit, so with hundreds
+     of samples it is NOT what limits the answer.
+
+     DRIFT, correlated over MISSION4_SPL_DRIFT_TAU seconds
+     (Ornstein-Uhlenbeck): gusts on the diaphragm, source directivity as
+     the aircraft's aspect changes, ground reflection changing with
+     geometry. This one does NOT average away - samples taken close
+     together in time share a bias, and the only defence is spatial and
+     temporal diversity. It is the term that makes search GEOMETRY matter,
+     and the reason a pattern crossing the target from several bearings
+     should beat one that samples a single arc.
+
+   1.5 dB each is not a small number here: at 45 m with a 10 m horizontal
+   offset the slant range is 46 m, where 1 dB is about 5.3 m of range and,
+   after removing the aircraft's own altitude, about 24 m of horizontal
+   error in a SINGLE sample. That is what an uncalibrated mic against one
+   beeper actually looks like, and it is why the solver needs many samples
+   from many places rather than one good pass.
+
+   Seeded from M4_NOISE_SEED when set, so a batch can hold everything else
+   fixed and vary only the noise draw; otherwise from the clock. The same
+   block is present verbatim in mission4_strasbourg.xml - if you change it
+   here, change it there, or the comparison stops being a comparison. */
+#define MISSION4_SPL_NOISE_DB 1.5f
+#define MISSION4_SPL_DRIFT_DB 1.5f
+#define MISSION4_SPL_DRIFT_TAU 5.0f
+
+static uint32_t mission4_rng = 0u;
+static float mission4_spl_drift = 0.0f;
+
+static inline float mission4_rand_unit(void)
+{
+  mission4_rng = mission4_rng * 1664525u + 1013904223u;
+  return (float)((mission4_rng / 65536u) % 32768u) / 32768.0f;
+}
+
+/* Irwin-Hall: twelve uniforms minus six is very close to N(0,1) and needs
+   no log or sqrt, so it is cheap enough to run inside the sampling path. */
+static inline float mission4_randn(void)
+{
+  float s = 0.0f;
+  int i;
+  for (i = 0; i != 12; i++) { s += mission4_rand_unit(); }
+  return s - 6.0f;
+}
+
+static inline void mission4_noise_init(void)
+{
+  uint32_t seed = 1u;
+#ifdef SITL
+  const char *e = getenv("M4_NOISE_SEED");
+  if (e != NULL) { seed = (uint32_t)atoi(e); }
+  else { seed = (uint32_t)time(NULL); }
+  printf("[M4NOISE] seed=%u white=%.2f dB drift=%.2f dB tau=%.1f s\n",
+         (unsigned)seed, MISSION4_SPL_NOISE_DB, MISSION4_SPL_DRIFT_DB,
+         MISSION4_SPL_DRIFT_TAU);
+  fflush(stdout);
+#endif
+  mission4_rng = seed * 2654435761u + 1u;
+  mission4_spl_drift = 0.0f;
+}
+
+static inline float mission4_spl_noise(void)
+{
+  float a = MISSION4_SAMPLE_PERIOD / MISSION4_SPL_DRIFT_TAU;
+  mission4_spl_drift += -a * mission4_spl_drift
+                      + sqrtf(2.0f * a) * MISSION4_SPL_DRIFT_DB * mission4_randn();
+  return mission4_spl_drift + MISSION4_SPL_NOISE_DB * mission4_randn();
+}
+
+static inline bool mission4_solve_source(uint8_t drop_wp)
+{
+  if (signbit((float)mission4_sample_count - 8.0f)) { return FALSE; }
+
+  double s11 = 0.0, s12 = 0.0, s13 = 0.0, s22 = 0.0, s23 = 0.0, s33 = 0.0;
+  double t1 = 0.0, t2 = 0.0, t3 = 0.0;
+  uint16_t i;
+  uint16_t n = mission4_sample_count;
+
+  for (i = 0; i != n; i++) {
+    double zi = (double)mission4_sample_z[i];
+    double slant = (double)MISSION4_KTR_REF_DIST *
+                   pow(10.0, ((double)MISSION4_KTR_REF_SPL - (double)mission4_sample_spl[i]) / 20.0);
+    double h2 = slant * slant - zi * zi;
+    if (signbit((float)h2)) { continue; }
+    double xi = (double)mission4_sample_x[i];
+    double yi = (double)mission4_sample_y[i];
+    double r  = xi * xi + yi * yi - h2;
+    double a1 = 2.0 * xi, a2 = 2.0 * yi, a3 = -1.0;
+    s11 += a1 * a1; s12 += a1 * a2; s13 += a1 * a3;
+    s22 += a2 * a2; s23 += a2 * a3; s33 += a3 * a3;
+    t1  += a1 * r;  t2  += a2 * r;  t3  += a3 * r;
+  }
+
+  double A11 = s22 * s33 - s23 * s23;
+  double A12 = s13 * s23 - s12 * s33;
+  double A13 = s12 * s23 - s13 * s22;
+  double A22 = s11 * s33 - s13 * s13;
+  double A23 = s13 * s12 - s11 * s23;
+  double det = s11 * A11 + s12 * A12 + s13 * A13;
+  if (signbit((float)(fabs(det) - 1.0e-3))) { return FALSE; }
+
+  double X = (A11 * t1 + A12 * t2 + A13 * t3) / det;
+  double Y = (A12 * t1 + A22 * t2 + A23 * t3) / det;
+
+  waypoints[drop_wp].x = (float)X;
+  waypoints[drop_wp].y = (float)Y;
+  return TRUE;
+}
+
+static inline bool mission4_sample_signal(uint8_t source_wp, uint8_t drop_wp) {
+  if (!signbit(autopilot.flight_time - mission4_last_sample_time - MISSION4_SAMPLE_PERIOD)) {
+    mission4_last_sample_time = autopilot.flight_time;
+    float dx = GetPosX() - waypoints[source_wp].x;
+    float dy = GetPosY() - waypoints[source_wp].y;
+    float dz = GetPosAlt() - GetAltRef();
+    float dist = sqrtf(dx * dx + dy * dy + dz * dz);
+    float spl = MISSION4_KTR_REF_SPL - 20.0f * log10f(dist / MISSION4_KTR_REF_DIST);
+    /* Corrupt the reading BEFORE anything downstream sees it: the recorded
+       sample, the best-so-far ranking and the solver must all work from the
+       same noisy number a real microphone would have handed them. */
+    spl += mission4_spl_noise();
+    if (signbit((float)mission4_sample_count - (float)MISSION4_MAX_SAMPLES)) {
+      mission4_sample_x[mission4_sample_count] = GetPosX();
+      mission4_sample_y[mission4_sample_count] = GetPosY();
+      mission4_sample_spl[mission4_sample_count] = spl;
+      mission4_sample_z[mission4_sample_count] = GetPosAlt() - GetAltRef();
+      mission4_sample_count++;
+    }
+    float own_alt = GetPosAlt() - GetAltRef();
+    float slant = MISSION4_KTR_REF_DIST * powf(10.0f, (MISSION4_KTR_REF_SPL - spl) / 20.0f);
+    float horiz2 = slant * slant - own_alt * own_alt;
+    if (signbit(horiz2)) { horiz2 = 0.0f; }
+    float horiz = sqrtf(horiz2);
+    if (signbit(horiz - mission4_best_horiz)) {
+      mission4_best_horiz = horiz;
+      waypoints[drop_wp].x = GetPosX();
+      waypoints[drop_wp].y = GetPosY();
+    }
+  }
+  return false;
+}
+
+/* ===================================================================
+   CLOVERLEAF STAR GEOMETRY
+
+   N legs through the estimate at line-angle steps of D = 180/N, joined by
+   turn circles of radius R tangent to both. Tangency FORCES the leg
+   half-length L = R * cot(D/2): N=4 gives L = 2.414 R and 225 deg turns.
+   Shorter legs and the turn cannot close, which is why L is derived and
+   not configured.
+
+   R = 25 m, their v2's value (they lowered it from 30 so the star fits the
+   fence, and say not to enlarge it). NOTE this is below the EasyStar 3
+   airframe's own declared MIN_CIRCLE_RADIUS of 30 m - about 22 deg of bank
+   at 10 m/s rather than 19. Verified the 4-leg star at R=25 fits inside
+   M4_FENCE from the search centre with no violations.
+
+   The star is flown at M4_SAFE_HEIGHT_M, above every tree at the site, so
+   its layout is tested against the FENCE ONLY. The low run-in is what has
+   to clear the trees, and that is tested separately.
+   =================================================================== */
+#define MISSION4_STAR_R 25.0f
+#define MISSION4_STAR_QUIET_BEFORE 40.0f
+#define MISSION4_STAR_QUIET_AFTER  30.0f
+#define MISSION4_STAR_SPINDOWN 1.5f
+#define MISSION4_STAR_CONVERGE_M 1.5f
+#define MISSION4_STAR_MAX_ITER 3
+#define MISSION4_STAR_PLAUSIBLE_M 35.0f
+#define MISSION4_STAR_ALIGN_RAD 0.175f
+#define MISSION4_STAR_CRUISE_THR 0.16f
+/* One airspeed across the quiet-window boundary: the setpoint slews at only
+   0.3 m/s/s (AIRSPEED_SETPOINT_SLEW), so a step at the edge would still be
+   settling well into the listening pass. Only the throttle changes. */
+#define MISSION4_STAR_AIRSPEED 10.0f
+
+static float mission4_star_cx, mission4_star_cy;
+static float mission4_star_px, mission4_star_py;
+static float mission4_star_L = 0.0f;
+static uint8_t mission4_star_nlegs = 4;
+static uint8_t mission4_star_leg = 0;
+static uint8_t mission4_star_iter = 0;
+static float mission4_star_shift_m = 9999.0f;
+static bool mission4_star_converged = FALSE;
+static bool mission4_star_quiet = FALSE;
+static float mission4_star_quiet_t = -1000.0f;
+static float mission4_star_s = 0.0f;
+
+/* Line bearing of leg k. Left turns advance the pattern by -D each leg. */
+static inline float mission4_star_phi(uint8_t k, uint8_t nlegs)
+{
+  return -(float)k * (3.14159265f / (float)nlegs);
+}
+
+/* Heading actually flown on leg k: even legs along +u, odd legs along -u,
+   because that is what the 180+D degree left turn between them delivers. */
+static inline float mission4_star_leg_heading(uint8_t k, uint8_t nlegs)
+{
+  float phi = mission4_star_phi(k, nlegs);
+  if ((k % 2) != 0) { phi += 3.14159265f; }
+  return phi;
+}
+
+/* Would an N-leg star centred here stay inside the fence? Tests both ends of
+   every leg and twelve points around every turn loop - the loops reach
+   furthest, sqrt(L^2+R^2)+R from the centre, so testing leg ends alone would
+   pass a layout that busts. */
+static inline bool mission4_star_fits(float cx, float cy, uint8_t nlegs)
+{
+  float dstep = 3.14159265f / (float)nlegs;
+  float L = MISSION4_STAR_R / tanf(dstep * 0.5f);
+  uint8_t k;
+  for (k = 0; k != nlegs; k++) {
+    float phi = mission4_star_phi(k, nlegs);
+    float ux = sinf(phi), uy = cosf(phi);
+    float ax = cx + ux * L, ay = cy + uy * L;
+    float bx = cx - ux * L, by = cy - uy * L;
+    if (!InsideM4_FENCE(ax, ay)) { return FALSE; }
+    if (!InsideM4_FENCE(bx, by)) { return FALSE; }
+
+    float ex, ey, hx, hy;
+    if ((k % 2) == 0) { ex = ax; ey = ay; hx = ux; hy = uy; }
+    else              { ex = bx; ey = by; hx = -ux; hy = -uy; }
+    float tx = ex - hy * MISSION4_STAR_R;
+    float ty = ey + hx * MISSION4_STAR_R;
+
+    uint8_t s;
+    for (s = 0; s != 12; s++) {
+      float a = (float)s * (2.0f * 3.14159265f / 12.0f);
+      if (!InsideM4_FENCE(tx + MISSION4_STAR_R * sinf(a),
+                          ty + MISSION4_STAR_R * cosf(a))) { return FALSE; }
+    }
+  }
+  return TRUE;
+}
+
+/* Place leg mission4_star_leg, and the turn circle that FOLLOWS it. */
+static inline void mission4_star_place(uint8_t from_wp, uint8_t to_wp, uint8_t turn_wp, float height)
+{
+  float phi = mission4_star_phi(mission4_star_leg, mission4_star_nlegs);
+  float ux = sinf(phi), uy = cosf(phi);
+  float L = mission4_star_L;
+  float ax, ay, bx, by;
+
+  if ((mission4_star_leg % 2) == 0) {
+    ax = mission4_star_cx - ux * L; ay = mission4_star_cy - uy * L;
+    bx = mission4_star_cx + ux * L; by = mission4_star_cy + uy * L;
+  } else {
+    ax = mission4_star_cx + ux * L; ay = mission4_star_cy + uy * L;
+    bx = mission4_star_cx - ux * L; by = mission4_star_cy - uy * L;
+  }
+
+  waypoints[from_wp].x = ax; waypoints[from_wp].y = ay;
+  waypoints[to_wp].x   = bx; waypoints[to_wp].y   = by;
+
+  /* Turn centre R to the LEFT of the exit heading: for a heading unit vector
+     (hx,hy) in (east,north), left is (-hy,hx). */
+  float hx = bx - ax, hy = by - ay;
+  float hn = sqrtf(hx * hx + hy * hy);
+  if (signbit(hn - 1.0f)) { hn = 1.0f; }
+  hx /= hn; hy /= hn;
+  waypoints[turn_wp].x = bx - hy * MISSION4_STAR_R;
+  waypoints[turn_wp].y = by + hx * MISSION4_STAR_R;
+
+  float a = GetAltRef() + height;
+  waypoints[from_wp].a = a;
+  waypoints[to_wp].a = a;
+  waypoints[turn_wp].a = a;
+}
+
+static inline void mission4_star_begin(float cx, float cy, uint8_t from_wp, uint8_t to_wp,
+                                       uint8_t turn_wp, float height)
+{
+  mission4_star_cx = cx;
+  mission4_star_cy = cy;
+  mission4_star_leg = 0;
+
+  mission4_star_nlegs = 4;
+  while (mission4_star_nlegs != 2) {
+    if (mission4_star_fits(cx, cy, mission4_star_nlegs)) { break; }
+    mission4_star_nlegs--;
+  }
+
+  mission4_star_L = MISSION4_STAR_R / tanf((3.14159265f / (float)mission4_star_nlegs) * 0.5f);
+  mission4_star_place(from_wp, to_wp, turn_wp, height);
+}
+
+/* Advance AFTER the turn, matching their v2's leg-turn-next ordering.
+
+   An earlier revision of this file reordered these to leg-next-turn, to skip
+   the loop after the final leg. That desynchronised the turn point: place()
+   writes the turn circle belonging to the leg it just placed, so the turn
+   block then circled the NEXT leg's far-end turn, up to 145 m away. Two
+   flights confirmed it - the aircraft flew away from the turn point every
+   time and the joins became long ad-hoc transits. Their ordering was right. */
+static inline uint8_t mission4_star_next_leg(uint8_t from_wp, uint8_t to_wp, uint8_t turn_wp, float height)
+{
+  mission4_star_leg++;
+  if (mission4_star_leg != mission4_star_nlegs) {
+    mission4_star_place(from_wp, to_wp, turn_wp, height);
+    return 0;
+  }
+  return 1;
+}
+
+/* True while the aircraft is not yet lined up with the NEXT leg. Computed
+   from the leg index, not from the waypoints, because the next leg has not
+   been placed yet at this point in the sequence. Returns false when there is
+   no next leg, so the turn block falls straight through after the last one
+   instead of flying a wasted 225 deg loop. */
+static inline bool mission4_star_turning(void)
+{
+  uint8_t k = mission4_star_leg + 1;
+  if (k == mission4_star_nlegs) { return FALSE; }
+  float want = mission4_star_leg_heading(k, mission4_star_nlegs);
+  float d = want - stateGetHorizontalSpeedDir_f();
+  while (!signbit(d - 3.14159265f)) { d -= 2.0f * 3.14159265f; }
+  while (signbit(d + 3.14159265f)) { d += 2.0f * 3.14159265f; }
+  if (signbit(fabs(d) - MISSION4_STAR_ALIGN_RAD)) { return FALSE; }
+  return TRUE;
+}
+
+/* Left turns, so a negative (counter-clockwise) circle radius: nav_circle_XY
+   accumulates progress for trigo_diff * -sign_radius, and a left turn
+   increases the trigonometric angle. */
+static inline float mission4_star_turn_radius(void)
+{
+  return -MISSION4_STAR_R;
+}
+
+/* Every cycle on a leg: cut power in the window around the estimate, restore
+   it outside, and record the along-track position for the altitude command.
+
+   Zeroing the nominal cruise throttle rather than setting
+   autopilot.kill_throttle is not stylistic: kill_throttle is ANDed into
+   nps_autopilot.launch (nps_autopilot_fixedwing.c), which gates
+   nps_fdm_run_step, so killing the throttle FREEZES the simulator. Their
+   design cuts the motor exactly that way and is untestable in SITL as
+   written. */
+static inline void mission4_star_leg_throttle(uint8_t from_wp, uint8_t to_wp)
+{
+  float hx = waypoints[to_wp].x - waypoints[from_wp].x;
+  float hy = waypoints[to_wp].y - waypoints[from_wp].y;
+  float hn = sqrtf(hx * hx + hy * hy);
+  if (signbit(hn - 1.0f)) { return; }
+  hx /= hn; hy /= hn;
+
+  mission4_star_s = (GetPosX() - mission4_star_cx) * hx
+                  + (GetPosY() - mission4_star_cy) * hy;
+
+  bool quiet = TRUE;
+  if (signbit(mission4_star_s + MISSION4_STAR_QUIET_BEFORE)) { quiet = FALSE; }
+  if (!signbit(mission4_star_s - MISSION4_STAR_QUIET_AFTER)) { quiet = FALSE; }
+
+  v_ctl_auto_airspeed_setpoint = MISSION4_STAR_AIRSPEED;
+  if (quiet) {
+    if (!mission4_star_quiet) { mission4_star_quiet_t = autopilot.flight_time; }
+    v_ctl_auto_throttle_nominal_cruise_throttle = 0.f;
+  } else {
+    v_ctl_auto_throttle_nominal_cruise_throttle = MISSION4_STAR_CRUISE_THR;
+  }
+  mission4_star_quiet = quiet;
+}
+
+/* Sample only while genuinely quiet AND past the prop spin-down - their
+   earcam_quiet_only. It is what lets the star run the motor at all: samples
+   taken under power are worthless to a microphone beside a pusher prop. */
+static inline bool mission4_star_sample(uint8_t src_wp, uint8_t drop_wp)
+{
+  if (!mission4_star_quiet) { return FALSE; }
+  if (signbit(autopilot.flight_time - mission4_star_quiet_t - MISSION4_STAR_SPINDOWN)) { return FALSE; }
+  return mission4_sample_signal(src_wp, drop_wp);
+}
+
+/* Level at the search height outside the quiet window, and the natural glide
+   inside it - the motor is off there, so commanding level flight would only
+   make the altitude loop fight an engine that is not running. From 45 m the
+   70 m window sheds about 6.4 m at this airframe's 11:1 glide, leaving well
+   over 20 m above the tallest tree. */
+static inline float mission4_star_leg_alt(float height, float floor_m)
+{
+  if (!mission4_star_quiet) { return GetAltRef() + height; }
+  float run = mission4_star_s + MISSION4_STAR_QUIET_BEFORE;
+  if (signbit(run)) { run = 0.f; }
+  /* V_CTL_GLIDE_RATIO, not GLIDE_RATIO: the airframe declares it inside the
+     vertical control section, so the generated airframe.h prefixes it. */
+  float h = height - run / (float)V_CTL_GLIDE_RATIO;
+  if (signbit(h - floor_m)) { h = floor_m; }
+  return GetAltRef() + h;
+}
+
+static inline void mission4_star_update(uint8_t est_wp)
+{
+  float nx = waypoints[est_wp].x, ny = waypoints[est_wp].y;
+  float dx = nx - mission4_star_px, dy = ny - mission4_star_py;
+  mission4_star_shift_m = sqrtf(dx * dx + dy * dy);
+  mission4_star_px = nx;
+  mission4_star_py = ny;
+  mission4_star_iter++;
+
+  mission4_star_converged = FALSE;
+  if (signbit(mission4_star_shift_m - MISSION4_STAR_CONVERGE_M)) { mission4_star_converged = TRUE; }
+  if (!signbit((float)mission4_star_iter - (float)MISSION4_STAR_MAX_ITER)) { mission4_star_converged = TRUE; }
+}
+
+/* The rules put the alarm within 25 m of the given point, so an estimate
+   further out is another source - a generator, another team's aircraft - and
+   must not be flown to. mission4_strasbourg.xml has no equivalent gate. */
+static inline bool mission4_star_plausible(uint8_t est_wp, uint8_t ref_wp)
+{
+  float dx = waypoints[est_wp].x - waypoints[ref_wp].x;
+  float dy = waypoints[est_wp].y - waypoints[ref_wp].y;
+  if (signbit(dx * dx + dy * dy - MISSION4_STAR_PLAUSIBLE_M * MISSION4_STAR_PLAUSIBLE_M)) { return TRUE; }
+  return FALSE;
+}
+
+static inline void mission4_star_reset(uint8_t ref_wp)
+{
+  mission4_sample_count = 0;
+  mission4_best_horiz = 1.0e6f;
+  mission4_star_iter = 0;
+  mission4_star_shift_m = 9999.0f;
+  mission4_star_converged = FALSE;
+  mission4_star_quiet = FALSE;
+  mission4_star_px = waypoints[ref_wp].x;
+  mission4_star_py = waypoints[ref_wp].y;
+}
+
+/* ===================================================================
+   OBSTACLE-AWARE RUN-IN, from their v2.
+   =================================================================== */
+static bool mission4_run_in_clear = FALSE;
+static float mission4_run_in_ux = 0.0f;
+static float mission4_run_in_uy = 1.0f;
+
+/* Is a corridor of half width `half` clear of trees and inside the fence,
+   from `back` metres before the target to `fwd` metres past it? Samples the
+   centreline and both edges - testing the centreline alone would let a wing
+   clip a crown the track itself misses. */
+static inline bool mission4_corridor_clear(float cx, float cy, float ux, float uy,
+                                           float back, float fwd, float half)
+{
+  int i;
+  for (i = 0; i != 121; i++) {
+    float s = -back + (back + fwd) * (float)i / 120.0f;
+    float px = cx + ux * s, py = cy + uy * s;
+    if (m4_obstacle(px, py)) { return FALSE; }
+    if (m4_obstacle(px - uy * half, py + ux * half)) { return FALSE; }
+    if (m4_obstacle(px + uy * half, py - ux * half)) { return FALSE; }
+  }
+  return TRUE;
+}
+
+/* Place START on the lane. Tries the lane course first, then alternating
+   tilts either side up to the maximum, and takes the first whose whole
+   corridor is clear. Sets mission4_run_in_clear; if nothing is clear the
+   caller must NOT drop - a release above 2 m scores nothing, so there is no
+   version of "try anyway" that is worth the risk.
+
+   Their v2 breaks ties towards the wind. Nothing onboard estimates wind on
+   this airframe - air_data only ever gets wind from an uplinked WIND_INFO -
+   so this takes the smallest tilt instead, i.e. the straightest run down the
+   lane. Restore the wind preference when there is a wind estimate to use. */
+static inline void mission4_place_run_in_lane(uint8_t drop_wp, uint8_t start_wp)
+{
+  float sx = waypoints[drop_wp].x, sy = waypoints[drop_wp].y;
+  float base = M4_LANE_COURSE_DEG * (3.14159265f / 180.0f);
+  float step = M4_LANE_TILT_STEP_DEG * (3.14159265f / 180.0f);
+  int n = (int)(M4_LANE_MAX_TILT_DEG / M4_LANE_TILT_STEP_DEG);
+  int i;
+
+  mission4_run_in_clear = FALSE;
+  for (i = 0; i != 2 * n + 1; i++) {
+    int half = (i + 1) / 2;
+    float sgn = ((i % 2) == 0) ? 1.0f : -1.0f;
+    float b = base + sgn * (float)half * step;
+    float ux = sinf(b), uy = cosf(b);
+    if (mission4_corridor_clear(sx, sy, ux, uy, M4_RUN_IN_M, M4_CLIMBOUT_MAX_M, M4_LANE_MARGIN_M)) {
+      mission4_run_in_ux = ux;
+      mission4_run_in_uy = uy;
+      waypoints[start_wp].x = sx - ux * M4_RUN_IN_M;
+      waypoints[start_wp].y = sy - uy * M4_RUN_IN_M;
+      mission4_run_in_clear = TRUE;
+      return;
+    }
+  }
+}
+
+/* Base turn circle centre, M4_DROPTURN_SIDE of the run-in beside START.
+   Right of a heading (ux,uy) is (uy,-ux). */
+static inline void mission4_place_dropturn(uint8_t start_wp, uint8_t turn_wp, float radius)
+{
+  float r = fabs(radius) * M4_DROPTURN_SIDE;
+  waypoints[turn_wp].x = waypoints[start_wp].x + mission4_run_in_uy * r;
+  waypoints[turn_wp].y = waypoints[start_wp].y - mission4_run_in_ux * r;
+  waypoints[turn_wp].a = waypoints[start_wp].a;
+}
+
+static inline bool mission4_circle_in_fence(float cx, float cy, float r)
+{
+  uint8_t i;
+  for (i = 0; i != 16; i++) {
+    float a = (float)i * (2.0f * 3.14159265f / 16.0f);
+    if (!InsideM4_FENCE(cx + r * sinf(a), cy + r * cosf(a))) { return FALSE; }
+  }
+  return TRUE;
+}
+
+/* Climb-out straight ahead on the run-in course, as far as
+   M4_CLIMBOUT_MAX_M but stopping where a full exit turn plus fence margin
+   would leave the geofence. Their v2 exists because the fence's north edge
+   is only ~142 m past the target, and because the nav_drop default climb-out
+   turns towards the east trees while still low. */
+static inline void mission4_place_climbout(uint8_t drop_wp, uint8_t climbout_wp,
+                                           uint8_t exit_wp, float height)
+{
+  float sx = waypoints[drop_wp].x, sy = waypoints[drop_wp].y;
+  float ux = mission4_run_in_ux, uy = mission4_run_in_uy;
+  float d = M4_CLIMBOUT_MAX_M;
+
+  while (!signbit(d - M4_CLIMBOUT_MIN_M)) {
+    float cx = sx + ux * d, cy = sy + uy * d;
+    float ex = cx + uy * M4_EXIT_TURN_RADIUS_M * M4_DROPTURN_SIDE;
+    float ey = cy - ux * M4_EXIT_TURN_RADIUS_M * M4_DROPTURN_SIDE;
+    if (mission4_circle_in_fence(ex, ey, M4_EXIT_TURN_RADIUS_M + M4_FENCE_MARGIN_M)) {
+      waypoints[climbout_wp].x = cx;
+      waypoints[climbout_wp].y = cy;
+      waypoints[climbout_wp].a = GetAltRef() + height - 10.0f;
+      waypoints[exit_wp].x = ex;
+      waypoints[exit_wp].y = ey;
+      waypoints[exit_wp].a = GetAltRef() + height;
+      return;
+    }
+    d -= 10.0f;
+  }
+
+  /* Fence too tight even at the minimum: climb straight ahead and put the
+     exit circle on the climb-out point itself, so the aircraft spirals up
+     where it is rather than turning towards anything. */
+  waypoints[climbout_wp].x = sx + ux * M4_CLIMBOUT_MIN_M;
+  waypoints[climbout_wp].y = sy + uy * M4_CLIMBOUT_MIN_M;
+  waypoints[climbout_wp].a = GetAltRef() + height - 10.0f;
+  waypoints[exit_wp].x = waypoints[climbout_wp].x;
+  waypoints[exit_wp].y = waypoints[climbout_wp].y;
+  waypoints[exit_wp].a = GetAltRef() + height;
+}
+
+/* Level-off point, `d` metres before the target on the run-in course. */
+static inline void mission4_place_level(uint8_t drop_wp, uint8_t level_wp, float d, float height)
+{
+  waypoints[level_wp].x = waypoints[drop_wp].x - mission4_run_in_ux * d;
+  waypoints[level_wp].y = waypoints[drop_wp].y - mission4_run_in_uy * d;
+  waypoints[level_wp].a = GetAltRef() + height;
+}
+
+/* Release conditions at the instant the gate fires, plus the search and
+   corridor diagnostics this file exists to collect. */
+static inline void mission4_log_release(uint8_t drop_wp, uint8_t true_wp, uint8_t impact_wp)
+{
+  char _m4msg[128];
+  float _agl_gate = mission4_agl();
+  float _spd = stateGetHorizontalSpeedNorm_f();
+  float _lead = mission4_release_lead();
+  float _px = GetPosX(), _py = GetPosY();
+  float _tx = _px - waypoints[true_wp].x, _ty = _py - waypoints[true_wp].y;
+  float _d_true = sqrtf(_tx * _tx + _ty * _ty);
+  float _dir = stateGetHorizontalSpeedDir_f();
+  float _ix = _px + _lead * sinf(_dir), _iy = _py + _lead * cosf(_dir);
+  float _mx = _ix - waypoints[true_wp].x, _my = _iy - waypoints[true_wp].y;
+  float _miss = sqrtf(_mx * _mx + _my * _my);
+  waypoints[impact_wp].x = _ix;
+  waypoints[impact_wp].y = _iy;
+  waypoints[impact_wp].a = waypoints[true_wp].a;
+  float _sim = -1.0f;
+#ifdef SITL
+  mission4_sim_payload(impact_wp);
+  float _sx = waypoints[impact_wp].x - waypoints[true_wp].x;
+  float _sy = waypoints[impact_wp].y - waypoints[true_wp].y;
+  _sim = sqrtf(_sx * _sx + _sy * _sy);
+#endif
+  float _tilt = DegOfRad(atan2f(mission4_run_in_ux, mission4_run_in_uy));
+  int _n = snprintf(_m4msg, sizeof(_m4msg),
+                    "STARDROP agl=%.2f dTrue=%.1f MISS=%.2f SIM=%.2f n=%u it=%u sh=%.1f lane=%.0f",
+                    _agl_gate, _d_true, _miss, _sim,
+                    (unsigned)mission4_star_nlegs, (unsigned)mission4_star_iter,
+                    mission4_star_shift_m, _tilt);
+  if (!signbit((float)_n)) {
+    DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, (uint8_t)_n, _m4msg);
+  }
+#ifdef SITL
+  printf("[M4STAR] release: AGL %.2f m, %.1f m/s, lead %.1f m, %.1f m from TRUE source\n"
+         "         predicted MISS %.2f m, integrated %.2f m\n"
+         "         search: %u legs/star, %u stars, final shift %.2f m, lane course %.0f deg\n",
+         _agl_gate, _spd, _lead, _d_true, _miss, _sim,
+         (unsigned)mission4_star_nlegs, (unsigned)mission4_star_iter,
+         mission4_star_shift_m, _tilt);
+  fflush(stdout);
+#endif
+}
+
+static inline float mission1_geo_init_delay(void) { return 5; }
+static inline float mission1_holding_delay(void) { return 5; }
+  </header>
+
+  <waypoints>
+    <waypoint name="AF" x="-38.599" y="326.783" height="20."/>
+    <waypoint name="_BASELEG" x="1.077" y="331.462"/>
+    <waypoint height="0" name="TD" x="-14.973" y="128.183"/>
+    <waypoint name="_HERE" x="-24.923" y="233.862"/>
+    <waypoint name="_STDBY" x="63.237" y="381.329"/>
+    <waypoint name="SEARCH_CENTER" lat="48.810232" lon="7.851804" height="45."/>
+    <waypoint name="TRUE_SOUND_SOURCE" x="-25.123" y="416.162"/>
+    <waypoint name="_S_FROM" x="-24.923" y="233.862"/>
+    <waypoint name="_S_TO" x="-24.923" y="233.862"/>
+    <waypoint name="_S_TURN" x="-24.923" y="233.862"/>
+    <waypoint name="DROP_POINT" x="-24.923" y="233.862"/>
+    <waypoint name="DROP_APPROACH" x="-24.923" y="233.862"/>
+    <waypoint name="DROP_LEVEL" x="-24.923" y="233.862"/>
+    <waypoint name="_DROPTURN" x="-24.923" y="233.862"/>
+    <waypoint name="_CLIMBOUT" x="-24.923" y="233.862"/>
+    <waypoint name="_EXIT" x="-24.923" y="233.862"/>
+    <waypoint name="IMPACT" x="-24.923" y="233.862"/>
+    <waypoint name="FZ1" x="-32.139" y="-7.246"/>
+    <waypoint name="FZ2" x="-60.310" y="480.779"/>
+    <waypoint name="FZ3" x="567.305" y="653.104"/>
+    <waypoint name="FZ4" x="539.187" y="290.616"/>
+    <waypoint name="FZ5" x="520.123" y="259.956"/>
+    <waypoint name="FZ6" x="539.378" y="166.731"/>
+    <waypoint name="_F1" lat="48.80570456695289" lon="7.84961762660713"/>
+    <waypoint name="_F2" lat="48.81084279436229" lon="7.84723708200721"/>
+    <waypoint name="_F3" lat="48.81380786901547" lon="7.86121460297154"/>
+    <waypoint name="_F4" lat="48.80863939598765" lon="7.86403963556767"/>
+    <waypoint name="_OW1" lat="48.807572" lon="7.848972"/>
+    <waypoint name="_OW2" lat="48.807572" lon="7.851523"/>
+    <waypoint name="_OW3" lat="48.809416" lon="7.851523"/>
+    <waypoint name="_OW4" lat="48.809443" lon="7.851632"/>
+    <waypoint name="_OW5" lat="48.809686" lon="7.851632"/>
+    <waypoint name="_OW6" lat="48.809713" lon="7.851495"/>
+    <waypoint name="_OW7" lat="48.810135" lon="7.851495"/>
+    <waypoint name="_OW8" lat="48.810180" lon="7.851359"/>
+    <waypoint name="_OW9" lat="48.810765" lon="7.851359"/>
+    <waypoint name="_OW10" lat="48.810828" lon="7.851223"/>
+    <waypoint name="_OW11" lat="48.811124" lon="7.851223"/>
+    <waypoint name="_OW12" lat="48.811169" lon="7.851086"/>
+    <waypoint name="_OW13" lat="48.811394" lon="7.851086"/>
+    <waypoint name="_OW14" lat="48.811439" lon="7.850950"/>
+    <waypoint name="_OW15" lat="48.811889" lon="7.850950"/>
+    <waypoint name="_OW16" lat="48.811934" lon="7.850813"/>
+    <waypoint name="_OW17" lat="48.813148" lon="7.850813"/>
+    <waypoint name="_OW18" lat="48.813148" lon="7.848972"/>
+    <waypoint name="_OE1" lat="48.809928" lon="7.852314"/>
+    <waypoint name="_OE2" lat="48.810072" lon="7.852041"/>
+    <waypoint name="_OE3" lat="48.810855" lon="7.852041"/>
+    <waypoint name="_OE4" lat="48.810855" lon="7.851905"/>
+    <waypoint name="_OE5" lat="48.811124" lon="7.851905"/>
+    <waypoint name="_OE6" lat="48.811124" lon="7.851768"/>
+    <waypoint name="_OE7" lat="48.811664" lon="7.851768"/>
+    <waypoint name="_OE8" lat="48.811664" lon="7.851905"/>
+    <waypoint name="_OE9" lat="48.811394" lon="7.851905"/>
+    <waypoint name="_OE10" lat="48.811439" lon="7.852314"/>
+    <waypoint name="_OE11" lat="48.811574" lon="7.852996"/>
+    <waypoint name="_OE12" lat="48.811799" lon="7.853541"/>
+    <waypoint name="_OE13" lat="48.811799" lon="7.854087"/>
+    <waypoint name="_OE14" lat="48.811529" lon="7.854087"/>
+    <waypoint name="_OE15" lat="48.811304" lon="7.853405"/>
+    <waypoint name="_OE16" lat="48.810630" lon="7.853200"/>
+    <waypoint name="_OE17" lat="48.810360" lon="7.852859"/>
+    <waypoint name="_OE18" lat="48.810180" lon="7.852518"/>
+    <waypoint name="_OE19" lat="48.809928" lon="7.852450"/>
+    <waypoint name="_ON1" lat="48.812069" lon="7.851291"/>
+    <waypoint name="_ON2" lat="48.812069" lon="7.852109"/>
+    <waypoint name="_ON3" lat="48.811979" lon="7.852109"/>
+    <waypoint name="_ON4" lat="48.811979" lon="7.852791"/>
+    <waypoint name="_ON5" lat="48.813418" lon="7.852791"/>
+    <waypoint name="_ON6" lat="48.813418" lon="7.851291"/>
+  </waypoints>
+
+  <sectors>
+    <sector name="M4_FENCE" color="green">
+      <corner name="_F1"/><corner name="_F2"/><corner name="_F3"/><corner name="_F4"/>
+    </sector>
+    <sector color="orange" name="Flyzone">
+      <corner name="FZ1"/><corner name="FZ2"/><corner name="FZ3"/>
+      <corner name="FZ4"/><corner name="FZ5"/><corner name="FZ6"/>
+    </sector>
+    <sector name="M4_OW" color="red">
+      <corner name="_OW1"/><corner name="_OW2"/><corner name="_OW3"/><corner name="_OW4"/>
+      <corner name="_OW5"/><corner name="_OW6"/><corner name="_OW7"/><corner name="_OW8"/>
+      <corner name="_OW9"/><corner name="_OW10"/><corner name="_OW11"/><corner name="_OW12"/>
+      <corner name="_OW13"/><corner name="_OW14"/><corner name="_OW15"/><corner name="_OW16"/>
+      <corner name="_OW17"/><corner name="_OW18"/>
+    </sector>
+    <sector name="M4_OE" color="red">
+      <corner name="_OE1"/><corner name="_OE2"/><corner name="_OE3"/><corner name="_OE4"/>
+      <corner name="_OE5"/><corner name="_OE6"/><corner name="_OE7"/><corner name="_OE8"/>
+      <corner name="_OE9"/><corner name="_OE10"/><corner name="_OE11"/><corner name="_OE12"/>
+      <corner name="_OE13"/><corner name="_OE14"/><corner name="_OE15"/><corner name="_OE16"/>
+      <corner name="_OE17"/><corner name="_OE18"/><corner name="_OE19"/>
+    </sector>
+    <sector name="M4_ON" color="red">
+      <corner name="_ON1"/><corner name="_ON2"/><corner name="_ON3"/>
+      <corner name="_ON4"/><corner name="_ON5"/><corner name="_ON6"/>
+    </sector>
+  </sectors>
+
+  <variables>
+    <variable init="45." var="star_height" min="30." max="70." step="1."/>
+    <variable init="30." var="star_floor" min="25." max="60." step="1."/>
+
+    <variable init="15." var="approach_height" min="8." max="25." step="0.5"/>
+    <variable init="1.5" var="level_height" min="1.0" max="5." step="0.1"/>
+    <variable init="50." var="level_distance" min="20." max="120." step="5."/>
+    <variable init="0.9" var="release_height" min="0.5" max="1.4" step="0.1"/>
+
+    <variable init="0" type="bool" var="sound_detected"/>
+    <variable init="0" type="uint8_t" var="drop_approaches"/>
+    <variable init="0" type="uint8_t" var="drop_done"/>
+  </variables>
+
+  <exceptions>
+    <exception cond="m4_obstacle(GetPosX(), GetPosY()) @AND (M4_ESCAPE_HEIGHT_M @GT GetPosHeight()) @AND !(nav_block == IndexOfBlock('Wait_GPS')) @AND !(nav_block == IndexOfBlock('Geo_init')) @AND !(nav_block == IndexOfBlock('Holding_point')) @AND !(nav_block == IndexOfBlock('Takeoff')) @AND !(nav_block == IndexOfBlock('Drop_Go_Around')) @AND !(nav_block == IndexOfBlock('land')) @AND !(nav_block == IndexOfBlock('final')) @AND !(nav_block == IndexOfBlock('flare'))" deroute="Drop_Go_Around"/>
+  </exceptions>
+
+  <blocks>
+    <block name="Wait_GPS">
+      <call_once fun="mission4_agl_sonar_init()"/>
+      <call_once fun="mission4_noise_init()"/>
+      <set value="1" var="autopilot.kill_throttle"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+
+    <block name="Geo_init">
+      <while cond="LessThan(NavBlockTime(), mission1_geo_init_delay())"/>
+      <call_once fun="NavSetGroundReferenceHere()"/>
+      <call_once fun="mission4_rangefinder_report_start()"/>
+    </block>
+
+    <block name="Holding_point">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <exception cond="NavBlockTime() @GT mission1_holding_delay()" deroute="Takeoff"/>
+      <attitude roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+
+    <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png" group="home">
+      <exception cond="GetPosAlt() @GT GetAltRef() + 25" deroute="Start_Mission4_Star"/>
+      <set value="0" var="autopilot.kill_throttle"/>
+      <set value="1" var="autopilot.launch"/>
+      <set value="0" var="autopilot.flight_time"/>
+      <call_once fun="NavSetWaypointHere(WP__HERE)"/>
+      <go climb="2.0" from="_HERE" hmode="route" vmode="climb" wp="SEARCH_CENTER"/>
+      <circle climb="2.0" radius="DEFAULT_CIRCLE_RADIUS" until="GetPosAlt() @GT GetAltRef()+25" vmode="climb" wp="SEARCH_CENTER"/>
+      <deroute block="Start_Mission4_Star"/>
+    </block>
+
+    <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="home">
+      <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="0.16"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="12."/>
+      <set var="v_ctl_max_climb" value="V_CTL_ALTITUDE_MAX_CLIMB"/>
+      <while cond="TRUE">
+        <go approaching_time="0" height="70." wp="_STDBY"/>
+      </while>
+    </block>
+
+    <block name="Start_Mission4_Star" strip_button="Start Mission4 Star" strip_icon="survey.png" group="home">
+      <set var="sound_detected" value="FALSE"/>
+      <set var="drop_approaches" value="0"/>
+      <set var="drop_done" value="0"/>
+      <call_once fun="mission4_star_reset(WP_SEARCH_CENTER)"/>
+      <deroute block="Climb_to_Star_Height"/>
+    </block>
+
+    <block name="Climb_to_Star_Height" group="mission">
+      <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="0.16"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="MISSION4_STAR_AIRSPEED"/>
+      <exception cond="GetPosAlt() @GT GetAltRef() + star_height - 2.0" deroute="Star_Begin"/>
+      <circle climb="2.0" radius="DEFAULT_CIRCLE_RADIUS" vmode="climb" wp="SEARCH_CENTER"/>
+    </block>
+
+    <block name="Star_Begin" group="mission">
+      <call_once fun="mission4_star_begin(WaypointX(WP_SEARCH_CENTER), WaypointY(WP_SEARCH_CENTER), WP__S_FROM, WP__S_TO, WP__S_TURN, star_height)"/>
+      <call_once fun="DownlinkSendWpNr(WP__S_FROM)"/>
+      <call_once fun="DownlinkSendWpNr(WP__S_TO)"/>
+      <call_once fun="DownlinkSendWpNr(WP__S_TURN)"/>
+      <deroute block="Star_Leg"/>
+    </block>
+
+    <block name="Star_Leg" group="mission" pre_call="mission4_star_leg_throttle(WP__S_FROM, WP__S_TO)">
+      <exception cond="sound_detected" deroute="Drop_Setup"/>
+      <exception cond="mission4_star_sample(WP_TRUE_SOUND_SOURCE, WP_DROP_POINT)" deroute="Drop_Setup"/>
+      <go approaching_time="0.2" from="_S_FROM" hmode="route" wp="_S_TO"
+          vmode="alt" alt="mission4_star_leg_alt(star_height, star_floor)"/>
+      <deroute block="Star_Turn"/>
+    </block>
+
+    <block name="Star_Turn" group="mission">
+      <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="0.16"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="MISSION4_STAR_AIRSPEED"/>
+      <exception cond="!mission4_star_turning()" deroute="Star_Next"/>
+      <exception cond="NavBlockTime() @GT 40" deroute="Star_Failed"/>
+      <circle radius="mission4_star_turn_radius()" vmode="alt" alt="GetAltRef()+star_height" wp="_S_TURN"/>
+    </block>
+
+    <block name="Star_Next" group="mission">
+      <exception cond="mission4_star_next_leg(WP__S_FROM, WP__S_TO, WP__S_TURN, star_height) == 0" deroute="Star_Leg"/>
+      <deroute block="Star_Solve"/>
+    </block>
+
+    <block name="Star_Solve" group="mission">
+      <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="0.16"/>
+      <call_once fun="mission4_solve_source(WP_DROP_POINT)"/>
+      <call_once fun="mission4_star_update(WP_DROP_POINT)"/>
+      <call_once fun="DownlinkSendWpNr(WP_DROP_POINT)"/>
+      <deroute block="Star_Decide"/>
+    </block>
+
+    <block name="Star_Decide" group="mission">
+      <exception cond="!mission4_star_plausible(WP_DROP_POINT, WP_SEARCH_CENTER)" deroute="Star_Failed"/>
+      <exception cond="mission4_star_converged" deroute="Star_Commit"/>
+      <deroute block="Star_Recentre"/>
+    </block>
+
+    <block name="Star_Recentre" group="mission">
+      <call_once fun="mission4_star_begin(WaypointX(WP_DROP_POINT), WaypointY(WP_DROP_POINT), WP__S_FROM, WP__S_TO, WP__S_TURN, star_height)"/>
+      <call_once fun="DownlinkSendWpNr(WP__S_FROM)"/>
+      <call_once fun="DownlinkSendWpNr(WP__S_TO)"/>
+      <deroute block="Star_Leg"/>
+    </block>
+
+    <block name="Star_Commit" group="mission">
+      <set var="sound_detected" value="TRUE"/>
+      <deroute block="Drop_Setup"/>
+    </block>
+
+    <block name="Star_Failed" group="mission">
+      <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="0.16"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="12."/>
+      <exception cond="mission4_star_iter @GT 1" deroute="Standby"/>
+      <call_once fun="mission4_star_reset(WP_SEARCH_CENTER)"/>
+      <deroute block="Star_Begin"/>
+    </block>
+
+    <block name="Start_Drop_Mission4" strip_button="Start Drop Mission4" strip_icon="down.png" group="mission">
+      <deroute block="Drop_Setup"/>
+    </block>
+
+
+    <block name="Drop_Setup" group="mission">
+      <set var="drop_approaches" value="drop_approaches + 1"/>
+      <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="0.16"/>
+      <call_once fun="mission4_place_run_in_lane(WP_DROP_POINT, WP_DROP_APPROACH)"/>
+      <deroute block="Drop_Approach"/>
+    </block>
+
+    <block name="Drop_Approach" group="mission">
+      <exception cond="!mission4_run_in_clear" deroute="Drop_No_Corridor"/>
+      <call_once fun="NavSetWaypointPosAndAltHere(WP__HERE)"/>
+      <set var="WaypointAlt(WP_DROP_POINT)" value="GetAltRef()+release_height"/>
+      <set var="WaypointAlt(WP_DROP_APPROACH)" value="GetAltRef()+approach_height"/>
+      <call_once fun="mission4_place_dropturn(WP_DROP_APPROACH, WP__DROPTURN, nav_radius)"/>
+      <call_once fun="mission4_place_level(WP_DROP_POINT, WP_DROP_LEVEL, level_distance, level_height)"/>
+      <call_once fun="mission4_place_climbout(WP_DROP_POINT, WP__CLIMBOUT, WP__EXIT, M4_SAFE_HEIGHT_M)"/>
+      <call_once fun="DownlinkSendWpNr(WP_DROP_APPROACH)"/>
+      <call_once fun="DownlinkSendWpNr(WP__CLIMBOUT)"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="12."/>
+      <go approaching_time="0.5" from="_HERE" hmode="route" vmode="glide" wp="DROP_APPROACH"/>
+      <circle radius="M4_DROPTURN_SIDE * fabs(nav_radius)"
+              until="NavQdrCloseTo(DegOfRad(atan2f(mission4_run_in_ux, mission4_run_in_uy))-15) @AND (5 @GT fabs(GetPosAlt() - WaypointAlt(WP_DROP_APPROACH)))"
+              wp="_DROPTURN"/>
+      <deroute block="Drop_Glide"/>
+    </block>
+
+    <block name="Drop_Glide" group="mission">
+      <set var="v_ctl_auto_airspeed_setpoint" value="10."/>
+      <go approaching_time="1" from="DROP_APPROACH" hmode="route" vmode="glide" wp="DROP_LEVEL"/>
+      <deroute block="Drop_Final"/>
+    </block>
+
+    <block name="Drop_Final" group="mission">
+      <exception cond="(2.0 @GT mission4_agl()) @AND (mission4_agl() @GT 0.5) @AND mission4_closing(WP_DROP_POINT) @AND ((mission4_release_lead()*mission4_release_lead()) @GT mission4_dist2_to_wp(WP_DROP_POINT))" deroute="Drop_Release"/>
+      <exception cond="drop_approaches @GT 2" deroute="Standby"/>
+      <go approaching_time="0.2" from="DROP_LEVEL" hmode="route" vmode="glide" wp="DROP_POINT"/>
+      <deroute block="Drop_Missed"/>
+    </block>
+
+    <block name="Drop_Release" group="mission">
+      <call_once fun="mission4_log_release(WP_DROP_POINT, WP_TRUE_SOUND_SOURCE, WP_IMPACT)"/>
+      <call_once fun="DropOpen()"/>
+      <set var="drop_done" value="1"/>
+      <call_once fun="DownlinkSendWpNr(WP_IMPACT)"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="M4_CLIMBOUT_AIRSPEED_MPS"/>
+      <set var="v_ctl_max_climb" value="M4_CLIMBOUT_RATE_MPS"/>
+      <go approaching_time="0" from="DROP_POINT" hmode="route" wp="_CLIMBOUT" vmode="climb" climb="M4_CLIMBOUT_RATE_MPS"/>
+      <deroute block="Drop_Exit"/>
+    </block>
+
+    <block name="Drop_Missed" group="mission">
+      <set var="v_ctl_auto_airspeed_setpoint" value="M4_CLIMBOUT_AIRSPEED_MPS"/>
+      <set var="v_ctl_max_climb" value="M4_CLIMBOUT_RATE_MPS"/>
+      <go approaching_time="0" from="DROP_POINT" hmode="route" wp="_CLIMBOUT" vmode="climb" climb="M4_CLIMBOUT_RATE_MPS"/>
+      <deroute block="Drop_Exit"/>
+    </block>
+
+    <block name="Drop_Go_Around" group="mission">
+      <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="0.16"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="M4_CLIMBOUT_AIRSPEED_MPS"/>
+      <set var="v_ctl_max_climb" value="M4_CLIMBOUT_RATE_MPS"/>
+      <go approaching_time="0" wp="_CLIMBOUT" vmode="climb" climb="M4_CLIMBOUT_RATE_MPS"/>
+      <deroute block="Drop_Exit"/>
+    </block>
+
+    <block name="Drop_Exit" group="mission">
+      <set var="v_ctl_max_climb" value="V_CTL_ALTITUDE_MAX_CLIMB"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="12."/>
+      <circle radius="M4_DROPTURN_SIDE * M4_EXIT_TURN_RADIUS_M"
+              until="GetPosHeight() @GT M4_SAFE_HEIGHT_M - 5" vmode="climb" climb="2.0" wp="_EXIT"/>
+      <deroute block="Drop_Decide"/>
+    </block>
+
+    <block name="Drop_No_Corridor" group="mission">
+      <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="0.16"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="12."/>
+      <exception cond="NavCircleCount() @GT 1.0" deroute="Standby"/>
+      <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()+M4_SAFE_HEIGHT_M" wp="SEARCH_CENTER"/>
+    </block>
+
+    <block name="Drop_Decide" group="mission">
+      <exception cond="drop_done" deroute="Land_Left_AF-TD"/>
+      <exception cond="drop_approaches @GT 2" deroute="Standby"/>
+      <deroute block="Standby"/>
+    </block>
+
+    <block name="Land_Right_AF-TD" strip_button="Land right (wp AF-TD)" strip_icon="land-right.png" group="land">
+      <set value="DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
+      <deroute block="land"/>
+    </block>
+
+    <block name="Land_Left_AF-TD" strip_button="Land left (wp AF-TD)" strip_icon="land-left.png" group="land">
+      <set value="-DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
+      <deroute block="land"/>
+    </block>
+
+    <block name="land">
+      <set var="v_ctl_max_climb" value="V_CTL_ALTITUDE_MAX_CLIMB"/>
+      <call_once fun="nav_compute_baseleg(WP_AF, WP_TD, WP__BASELEG, nav_radius)"/>
+      <circle radius="nav_radius" until="NavCircleCount() @GT 0.5" wp="_BASELEG"/>
+      <circle radius="nav_radius" until="NavQdrCloseTo(DegOfRad(baseleg_out_qdr)-(nav_radius/fabs(nav_radius))*10) @AND (3 @GT fabs(GetPosAlt() - WaypointAlt(WP__BASELEG)))" wp="_BASELEG"/>
+    </block>
+
+    <block name="final">
+      <exception cond="GetAltRef() + 10 @GT GetPosAlt()" deroute="flare"/>
+      <go from="AF" hmode="route" vmode="glide" wp="TD"/>
+    </block>
+
+    <block name="flare">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <go approaching_time="0" from="AF" hmode="route" throttle="0.0" vmode="throttle" wp="TD"/>
+      <attitude roll="0.0" throttle="0.0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</procedure>
