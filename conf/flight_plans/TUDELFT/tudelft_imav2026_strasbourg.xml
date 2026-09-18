@@ -48,11 +48,11 @@
     <waypoint name="_MX3" lat="48.812459" lon="7.859645"/>
     <waypoint name="_MX4" lat="48.811362" lon="7.854512"/>
 
-<!-- Fire zone (Mission 2) -->
-    <waypoint name="_FIRE1" lat="48.80902783246171" lon="7.85289329256999"/>
-    <waypoint name="_FIRE2" lat="48.80916266922539" lon="7.85391504353729"/>
-    <waypoint name="_FIRE3" lat="48.81072613097682" lon="7.85342158470375"/>
-    <waypoint name="_FIRE4" lat="48.81060036833018" lon="7.85241003689887"/>
+<!-- Fire zone (Mission 2), rulebook "Fire detection area": SW, SE, NE, NW -->
+    <waypoint name="_FIRE1" lat="48.808494" lon="7.851707"/>
+    <waypoint name="_FIRE2" lat="48.808518" lon="7.852497"/>
+    <waypoint name="_FIRE3" lat="48.809540" lon="7.852558"/>
+    <waypoint name="_FIRE4" lat="48.809522" lon="7.851791"/>
 
 <!-- Dead man area (Mission 4) -->
     <!-- <waypoint name="DMA1"  lat="48.81063598702768" lon="7.851967313095118"/>
@@ -206,8 +206,8 @@
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_test_precision_landing.xml"/> -->
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_test_precision_landing.xml"/> -->
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_testing.xml"/> -->
-    <include name="Mission" procedure="tudelft_include_imav2026_mission1.xml"/>
-    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission2.xml"/> -->
+    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission1.xml"/> -->
+    <include name="Mission" procedure="tudelft_include_imav2026_mission2.xml"/>
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4.xml"/> -->
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4.xml"/> -->
     <!-- <include name="Safety" procedure="tudelft_include_imav2026_safety.xml"/> -->

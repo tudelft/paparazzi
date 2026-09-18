@@ -588,7 +588,8 @@ bool nav_survey_poly_osam_run(void)
           SurveyCircle.x = SurveyFromWP.x;
         }
 
-        //y position to circle
+        //y position to 
+        
         SurveyCircle.y = ys - temp;
 
         //centre on the edge midway between the lines
