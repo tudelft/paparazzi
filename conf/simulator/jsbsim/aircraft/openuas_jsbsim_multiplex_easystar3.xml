@@ -109,6 +109,58 @@
             <spring_coeff unit="LBS/FT"> 10.0 </spring_coeff>
             <damping_coeff unit="LBS/FT/SEC"> 0.3 </damping_coeff>
         </contact>
+        <!-- Envelope contacts: with only the belly and wingtip points above,
+             nothing lies above the CG, so after the 2 m NPS spawn drop or a
+             bad launch the aircraft could come to rest inverted or nose-in
+             and never get airborne. Parameters are this model's belly values. -->
+        <contact type="STRUCTURE" name="NOSE">
+            <location unit="IN">
+                <x>  0.50 </x>
+                <y>  0.00 </y>
+                <z> -1.50 </z>
+            </location>
+            <static_friction>  0.60 </static_friction>
+            <dynamic_friction> 0.40 </dynamic_friction>
+            <spring_coeff unit="LBS/FT"> 20.0 </spring_coeff>
+            <damping_coeff unit="LBS/FT/SEC"> 3.0 </damping_coeff>
+            <damping_coeff_rebound unit="LBS/FT/SEC"> 5.0 </damping_coeff_rebound>
+        </contact>
+        <contact type="STRUCTURE" name="TAIL">
+            <location unit="IN">
+                <x> 30.00 </x>
+                <y>  0.00 </y>
+                <z> -1.00 </z>
+            </location>
+            <static_friction>  0.60 </static_friction>
+            <dynamic_friction> 0.40 </dynamic_friction>
+            <spring_coeff unit="LBS/FT"> 20.0 </spring_coeff>
+            <damping_coeff unit="LBS/FT/SEC"> 3.0 </damping_coeff>
+            <damping_coeff_rebound unit="LBS/FT/SEC"> 5.0 </damping_coeff_rebound>
+        </contact>
+        <contact type="STRUCTURE" name="CABIN_TOP">
+            <location unit="IN">
+                <x> 12.00 </x>
+                <y>  0.00 </y>
+                <z>  2.50 </z>
+            </location>
+            <static_friction>  0.60 </static_friction>
+            <dynamic_friction> 0.40 </dynamic_friction>
+            <spring_coeff unit="LBS/FT"> 20.0 </spring_coeff>
+            <damping_coeff unit="LBS/FT/SEC"> 3.0 </damping_coeff>
+            <damping_coeff_rebound unit="LBS/FT/SEC"> 5.0 </damping_coeff_rebound>
+        </contact>
+        <contact type="STRUCTURE" name="VERTICAL_TAIL">
+            <location unit="IN">
+                <x> 29.00 </x>
+                <y>  0.00 </y>
+                <z>  4.00 </z>
+            </location>
+            <static_friction>  0.60 </static_friction>
+            <dynamic_friction> 0.40 </dynamic_friction>
+            <spring_coeff unit="LBS/FT"> 20.0 </spring_coeff>
+            <damping_coeff unit="LBS/FT/SEC"> 3.0 </damping_coeff>
+            <damping_coeff_rebound unit="LBS/FT/SEC"> 5.0 </damping_coeff_rebound>
+        </contact>
     </ground_reactions>
 
     <propulsion>

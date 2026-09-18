@@ -1288,6 +1288,10 @@ static inline float mission1_holding_delay(void) { return 5; }
 
     <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png" group="home">
       <exception cond="GetPosAlt() @GT GetAltRef() + 25" deroute="Start_Mission4_Orbit"/>
+      <!-- Hand launch at 8-10 m/s: a 12 m/s setpoint makes the energy controller dive
+           for speed and fly into the ground (worst with a tailwind). The mission
+           blocks after this set their own airspeed. -->
+      <set var="v_ctl_auto_airspeed_setpoint" value="MIN_SPEED_FOR_TAKEOFF"/>
       <set value="0" var="autopilot.kill_throttle"/>
       <set value="1" var="autopilot.launch"/>
       <set value="0" var="autopilot.flight_time"/>
@@ -1317,11 +1321,23 @@ static inline float mission1_holding_delay(void) { return 5; }
     <block name="Climb_to_Orbit_Height" group="mission">
       <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="MISSION4_CRUISE_THR"/>
       <set var="v_ctl_auto_airspeed_setpoint" value="MISSION4_ORBIT_AIRSPEED"/>
-      <exception cond="GetPosAlt() @GT GetAltRef() + orbit_height - 2.0" deroute="Orbit_Begin"/>
+      <exception cond="GetPosAlt() @GT GetAltRef() + orbit_height - 2.0" deroute="Measure_Wind"/>
       <circle climb="2.0" radius="DEFAULT_CIRCLE_RADIUS" vmode="climb" wp="SEARCH_CENTER"/>
     </block>
 
+    <!-- One circle at mission height, motor on, constant airspeed: wind_circle fits the
+         GPS ground speed vectors and publishes the wind to the state (used by the drop).
+         One lap at 40 m / 10 m/s is about 25 s; no fit after 70 s -> go on with the
+         last known wind. -->
+    <block name="Measure_Wind" group="mission">
+      <call_once fun="wind_circle_start()"/>
+      <exception cond="wind_circle.ready @AND (NavBlockTime() @GT 25)" deroute="Orbit_Begin"/>
+      <exception cond="NavBlockTime() @GT 70" deroute="Orbit_Begin"/>
+      <circle alt="GetAltRef() + orbit_height" radius="DEFAULT_CIRCLE_RADIUS" wp="SEARCH_CENTER"/>
+    </block>
+
     <block name="Orbit_Begin" group="mission">
+      <call_once fun="wind_circle_stop()"/>
       <call_once fun="mission4_sim_place_source(WP_TRUE_SOUND_SOURCE, WP_SEARCH_CENTER)"/>
       <call_once fun="DownlinkSendWpNr(WP_TRUE_SOUND_SOURCE)"/>
       <call_once fun="mission4_orbit_reset(WP_SEARCH_CENTER, WP_DROP_POINT)"/>
@@ -1444,17 +1460,17 @@ static inline float mission1_holding_delay(void) { return 5; }
     </block>
 
     <block name="Drop_Decide" group="mission">
-      <exception cond="drop_done" deroute="Land_Left_AF-TD"/>
+      <exception cond="drop_done" deroute="Land_Left_AF_TD"/>
       <exception cond="drop_approaches @GT 2" deroute="Standby"/>
       <deroute block="Standby"/>
     </block>
 
-    <block name="Land_Right_AF-TD" strip_button="Land right (wp AF-TD)" strip_icon="land-right.png" group="land">
+    <block name="Land_Right_AF_TD" strip_button="Land right (wp AF-TD)" strip_icon="land-right.png" group="land">
       <set value="DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
       <deroute block="land"/>
     </block>
 
-    <block name="Land_Left_AF-TD" strip_button="Land left (wp AF-TD)" strip_icon="land-left.png" group="land">
+    <block name="Land_Left_AF_TD" strip_button="Land left (wp AF-TD)" strip_icon="land-left.png" group="land">
       <set value="-DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
       <deroute block="land"/>
     </block>
