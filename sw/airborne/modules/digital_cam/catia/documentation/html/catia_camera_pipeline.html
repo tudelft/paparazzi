@@ -346,54 +346,56 @@ as shown in step 4. Never put a sudo password into a script or chat.</p>
 <p>On the Raspberry Pi Zero 2 W MORA (<code>theatre</code>), disable Bluetooth and dedicate
 the full UART to CATIA. Wi-Fi remains enabled. This is a one-time board setup,
 not something to repeat for every application deployment.</p>
-<p>Connect from the development PC:</p>
+<ol>
+<li>Connect from the development PC:</li>
+</ol>
 <pre><code class="language-sh">ssh air@theatre
 </code></pre>
 <p>Run the following steps <strong>on MORA</strong>. Enter sudo passwords directly in that
 terminal.</p>
-<ol>
+<ol start="2">
 <li>Open the boot configuration:</li>
 </ol>
-<p><code>sh
-   sudo nano /boot/firmware/config.txt</code></p>
+<pre><code class="language-sh">sudo nano /boot/firmware/config.txt
+</code></pre>
 <p>Under the existing <code>[all]</code> section, add or update these settings:</p>
-<p><code>ini
-   enable_uart=1
-   dtoverlay=disable-bt</code></p>
+<pre><code class="language-ini">enable_uart=1
+dtoverlay=disable-bt
+</code></pre>
 <p>NOTE: Remove <code>dtoverlay=miniuart-bt</code> if present; it is the alternative setup that
-   retains Bluetooth. Do not leave both overlays enabled. Save and exit.</p>
-<ol>
+retains Bluetooth. Do not leave both overlays enabled. Save and exit.</p>
+<ol start="2">
 <li>Disable the Bluetooth services:</li>
 </ol>
-<p><code>sh
-   sudo systemctl disable --now hciuart.service bluetooth.service</code></p>
+<pre><code class="language-sh">sudo systemctl disable --now hciuart.service bluetooth.service
+</code></pre>
 <p>If either service is absent, skip that service and disable the one that
-   exists. An absent Bluetooth service does not prevent UART setup.</p>
-<ol>
+exists. An absent Bluetooth service does not prevent UART setup.</p>
+<ol start="4">
 <li>Configure the serial port:</li>
 </ol>
-<p><code>sh
-   sudo raspi-config</code></p>
+<pre><code class="language-sh">sudo raspi-config
+</code></pre>
 <p>Choose <strong>Interface Options &gt; Serial Port</strong>. Set <strong>Login shell over serial</strong>
-   to <strong>No</strong> and <strong>Serial hardware enabled</strong> to <strong>Yes</strong>, then finish.</p>
-<ol>
+to <strong>No</strong> and <strong>Serial hardware enabled</strong> to <strong>Yes</strong>, then finish.</p>
+<ol start="4">
 <li>Reboot to apply the configuration:</li>
 </ol>
-<p><code>sh
-   sudo reboot</code></p>
+<pre><code class="language-sh">sudo reboot
+</code></pre>
 <p>The SSH connection closes. Once MORA is reachable again, reconnect from
-   the PC with <code>ssh air@theatre</code>.</p>
-<ol>
+the PC with <code>ssh air@theatre</code>.</p>
+<ol start="6">
 <li>Verify the devices on MORA:</li>
 </ol>
-<p><code>sh
-   ls -l /dev/serial0 /dev/ttyAMA0</code></p>
+<pre><code class="language-sh">ls -l /dev/serial0 /dev/ttyAMA0
+</code></pre>
 <p>Expected mapping for this board configuration:</p>
-<p><code>text
-   /dev/serial0 -&gt; ttyAMA0</code></p>
+<pre><code class="language-text">/dev/serial0 -&gt; ttyAMA0
+</code></pre>
 <p>Confirm that <code>/dev/ttyAMA0</code> is a character device accessible to <code>air</code>
-   through its <code>dialout</code> group. Do not create a manual symlink to compensate
-   for missing OS configuration.</p>
+through its <code>dialout</code> group. Do not create a manual symlink to compensate
+for missing OS configuration.</p>
 <p>MORA TX remains <strong>GPIO14, physical pin 8</strong>; RX remains <strong>GPIO15, physical pin 10</strong>.
 No PC-side FTDI configuration change is needed. Cross TX/RX, use a common
 ground and <strong>3.3 V UART logic</strong>, and configure both ends for <strong>115200 baud</strong>.

@@ -84,7 +84,7 @@ On the Raspberry Pi Zero 2 W MORA (`theatre`), disable Bluetooth and dedicate
 the full UART to CATIA. Wi-Fi remains enabled. This is a one-time board setup,
 not something to repeat for every application deployment.
 
-Connect from the development PC:
+1. Connect from the development PC:
 
 ```sh
 ssh air@theatre
@@ -93,64 +93,64 @@ ssh air@theatre
 Run the following steps **on MORA**. Enter sudo passwords directly in that
 terminal.
 
-1. Open the boot configuration:
+2. Open the boot configuration:
 
-   ```sh
-   sudo nano /boot/firmware/config.txt
-   ```
+```sh
+sudo nano /boot/firmware/config.txt
+```
 
-   Under the existing `[all]` section, add or update these settings:
+Under the existing `[all]` section, add or update these settings:
 
-   ```ini
-   enable_uart=1
-   dtoverlay=disable-bt
-   ```
+```ini
+enable_uart=1
+dtoverlay=disable-bt
+```
 
-   NOTE: Remove `dtoverlay=miniuart-bt` if present; it is the alternative setup that
-   retains Bluetooth. Do not leave both overlays enabled. Save and exit.
+NOTE: Remove `dtoverlay=miniuart-bt` if present; it is the alternative setup that
+retains Bluetooth. Do not leave both overlays enabled. Save and exit.
 
-1. Disable the Bluetooth services:
+2. Disable the Bluetooth services:
 
-   ```sh
-   sudo systemctl disable --now hciuart.service bluetooth.service
-   ```
+```sh
+sudo systemctl disable --now hciuart.service bluetooth.service
+```
 
-   If either service is absent, skip that service and disable the one that
-   exists. An absent Bluetooth service does not prevent UART setup.
+If either service is absent, skip that service and disable the one that
+exists. An absent Bluetooth service does not prevent UART setup.
 
-1. Configure the serial port:
+4. Configure the serial port:
 
-   ```sh
-   sudo raspi-config
-   ```
+```sh
+sudo raspi-config
+```
 
-   Choose **Interface Options > Serial Port**. Set **Login shell over serial**
-   to **No** and **Serial hardware enabled** to **Yes**, then finish.
+Choose **Interface Options > Serial Port**. Set **Login shell over serial**
+to **No** and **Serial hardware enabled** to **Yes**, then finish.
 
-1. Reboot to apply the configuration:
+4. Reboot to apply the configuration:
 
-   ```sh
-   sudo reboot
-   ```
+```sh
+sudo reboot
+```
 
-   The SSH connection closes. Once MORA is reachable again, reconnect from
-   the PC with `ssh air@theatre`.
+The SSH connection closes. Once MORA is reachable again, reconnect from
+the PC with `ssh air@theatre`.
 
-1. Verify the devices on MORA:
+6. Verify the devices on MORA:
 
-   ```sh
-   ls -l /dev/serial0 /dev/ttyAMA0
-   ```
+```sh
+ls -l /dev/serial0 /dev/ttyAMA0
+```
 
-   Expected mapping for this board configuration:
+Expected mapping for this board configuration:
 
-   ```text
-   /dev/serial0 -> ttyAMA0
-   ```
+```text
+/dev/serial0 -> ttyAMA0
+```
 
-   Confirm that `/dev/ttyAMA0` is a character device accessible to `air`
-   through its `dialout` group. Do not create a manual symlink to compensate
-   for missing OS configuration.
+Confirm that `/dev/ttyAMA0` is a character device accessible to `air`
+through its `dialout` group. Do not create a manual symlink to compensate
+for missing OS configuration.
 
 MORA TX remains **GPIO14, physical pin 8**; RX remains **GPIO15, physical pin 10**.
 No PC-side FTDI configuration change is needed. Cross TX/RX, use a common
