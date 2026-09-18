@@ -5,16 +5,19 @@
      Read about this challenge here: https://2026.imavs.org/
 
 -->
-<flight_plan alt="193" ground_alt="143" lat0="48.806567" lon0="7.852134" max_dist_from_home="1500" name="IMAV2026" security_height="35" home_mode_height="50"qfu="12">
+<flight_plan alt="193" ground_alt="143" lat0="48.806567" lon0="7.852134" max_dist_from_home="1500" name="IMAV2026" security_height="35" home_mode_height="50" qfu="12">
 
 <!-- ******************************* WAYPOINTS ***************************** -->
   <waypoints>
-    <!-- <waypoint name="HOME" x="0.0" y=".0"/> -->
+    <!-- Fixed-wing launch point (48.8086670N 7.8517466E, origin of the MS plans), inside Takeoff_Landing_zone_Fixedwing.
+         Defined here only: included procedures must not define HOME. -->
+    <waypoint name="HOME" x="-24.923" y="233.862"/>
 <!-- Hard geofence sector corners, so that the aircraft is never allowed outside, needs forcedcrash-->
-    <waypoint name="_GF1" lat="48.80570456695289" lon="7.84961762660713"/>
-    <waypoint name="_GF2" lat="48.81084279436229" lon="7.84723708200721"/>
-    <waypoint name="_GF3" lat="48.81380786901547" lon="7.86121460297154"/>
-    <waypoint name="_GF4" lat="48.80863939598765" lon="7.86403963556767"/>
+<!-- Rulebook "Border geofence" corners: SW, NW, NE, SE -->
+    <waypoint name="_GF1" lat="48.806034" lon="7.850607"/>
+    <waypoint name="_GF2" lat="48.811254" lon="7.849834"/>
+    <waypoint name="_GF3" lat="48.813519" lon="7.861106"/>
+    <waypoint name="_GF4" lat="48.808367" lon="7.860520"/>
 
 <!-- Soft geofence sector corners, as a backup just in case something is amiss and we still can fly plane back -->
     <!-- <waypoint name="SGF1" lat="48.80570456695289" lon="7.84961762660713"/>
@@ -33,19 +36,17 @@
     <waypoint name="_FZ8" lat="48.81250109175638" lon="7.85962794135288"/>
     <waypoint name="_FZ9" lat="48.81089414069912" lon="7.85196675859237"/> -->
 
-<!-- Mapping area 1 (Mission 1) -->
-    <waypoint name="_MA1" lat="48.80693509354554" lon="7.85164127905473"/>
-    <waypoint name="_MA2" lat="48.80768200909922" lon="7.85500210052321"/>
-    <waypoint name="_MA3" lat="48.81139279833167" lon="7.85440157563368"/>
-    <waypoint name="_MA4" lat="48.81085311865281" lon="7.85105155114396"/>
+<!-- Mapping area 1 (Mission 1), rulebook "Card Border 1" / "Card Border 1 and 2" -->
+    <waypoint name="_MA1" lat="48.806895" lon="7.851654"/>
+    <waypoint name="_MA2" lat="48.807676" lon="7.855065"/>
+    <waypoint name="_MA3" lat="48.811362" lon="7.854512"/>
+    <waypoint name="_MA4" lat="48.810883" lon="7.851214"/>
 
-<!-- Mapping area 2 (Mission 1) -->
-    <waypoint name="_MX1" lat="48.80762099075623" lon="7.85503862863751"/>
-    <waypoint name="_MX2" lat="48.80853085515681" lon="7.85922936963215"/>
-    <waypoint name="_MX3" lat="48.80902546150865" lon="7.85905139132392"/>
-    <waypoint name="_MX4" lat="48.80930953485449" lon="7.85929233676662"/>
-    <waypoint name="_MX5" lat="48.81249409545106" lon="7.85962245499655"/>
-    <waypoint name="_MX6" lat="48.81139512077117" lon="7.85441047025036"/>
+<!-- Mapping area 2 (Mission 1), rulebook "Card Border 2" / "Card Border 1 and 2" -->
+    <waypoint name="_MX1" lat="48.807676" lon="7.855065"/>
+    <waypoint name="_MX2" lat="48.808588" lon="7.859258"/>
+    <waypoint name="_MX3" lat="48.812459" lon="7.859645"/>
+    <waypoint name="_MX4" lat="48.811362" lon="7.854512"/>
 
 <!-- Fire zone (Mission 2) -->
     <waypoint name="_FIRE1" lat="48.80902783246171" lon="7.85289329256999"/>
@@ -91,6 +92,12 @@
     <waypoint name="_TLFW3" lat="48.80906601377884" lon="7.852087722616552"/>
     <waypoint name="_TLFW4" lat="48.80899886628665" lon="7.851348534388965"/>
 
+<!-- Precision landing Fixedwing zone (rulebook), 5 x 20 m box, long axis 353/173 deg -->
+    <waypoint name="_PLFW1" lat="48.807315" lon="7.852020"/>
+    <waypoint name="_PLFW2" lat="48.807315" lon="7.851951"/>
+    <waypoint name="_PLFW3" lat="48.807494" lon="7.851915"/>
+    <waypoint name="_PLFW4" lat="48.807500" lon="7.851982"/>
+
   </waypoints>
 
 <!--
@@ -134,8 +141,6 @@
       <corner name="_MX2"/>
       <corner name="_MX3"/>
       <corner name="_MX4"/>
-      <corner name="_MX5"/>
-      <corner name="_MX6"/>
     </sector>
 
     <sector color="red" name="Fire_zone">
@@ -186,15 +191,22 @@
       <corner name="_TLFW3"/>
       <corner name="_TLFW4"/>
     </sector>
+
+    <sector color="magenta" name="Precision_landing_Fixedwing">
+      <corner name="_PLFW1"/>
+      <corner name="_PLFW2"/>
+      <corner name="_PLFW3"/>
+      <corner name="_PLFW4"/>
+    </sector>
   </sectors>
 
   <includes>
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_test_drop.xml"/> -->
     <!-- Precision landing aims at TD; Takeoff_Landing_zone_Fixedwing is the outer abort boundary. -->
-    <include name="Testing" procedure="tudelft_include_imav2026_test_precision_landing.xml"/>
+    <!-- <include name="Testing" procedure="tudelft_include_imav2026_test_precision_landing.xml"/> -->
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_test_precision_landing.xml"/> -->
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_testing.xml"/> -->
-    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission1.xml"/> -->
+    <include name="Mission" procedure="tudelft_include_imav2026_mission1.xml"/>
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission2.xml"/> -->
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4.xml"/> -->
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4.xml"/> -->

@@ -1,532 +1,632 @@
-
-<procedure>
-<!-- ******************************** HEADERS ****************************** -->
-<header>
-
-#ifndef FLIGHTPLAN_HEADER_DEFINES
-#define FLIGHTPLAN_HEADER_DEFINES
-
-//Set Generic options
-    #include "autopilot.h"
-//Enable AHRS Health test functions
-    #include "modules/ahrs/ahrs_aligner.h"
-//Enable advanced electrical power functions
-    #include "modules/energy/electrical.h"
-//Enable datalink tests
-    #include "modules/datalink/datalink.h"
-//For interaction with the Flight termination Device (FTD)
-    #define RCChannel(_x) ((*fbw_state).channels[_x])
-
-//DANGER WARNING
-// define ACTIVATED_FTD 0
-
-
-// PHOTOGRAMMETRY settings
-    #define PHOTOGRAMMETRY_OVERLAP 30		// 1-99 Procent
-    #define PHOTOGRAMMETRY_SIDELAP 20		// 1-99 Procent
-    #define PHOTOGRAMMETRY_RESOLUTION 50		// mm pixel projection size
-
-// Incluse airframe.h To be able to use specific variables
-    #include "generated/airframe.h"
-
-// Completly replace with onboard recon copmpter interface
-    #ifdef DC_AUTOSHOOT_PERIOD
-    //TODO make shooting distance not periodic
-    #define LINE_START_FUNCTION dc_autoshoot = DC_AUTOSHOOT_PERIODIC;
-    #define LINE_STOP_FUNCTION dc_autoshoot = DC_AUTOSHOOT_STOP;
-    #endif
-
-//Enable energy control commands from within flightplan
-    #include "firmwares/fixedwing/guidance/energy_ctrl.h"
-
-// States
-    #define AircraftIsBooting()  LessThan(nav_block,4)  // LessThan(nav_block,IndexOfBlock('Mission.ReadyForDeparture'))
-
-
-#endif
-
-  </header>
-<!-- ******************************* WAYPOINTS ***************************** -->
-  <waypoints>
-
-<!-- Scrutineering Course -->
-<!-- South * East
-TST-1 = -26° 34' 58.9" * 151° 50' 16.2"
-TST-2 = -26° 35' 04.1" * 151° 50' 44.5"
-TST-3 = -26° 35' 23.2" * 151° 50' 45.9"
--->
-<!-- extra boundary maybe add it -->
-<!-- ABS = Alert Boundary scrutineering flight -->
-<!-- TODO real positions and better naming-->
+<!DOCTYPE procedure SYSTEM "../flight_plan.dtd">
 <!--
-    <waypoint name="_ABS1" lat="" lon="" height="400."/>
-    <waypoint name="_ABS2" lat="" lon="" height="400."/>
-    <waypoint name="_ABS3" lat="" lon="" height="400."/>
+  IMAV 2026 Mission 1 (Strasbourg) - single-aircraft 2D mapping of BOTH areas.
+  Procedure version of flight_plans/MS/mission1_single_strasbourg.xml, to be
+  included from tudelft_imav2026_strasbourg.xml:
+
+    <include name="Mission" procedure="tudelft_include_imav2026_mission1.xml"/>
+
+  All block names get the include name as prefix (e.g. "Mission.Takeoff");
+  deroutes and IndexOfBlock() inside this file are prefixed automatically.
+
+  FRAME: the main plan's origin (lat0 48.806567, lon0 7.852134) is NOT the
+  origin of the MS plan (lat0 48.8086670, lon0 7.8517466). All x/y below are
+  the MS values shifted by the UTM offset between the two origins:
+      dx = -24.923 m, dy = +233.862 m   (MISSION1_MS_FRAME_DX/DY)
+  The flyzone polygon in nav_mission4_geofence.h is still in the MS frame, so
+  the geofence exception converts the position back with that offset.
+  HOME is defined by the main plan (the fixed-wing launch point).
+
+  ONE Talon flies both areas, back to back, west to east:
+
+    Takeoff -> Survey Area 1 (Left) -> Survey Area 2 (Right) -> land at TD.
+
+  AREAS ARE THE OFFICIAL IMAV 2026 COORDINATES:
+    Area 1: M1_NW 48.810883N 7.851214E, M1_SW 48.806895N 7.851654E
+    Area 2: M2_NE 48.812459N 7.859645E, M2_SE 48.808588N 7.859258E
+    Shared border: M12_N 48.811362N 7.854512E, M12_S 48.807676N 7.855065E
+
+  SURVEY PATTERN: 60 m AGL (mapping_height, changeable in the GCS), lines
+  parallel to each area's longest side, spacing fitted to the area's width
+  for at least mapping_sidelap (51.2 m in Area 1, 52.6 m in Area 2).
+    - mapping_passes = 2 (default): TWO INTERLEAVED PASSES (lines 1,3,5..
+      then 2,4,6..) at twice the line spacing, U-turn radius = the line
+      spacing (~52 m).
+    - mapping_passes = 1: lines flown IN ORDER, one nav_survey_poly_osam
+      run per area. U-turn radius = half the line spacing (~26 m, ~22 deg
+      bank at 10 m/s). Needs POLY_OSAM_MIN_RADIUS below that in the
+      airframe (set to 24), otherwise the module forces 30 m and the turn
+      no longer ends on the next line.
+    - The scratch polygon's north/south edges are the area's edges pushed
+      mapping_overrun metres out (0 by default). With Poly_Turn_On_Edge
+      (set in the survey blocks) each U-turn circle's centre sits ON that
+      edge, midway between the two lines, and the line that crosses the
+      slanted edge further out is ended there too. The other line then
+      ends up to 7-21 m short of the centre and flies straight into the
+      turn.
+    - The camera only fires on a line, inside the area, at survey altitude.
+  Nominal turn reach (no wind, no overshoot), past flyzone / past border,
+  centre on edge:
+    2 passes,  0 m overrun: 45-46 m / 0
+    2 passes, 10 m overrun: 55-56 m / Area 2 5 m
+    2 passes, 20 m overrun: 64-66 m / 8-15 m
+  (Old placement, level with the outer line end, 40 m overrun: 92-103 m /
+  40-52 m.)
+  The geofence exception uses its own mapping_fence_buffer for that.
+
+  ROUTE: 1 pass: Area 1 starts on the west side and ends on the shared M12
+  border; Area 2 starts on the M12 border. 2 passes: both passes of an area
+  start and finish on the same side; both areas start on the M12 border
+  side, so Area 1 ends next to Area 2 either way.
+
+  CAMERA: Raspberry Pi AI Camera over digital_cam_uart, 66 deg axis across
+  the wings, distance-triggered every mapping_shot_interval metres.
+
+  PER-AREA PHOTO TAG: Area 1 photos 1001..1999, Area 2 photos 2001..2999
+  (area = nr / 1000, index = nr % 1000).
 -->
+<procedure>
+  <header>
+#include "autopilot.h"
+#include "firmwares/fixedwing/guidance/energy_ctrl.h"
+#include "modules/digital_cam/dc.h"
+#include "modules/nav/nav_survey_poly_osam.h"
+#include "modules/nav/nav_mission4_geofence.h"
 
-    <waypoint name="FLARE" x="-100." y="400." height="-40."/>
+/* Offset of the MS plan's origin in this plan's frame (UTM, metres).
+   Position in the MS frame = position here - offset. */
+#define MISSION1_MS_FRAME_DX (-24.923f)
+#define MISSION1_MS_FRAME_DY (233.862f)
 
-<!-- Additional VIA_EL2 Waypoint since we must go *via* EL2, and to have a little
-    more meters optimal for our scan strips entry, otherwhise we could miss one
-    photo and not spot Joe. -->
+/* Buffered Strasbourg flyzone check (polygon in nav_mission4_geofence.h is
+   in the MS frame). */
+static inline bool mission1_in_flyzone(float x, float y, float buf)
+{
+  return mission4_near_poly(mission4_strasbourg_vx, mission4_strasbourg_vy, 6,
+                            x - MISSION1_MS_FRAME_DX, y - MISSION1_MS_FRAME_DY, buf);
+}
 
-<!-- Position where Outback Joe would be located. If this waypoint is situated
-     outside search area(The default situation), by this way the flightplane
-     -knows if it should start a search phase. If it is moved inside the area it
-      will start a rescue phase, a.k.a bottledrop.  -->
+/* Photo-number block per mapping area: shots in area k are k*1000 + 1, +2 ...
+   dc_photo_nr is the number of the LAST shot and is incremented before
+   sending, so setting it to k*1000 makes the first frame k*1000 + 1. */
+#define MISSION1_PHOTO_BLOCK 1000
 
- <!-- The START from here towards target(Joe), wile dynamically calculating the RELEASE point to target the OUTBACKJOE -->
-    <waypoint name="START" x="-100" y="300"/>
-    <waypoint name="OUTBACKJOE" x="222." y="333."/>
-    <!-- Note that 70m is the release height, we are not allowed to go below
-    60 meters and need at least some GPS height fluctuation into account
-    Also if we steeply move UP from START to RELEASE the release will maybe a
-    little more accurate, hmmmm theoretically -->
-    <waypoint name="RELEASE" x="-100." y="400." height="61."/>
+/* tan(half of the camera FOV ACROSS the flight line). The AI Camera is
+   66 x 52.3 deg, mounted with the 66 deg axis ACROSS THE WINGS:
+   2 * 60 m * tan(33) = 77.9 m swath. If it turns out to be the other way
+   round, use 0.49098f (tan 26.15 deg, 58.9 m swath at 60 m). */
+#define MISSION1_TAN_HALF_CROSS_FOV 0.64941f
 
-<!-- For autonomous landing and drop -->
-    <waypoint name="_BASELEG" x="100" y="300"/>
-    <waypoint name="_CLIMB" x="100" y="300"/>
-    </waypoints>
+/* Survey line angle parallel to the edge wp_a-wp_b, in the module's own
+   convention (atan(dy/dx), degrees), so the lines follow the corners when
+   they are dragged in the GCS. dx is nudged off zero like the module does. */
+static inline float mission1_line_angle(uint8_t wp_a, uint8_t wp_b)
+{
+  float dx = waypoints[wp_b].x - waypoints[wp_a].x;
+  float dy = waypoints[wp_b].y - waypoints[wp_a].y;
+  if (signbit(fabs(dx) - 0.000001f)) { dx = 0.000001f; }
+  return DegOfRad(atan(dy / dx));
+}
 
-<!-- ******************************** SECTORS ****************************** -->
-<!-- Sectors are good for displaying an overlay -->
+/* Point on the edge a-b, pushed `m` metres away from (cx, cy), where the
+   across-line coordinate x*nx + y*ny equals T. */
+static inline void mission1_edge_at(uint8_t a, uint8_t b, float cx, float cy, float m,
+    float nx, float ny, float T, float *px, float *py)
+{
+  float ax = waypoints[a].x, ay = waypoints[a].y;
+  float bx = waypoints[b].x, by = waypoints[b].y;
+  float dx = bx - ax, dy = by - ay;
+  float len = sqrtf(dx * dx + dy * dy);
+  if (signbit(len - 0.001f)) { len = 1.0f; }
+  float ex = -dy / len, ey = dx / len;
+  if (!signbit((cx - ax) * ex + (cy - ay) * ey)) { ex = -ex; ey = -ey; }
+  ax += ex * m; ay += ey * m;
+  bx += ex * m; by += ey * m;
+  float ta = ax * nx + ay * ny;
+  float den = bx * nx + by * ny - ta;
+  if (signbit(fabs(den) - 0.001f)) { den = 0.001f; }
+  float u = (T - ta) / den;
+  *px = ax + u * (bx - ax);
+  *py = ay + u * (by - ay);
+}
+
+/* Turn radius the module will use: half the sweep, but never below its
+   POLY_OSAM_MIN_RADIUS (module default 30 unless the airframe sets it). */
+#ifdef POLY_OSAM_MIN_RADIUS
+#define MISSION1_MIN_TURN_RADIUS ((float)POLY_OSAM_MIN_RADIUS)
+#else
+#define MISSION1_MIN_TURN_RADIUS 30.0f
+#endif
+/* Never pull an edge in by more than this along the lines. */
+#define MISSION1_MAX_INSET 80.0f
+/* Entry circle radius (Poly_Entry_Radius): the module then puts the entry
+   circle tangent to the first line instead of round the polygon corner
+   with half the sweep (~52 m), which stuck far out at the Area 2 SE corner
+   and forced the south edge ~38 m in. */
+#define MISSION1_ENTRY_RADIUS 30.0f
+
+/* How far (along the lines, metres) a circle centre at (x, y) must move
+   by -d * (ux, uy) so a circle of radius r stays `margin` inside the convex
+   border polygon gx/gy (4 corners, either winding). Border sides that the
+   move barely changes the distance to are ignored (it cannot help there). */
+static inline float mission1_inset_needed(float x, float y, float ux, float uy,
+    float r, float margin, float *gx, float *gy)
+{
+  float mx = 0.25f * (gx[0] + gx[1] + gx[2] + gx[3]);
+  float my = 0.25f * (gy[0] + gy[1] + gy[2] + gy[3]);
+  float need = 0.0f;
+  uint8_t i;
+  for (i = 0; i != 4; i++) {
+    uint8_t j = (i + 1) % 4;
+    float ex = gx[j] - gx[i], ey = gy[j] - gy[i];
+    float len = sqrtf(ex * ex + ey * ey);
+    if (signbit(len - 0.001f)) { continue; }
+    float gnx = -ey / len, gny = ex / len;   /* made to point inward below */
+    if (signbit((mx - gx[i]) * gnx + (my - gy[i]) * gny)) { gnx = -gnx; gny = -gny; }
+    float dist = (x - gx[i]) * gnx + (y - gy[i]) * gny;
+    float lack = r + margin - dist;
+    float gain = -(ux * gnx + uy * gny);
+    if (signbit(lack) || signbit(gain - 0.1f)) { continue; }
+    float d = lack / gain;
+    if (signbit(need - d)) { need = d; }
+  }
+  if (signbit(MISSION1_MAX_INSET - need)) { need = MISSION1_MAX_INSET; }
+  return need;
+}
+
+/* Perpendicular distance to pull the edge a-b (currently pushed `overrun`
+   out) in, so every U-turn circle of this pass on that edge, and the entry
+   circle at that edge's corner on the entry side, stay `margin` inside the
+   border. With Poly_Turn_On_Edge a U-turn centre (radius r) sits on the
+   scratch edge midway between the two lines; the entry circle (radius
+   r_entry, module: first line's start level) sits r_entry from the first
+   line T_first towards the entry side T_side. 0 when nothing needs to
+   move. */
+static inline float mission1_edge_pull(uint8_t a, uint8_t b, float cx, float cy,
+    float overrun, float nx, float ny, float lo, float s, int kmin, int kmax,
+    int kstep, float T_side, float T_first, float r, float r_entry, float margin,
+    float *gx, float *gy)
+{
+  float ux = ny, uy = -nx;   /* along the lines */
+  float p[2];   /* p + 0 / p + 1, not the address-of form (XML) */
+  mission1_edge_at(a, b, cx, cy, overrun, nx, ny, T_first, p + 0, p + 1);
+  if (signbit((p[0] - cx) * ux + (p[1] - cy) * uy)) { ux = -ux; uy = -uy; }   /* out of the area */
+
+  float d = 0.0f, di;
+  int k;
+  for (k = kmin; !signbit((float)(kmax - k - kstep)); k += kstep) {
+    float T = lo + ((float)k + 0.5f + 0.5f * (float)kstep) * s;
+    mission1_edge_at(a, b, cx, cy, overrun, nx, ny, T, p + 0, p + 1);
+    di = mission1_inset_needed(p[0], p[1], ux, uy, r, margin, gx, gy);
+    if (signbit(d - di)) { d = di; }
+  }
+  mission1_edge_at(a, b, cx, cy, overrun, nx, ny, T_first, p + 0, p + 1);
+  float toward = signbit(T_side - T_first) ? -r_entry : r_entry;
+  p[0] += toward * nx;
+  p[1] += toward * ny;
+  di = mission1_inset_needed(p[0], p[1], ux, uy, r_entry, margin, gx, gy);
+  if (signbit(d - di)) { d = di; }
+
+  /* along-line distance d = perpendicular edge shift / |cos| */
+  float ex = waypoints[b].x - waypoints[a].x, ey = waypoints[b].y - waypoints[a].y;
+  float len = sqrtf(ex * ex + ey * ey);
+  if (signbit(len - 0.001f)) { return 0.0f; }
+  return d * fabsf((ux * ey - uy * ex) / len);
+}
+
+/* Set up ONE PASS of a survey of the quadrilateral n0-n1 (north edge),
+   s0-s1 (south edge), lines parallel to edge_a-edge_b. N lines at
+   (k + 0.5) * W / N across the width W.
+   passes == 1: the single pass flies all N lines in order, at spacing s.
+     It starts on ref_wp's side, or ENDS there if end_on_ref.
+   passes == 2: interleaved; pass 1 flies the lines of the same parity as
+     the outer line on ref_wp's side, pass 2 the others, at spacing 2 * s.
+   Each pass is a nav_survey_poly_osam run over the scratch polygon
+   out_wp .. out_wp+3 (consecutive), whose north/south edges are the area's
+   edges pushed `overrun` metres outward, then each pulled back in as far
+   as needed to keep this pass's U-turn and entry circles `margin` metres
+   inside the border geofence g0..g3. Returns the number of lines in the
+   pass; 0 means none (survey not set up). */
+static inline uint8_t mission1_pass_setup(uint8_t n0, uint8_t n1, uint8_t s0, uint8_t s1,
+    uint8_t edge_a, uint8_t edge_b, uint8_t ref_wp, bool end_on_ref,
+    uint8_t passes, uint8_t pass,
+    float max_sweep, float overrun, float alt, uint8_t out_wp,
+    uint8_t g0, uint8_t g1, uint8_t g2, uint8_t g3, float margin)
+{
+  float angle = mission1_line_angle(edge_a, edge_b);
+  float th = RadOfDeg(angle);
+  float nx = -sinf(th), ny = cosf(th);
+  uint8_t c[4] = {n0, n1, s0, s1};
+  float lo = 0.0f, hi = 0.0f, cx = 0.0f, cy = 0.0f;
+  uint8_t i;
+  for (i = 0; i != 4; i++) {
+    float t = waypoints[c[i]].x * nx + waypoints[c[i]].y * ny;
+    if (i == 0) { lo = t; hi = t; }
+    if (signbit(t - lo)) { lo = t; }
+    if (!signbit(t - hi)) { hi = t; }
+    cx += 0.25f * waypoints[c[i]].x;
+    cy += 0.25f * waypoints[c[i]].y;
+  }
+  float width = hi - lo;
+  if (signbit(max_sweep - 1.0f)) { max_sweep = 1.0f; }
+  /* -0.001: a width of exactly k strips must give k lines, not k+1 */
+  float nl = ceilf(width / max_sweep - 0.001f);
+  if (signbit(nl - 1.0f)) { nl = 1.0f; }
+  int N = (int)nl;
+  float s = width / nl;
+
+  float tref = waypoints[ref_wp].x * nx + waypoints[ref_wp].y * ny;
+  bool ref_low = signbit(tref - 0.5f * (lo + hi));
+  int k_ref = ref_low ? 0 : N - 1;
+  int kmin = 0;
+  int kmax = N - 1;
+  int kstep = 1;
+  if (passes == 2) {
+    int parity = (pass == 1) ? (k_ref % 2) : ((k_ref + 1) % 2);
+    kmin = parity;
+    kmax = (((N - 1) % 2) == parity) ? N - 1 : N - 2;
+    kstep = 2;
+  }
+  if (signbit((float)(kmax - kmin))) { return 0; }
+
+  /* nav_survey_poly_osam puts the first line half a sweep inside the
+     polygon and sweeps back when the next line would be past the far edge,
+     so the polygon extends half a sweep beyond the outer lines. */
+  float sweep = (float)kstep * s;
+  float plo = lo + ((float)kmin + 0.5f) * s - 0.5f * sweep;
+  float phi = lo + ((float)kmax + 0.5f) * s + 0.5f * sweep;
+
+  float px = stateGetPositionEnu_f()[0].x;
+  float py = stateGetPositionEnu_f()[0].y;
+  bool entry_low = ref_low;
+  if (passes != 2) {
+    if (end_on_ref) { entry_low = !ref_low; }
+  }
+  if (pass != 1) { entry_low = signbit(px * nx + py * ny - 0.5f * (plo + phi)); }
+
+  /* Keep the circles inside the border geofence: pull each edge in. */
+  float r = 0.5f * sweep;
+  if (signbit(r - MISSION1_MIN_TURN_RADIUS)) { r = MISSION1_MIN_TURN_RADIUS; }
+  uint8_t g[4] = {g0, g1, g2, g3};
+  float gx[4], gy[4];
+  for (i = 0; i != 4; i++) {
+    gx[i] = waypoints[g[i]].x;
+    gy[i] = waypoints[g[i]].y;
+  }
+  float T_side = entry_low ? plo : phi;
+  float T_first = entry_low ? plo + 0.5f * sweep : phi - 0.5f * sweep;
+  float m_n = overrun - mission1_edge_pull(n0, n1, cx, cy, overrun, nx, ny, lo, s,
+      kmin, kmax, kstep, T_side, T_first, r, MISSION1_ENTRY_RADIUS, margin, gx, gy);
+  float m_s = overrun - mission1_edge_pull(s0, s1, cx, cy, overrun, nx, ny, lo, s,
+      kmin, kmax, kstep, T_side, T_first, r, MISSION1_ENTRY_RADIUS, margin, gx, gy);
+  Poly_Entry_Radius = MISSION1_ENTRY_RADIUS;
+
+  float x[4], y[4];
+  /* x + k, not the address-of form: a raw ampersand is not valid XML */
+  mission1_edge_at(n0, n1, cx, cy, m_n, nx, ny, plo, x + 0, y + 0);
+  mission1_edge_at(n0, n1, cx, cy, m_n, nx, ny, phi, x + 1, y + 1);
+  mission1_edge_at(s0, s1, cx, cy, m_s, nx, ny, phi, x + 2, y + 2);
+  mission1_edge_at(s0, s1, cx, cy, m_s, nx, ny, plo, x + 3, y + 3);
+  uint8_t cn = entry_low ? 0 : 1;   /* north corner on the entry side */
+  uint8_t cs = entry_low ? 3 : 2;   /* south corner on the entry side */
+  float dn = (x[cn] - px) * (x[cn] - px) + (y[cn] - py) * (y[cn] - py);
+  float ds = (x[cs] - px) * (x[cs] - px) + (y[cs] - py) * (y[cs] - py);
+  uint8_t first = signbit(dn - ds) ? cn : cs;
+
+  /* rotate the cyclic order so the entry corner comes first */
+  for (i = 0; i != 4; i++) {
+    uint8_t j = (first + i) % 4;
+    waypoints[out_wp + i].x = x[j];
+    waypoints[out_wp + i].y = y[j];
+    waypoints[out_wp + i].a = alt;
+  }
+  nav_survey_poly_osam_setup(out_wp, 4, sweep, angle);
+  return (uint8_t)((kmax - kmin) / kstep + 1);
+}
+
+/* Shoot only within alt_tol of the survey altitude, only while the GROUND
+   TRACK runs along the survey lines (within max_course_err_deg), and only
+   inside the area being mapped (now AND `lookahead` seconds ahead). Area
+   corners are passed as waypoint ids because this header is emitted before
+   the WP_ defines; n is up to 6, unused ids are ignored.
+   Sets dc_autoshoot directly rather than dc_stop()/dc_distance(): those send
+   DC_INFO on every call and dc_distance() resets the last shot position.
+   No raw angle brackets or ampersands anywhere in this header: they make
+   the flight plan invalid XML. */
+static inline void mission1_shoot_in_area(float max_roll_deg, float lookahead,
+    float alt_now, float alt_target, float alt_tol,
+    float line_angle_deg, float max_course_err_deg, uint8_t n,
+    uint8_t w0, uint8_t w1, uint8_t w2, uint8_t w3, uint8_t w4, uint8_t w5)
+{
+  uint8_t ids[6] = {w0, w1, w2, w3, w4, w5};
+  float vx[6], vy[6];
+  uint8_t i;
+  for (i = 0; i != n; i++) {
+    vx[i] = waypoints[ids[i]].x;
+    vy[i] = waypoints[ids[i]].y;
+  }
+  /* Roll no longer gates shots: shoot at any bank angle. */
+  (void)max_roll_deg;
+  bool shoot = true;
+  float x = stateGetPositionEnu_f()[0].x;
+  float y = stateGetPositionEnu_f()[0].y;
+  float ax = x + stateGetSpeedEnu_f()[0].x * lookahead;
+  float ay = y + stateGetSpeedEnu_f()[0].y * lookahead;
+  if (!mission4_in_poly(vx, vy, n, x, y)) { shoot = false; }
+  if (!mission4_in_poly(vx, vy, n, ax, ay)) { shoot = false; }
+  if (!signbit(fabs(alt_now - alt_target) - alt_tol)) { shoot = false; }
+  float sx = stateGetSpeedEnu_f()[0].x;
+  float sy = stateGetSpeedEnu_f()[0].y;
+  float track_err = fmod(fabs(DegOfRad(atan2f(sy, sx)) - line_angle_deg), 180.0f);
+  if (!signbit(track_err - 90.0f)) { track_err = 180.0f - track_err; }
+  if (!signbit(track_err - max_course_err_deg)) { shoot = false; }
+  if (shoot) {
+    dc_autoshoot = DC_AUTOSHOOT_DISTANCE;
+  } else {
+    dc_autoshoot = DC_AUTOSHOOT_STOP;
+  }
+}
+  </header>
+
+  <waypoints>
+    <!-- Launch / land infrastructure. AF is where the final glide STARTS,
+         TD where it touches down. TD is the centre of the official
+         "Precision landing Fixedwing zone" (5 x 20 m box, long axis
+         353/173 deg); the final is flown SOUTHBOUND (173 deg): AF 200 m
+         north of TD at 20 m AGL (~5.7 deg glide). AF is 15 m inside the west
+         fence, so Land AF-TD uses a NEGATIVE radius (baseleg circle east of
+         AF). For wind, drag AF round TD in the GCS. -->
+    <waypoint name="CLIMB" x="-13.193" y="276.124"/>
+    <!-- height, not alt: 20 m above the main plan's ground_alt (MS plan had
+         alt 160 = 20 m above its ground_alt 140). -->
+    <waypoint name="AF" x="-34.464" y="292.028" height="20."/>
+    <waypoint name="_BASELEG" x="-4.723" y="295.562"/>
+    <!-- height="0": on the ground, otherwise final climbs from AF to TD. -->
+    <waypoint name="TD" x="-10.839" y="93.428" height="0"/>
+    <waypoint name="_STDBY" x="63.237" y="381.329"/>
+
+    <!-- Not flown. nav_couzin_fw.c is compiled into the Talon airframe and
+         references WP_SWARM_TGT/WP_S1/WP_S2 in C, so it will not link
+         without them. -->
+    <waypoint name="SWARM_TGT" x="88.354" y="354.256"/>
+    <waypoint name="S1" x="139.948" y="164.859"/>
+    <waypoint name="S2" x="369.584" y="472.507"/>
+
+    <!-- Strasbourg flyzone hexagon, display only. The geofence exception
+         uses mission4_strasbourg_vx/vy in nav_mission4_geofence.h; keep
+         both in sync (those are in the MS frame, see MISSION1_MS_FRAME_DX). -->
+    <waypoint name="_FZ1" x="-32.139" y="-7.246"/>
+    <waypoint name="_FZ2" x="-60.310" y="480.779"/>
+    <waypoint name="_FZ3" x="567.305" y="653.104"/>
+    <waypoint name="_FZ4" x="539.187" y="290.616"/>
+    <waypoint name="_FZ5" x="520.123" y="259.956"/>
+    <waypoint name="_FZ6" x="539.378" y="166.731"/>
+
+    <!-- Official mapping area corners. These define the lines, the sectors
+         and the camera gate polygons. -->
+    <waypoint name="M1_NW" x="-60.310" y="480.779"/>
+    <waypoint name="M12_N" x="182.621" y="530.376"/>
+    <waypoint name="M12_S" x="217.058" y="120.034"/>
+    <waypoint name="M1_SW" x="-34.693" y="36.992"/>
+    <waypoint name="M2_NE" x="561.294" y="646.659"/>
+    <waypoint name="M2_SE" x="526.435" y="216.790"/>
+
+    <!-- Scratch polygon for the current survey pass, written by
+         mission1_pass_setup(). Declared positions are irrelevant. MUST STAY
+         CONSECUTIVE: nav_survey_poly_osam indexes them by offset. -->
+    <waypoint name="_P1" x="0.0" y="0.0"/>
+    <waypoint name="_P2" x="0.0" y="0.0"/>
+    <waypoint name="_P3" x="0.0" y="0.0"/>
+    <waypoint name="_P4" x="0.0" y="0.0"/>
+  </waypoints>
+
   <sectors>
-    <sector name="SurveyArea" color="green">
-      <corner name="SA1"/>
-      <corner name="SA2"/>
-      <corner name="SA3"/>
-      <corner name="SA4"/>
-      <corner name="SA5"/>
+    <sector color="red" name="Mission1_Flyzone">
+      <corner name="_FZ1"/>
+      <corner name="_FZ2"/>
+      <corner name="_FZ3"/>
+      <corner name="_FZ4"/>
+      <corner name="_FZ5"/>
+      <corner name="_FZ6"/>
+    </sector>
+    <sector color="orange" name="MapArea1_Left">
+      <corner name="M1_NW"/>
+      <corner name="M12_N"/>
+      <corner name="M12_S"/>
+      <corner name="M1_SW"/>
+    </sector>
+    <sector color="green" name="MapArea2_Right">
+      <corner name="M12_N"/>
+      <corner name="M2_NE"/>
+      <corner name="M2_SE"/>
+      <corner name="M12_S"/>
     </sector>
   </sectors>
 
-<!-- ****************************** EXCEPTIONS ***************************** -->
+  <variables>
+    <!-- 60 m AGL: fewest lines (5+7) for ~1.9 cm per pixel. 55 m gives more
+         sidelap (6+8 lines). Above ~70 m the lines could be flown in order. -->
+    <variable init="60." var="mapping_height" min="10." max="120." step="1."/>
+    <!-- Survey airspeed, m/s. The Talon 250g cannot hold 12 m/s and climb. -->
+    <variable init="10." var="mapping_airspeed" min="8." max="16." step="0.5"/>
+    <!-- MINIMUM sidelap between adjacent lines (real sidelap ~33-34%). -->
+    <variable init="0.3" var="mapping_sidelap" min="0." max="0.8" step="0.05"/>
+    <!-- 1 = lines in order, ~26 m U-turns (tight, stays near the areas).
+         2 = interleaved passes, ~52 m U-turns (gentle, reaches far out).
+         Read when an area's survey is set up. -->
+    <variable init="2" var="mapping_passes" min="1" max="2" step="1" type="uint8_t"/>
+    <!-- How far the scratch polygon's north/south edges sit past the area's
+         edges = where the lines end and the U-turn circle's centre sits
+         (level with the further-out of the two line ends). The turn then
+         reaches one radius beyond that. Negative pulls the centre inside
+         the area. -->
+    <variable init="0." var="mapping_overrun" min="-30." max="100." step="5."/>
+    <!-- Every U-turn and entry circle is kept at least this many metres
+         inside the rulebook border geofence (main plan _GF1.._GF4): the
+         north/south edge is pulled in automatically, per pass, as far as
+         needed (up to 80 m along the lines). Covers tracking error and
+         wind drift in the turns. Read when a pass is set up. -->
+    <variable init="10." var="mapping_border_margin" min="0." max="60." step="5."/>
+    <!-- Geofence: how far outside the flyzone hexagon the aircraft may go
+         before diverting to Standby. Must exceed the turn reach (~53-65 m
+         with 2 passes / 0 m overrun, ~44 m with 1 pass / 15 m). -->
+    <variable init="100." var="mapping_fence_buffer" min="30." max="250." step="5."/>
+    <!-- Metres of ground track between shots. 9 m: ~85% forward overlap at
+         60 m (59 m along-track footprint), ~1.1 shots/s at 10 m/s, ~580
+         photos for both areas (15 m gave ~75%, ~350). dc_periodic checks at
+         10 Hz and fires when the distance EXCEEDS this, so real spacing is
+         ~9-10 m. -->
+    <variable init="9." var="mapping_shot_interval" min="2." max="50." step="1."/>
+    <!-- Unused: roll no longer gates shots (see mission1_shoot_in_area). -->
+    <variable init="2." var="mapping_max_roll" min="1." max="45." step="0.5"/>
+    <!-- Camera off when the ground track is more than this far off the survey
+         line direction (degrees). -->
+    <variable init="10." var="mapping_max_course_err" min="2." max="90." step="1."/>
+    <!-- Gate look-ahead along the ground track, seconds. -->
+    <variable init="0.1" var="mapping_gate_lookahead" min="0." max="1." step="0.05"/>
+    <!-- Camera off when more than this many metres from the survey altitude. -->
+    <variable init="5." var="mapping_alt_tolerance" min="1." max="30." step="1."/>
+    <variable init="5." var="holding_delay" min="0." max="60." step="1."/>
+  </variables>
+
   <exceptions>
-<!-- WARNING these are Global Exeption, bettersome to stuff in a flightplan block-->
-    <!-- If datalink is lost for more than 10 seconds and we are in launched state -->
-
-    <!-- below for the real SnR --> <!--  TODO: if datalinkloss but still closeby move to commhold? strange better airfiledhome loiter IMHO -->
-    <exception cond="And((datalink_time/2) @GT 9, autopilot.launch @GT 0) @AND (!AircraftIsBooting())" deroute="CommsHoldLoiter"/> <!-- deroute="AirfieldHomeLoiter"/> -->
-
- <!--   <exception cond="if Joefoundandretunvalformticket deroute="Waitforjudges"/>-->
-
-    <!-- Optional check, if at seconds of launch GPS is lost -->
-    <!-- <exception cond="And(launch, gps_lost)" deroute="killengine" or test for heighht 40M or so/> -->
-    <!-- see if we can get correct AP voltage -->
-
-    <!-- not used yet maybe switch it on <exception cond="10.0 @GT PowerVoltage()" deroute="Standby"/> -->
-    <!-- not used yet maybe switch it on <exception cond="11.0 @GT vsupply" deroute="Standby"/> -->
- <!--  is less safe and has less chance of AC recovery. It states battery LOW, not battery critical -->
-<!--  <exception cond="electrical.bat_low @AND !(nav_block == IndexOfBlock('Setting_home_location')) @AND !(nav_block == IndexOfBlock('Holding_point') @AND !(nav_block == IndexOfBlock('Land')))" deroute="Land"/>-->
-<!--<TODO: Add somethin like pre_call="if (!InsideRed(GetPosX(), GetPosY())) NavKillThrottle();-->
+    <!-- Buffered geofence: flyzone hexagon + mapping_fence_buffer, not
+         active before takeoff. Block names are prefixed with the include
+         name automatically. -->
+    <exception cond="!mission1_in_flyzone(GetPosX(), GetPosY(), mapping_fence_buffer) @AND !(nav_block == IndexOfBlock('Wait_GPS')) @AND !(nav_block == IndexOfBlock('Geo_init')) @AND !(nav_block == IndexOfBlock('Holding_point')) @AND !(nav_block == IndexOfBlock('Takeoff'))" deroute="Standby"/>
   </exceptions>
 
-<!-- *********************************************************************** -->
-<!-- ********************** FLIGHTPLAN STARTINGPOINT *********************** -->
-<!-- *********************************************************************** -->
-
-<!-- *********** Wait for GPS fix, 3D by default *********** -->
   <blocks>
-    <block name="WaitForGPS" pre_call="NavKillThrottle()" >
-      <!-- Do Not Kill -->
-      <call fun="Fly()"/>
-      <!-- IDEA Close the hatch so not able to insert payload before there is a 3D fix , however maybe not so handy anyhow since we need to wat be fre we can insert-->
-      <!--  <set value="NavDropCloseHatch" var="unit"/> -->
-      <!-- if no valid fix or gps accuracy> 15m or no AHRS , it a no-go wait-->
-      <while cond="!GpsFixValid() || gps.pacc @GT 1500 || stateIsAttitudeValid()"/>
+    <!-- ── Pre-flight ───────────────────────────────────────────────────── -->
+    <block name="Wait_GPS">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <while cond="!GpsFixValid()"/>
     </block>
 
-<!-- *********** Set the ground reference height and the home position *********** -->
-<!-- a second init will follow since the plane thrower will still walk to launchpoint -->
-
-    <block name="Geo Init">
-      <while cond="LessThan(NavBlockTime(), 3)"/>
-<!--
-      <while cond="LessThan(nav_block,IndexOfBlock('Mission.ReadyForDeparture'))"/>
+    <block name="Geo_init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="NavSetGroundReferenceHere()"/>
-      <call_once fun="NavSetWaypointHere(WP_HOME)"/>
--->
-      <!--  TODO Set QNH here based on GPS height if allowed from commitee -->
-      <call_once fun="NavSetAltitudeReferenceHere()" />
-      <set var="air_data.calc_qnh_once" value="TRUE"/>
     </block>
 
-    <!-- *********** Set the ground reference height and the home position *********** -->
-
-<!-- a second init will follow since the plane thrower will still walk to launchpoint-->
-
-    <block name="Wait for RC">
-      <!-- We must have RC at least once switched on just to test, this check can be deleted if everything works 100% in Auto2 -->
-      <while cond="RCLost()"/> <!-- to make sure we do not hop to AUTO2 and engine starts running , at least switch on then maybe off if you wantto -->
-      <!-- TODO maybe switch on ACL blick as soon as we are ready to go  -->
+    <block name="Holding_point">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <exception cond="NavBlockTime() @GT holding_delay" deroute="Takeoff"/>
+      <attitude roll="0" throttle="0" vmode="throttle" until="FALSE"/>
     </block>
 
-    <block name="Set Landing Position" pre_call="NavKillThrottle()">
-      <call_once fun="AirbrakesOff()"/>
-      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/><!-- maybe not moving the plane would still make a test of defelction possible -->
-    </block>
-
-    <block name="Landing Position Stored" pre_call="NavKillThrottle()" strip_button="Store" strip_icon="recenter.png">
-      <call_once fun="NavSetWaypointPosAndAltHere(WP_TD)"/>
-      <call_once fun="DownlinkSendWpNr(WP_TD)"/>
-      <!-- CDW set value="SetAltitudeForFinalFromTo(WP_TD,WP_AF)" var="unit"/-->
-      <call_once fun="nav_compute_final_from_glide(WP_AF, WP_TD, V_CTL_GLIDE_RATIO)"/>
-      <!-- CDW call_once fun="nav_compute_flare_from_aftd(WP_AF, WP_TD, WP_FLARE)"/-->
-      <call_once fun="DownlinkSendWpNr(WP_AF)"/>
-      <call_once fun="DownlinkSendWpNr(WP_FLARE)"/>
-      <deroute block="HoldingPoint"/>
-    </block>
-
-<!-- *********** Throttle off holdingpoint *********** -->
-    <block name="HoldingPoint" pre_call="NavKillThrottle()" >
-      <!--  TODO: make some movements on all defelctros as a sign we are in holding and to see if all works Maybe a separate testblock-->
-      <!-- <set var="waypoints[WP_START].x" value="WaypointX(WP_EL2) + 50"/> -->
-      <!-- <set var="waypoints[WP_START].y" value="WaypointY(WP_EL2) + 50"/> -->
-      <!-- <set value="0" var="commands[COMMAND_CAMBER]"/> -->
-      <!-- <set value="0" var="commands[COMMAND_BRAKE]"/> -->
-      <call_once fun="AirbrakesOff()"/>
-      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/><!-- maybe not moving the plane would still make a test of defelction possible -->
-    </block>
-
-<!-- *********************************************************
-     *********** Search Area Entry Procedure Start ***********
-     ***************************************************** -->
-    <block name="Start Scruteneering Flight" strip_button="Scrut" group="TO">
-      <!-- CDW set value="SCRUTENEERING_FLIGHT" var="obc_flight_mode" /-->
-      <deroute block="ReadyForDeparture"/>
-    </block>
-
-    <block name="Start Search Flight" strip_button="Search" group="TO">
-      <!-- CDW set value="SEARCH_FLIGHT" var="obc_flight_mode" /-->
-      <deroute block="ReadyForDeparture"/>
-    </block>
-
-    <block name="Start Drop Flight" strip_button="Drop" group="TO">
-      <!-- CDW set value="DROP_FLIGHT" var="obc_flight_mode" /-->
-      <deroute block="ReadyForDeparture"/>
-    </block>
-
-    <block name="ReadyForDeparture" >
-      <exception cond="ThrottleHigh()" deroute="Takeoff"/>
-      <attitude pitch="nav_takeoff_pitch_setting" roll="0" throttle="0.0" until="FALSE" vmode="throttle"/>
-    </block>
-
-    <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-      <!-- <set value="3000" var="commands[COMMAND_CAMBER]"/> -->
+    <!-- ── Launch ───────────────────────────────────────────────────────── -->
+    <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png" group="home">
+      <exception cond="GetPosAlt() @GT GetAltRef() + 25" deroute="Survey_Area1_Left"/>
       <set value="0" var="autopilot.kill_throttle"/>
       <set value="1" var="autopilot.launch"/>
       <set value="0" var="autopilot.flight_time"/>
-      <call_once fun="AirbrakesOff()"/>
-      <set value="nav_airspeed_nominal_setting" var="v_ctl_auto_airspeed_setpoint"/>
-      <attitude pitch="nav_takeoff_pitch_setting" roll="0" throttle="1.0" until="MoreThan(NavBlockTime(), 2)" vmode="throttle"/>
+      <attitude roll="0" throttle="0.99" pitch="25" vmode="throttle" until="GetPosAlt() @GT GetAltRef() + 25"/>
+      <deroute block="Survey_Area1_Left"/>
     </block>
 
-    <block name="Climb-Out">
-      <!--<exception cond="rc_status==RC_REALLY_LOST" after 3 seconds and no IMU deroute="softlydown">if using RC stil on with a Auto2 mode switch-->
-      <attitude pitch="nav_takeoff_pitch_setting" roll="0" throttle="1.0" until="GetPosAlt() @GT ground_alt+40" vmode="throttle"/>
-      <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="1.0" />
-      <set var="v_ctl_auto_throttle_nominal_cruise_pitch" value="nav_takeoff_pitch_setting" />
+    <!-- ── Area 1: Left (M1_NW/M12_N/M12_S/M1_SW), photos 1001.. ──────── -->
+    <!-- Every pass has a setup block and a run block: exceptions run before a
+         block's stages, so the previous pass's PolySurveySweepBackNum would
+         bounce straight out before setup() reset it. -->
+    <block name="Survey_Area1_Left" strip_button="Map Area 1 (Left)" strip_icon="survey.png" group="mission">
+      <set var="v_ctl_auto_airspeed_setpoint" value="mapping_airspeed"/>
+      <!-- No half-sweep line: the spacing already fits the width exactly. -->
+      <set var="Half_Sweep_Enabled" value="FALSE"/>
+      <!-- U-turn circle centre ON the scratch polygon edge (= area edge +
+           mapping_overrun) midway between the two lines; the outer line of
+           each pair ends there too. Set once, the module keeps it. -->
+      <set var="Poly_Turn_On_Edge" value="TRUE"/>
+      <set var="dc_photo_nr" value="1 * MISSION1_PHOTO_BLOCK"/>
+      <call_once fun="dc_distance(mapping_shot_interval)"/>
+      <!-- dc_distance() arms the camera; disarm so the in-area gate decides
+           the first shot. -->
+      <set var="dc_autoshoot" value="DC_AUTOSHOOT_STOP"/>
+      <!-- Pass 1 starts on the shared M12 border side (ref M12_N). Lines
+           parallel to the west edge M1_SW-M1_NW. -->
+      <call_once fun="mission1_pass_setup(WP_M1_NW, WP_M12_N, WP_M12_S, WP_M1_SW, WP_M1_SW, WP_M1_NW, WP_M12_N, TRUE, mapping_passes, 1, (1. - mapping_sidelap) * 2. * mapping_height * MISSION1_TAN_HALF_CROSS_FOV, mapping_overrun, GetAltRef() + mapping_height, WP__P1, WP__GF1, WP__GF2, WP__GF3, WP__GF4, mapping_border_margin)"/>
+      <deroute block="Run_Area1_Pass1"/>
     </block>
-
-    <block name="determineflighttype">
-      <!-- CDW exception cond="(obc_flight_mode == SCRUTENEERING_FLIGHT)" deroute="ScrutineeringAutonomyTriangle"/-->
-      <!-- otherwise goto search area via entry lane -->
-      <deroute block="EntryLane1"/>
+    <block name="Run_Area1_Pass1" group="mission" pre_call="mission1_shoot_in_area(mapping_max_roll, mapping_gate_lookahead, GetPosAlt(), GetAltRef() + mapping_height, mapping_alt_tolerance, mission1_line_angle(WP_M1_SW, WP_M1_NW), mapping_max_course_err, 4, WP_M1_NW, WP_M12_N, WP_M12_S, WP_M1_SW, 0, 0)">
+      <exception cond="PolySurveySweepBackNum @GT 0" deroute="Area1_Pass2"/>
+      <call fun="nav_survey_poly_osam_run()"/>
     </block>
-
-<!-- *********************************************************
-     **************** Scrutineering Flight *******************
-     ***************************************************** -->
-
-<!--
-As part of the scrutineering the Search and Rescue entrants of the UAV Challenge
-Outback Rescue will be required to take off, track TST-1, TST-2, TST-3, TST-1... Until
-requested to land.
-
-All emergency and failure requirements of the Challenge must be met,
-
-with the exception that for Loss of Data Link the procedure will be track direct
-to “Airfield Home” and orbit for either a landing or regain of Data Link.
--->
-
-    <block name="ScrutineeringAutonomyTriangle" strip_button="Triangle" strip_icon="path.png" group="Mission">
-      <!-- TODO: while we are up there take some pictures anyhow :) -->
-      <for var="i" from="1" to="3">
-        <go from="TST-3" hmode="route" wp="TST-1"/>
-        <go from="TST-1" hmode="route" wp="TST-2"/>
-        <go from="TST-2" hmode="route" wp="TST-3"/>
-      </for>
-      <deroute block="ComputeLandingApproach" />
+    <block name="Area1_Pass2" group="mission">
+      <exception cond="2 @GT mapping_passes" deroute="Survey_Area2_Right"/>
+      <call_once fun="mission1_pass_setup(WP_M1_NW, WP_M12_N, WP_M12_S, WP_M1_SW, WP_M1_SW, WP_M1_NW, WP_M12_N, TRUE, mapping_passes, 2, (1. - mapping_sidelap) * 2. * mapping_height * MISSION1_TAN_HALF_CROSS_FOV, mapping_overrun, GetAltRef() + mapping_height, WP__P1, WP__GF1, WP__GF2, WP__GF3, WP__GF4, mapping_border_margin)"/>
+      <deroute block="Run_Area1_Pass2"/>
     </block>
-
-<!-- *********************************************************
-     *********** Search Area Entry Procedure Start ***********
-     ***************************************************** -->
-
-<!-- maybe a HelperWaypoint to gettart n return from a mission Tracking to EL1
-      <set value="0" var="commands[COMMAND_CAMBER]"/>-->
-
-<!-- *********** Track to EL-1 *********** -->
-    <block name="EntryLane1" strip_button="Turguy" strip_icon="lookdown.png" group="Mission">
-      <set value="nav_airspeed_tracking_setting" var="v_ctl_auto_airspeed_setpoint"/>
-      <go from="AIRFIELDHOME" wp="EL1" hmode="route"/>
-    </block>
-    <!--  maybe add other waypoint to enterarea in a better way -->
-
-<!-- *********** Track Direct to EL-2, Entry to Search Area only via EL-2 *********** -->
-    <block name="EntryLane2">
-      <set value="nav_airspeed_tracking_setting" var="v_ctl_auto_airspeed_setpoint"/>
-      <go from="EL1" wp="EL2" hmode="route" approaching_time="10" />
-    </block>
-
-    <block name="determinerescuetype">
-      <!-- CDW exception cond="(obc_flight_mode == DROP_FLIGHT)" deroute="RescueJoe"/-->
-      <deroute block="SearchForJoe" />
-    </block>
-
-<!-- "Type 1" operation:
-     an areascan with taking pictures of ground realtime anyyse and if joe found an accknolege signal given , autonomous drop and return.
-
-     "Type 2"
-     * There is a search phase and a rescue phase.
-     ** Search means areascan gathering the imagery needed to pinpoint the location of lost Joe ("Type 1" operation)
-     ** Rescue means the payload dropping phase. ("Type 1" operation)
-     -->
-     <!-- TODO: if defined TYPE2 then -->
-<!--
-    <block name="determine_search_or_rescue_phase">
-      <exception cond="InsideSurveyArea(WaypointX(WP_OUTBACKJOE), WaypointY(WP_OUTBACKJOE))" deroute="RescueJoe"/>
-    </block>-->
-
-<!-- ***********
-See for calculations of camera values used
-http://www.openuas.org/intranet/webapps/pmwiki/pmwiki.php?n=UAS.Targetcalc
-Max Scanwidh at 120m is 180m
-Mission scanwidh is 144m thus with a 20% overlap. Overlap depends on lots of factors,
-best to perform many real life tests with the CAM
-*********** -->
-
-    <block name="SearchForJoeLateral">
-      <call_once fun="nav_survey_poly_osam_setup_towards(WP_SA1, 5, 158, WP_SA2)"/> <!-- TODO correct angle of how we want to search -->
-      <deroute block="Searching" />
-    </block>
-
-    <block name="SearchForJoeDiagonal1">
-      <call_once fun="nav_survey_poly_osam_setup(WP_SA1, 5, 158, 30)"/> <!-- TODO correct angle of how we want to search -->
-      <deroute block="Searching" />
-    </block>
-
-    <block name="SearchForJoeDiagonal2">
-      <call_once fun="nav_survey_poly_osam_setup(WP_SA1, 5, 158, 55)"/> <!-- TODO correct angle of how we want to search -->
-      <deroute block="Searching" />
-    </block>
-
-    <block name="SearchForJoe">
-      <!-- <exception cond="FoundJoe" deroute="WaitForJugesDropApprovale"/> -->
-      <!-- Parameters
-      The orientation of the sweeps can ranges from north south to east west and
-       any where in between (-90 <-> 90 degrees respectively).
-       The side of the polygon the aircraft starts on (ex. north or south) is
-       determined by the side of the polygon the entry point is located.
-       call_once fun="InitializePolygonSurvey(WP_S1, NumOfCorners, SweepWidth, Orientation)"/> -->
-
-       <!-- SweepWidth  max photo with at height - 20 pct overlap 180- etc-->
-      <call_once fun="nav_survey_poly_osam_setup_towards(WP_SA1, 5, 158, WP_SA5)"/> <!-- TODO correct angle of how we want to search -->
-    </block>
-
-    <block name="Searching">
-      <exception cond="PolySurveySweepBackNum >= 1" deroute="ReturnToBase"/> <!-- ? TODO decide to search in reverse again on until battery < volts needed to return home? if nothing found, go back?-->
-      <set value="nav_airspeed_nominal_setting" var="v_ctl_auto_airspeed_setpoint"/>
+    <block name="Run_Area1_Pass2" group="mission" pre_call="mission1_shoot_in_area(mapping_max_roll, mapping_gate_lookahead, GetPosAlt(), GetAltRef() + mapping_height, mapping_alt_tolerance, mission1_line_angle(WP_M1_SW, WP_M1_NW), mapping_max_course_err, 4, WP_M1_NW, WP_M12_N, WP_M12_S, WP_M1_SW, 0, 0)">
+      <exception cond="PolySurveySweepBackNum @GT 0" deroute="Survey_Area2_Right"/>
       <call fun="nav_survey_poly_osam_run()"/>
     </block>
 
-<!--WaitForJugesDropApproval if we do a Type 1 search otherwise it would be approved already Warning then never enter this block -->
-<block name="WaitForJugesDropApproval">
-<!-- circle with circle border already alligend with Drop align route, or maybe some better ideas... -->
-<!-- TODO: if blocktime approval takes to long do what? -->
-</block>
-
-<!-- *********************************************************
-     *********** Search Area Departure Procedure *************
-     ***************************************************** -->
-
-<!-- *********** Exit Search Area only via EL-3 *********** -->
-    <block name="ReturnToBase">
-      <set value="nav_airspeed_tracking_setting" var="v_ctl_auto_airspeed_setpoint"/>
-      <go wp="EL3"/>
+    <!-- ── Area 2: Right (M12_N/M2_NE/M2_SE/M12_S), photos 2001.. ─────── -->
+    <block name="Survey_Area2_Right" strip_button="Map Area 2 (Right)" strip_icon="survey.png" group="mission">
+      <call_once fun="dc_stop()"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="mapping_airspeed"/>
+      <set var="Half_Sweep_Enabled" value="FALSE"/>
+      <set var="Poly_Turn_On_Edge" value="TRUE"/>
+      <set var="dc_photo_nr" value="2 * MISSION1_PHOTO_BLOCK"/>
+      <call_once fun="dc_distance(mapping_shot_interval)"/>
+      <set var="dc_autoshoot" value="DC_AUTOSHOOT_STOP"/>
+      <!-- Pass 1 starts on the shared M12 border side, where Area 1 ended.
+           Lines parallel to the east edge M2_SE-M2_NE. -->
+      <call_once fun="mission1_pass_setup(WP_M12_N, WP_M2_NE, WP_M2_SE, WP_M12_S, WP_M2_SE, WP_M2_NE, WP_M12_N, FALSE, mapping_passes, 1, (1. - mapping_sidelap) * 2. * mapping_height * MISSION1_TAN_HALF_CROSS_FOV, mapping_overrun, GetAltRef() + mapping_height, WP__P1, WP__GF1, WP__GF2, WP__GF3, WP__GF4, mapping_border_margin)"/>
+      <deroute block="Run_Area2_Pass1"/>
+    </block>
+    <block name="Run_Area2_Pass1" group="mission" pre_call="mission1_shoot_in_area(mapping_max_roll, mapping_gate_lookahead, GetPosAlt(), GetAltRef() + mapping_height, mapping_alt_tolerance, mission1_line_angle(WP_M2_SE, WP_M2_NE), mapping_max_course_err, 4, WP_M12_N, WP_M2_NE, WP_M2_SE, WP_M12_S, 0, 0)">
+      <exception cond="PolySurveySweepBackNum @GT 0" deroute="Area2_Pass2"/>
+      <call fun="nav_survey_poly_osam_run()"/>
+    </block>
+    <block name="Area2_Pass2" group="mission">
+      <exception cond="2 @GT mapping_passes" deroute="Mapping_Done"/>
+      <call_once fun="mission1_pass_setup(WP_M12_N, WP_M2_NE, WP_M2_SE, WP_M12_S, WP_M2_SE, WP_M2_NE, WP_M12_N, FALSE, mapping_passes, 2, (1. - mapping_sidelap) * 2. * mapping_height * MISSION1_TAN_HALF_CROSS_FOV, mapping_overrun, GetAltRef() + mapping_height, WP__P1, WP__GF1, WP__GF2, WP__GF3, WP__GF4, mapping_border_margin)"/>
+      <deroute block="Run_Area2_Pass2"/>
+    </block>
+    <block name="Run_Area2_Pass2" group="mission" pre_call="mission1_shoot_in_area(mapping_max_roll, mapping_gate_lookahead, GetPosAlt(), GetAltRef() + mapping_height, mapping_alt_tolerance, mission1_line_angle(WP_M2_SE, WP_M2_NE), mapping_max_course_err, 4, WP_M12_N, WP_M2_NE, WP_M2_SE, WP_M12_S, 0, 0)">
+      <exception cond="PolySurveySweepBackNum @GT 0" deroute="Mapping_Done"/>
+      <call fun="nav_survey_poly_osam_run()"/>
     </block>
 
-<!-- *********** Track Direct to EL-4 *********** -->
-    <block name="ExitLane3">
-      <set value="nav_airspeed_tracking_setting" var="v_ctl_auto_airspeed_setpoint"/>
-      <go from="EL3" wp="EL4" hmode="route"/>
+    <block name="Mapping_Done" group="mission">
+      <call_once fun="dc_stop()"/>
+      <deroute block="Land_AF_TD"/>
     </block>
 
-<!-- ************ Track to Kingaroy Airport *********** -->
-    <block name="ExitLane4">
-      <set value="nav_airspeed_tracking_setting" var="v_ctl_auto_airspeed_setpoint"/>
-      <go from="EL4" wp="AIRFIELDHOME" hmode="route"/>
-      <deroute block="ComputeLandingApproach"/>
+    <!-- ── Safety hold (geofence / abort) ───────────────────────────────── -->
+    <!-- Resume with the "Map Area 1/2" strip buttons - re-entering an area
+         restarts its survey AND its photo numbering from x001. -->
+    <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="home">
+      <call_once fun="dc_stop()"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="mapping_airspeed"/>
+      <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()+mapping_height" wp="_STDBY"/>
     </block>
 
-<!-- *********************************************************
-     **************** Deliver the Payload ********************
-     ***************************************************** -->
-
-    <block name="RescueJoe" strip_button="Drop" strip_icon="parachute.png" group="Mission">
-      <!-- <go wp="VIAEL2" hmode="route"/>--> <!-- TODO maybe not needed -->
-      <deroute block="drop"/>
+    <!-- ── Landing ──────────────────────────────────────────────────────── -->
+    <!-- Negative radius: baseleg circle east of AF, away from the west fence. -->
+    <block name="Land_AF_TD" strip_button="Land (wp AF-TD)" strip_icon="land-left.png" group="land">
+      <call_once fun="dc_stop()"/>
+      <set value="-DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
+      <deroute block="land"/>
     </block>
 
- <!--  AS REMINDER
- extern unit_t nav_drop_compute_approach( uint8_t wp_target, uint8_t wp_start, float radius );
-extern unit_t nav_drop_update_release( uint8_t wp_target );
-extern unit_t nav_drop_shoot( void );
-extern float nav_drop_trigger_delay, nav_drop_start_qdr;
-extern bool_t compute_alignment(uint8_t w1, uint8_t w2, uint8_t start, uint8_t end, float d_before, float d_after);
-
-#define NavDropComputeApproach(_target, _start, _radius) nav_drop_compute_approach(_target, _start, _radius)
-#define NavDropUpdateRelease(_wp) nav_drop_update_release(_wp)
-#define NavDropShoot() nav_drop_shoot()
-#define NavDropCloseHatch() ({ commands[COMMAND_HATCH] = MIN_PPRZ; })
-#define NavDropAligned() Qdr(DegOfRad(nav_drop_qdr_aligned)) -->
-
-
-<!-- *********** Drop Compute Approach *********** -->
-    <block name="drop">
- <!-- TODO set Height to minimum height AGL allowed by commitee ?60M -->
- <!-- TODO determine what still is success and is fastest value for this 100  -->
-      <!--set var="waypoints[WP_START].x" value="WaypointX(WP_OUTBACKJOE) + 100"/-->
-      <!--set var="waypoints[WP_START].y" value="WaypointY(WP_OUTBACKJOE) + 100"/-->
-
-      <call_once fun="nav_drop_compute_approach(WP_OUTBACKJOE, WP_START, WP__BASELEG, WP__CLIMB, nav_radius)"/>
-      <call_once fun="DownlinkSendWpNr(WP_RELEASE)"/>
-      <circle radius="nav_radius" until="NavQdrCloseTo(DegOfRad(nav_drop_start_qdr)-15)" wp="_BASELEG"/>
-    </block>
-
-<!-- *********** Align on release path *********** -->
-    <block name="align">
-      <!-- TODO set AIRSPEED_AT_RELEASE-->
-      <!--TODO set HEIGHT to 60m -->
-      <exception cond="nav_drop_update_release(WP_OUTBACKJOE)" deroute="ReturnToBase"/>
-      <go approaching_time="nav_drop_trigger_delay" from="START" hmode="route" wp="RELEASE"/>
-    </block>
-
-<!-- *********** Release Payload *********** -->
-    <block name="shoot">
-      <!-- TODO maybe extend crowbreak 80%? for slowes possible speed? -->
-      <!-- <set value="0" var="commands[COMMAND_BRAKE]"/> -->
-      <!-- TODO is electrcal plane and almost there maybe stop proppelor from spinning for a few seconds -->
-      <call_once fun="NavDropShoot()"/>
-      <!-- TODO add maxspeed again -->
-      <go from="RELEASE" hmode="route" wp="EL3"/>
-      <!-- Maybe better not to close, more chance of delivery, TODO maybe even add a sensor to detect release if not try again -->
-      <!-- <set value="NavDropCloseHatch" var="unit"/> -->
-
-      <deroute block="ReturnToBase"/><!-- Just To Make Sure -->
-    </block>
-
-<!-- *********************************************************
-     ********************* Autolanding ***********************
-     ***************************************************** -->
-
-<!-- *********** Initiate landing *********** -->
-<!--TODO better routing in combination with calced wind direction-->
-
-<!-- *********** Land *********** -->
-
-    <block key="r" name="ConstantSlopeLandRightAFTD" strip_button="Land right (wp AF-TD)" strip_icon="land-right.png"  group="Land">
-      <set value="LANDING_CIRCLE_RADIUS" var="nav_radius"/>
-      <deroute block="ComputeLandingApproach"/>
-    </block>
-
-    <block key="l" name="ConstantSlopeLandLeftAFTD" strip_button="Land left (wp AF-TD)" strip_icon="land-left.png"  group="Land">
-      <set value="-LANDING_CIRCLE_RADIUS" var="nav_radius"/>
-      <deroute block="ComputeLandingApproach"/>
-    </block>
-
-    <block name="ComputeLandingApproach" >
-      <call_once fun="nav_compute_final_from_glide(WP_AF, WP_TD, V_CTL_GLIDE_RATIO)"/>
-      <!-- CDW call_once fun="nav_compute_flare_from_aftd(WP_AF, WP_TD, WP_FLARE)"/-->
-      <call_once fun="DownlinkSendWpNr(WP_AF)"/>
-      <call_once fun="DownlinkSendWpNr(WP_FLARE)"/>
-      </block>
-
-    <block name="Land">
-      <set value="nav_airspeed_nominal_setting" var="v_ctl_auto_airspeed_setpoint"/>
+    <block name="land">
       <call_once fun="nav_compute_baseleg(WP_AF, WP_TD, WP__BASELEG, nav_radius)"/>
       <circle radius="nav_radius" until="NavCircleCount() @GT 0.5" wp="_BASELEG"/>
-      <set value="nav_airspeed_landing_setting" var="v_ctl_auto_airspeed_setpoint"/>
-      <circle radius="nav_radius" until="NavQdrCloseTo(DegOfRad(baseleg_out_qdr)-(nav_radius/fabs(nav_radius))*10) @AND 15 @GT fabs(GetPosAlt() - WaypointAlt(WP__BASELEG))" wp="_BASELEG"/>
+      <circle radius="nav_radius" until="NavQdrCloseTo(DegOfRad(baseleg_out_qdr)-(nav_radius/fabs(nav_radius))*10) @AND (10 @GT fabs(GetPosAlt() - WaypointAlt(WP__BASELEG)))" wp="_BASELEG"/>
+      <deroute block="final"/>
     </block>
 
-    <block name="Final">
-      <call_once fun="AirbrakesOn()"/>
-      <go approaching_time="8" from="AF" hmode="route" wp="TD"/>
+    <block name="final">
+      <!-- Glide AF -> TD; below 10 m AGL go to flare (motor killed). -->
+      <exception cond="GetAltRef() + 10 @GT GetPosAlt()" deroute="flare"/>
+      <go from="AF" hmode="route" vmode="glide" wp="TD"/>
     </block>
 
-    <block name="Flare">
-      <call_once fun="NavKillThrottle()" />
-      <set value="nav_airspeed_landing_setting*0.8" var="v_ctl_auto_airspeed_setpoint"/>
-      <go approaching_time="0" from="TD" hmode="route" wp="FLARE"/>
-      <!-- TODO: retract brake after landed is true (with +3seconds margin) better a sensor(witch) that detects IsAircraftOnSolidGround -->
+    <block name="flare">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <go approaching_time="0" from="AF" hmode="route" throttle="0.0" vmode="throttle" wp="TD"/>
+      <attitude roll="0.0" throttle="0.0" until="FALSE" vmode="throttle"/>
     </block>
-
-
-<!-- *********************************************************
-     ********** Loss of Data Link – Rally Point **************
-     ***************************************************** -->
-<!--
-TODO: get OBC2014Rules in 5.5.2.1 Loss of Data Link – Rally Point
-
-* This flight mode must be activated if the data link is lost for 10 seconds.
-
-* This flight mode, once activated, must return the aircraft directly to the
-waypoint “Comms Hold” (Figure 1, Table 1) (no time limit for transit, but it
-must be direct to the waypoint)
-
-* and enter a loiter centred on that waypoint.
-* After 2 minutes of loitering,
-
-* if the data link has not been re-established, the aircraft must be programmed to return directly to
-waypoint “Airfield Home” (Figure 1, Table 1), where the RC link
-maybe re-established for a manual recovery. There is no time limit for
-the transit, but it must be direct to the waypoint.
-
-* On arriving at “Airfield Home”, the aircraft must enter a loiter centred
-on that waypoint.
-
-* If after 2 minutes, RC contact has not been re-established, an autopilot initiated and controlled flight termination
-mode must be activated. A controlled flight termination mode may be
-(but not limited to) an autonomous landing or entering the flight
-termination mode (Section 5.6).
--->
-
-    <block name="CommsHoldLoiter" strip_button="CommsHold" strip_icon="recenter.png" group="Link">  <!-- TODO other ICON -->
-      <!-- stop streaming thumbnails -->
-      <!-- CDW set value="0" var="ticket_thumbnails"/ -->
-      <!-- TODO: maybe set a little lower speed ? max endurence speed? -->
-      <set value="nav_airspeed_nominal_setting" var="v_ctl_auto_airspeed_setpoint"/>
-      <!-- Rules 2014 state a loiter of maximum 2 minutes = 120seconds is allowed -->
-      <exception cond="(stage_time @GT 120)" deroute="AirfieldHomeLoiter"/>
-      <!-- resume if datalink is regained-->
-      <!--TODO If the data link is regained prior to the conclusion of 2 minutes of loiter at
-      Comms Hold the mission maybe continued otherwise any subsequent  TODO -->
-      <!--exception cond="LessThan(datalink_time0, 10)" deroute="EntryLane2"/-->      <!-- As soon as we have a link again Go EL2 and continue mission> -->
-      <!-- TODO: better continue where we had our last telemerty still OK point if possible -->
-      <!-- Since it arrived we must raise a counter by one. it's not alowed by rules to occur  more than twice, then we must move to airfieldhome -->
-      <!-- TODO: set only after aircraft **arrived!** in the loiter not before the ETA < 1sec -->
-      <!-- <while no link then -->
-       <circle wp="COMMSHOLD" radius="nav_radius"/> <!-- TODO maybe bigger than default radius -->
-    </block>
-
-    <block name="AirfieldHomeLoiter" strip_button="AirfieldHome" strip_icon="home.png" group="Link">
-      <exception cond="stage_time @GT 120" deroute="ConstantSlopeLandRightAFTD"/>
-      <circle wp="AIRFIELDHOME" radius="nav_radius*1.5"/><!-- 1.5 x  mean it will be a bit bigger circle -->
-    </block>
-
-
   </blocks>
 </procedure>
-

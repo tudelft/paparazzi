@@ -35,6 +35,8 @@ extern uint16_t PolySurveySweepNum;
 extern uint16_t PolySurveySweepBackNum;
 extern bool Half_Sweep_Enabled;
 extern bool Reset_Sweep;
+extern bool Poly_Turn_On_Edge;
+extern float Poly_Entry_Radius;
 
 /**
  * Setup polygon survey.

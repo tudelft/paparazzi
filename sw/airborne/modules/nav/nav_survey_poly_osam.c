@@ -77,6 +77,11 @@ float Poly_Sweep = POLY_OSAM_DEFAULT_SWEEP;
 bool use_full_circle = POLY_OSAM_USE_FULL_CIRCLE;
 bool Half_Sweep_Enabled = POLY_OSAM_HALF_SWEEP_ENABLED;
 bool Reset_Sweep = FALSE;
+/// Put the U-turn circle centre on the polygon edge midway between the two
+/// lines (and end the line there) instead of level with the outer line end
+bool Poly_Turn_On_Edge = FALSE;
+/// Entry circle radius set at runtime (m), overrides POLY_OSAM_ENTRY_RADIUS if > 0
+float Poly_Entry_Radius = 0;
 
 void nav_survey_poly_osam_setup_towards(uint8_t FirstWP, uint8_t Size, float Sweep, int SecondWP)
 {
@@ -142,6 +147,43 @@ uint16_t PolySurveySweepNum;
 uint16_t PolySurveySweepBackNum;
 float EntryRadius;
 
+/** Polygon edge crossing at sweep coordinate y closest to x_ref.
+ *  Returns false if y is not inside the polygon. */
+static bool EdgeXNear(float y, float x_ref, float *x)
+{
+  bool found = false;
+  for (int i = 0; i < SurveySize; i++) {
+    if (EdgeMinY[i] < y && EdgeMaxY[i] >= y) {
+      float xi = EvaluateLineForX(y, Edges[i]);
+      if (!found || fabsf(xi - x_ref) < fabsf(*x - x_ref)) {
+        *x = xi;
+        found = true;
+      }
+    }
+  }
+  return found;
+}
+
+/** With Poly_Turn_On_Edge, end the current line where the edge crosses
+ *  midway to the next line, i.e. level with the next turn's centre, so the
+ *  aircraft does not fly past the centre before turning. Only for a normal
+ *  sweep next, not a sweep back. */
+static void ClipLineEndToTurn(void)
+{
+  if (!Poly_Turn_On_Edge) {
+    return;
+  }
+  float y_next = SurveyToWP.y + dSweep;
+  if (y_next >= MaxY || y_next <= 0) {
+    return;
+  }
+  float xe;
+  if (EdgeXNear(SurveyToWP.y + dSweep / 2, SurveyToWP.x, &xe)
+      && fabsf(xe - SurveyFromWP.x) < fabsf(SurveyToWP.x - SurveyFromWP.x)) {
+    SurveyToWP.x = xe;
+  }
+}
+
 
 void nav_survey_poly_osam_setup(uint8_t EntryWP, uint8_t Size, float sw, float Orientation)
 {
@@ -159,6 +201,9 @@ void nav_survey_poly_osam_setup(uint8_t EntryWP, uint8_t Size, float sw, float O
 
   float PolySurveyEntryDistance = POLY_OSAM_FIRST_SWEEP_DISTANCE;
   float PolySurveyEntryRadius = POLY_OSAM_ENTRY_RADIUS;
+  if (Poly_Entry_Radius > 0) {
+    PolySurveyEntryRadius = Poly_Entry_Radius;
+  }
 
   if (PolySurveyEntryDistance == 0) {
     entry_distance = sw / 2;
@@ -326,6 +371,7 @@ void nav_survey_poly_osam_setup(uint8_t EntryWP, uint8_t Size, float sw, float O
       SurveyFromWP.x = XIntercept1;
       SurveyFromWP.y = ys;
     }
+    ClipLineEndToTurn();
 
     //Find the direction to circle
     if (ys > 0 && SurveyToWP.x > SurveyFromWP.x) {
@@ -544,6 +590,15 @@ bool nav_survey_poly_osam_run(void)
 
         //y position to circle
         SurveyCircle.y = ys - temp;
+
+        //centre on the edge midway between the lines
+        float xe;
+        if (Poly_Turn_On_Edge && EdgeXNear(SurveyCircle.y, LastPoint.x, &xe)) {
+          SurveyCircle.x = xe;
+        }
+
+        //end the new line level with its own turn centre
+        ClipLineEndToTurn();
 
         //Go into circle state
         CSurveyStatus = SweepCircle;

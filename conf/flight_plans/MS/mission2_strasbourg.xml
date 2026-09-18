@@ -1,0 +1,813 @@
+<?xml version="1.0"?>
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+<!--
+  IMAV Mission 2 (Strasbourg) - thermal hot-spot survey of the fire zone.
+
+  THE TASK
+    Two hot spots somewhere in the red "Fire zone" on the site map. Report
+    their GPS coordinates in decimal degrees to 5 m accuracy, no later than
+    5 MINUTES AFTER LANDING. Single aircraft, flight is timed, energy
+    consumption is measured, fixed-wing favoured.
+
+  THE ONE RULE THAT SHAPES EVERYTHING
+    Coordinates are due five minutes after landing, NOT in flight. So the
+    aircraft does not have to detect anything. Its entire job is to
+    guarantee coverage of the fire zone and produce frames that are
+    well geotagged. Detection and georeferencing run on a laptop after
+    touchdown. That is a far easier and far more debuggable problem than
+    onboard detection, and it costs nothing in score.
+
+    Consequence: this flight plan contains no detection logic at all, and
+    should not acquire any. It is a survey plan.
+
+  THE CAMERA
+    LWIR, 256 x 192, 12 um pitch, 4.3 mm f/1.2, IFOV 2.79 mrad, 40 x 30 deg.
+    Verified self-consistent: 256 x 2.79 mrad = 40.9 deg, and 2.79 mrad x
+    4.3 mm = 12.0 um. The alternative 25 x 19 deg option implies a ~7 mm lens.
+
+    TAKE THE 40 x 30 LENS. The narrow one buys nothing. At whatever altitude
+    gives N pixels on the target the swath comes out the same either way -
+    h scales as 1/IFOV and swath as h*IFOV, so they cancel and only the 256
+    pixel count sets it (0.3 m target at 3 px: 36.7 m / 26.7 m swath with the
+    wide lens, 58.7 m / 26.0 m with the narrow). The narrow lens just forces
+    you higher, which makes the georeferencing attitude term worse - 1.02 m
+    against 0.64 m at 1 deg of attitude error.
+
+  WHY 40 m AGL
+    An earlier revision of this file said 80 m, worked through against a
+    1280 x 1024 sensor. That was correct arithmetic on the wrong camera. At
+    256 x 192 the ground sample distance is FOUR TIMES coarser:
+
+        AGL    GSD     swath    0.3 m target   0.6 m target
+         40   11.2cm   29.1 m      2.7 px         5.4 px
+         60   16.7cm   43.7 m      1.8 px         3.6 px
+         80   22.3cm   58.2 m      1.3 px         2.7 px
+
+    At 80 m a 1 foot plate is 1.3 pixels - a single warm pixel, not a
+    detection. Maximum altitude is now set by target size alone: 35.8 m for
+    3 px on a 0.3 m target, 71.7 m for 3 px on a 0.6 m one.
+
+    40 m is the hedge between those: 2.7 px on the small case, 5.4 px on the
+    large. Slightly under the usual 3 px rule for 0.3 m targets, but that
+    rule assumes a cluttered scene, and the mock imagery from this camera
+    shows a near-saturated blob against COLD vegetation - the confusers are
+    at the opposite end of the histogram from the target, which is a far
+    easier discrimination than the rule is sized for.
+
+    >>> TARGET SIZE IS THE CRITICAL UNKNOWN. 0.3 m versus 0.6 m is the
+    difference between 36 m and 72 m, and between 12 lines and 6. If the
+    organisers will say what the hot spots physically are, that single fact
+    is worth more than any other tuning in this file. <<<
+
+  WHY NOT HIGHER (the energy argument, and why it loses)
+    Altitude is nearly free for georeferencing accuracy and pays for itself
+    in battery - see the measured numbers below. That argument still holds in
+    isolation, and it is why an earlier revision chose 80 m. It is now
+    OVERRIDDEN by detection: at 80 m this survey would be short, efficient,
+    well georeferenced, and blind. For the 130 x 150 m zone at 50% sidelap:
+
+        AGL   lines   time    0.3 m target
+         40      9    175 s      2.7 px
+         60      6    114 s      1.8 px
+         80      5     94 s      1.3 px
+
+    Flying low roughly doubles the survey. Pay it.
+
+  THE OLD ALTITUDE REASONING, kept because it still governs everything else:
+
+      1. Georeferencing error = sqrt(GPS^2 + (h*attitude)^2 + (v*sync)^2).
+         Only the attitude term scales with height, and it is RANDOM, so it
+         averages away over the many frames that see each spot. After
+         averaging, the total is dominated by SYSTEMATIC terms - GPS bias
+         (~2 m) and residual boresight (~0.5 m) - which do not depend on
+         altitude at all. Measured on the projection: 80 m and 120 m differ
+         by 6 cm at 10 sightings. Altitude is almost free for accuracy.
+
+      2. Pixels on target. This is what stops us going higher, and with a
+         256 px sensor it binds far lower than it would with 1280 - see the
+         table above.
+
+      3. Flight time and energy are both scored, and both improve with
+         altitude (wider swath, fewer lines).
+
+    IS CLIMBING WORTH THE BATTERY? YES, decisively - measured, not assumed.
+    From this airframe's own SITL power telemetry: 19.1 W in level cruise at
+    12 m/s (17% throttle), 26.2 W climbing at 2 m/s. Over a 400x400 m area:
+
+        80 m AGL: 3364 m of track, 280 s -> 1.48 Wh cruise + 0.52 Wh climb
+        40 m AGL: 6328 m of track, 527 s -> 2.79 Wh cruise + 0.26 Wh climb
+
+    Flying at 80 m instead of 40 m SAVES 1.05 Wh, a third of the total. The
+    extra 40 m of climb costs 0.26 Wh; halving the survey saves 1.31 Wh. The
+    climb is repaid roughly five times over, and some of it comes back again
+    as a power-off glide on the descent to land. Height is bought once and
+    spent across every line, which is why it is nearly always worth it for a
+    survey - the argument only reverses for an area so small that the climb
+    is a large fraction of the whole flight.
+
+    So: go as high as pixels-on-target allows. With this camera that is
+    about 40 m, far below the competition's 80 m AGL cap, so the cap is no
+    longer the binding constraint - the sensor is.
+
+  WHY DISTANCE-BASED CAMERA TRIGGERING
+    dc_distance() shoots every survey_shot_interval METRES of ground track,
+    not every N seconds. With wind, ground speed varies along and across the
+    lines; a time-based trigger would bunch frames on the downwind legs and
+    thin them on the upwind ones. Distance-based gives uniform forward
+    overlap regardless, which is what both the mosaic and the multi-frame
+    averaging want.
+
+    NOTE it is dc_distance(), not the confusingly named dc_Survey() - see
+    the Start Survey block for why the latter is wrong for a lawnmower.
+
+  WHAT ACTUALLY DECIDES THE SCORE (and it is not this file)
+    After multi-frame averaging the error budget is essentially
+    sqrt(2.0^2 + 0.5^2) = 2.06 m of pure systematic error, so even with a
+    perfect flight the 95% figure is about 4.1 m against a 5 m requirement.
+    Two things move that, neither of which lives in a flight plan:
+
+      RTK or PPK removes the 2 m GPS term outright. Biggest single win
+      available and it is a procurement decision, not a code change.
+
+      BORESIGHT CALIBRATION. The camera is never perfectly square to the
+      airframe, and 2 deg of mounting error is 2.79 m at 80 m - larger than
+      everything else combined. Unlike attitude noise it is a FIXED bias and
+      averaging over frames does not reduce it at all. Calibrate by flying
+      over a surveyed point and solving for the roll/pitch offsets.
+
+    Then validate end to end: put a hot target on a GPS-measured spot, fly
+    this survey, and check what the pipeline returns. An error budget on
+    paper is not evidence.
+
+  LWIR NOTES THAT AFFECT THIS PLAN
+    FFC (the shutter flat-field correction, every 30-120 s) blanks the image
+    for 0.5-2 s. THIS GOT TIGHTER when the altitude dropped: the along-track
+    footprint is only 21.4 m at 40 m, so a ground point is in view for just
+    1.8 s at 12 m/s, and a 2 s blank CAN swallow it. At 80 m the dwell was
+    5-6 s and this was a non-issue.
+
+    What saves it is the 50% sidelap: nearly every point is imaged from two
+    adjacent lines, flown a minute or more apart, so a shutter event would
+    have to land on the same ground twice to open a real hole. Over a 175 s
+    survey with FFC every 60 s that is about 3 events, roughly 5% of the area
+    blanked once and almost none of it blanked twice.
+
+    LEAVE FFC ENABLED. Disabling it to avoid gaps would trade a covered risk
+    for real radiometric drift. If the core allows it, force a manual FFC
+    just before Start Survey and set the automatic period as long as
+    possible - that pushes the events out of the survey window entirely.
+
+    Motion smear is 1-3 px at a microbolometer's 8-20 ms thermal time
+    constant and 12 m/s. Acceptable, and symmetric along track so it does
+    not bias the centroid.
+
+    Frames taken IN THE TURNS should be discarded in post-processing, not
+    prevented here: attitude error in a bank is far worse than in level
+    flight and sits at the top of the error budget. Filtering on |phi| in
+    the log is simpler and loses nothing, so the camera runs continuously.
+
+  OFFICIAL COORDINATES (IMAV 2026, converted to this plan's UTM frame)
+    Fire detection area, as listed in the competition rulebook:
+        48.808494N 7.851707E   (SW, = F3)
+        48.808518N 7.852497E   (SE, = F4)
+        48.809540N 7.852558E   (NE, = F1)
+        48.809522N 7.851791E   (NW, = F2)
+    Same counter-clockwise ring as F1..F4, just started at a different
+    corner - the survey does not care which corner comes first. About
+    58 x 114 m, long axis N-S, right next to HOME (HOME is 2 m inside its
+    west edge).
+    HOT_TEST (practice hot spot, NOT in the fire area): 48.807853N 7.851819E.
+    Landing: TD in the "Precision landing Fixedwing zone", see AF/TD.
+    The survey adapts to whatever polygon F1..F4 describes; nothing else
+    needs changing when they move.
+-->
+<flight_plan alt="190" ground_alt="140" lat0="48.8086670" lon0="7.8517466" max_dist_from_home="1500" name="Mission2_Strasbourg" security_height="5" geofence_max_alt="225">
+  <header>
+#include "autopilot.h"
+#include "firmwares/fixedwing/guidance/energy_ctrl.h"
+#include "modules/digital_cam/dc.h"
+#include "modules/nav/nav_survey_poly_osam.h"
+#include "modules/nav/nav_mission4_geofence.h"
+
+/* Shoot ONLY while the wings are near level, so frames come from the
+   straight legs and not the turns.
+
+   The camera is bolted to the airframe, so in a turn the footprint swings
+   off to the side AND the attitude estimate is at its worst: ahrs_float_dcm
+   has no external attitude aid, and its accelerometer-based levelling is
+   corrupted by centripetal acceleration exactly when banked. Turn frames
+   are therefore the ones that would georeference worst, and they cover
+   ground the straight legs already cover - pure liability.
+
+   Gating on ROLL rather than the survey module's own state because
+   nav_survey_poly_osam keeps CSurveyStatus (Init/Entry/Sweep/Turn)
+   file-static and does not export it. Roll is the better test anyway: it
+   also suppresses the roll-out transient at the start of a leg, where the
+   aircraft is still settling onto the line and cross-track error is largest.
+
+   Sets dc_autoshoot DIRECTLY rather than calling dc_stop()/dc_distance():
+   dc_stop() also fires a DC_INFO downlink on every call, which at 20 Hz
+   would flood the link, and dc_distance() resets last_shot_pos, which would
+   restart the along-track spacing at every gate transition. Toggling the
+   mode preserves both the interval and the last shot position.
+
+   No coverage is lost: the turns happen OUTSIDE the polygon, so every
+   suppressed frame is of ground the survey lines cover anyway. Measured on
+   the Talon without this gate: 2115 frames at a mean roll of 19.2 deg, 1776
+   of them past 10 deg. With it: 351 frames, mean 4.7 deg, max 19.1 deg,
+   against a 46.8 deg peak bank in the turns. */
+/* Lay the survey lines PARALLEL TO THE LONGEST EDGE of the search polygon.
+
+   Two reasons, and the second is the expensive one:
+
+     Parallel to a real boundary. Lines that cut across the zone at an
+     arbitrary angle leave ragged part-width strips along the edges, which
+     is where a hot spot is most likely to be missed.
+
+     Fewest turns. Every line change costs a turn, and on this aircraft a
+     turn is enormous relative to the line spacing - POLY_OSAM_MIN_RADIUS is
+     30 m, so 60 m of lateral travel is needed to swap lines while the swath
+     at 40 m is only 29 m. Running the lines along the LONG axis gives the
+     fewest, longest legs and so the fewest of those turns.
+
+   The obvious call, nav_survey_poly_osam_setup_towards(F1, 4, sweep, F2),
+   hardcodes the F1-F2 edge. That happens to be the long edge of the current
+   placeholder, but the real fire zone is a rotated rectangle and there is
+   no guarantee its corners arrive in an order that puts the long side
+   first - if F1-F2 came out as the SHORT side you would silently get twice
+   the lines and twice the turns. Choosing the longest edge is orientation-
+   and order-independent, so it survives whatever the organisers' KML gives.
+
+   Orientation convention mirrors the module's own setup_towards: a LINE
+   angle from atan(dy/dx), degrees CCW from east, in (-90, +90). Direction
+   sense does not matter for a sweep, only the line direction. */
+/* Push the survey lines OUT PAST the search polygon along the sweep axis,
+   so every turn and every roll-out happens outside the hot-spot area and
+   the aircraft crosses the real boundary already straight and level.
+
+   Why this is needed even though the U-turns are already outside: a turn
+   does not end where the curve ends. The aircraft rolls out over some
+   distance, and a gentle roll-out is still a curve - at 12 m/s a 10 deg
+   bank is a 83 m radius, which the roll gate happily lets through, so
+   frames were being taken on visibly curved track just inside the edge.
+
+   Only the two edges PERPENDICULAR to the sweep are moved, by `margin`
+   each. That lengthens every line but does NOT add lines, so the cost is
+   2*margin per line rather than a whole extra pass - expanding the polygon
+   uniformly would widen it too and add lines for nothing.
+
+   The expanded corners go into scratch waypoints so F1..F4 stay the true
+   fire zone for the GCS and for any post-flight coverage check. */
+static inline void mission2_expand_along_sweep(uint8_t src_wp, uint8_t n, uint8_t dst_wp, float margin)
+{
+  uint8_t i;
+  float best = -1.0f, ux = 1.0f, uy = 0.0f;
+  float cx = 0.0f, cy = 0.0f;
+
+  for (i = 0; i != n; i++) {
+    cx += waypoints[src_wp + i].x;
+    cy += waypoints[src_wp + i].y;
+  }
+  cx /= (float)n;
+  cy /= (float)n;
+
+  /* Same longest-edge rule the sweep orientation uses, so the expansion is
+     along the direction the lines will actually run. */
+  for (i = 0; i != n; i++) {
+    uint8_t a = src_wp + i;
+    uint8_t b = src_wp + ((i + 1) % n);
+    float dx = waypoints[b].x - waypoints[a].x;
+    float dy = waypoints[b].y - waypoints[a].y;
+    float d2 = dx * dx + dy * dy;
+    if (!signbit(d2 - best)) { best = d2; ux = dx; uy = dy; }
+  }
+  float un = sqrtf(ux * ux + uy * uy);
+  if (signbit(un - 0.001f)) { un = 1.0f; }
+  ux /= un;
+  uy /= un;
+
+  for (i = 0; i != n; i++) {
+    float x = waypoints[src_wp + i].x;
+    float y = waypoints[src_wp + i].y;
+    float s = (x - cx) * ux + (y - cy) * uy;   /* along-sweep position */
+    float k = margin;
+    if (signbit(s)) { k = -margin; }           /* push each end outward */
+    waypoints[dst_wp + i].x = x + ux * k;
+    waypoints[dst_wp + i].y = y + uy * k;
+    waypoints[dst_wp + i].a = waypoints[src_wp + i].a;
+  }
+}
+
+/* tan(HFOV / 2) for the 40 x 30 deg LWIR lens: swath = 2 * height * this */
+#define MISSION2_TAN_HALF_HFOV 0.36397f
+
+/* The NUMBER OF LINES follows the polygon: the width across the lines is
+   split into the fewest equal strips no wider than max_sweep, and that
+   exact spacing goes to the module. The module puts the first line half a
+   spacing in from the edge, so N lines land at (k + 0.5) * width / N and
+   the outer lines sit exactly half a spacing from each edge - full
+   coverage for any zone, with no ragged last strip and no half-sweep. */
+static inline void mission2_survey_along_longest_edge(uint8_t first_wp, uint8_t n, float max_sweep)
+{
+  uint8_t i;
+  float best = -1.0f;
+  float bdx = 1.0f, bdy = 0.0f;
+
+  for (i = 0; i != n; i++) {
+    uint8_t a = first_wp + i;
+    uint8_t b = first_wp + ((i + 1) % n);
+    float dx = waypoints[b].x - waypoints[a].x;
+    float dy = waypoints[b].y - waypoints[a].y;
+    float d2 = dx * dx + dy * dy;
+    if (!signbit(d2 - best)) { best = d2; bdx = dx; bdy = dy; }
+  }
+  /* Width across the lines: spread of the corners along the edge normal. */
+  float len = sqrtf(best);
+  if (signbit(len - 0.001f)) { len = 1.0f; }
+  float nx = -bdy / len, ny = bdx / len;
+  float lo = 0.0f, hi = 0.0f;
+  for (i = 0; i != n; i++) {
+    float t = waypoints[first_wp + i].x * nx + waypoints[first_wp + i].y * ny;
+    if (i == 0) { lo = t; hi = t; }
+    if (signbit(t - lo)) { lo = t; }
+    if (!signbit(t - hi)) { hi = t; }
+  }
+  float width = hi - lo;
+  if (signbit(max_sweep - 1.0f)) { max_sweep = 1.0f; }
+  /* -0.001: a width of exactly k strips must give k lines, not k+1 */
+  float lines = ceilf(width / max_sweep - 0.001f);
+  if (signbit(lines - 1.0f)) { lines = 1.0f; }
+  float sweep = width / lines;
+
+  /* atan(dy/dx) blows up on a due-north edge; nudge dx the way the module
+     does rather than switching to atan2, so the convention stays identical. */
+  if (signbit(fabs(bdx) - 0.000001f)) { bdx = 0.000001f; }
+  nav_survey_poly_osam_setup(first_wp, n, sweep, DegOfRad(atan(bdy / bdx)));
+}
+
+/* True if (x, y) is at least `margin` metres inside the convex polygon
+   waypoints[first_wp .. first_wp+n-1]. The winding is taken from the signed
+   area, so a relabelled or re-dragged zone needs no code change. */
+static inline bool mission2_inside_zone(uint8_t first_wp, uint8_t n, float x, float y, float margin)
+{
+  uint8_t i;
+  float area2 = 0.0f;
+  for (i = 0; i != n; i++) {
+    uint8_t a = first_wp + i;
+    uint8_t b = first_wp + ((i + 1) % n);
+    area2 += waypoints[a].x * waypoints[b].y - waypoints[b].x * waypoints[a].y;
+  }
+  float wind = 1.0f;
+  if (signbit(area2)) { wind = -1.0f; }
+
+  for (i = 0; i != n; i++) {
+    uint8_t a = first_wp + i;
+    uint8_t b = first_wp + ((i + 1) % n);
+    float ex = waypoints[b].x - waypoints[a].x;
+    float ey = waypoints[b].y - waypoints[a].y;
+    float len = sqrtf(ex * ex + ey * ey);
+    if (signbit(len - 0.001f)) { continue; }
+    /* signed distance from this edge, positive towards the inside */
+    float dist = wind * (ex * (y - waypoints[a].y) - ey * (x - waypoints[a].x)) / len;
+    if (signbit(dist - margin)) { return false; }
+  }
+  return true;
+}
+
+/* Shoot ONLY inside the fire zone, and only with the wings near level.
+
+   Position is the aircraft's, not the footprint's: a frame taken just inside
+   the edge still images 13.4 m past it along track (26.8 m footprint at
+   50 m), so the edges stay covered while nothing is shot from outside.
+
+   The gate LOOKS AHEAD by `lookahead` seconds along the ground velocity:
+   it runs at the navigation rate (20 Hz) while dc_periodic runs on its own
+   at 10 Hz, so a shot can land up to one navigation period after the gate
+   last saw the aircraft inside. Requiring the look-ahead point inside too
+   closes the gate just before the edge by exactly that much track, at any
+   edge angle. A fixed inward margin instead grows to margin/sin(angle) at
+   an edge crossed obliquely, and clipped the tips of sharp corners. */
+static inline void mission2_shoot_in_zone(float max_roll_deg, uint8_t first_wp, uint8_t n, float lookahead)
+{
+  /* [0].phi, not an arrow: a raw angle bracket in this header corrupts the
+     generated flight_plan.xml, and Xml-light rejects it outright. */
+  /* Roll no longer gates shots: shoot at any bank angle. */
+  (void)max_roll_deg;
+  bool shoot = true;
+  float x = stateGetPositionEnu_f()[0].x;
+  float y = stateGetPositionEnu_f()[0].y;
+  float ax = x + stateGetSpeedEnu_f()[0].x * lookahead;
+  float ay = y + stateGetSpeedEnu_f()[0].y * lookahead;
+  if (!mission2_inside_zone(first_wp, n, x, y, 0.0f)) { shoot = false; }
+  if (!mission2_inside_zone(first_wp, n, ax, ay, 0.0f)) { shoot = false; }
+  if (shoot) {
+    dc_autoshoot = DC_AUTOSHOOT_DISTANCE;
+  } else {
+    dc_autoshoot = DC_AUTOSHOOT_STOP;
+  }
+}
+  </header>
+
+  <waypoints>
+    <!-- Launch and recovery. Per the site map the fixed-wing / VTOL takeoff
+         and landing zone is on the WEST side of the flight zone, so HOME
+         sits there and the survey area is to the north-east of it. -->
+    <waypoint name="HOME" x="0.0" y="0.0"/>
+    <waypoint name="CLIMB" x="60.0" y="60.0" height="80."/>
+    <!-- _STDBY, not STDBY: nav_couzin_fw.c is compiled into the Talon 250g
+         airframe and hard-references WP__STDBY in C, so the name is fixed. -->
+    <waypoint name="_STDBY" x="40.0" y="120.0" height="80."/>
+
+    <!-- Dead weight kept alive by a compiled dependency, not by anything
+         this mission does: nav_couzin_fw.c references WP_SWARM_TGT, WP_S1
+         and WP_S2 directly in C rather than through flight-plan go/circle
+         calls, so the Talon airframe will not LINK without them. Nothing
+         here ever flies to any of these. Same note as mission4_strasbourg. -->
+    <waypoint name="SWARM_TGT" x="113.277" y="120.394"/>
+    <waypoint name="S1" x="164.871" y="-69.003"/>
+    <waypoint name="S2" x="394.507" y="238.645"/>
+    <!-- TD: centre of the official "Precision landing Fixedwing zone"
+         (48.807315N 7.852020E, 48.807315N 7.851951E, 48.807494N 7.851915E,
+         48.807500N 7.851982E), a 5 x 20 m box on a 353/173 deg axis. The
+         "Landing Fixedwing zone" line (48.807761N 7.851868E - 48.807767N
+         7.851934E) is 40 m north of it, so the final is SOUTHBOUND: AF 200 m
+         north along the box axis at 20 m AGL, the same geometry as
+         mission1_single_strasbourg.xml. Northbound would put AF ~100 m
+         outside the south fence. Drag AF round TD for wind. -->
+    <waypoint name="AF" x="-9.541" y="58.166" alt="160.0"/>
+    <waypoint height="0" name="TD" x="14.084" y="-140.434"/>
+    <waypoint name="_BASELEG" x="20.2" y="61.7"/>
+    <!-- Practice hot spot - reference only, nothing flies to it. -->
+    <waypoint name="HOT_TEST" x="3.951" y="-90.563"/>
+    <waypoint name="_HERE" x="0.0" y="0.0"/>
+
+    <!-- The FZ1-FZ6 Strasbourg hexagon, FZ1/FZ2 widened to the official
+         Mission 1 Area 1 west border - must match mission4_strasbourg_vx/vy
+         in nav_mission4_geofence.h. This is the big red polygon the other
+         missions fly inside; the fire zone is a small area within it, not a
+         separate zone.
+
+         Drawn as a sector for the GCS. The HARD containment is the buffered
+         exception below, NOT geofence_sector - see that exception for why. -->
+    <waypoint name="FZ1" x="-7.216" y="-241.108"/>
+    <waypoint name="FZ2" x="-35.387" y="246.917"/>
+    <waypoint name="FZ3" x="592.228" y="419.242"/>
+    <waypoint name="FZ4" x="564.110" y="56.754"/>
+    <waypoint name="FZ5" x="545.046" y="26.094"/>
+    <waypoint name="FZ6" x="564.301" y="-67.131"/>
+
+    <!-- The official fire detection area (see header), a ~58 x 114 m
+         quadrilateral with its long axis roughly north-south.
+
+         Survey lines run along the long axis, so the pattern swings about
+         a turn radius plus survey_overrun beyond the north and south ends.
+         Both ends are well clear of the hexagon here (the north edge is
+         ~135 m beyond F1/F2). If you move this box, re-check the turn
+         APEXES, not the corners.
+
+         ORDER MATTERS. nav_survey_poly_osam indexes
+         waypoints[F1 .. F1+3], so these four must stay CONSECUTIVE in this
+         list and consistently wound. Inserting a waypoint between them
+         silently changes the surveyed polygon - the same trap
+         mission1_strasbourg.xml documents for its L1..L4.
+
+         Lines run along the LONGEST edge (here F2 -> F3 / F4 -> F1, the
+         north-south sides), picked in code by
+         mission2_survey_along_longest_edge, so the aircraft flies the
+         fewest, longest legs and spends least time turning. Turns cost time
+         and energy - both scored - and produce frames that get discarded
+         anyway. No change is needed if the zone turns out wider than tall. -->
+    <!-- Official rulebook corners (see header). F1 is the NE corner, then
+         NW, SW, SE (counter-clockwise); the rulebook lists the same ring
+         starting at SW (F3). -->
+    <waypoint name="F1" x="61.036" y="96.143"/>
+    <waypoint name="F2" x="4.693" y="94.991"/>
+    <waypoint name="F3" x="-3.198" y="-19.187"/>
+    <waypoint name="F4" x="54.845" y="-17.393"/>
+
+    <!-- Scratch: F1..F4 stretched along the sweep axis by survey_overrun, so
+         the turns and roll-outs finish OUTSIDE the fire zone and the
+         aircraft crosses the real boundary already straight. Written every
+         time Start Survey runs, so they follow F1..F4 automatically when you
+         drag those onto the real zone. Declared positions are irrelevant.
+         MUST STAY CONSECUTIVE - the survey module indexes them by offset. -->
+    <waypoint name="_G1" x="0.0" y="0.0"/>
+    <waypoint name="_G2" x="0.0" y="0.0"/>
+    <waypoint name="_G3" x="0.0" y="0.0"/>
+    <waypoint name="_G4" x="0.0" y="0.0"/>
+  </waypoints>
+
+  <sectors>
+    <sector name="Flyzone" color="red">
+      <corner name="FZ1"/><corner name="FZ2"/><corner name="FZ3"/>
+      <corner name="FZ4"/><corner name="FZ5"/><corner name="FZ6"/>
+    </sector>
+    <sector name="M2_FIREZONE" color="orange">
+      <corner name="F1"/><corner name="F2"/><corner name="F3"/><corner name="F4"/>
+    </sector>
+    <kml file="MS/strasbourg_flyzone.kml"/>
+  </sectors>
+
+  <variables>
+    <!-- 50 m, raised from 40 m to widen the line spacing: fewer lines means
+         fewer turns, and every turn here is a ~190 m omega loop. Swath 36.4 m,
+         GSD 14.0 cm, so 2.2 px on a 0.3 m plate and 4.3 px on a 0.6 m one -
+         under the usual 3 px rule for the small case, leaning on the
+         near-saturated hot spot against cold vegetation (see the file
+         header). Drop back to ~36-40 m if the hot spots are confirmed small.
+         Line spacing and count follow automatically (survey_sidelap). -->
+    <variable init="50." var="survey_height" min="25." max="80." step="1."/>
+
+    <!-- MINIMUM sidelap between adjacent lines. Nothing to recompute by hand:
+         the maximum line spacing is (1 - sidelap) * swath, with
+         swath = 2 * survey_height * tan(HFOV/2), and Start Survey then picks
+         the fewest lines that fit the zone at no more than that spacing
+         (mission2_survey_along_longest_edge). The ACTUAL spacing is
+         width / lines, so the real sidelap is this or more.
+
+         At 50 m: swath 36.4 m, maximum spacing 27.3 m. The current zone is
+         54.3 m wide, so 2 lines at 27.15 m - 9.3 m of overlap between them
+         and 4.6 m of footprint past each long edge. A zone just 0.3 m wider
+         becomes 3 lines at 18.2 m.
+
+         Low sidelap ONLY HOLDS WITH THE LINES FLOWN ALONG THE WIND. The
+         camera is bolted to the airframe, so crabbing into a crosswind
+         rotates the footprint and the guaranteed strip becomes the inscribed
+         width, w*cos(c) - h_along*sin(c), not the swath. At 12 m/s a 5 m/s
+         crosswind is 24.6 deg of crab, which cuts the guaranteed strip at
+         50 m from 36.4 m to 22.0 m - 27 m spacing would then leave 5 m
+         gaps. Flying pure headwind/tailwind makes the crab zero on the legs;
+         it only appears in the turns, where frames are discarded anyway.
+         If the lines cannot be put along the wind, use 0.5 (18.2 m maximum
+         spacing at 50 m).
+
+         Turns: anything under 2 x POLY_OSAM_MIN_RADIUS (60 m) is flown as an
+         omega turn outside the polygon, ~190 m of track each - which is why
+         fewer, wider lines pay off. -->
+    <variable init="0.25" var="survey_sidelap" min="0." max="0.8" step="0.05"/>
+
+    <!-- Metres of ground track between shots. Sets forward overlap and,
+         more importantly, how many times each hot spot is seen - which is
+         what averages the random half of the error budget away.
+
+         SCALES WITH ALTITUDE. At 50 m the along-track footprint is 26.8 m,
+         so 3 m (3.4-3.6 m actual, see below) gives about 8 sightings per
+         spot per pass and ~15 in the strip both lines see - 87% forward
+         overlap.
+
+         Far more than coverage needs (anything under 26.8 m covers), and
+         more than accuracy needs (GPS bias dominates; 4 sightings is almost
+         as good as 8). The overlap is for DETECTION: a real hot spot
+         repeats in consecutive frames at one ground position while noise
+         and glints do not, a ~2 px target gets several pixel alignments,
+         and a 2 s FFC blank (~24 m of track) still leaves most points seen.
+         Costs about 70 frames over the two lines - trivial.
+
+         At 12 m/s, 3 m is 4 Hz. dc_periodic runs at 10 Hz (digital_cam_uart)
+         so the interval quantises in ~1.2 m steps - fine here, but do not
+         set this much below 2 m or the quantisation dominates. -->
+    <variable init="3." var="survey_shot_interval" min="2." max="40." step="0.5"/>
+
+    <!-- Survey airspeed. Time AND energy are both scored and they pull in
+         opposite directions: minimum energy per unit distance is near best
+         L/D (GLIDE_AIRSPEED, 7.5 m/s on this airframe), minimum time is as
+         fast as the aircraft will go. 10 m/s is chosen as the balance (this
+         repo's Talon 250g, NOMINAL_AIRSPEED 9.4, sinks when held at 12) and because motion smear and the sync error term both
+         scale with it. Worth revisiting once the scoring weights are known. -->
+    <variable init="10." var="survey_airspeed" min="8." max="16." step="0.5"/>
+
+    <!-- Seconds held wings-level before the launch sequence starts. -->
+    <variable init="5." var="holding_delay" min="0." max="60." step="1."/>
+
+    <!-- Camera is inhibited above this bank angle, so frames come only from
+         the straight legs. 10 deg comfortably excludes the survey turns
+         (the Talon banks to ~46 deg in them) while letting a leg resume
+         shooting as soon as it has rolled out.
+
+         Raise it if legs start late and lose coverage at the polygon edge;
+         lower it if turn frames still get through. Setting it very high
+         defeats the gate; near zero will suppress legs flown with a small
+         steady bank in wind. -->
+    <!-- 5 deg, not 10. A gate only rejects turns TIGHTER than
+         v^2/(g*tan(gate)): at 12 m/s that is 83 m radius at 10 deg but
+         168 m at 5 deg. Shots were visibly landing on gentle curves near
+         the polygon edge because an 83 m-radius roll-out passes a 10 deg
+         gate. Do not push below about 3 deg (280 m) - a leg flown with a
+         small steady bank correction in wind would start being suppressed. -->
+    <!-- Unused now: roll no longer gates shots (see shoot function). -->
+    <variable init="5." var="survey_max_roll" min="3." max="45." step="1."/>
+
+    <!-- Seconds the camera gate looks ahead along the ground track: a shot
+         is only allowed if the aircraft is inside the fire zone F1..F4 now
+         AND will still be inside this much later. 0.1 s is two navigation
+         periods - 1.2 m of track at 12 m/s, 1.7 m at 17 m/s downwind -
+         covering the up-to-one-period lag between the gate and dc_periodic.
+         Checked on six zone shapes: no shot outside, 100% coverage. -->
+    <variable init="0.1" var="survey_gate_lookahead" min="0." max="1." step="0.05"/>
+
+    <!-- How far the survey lines are extended PAST the fire zone at each
+         end, so turns and roll-outs happen outside it. Costs 2*overrun per
+         line and adds no lines.
+
+         15 m: the survey turns now finish exactly on the next line, already
+         heading along it, so the overrun only has to cover the settle onto
+         the line - the old 30 m was sized for circle turns that handed over
+         crooked.
+
+         The omega turns reach ~72 m past the end of each line at 25.5 m
+         spacing, so the furthest point of a turn is overrun + 72 m from the
+         fire zone. On the official fire area the survey track stays at
+         least 17 m inside the flyzone (SITL; the tightest point is the west
+         edge, not a turn apex). RE-CHECK THE FIT whenever F1..F4,
+         survey_sidelap or this change. -->
+    <variable init="15." var="survey_overrun" min="0." max="60." step="5."/>
+  </variables>
+
+  <exceptions>
+    <!-- Buffered geofence, identical to mission4_strasbourg.xml: inside the
+         hexagon, or within MISSION4_GEOFENCE_BUFFER (60 m) outside it.
+
+         Deliberately NOT geofence_sector. That is a hard autopilot fence on
+         the raw polygon, and HOME sits only 15.7 m inside this hexagon - so
+         the takeoff circle breaches it immediately, the autopilot takes over
+         in HOME mode, and the aircraft orbits the launch point at
+         security_height for the whole flight without ever reaching the
+         survey. Confirmed in SITL before this was changed: 198 s pinned at
+         exactly 25.0 m AGL, circling the origin. A hard sector fence cannot
+         be reasoned around from inside a block, which is exactly why the
+         other MS plans use this buffered exception instead. -->
+    <exception cond="!mission4_in_strasbourg_safe(GetPosX(), GetPosY()) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Takeoff'))" deroute="Standby"/>
+  </exceptions>
+
+  <blocks>
+    <!-- ── Pre-flight ───────────────────────────────────────────────────── -->
+    <block name="Wait GPS">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetGroundReferenceHere()"/>
+    </block>
+
+    <!-- Auto-sequences into Takeoff after a short settle, same as the other
+         MS plans. The flight is TIMED, so the plan must not sit here waiting
+         for a GCS click - and it also has to be able to run unattended in
+         SITL. Raise holding_delay if the launch crew needs longer. -->
+    <block name="Holding point">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <exception cond="NavBlockTime() @GT holding_delay" deroute="Takeoff"/>
+      <attitude roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+
+    <!-- ── Launch ───────────────────────────────────────────────────────── -->
+    <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png" group="home">
+      <exception cond="GetPosAlt() @GT GetAltRef() + 25" deroute="Climb to Survey Height"/>
+      <set value="0" var="autopilot.kill_throttle"/>
+      <set value="1" var="autopilot.launch"/>
+      <set value="0" var="autopilot.flight_time"/>
+      <call_once fun="NavSetWaypointHere(WP__HERE)"/>
+      <!-- vmode="climb" rather than a fixed pitch: on this airframe an
+           open-loop attitude climb could not get past ~8 m AGL because
+           excess thrust leaked into airspeed instead of altitude. See
+           mission4_strasbourg.xml for the full telemetry account. -->
+      <go climb="2.0" from="_HERE" hmode="route" vmode="climb" wp="CLIMB"/>
+      <circle climb="2.0" radius="DEFAULT_CIRCLE_RADIUS" until="GetPosAlt() @GT GetAltRef()+25" vmode="climb" wp="CLIMB"/>
+      <deroute block="Climb to Survey Height"/>
+    </block>
+
+    <!-- Climb EN ROUTE to the survey area, not by orbiting.
+
+         Circling to altitude first was pure dead time: takeoff hands over at
+         25 m, the survey runs at 80 m, and 55 m at 2 m/s is 27.5 s of
+         orbiting that covers no ground and buys nothing. The transit to F1
+         is about 200 m, which at 12 m/s is roughly the same 17 s - so the
+         climb and the transit are the same manoeuvre and one of them is
+         free. Time and energy are both scored; this is the cheapest second
+         to save in the whole plan.
+
+         The circle below is only a fallback for arriving low (headwind, or a
+         survey height raised well above 80 m). In the normal case the
+         exception fires during the go and the circle never runs. -->
+    <block name="Climb to Survey Height" group="mission">
+      <set var="v_ctl_auto_airspeed_setpoint" value="survey_airspeed"/>
+      <exception cond="GetPosAlt() @GT GetAltRef() + survey_height - 2.0" deroute="Start Survey"/>
+      <call_once fun="NavSetWaypointHere(WP__HERE)"/>
+      <go climb="2.0" from="_HERE" hmode="route" vmode="climb" wp="F1"/>
+      <circle climb="2.0" radius="DEFAULT_CIRCLE_RADIUS" vmode="climb" wp="F1"/>
+    </block>
+
+    <!-- ── Survey ───────────────────────────────────────────────────────── -->
+
+    <!-- Lay out the lawnmower over F1..F4 and start the camera.
+
+         _setup_towards(F1, 4, sweep, F2) rather than the fixed-angle
+         _setup(): the orientation is then defined by two corners of the
+         polygon itself, so it follows the zone automatically when the real
+         coordinates replace the placeholders. mission1_strasbourg.xml uses
+         the angle form with a magic -87.46, which has to be recomputed by
+         hand every time its polygon moves. Point it at F4 instead if the
+         real zone turns out to be wider than it is tall.
+
+         The survey altitude is stamped onto F1 because
+         nav_survey_poly_osam flies at the altitude of its first waypoint. -->
+    <block name="Start Survey" strip_button="Start Survey" strip_icon="survey.png" group="mission">
+      <set var="v_ctl_auto_airspeed_setpoint" value="survey_airspeed"/>
+      <set var="WaypointAlt(WP_F1)" value="GetAltRef()+survey_height"/>
+      <!-- No half-sweep line: the spacing is computed so the lines fit the
+           zone exactly (see mission2_survey_along_longest_edge), so the last
+           line already sits half a spacing from the far edge. A half line
+           would only add an extra omega turn. -->
+      <set var="Half_Sweep_Enabled" value="FALSE"/>
+      <call_once fun="mission2_expand_along_sweep(WP_F1, 4, WP__G1, survey_overrun)"/>
+      <call_once fun="mission2_survey_along_longest_edge(WP__G1, 4, (1. - survey_sidelap) * 2. * survey_height * MISSION2_TAN_HALF_HFOV)"/>
+      <!-- dc_distance(), NOT dc_Survey(), despite the name.
+
+           DC_AUTOSHOOT_SURVEY measures distance from a FIXED reference point
+           captured when it starts, and fires on expanding concentric rings
+           around it (dc.c: dist from dc_gps_x/y vs dc_gps_next_dist, which
+           only ever increases). On a boustrophedon that is wrong: the
+           distance from a fixed point grows on the outbound half of a line
+           and shrinks on the way back, so the camera shoots on some legs and
+           goes silent on others. Measured here before the change - 29 frames
+           over 50 s of survey, unevenly spaced, where uniform 6 m spacing at
+           12 m/s should give about 100.
+
+           DC_AUTOSHOOT_DISTANCE measures from the LAST SHOT POSITION, which
+           is true along-track spacing and is what a lawnmower needs. It is
+           also wind-immune for the same reason: metres of ground track, not
+           seconds, so overlap stays uniform when ground speed changes
+           between the upwind and downwind legs.
+
+           dc_periodic runs at 10 Hz (digital_cam_uart), so at 12 m/s the
+           interval quantises in ~1.2 m steps - fine at 6 m, worth knowing if
+           anyone sets it much lower.
+
+           DC_SHOT is downlinked per frame by default (DC_SHOT_SYNC_SEND),
+           carrying photo_nr, lat, lon, alt, phi, theta, psi and itow - the
+           entire input the post-flight georeferencing needs. -->
+      <call_once fun="dc_distance(survey_shot_interval)"/>
+      <!-- dc_distance() leaves the camera ARMED with last_shot_pos at the
+           origin, so the next dc_periodic would shoot at once - out here at
+           the entry circle, before Run Survey's zone gate has run. Disarm it
+           and let the gate open it inside the zone. The interval set above
+           is kept. -->
+      <set var="dc_autoshoot" value="DC_AUTOSHOOT_STOP"/>
+      <deroute block="Run Survey"/>
+    </block>
+
+    <!-- pre_call runs every navigation cycle and gates the camera: shots
+         only inside the fire zone F1..F4 (not the stretched _G1.._G4) and
+         only with the wings near level. -->
+    <block name="Run Survey" group="mission" pre_call="mission2_shoot_in_zone(survey_max_roll, WP_F1, 4, survey_gate_lookahead)">
+      <!-- PolySurveySweepBackNum >= 1 means the pattern has covered the
+           polygon and started back over ground it has already flown. -->
+      <exception cond="PolySurveySweepBackNum @GT 0" deroute="Survey Done"/>
+      <call fun="nav_survey_poly_osam_run()"/>
+    </block>
+
+    <!-- Camera off the moment coverage is complete: every extra frame is
+         data to sift through in a five minute window. -->
+    <block name="Survey Done" group="mission">
+      <call_once fun="dc_stop()"/>
+      <deroute block="Land AF-TD"/>
+    </block>
+
+    <!-- ── Safety hold ──────────────────────────────────────────────────── -->
+    <!-- Where the geofence and any abort lands. Stops the camera too, so an
+         aborted flight does not keep filling the buffer. -->
+    <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="home">
+      <call_once fun="dc_stop()"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="survey_airspeed"/>
+      <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()+survey_height" wp="_STDBY"/>
+    </block>
+
+    <!-- ── Landing ──────────────────────────────────────────────────────── -->
+    <!-- Negative radius: baseleg circle east of AF, away from the west fence. -->
+    <block name="Land AF-TD" strip_button="Land (wp AF-TD)" strip_icon="land-left.png" group="land">
+      <call_once fun="dc_stop()"/>
+      <set value="-DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
+      <deroute block="land"/>
+    </block>
+
+    <block name="land">
+      <call_once fun="nav_compute_baseleg(WP_AF, WP_TD, WP__BASELEG, nav_radius)"/>
+      <circle radius="nav_radius" until="NavCircleCount() @GT 0.5" wp="_BASELEG"/>
+      <circle radius="nav_radius" until="NavQdrCloseTo(DegOfRad(baseleg_out_qdr)-(nav_radius/fabs(nav_radius))*10)                      @AND (fabs(GetPosAlt() - WaypointAlt(WP__BASELEG)) @LT 10)" wp="_BASELEG"/>
+      <deroute block="final"/>
+    </block>
+
+    <block name="final">
+      <!-- Glide AF -> TD; below 10 m AGL go to flare (motor killed). -->
+      <exception cond="GetAltRef() + 10 @GT GetPosAlt()" deroute="flare"/>
+      <go from="AF" hmode="route" vmode="glide" wp="TD"/>
+    </block>
+
+    <block name="flare">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <go approaching_time="0" from="AF" hmode="route" throttle="0.0" vmode="throttle" wp="TD"/>
+      <attitude roll="0.0" throttle="0.0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</flight_plan>

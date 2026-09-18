@@ -1,0 +1,123 @@
+<conf>
+  <aircraft
+   name="Cherry"
+   ac_id="112"
+   airframe="airframes/OPENUAS/openuas_multiplex_easystar_3.xml"
+   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
+   telemetry="telemetry/default_fixedwing_imu.xml"
+   flight_plan="flight_plans/MS/mission4_strasbourg.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/airspeed_sdp3x.xml modules/digital_cam_common.xml modules/digital_cam_uart.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_energy.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/nav_cube.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/rangefinder_i2c.xml modules/stabilization_adaptive_fw.xml"
+   gui_color="magenta"
+  />
+  <aircraft
+   name="CherryStar"
+   ac_id="114"
+   airframe="airframes/OPENUAS/openuas_multiplex_easystar_3.xml"
+   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
+   telemetry="telemetry/default_fixedwing_imu.xml"
+   flight_plan="flight_plans/MS/mission4_star_strasbourg.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/airspeed_sdp3x.xml modules/digital_cam_common.xml modules/digital_cam_uart.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_energy.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/nav_cube.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/rangefinder_i2c.xml modules/stabilization_adaptive_fw.xml"
+   gui_color="orange"
+  />
+  <aircraft
+   name="CherryOrbit"
+   ac_id="117"
+   airframe="airframes/OPENUAS/openuas_multiplex_easystar_3.xml"
+   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
+   telemetry="telemetry/default_fixedwing_imu.xml"
+   flight_plan="flight_plans/MS/mission4_orbit_strasbourg.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/airspeed_sdp3x.xml modules/digital_cam_common.xml modules/digital_cam_uart.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_energy.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/nav_cube.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/rangefinder_i2c.xml modules/stabilization_adaptive_fw.xml"
+   gui_color="cyan"
+  />
+  <aircraft
+   name="CherryOrbitVB"
+   ac_id="118"
+   airframe="airframes/OPENUAS/openuas_multiplex_easystar_3.xml"
+   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
+   telemetry="telemetry/default_fixedwing_imu.xml"
+   flight_plan="flight_plans/MS/mission4_orbit.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/airspeed_sdp3x.xml modules/digital_cam_common.xml modules/digital_cam_uart.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_energy.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/nav_cube.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/rangefinder_i2c.xml modules/stabilization_adaptive_fw.xml"
+   gui_color="yellow"
+  />
+  <aircraft
+   name="CherryStarVB"
+   ac_id="122"
+   airframe="airframes/OPENUAS/openuas_multiplex_easystar_3.xml"
+   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
+   telemetry="telemetry/default_fixedwing_imu.xml"
+   flight_plan="flight_plans/MS/mission4_star.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/airspeed_sdp3x.xml modules/digital_cam_common.xml modules/digital_cam_uart.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_energy.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/nav_cube.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/rangefinder_i2c.xml modules/stabilization_adaptive_fw.xml"
+   gui_color="orange"
+  />
+  <aircraft
+   name="CherryFire"
+   ac_id="115"
+   airframe="airframes/OPENUAS/openuas_zohd_talon_250g.xml"
+   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
+   telemetry="telemetry/default_fixedwing_imu.xml"
+   flight_plan="flight_plans/MS/mission2_strasbourg.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/airspeed_sdp3x.xml modules/digital_cam_common.xml modules/digital_cam_uart.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_energy.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/stabilization_adaptive_fw.xml"
+   gui_color="yellow"
+  />
+  <aircraft
+   name="CherryFireVB"
+   ac_id="116"
+   airframe="airframes/OPENUAS/openuas_zohd_talon_250g.xml"
+   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
+   telemetry="telemetry/default_fixedwing_imu.xml"
+   flight_plan="flight_plans/MS/mission2.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/airspeed_sdp3x.xml modules/digital_cam_common.xml modules/digital_cam_uart.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_energy.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/stabilization_adaptive_fw.xml"
+   gui_color="yellow"
+  />
+  <aircraft
+   name="CherryMap"
+   ac_id="119"
+   airframe="airframes/OPENUAS/openuas_zohd_talon_250g.xml"
+   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
+   telemetry="telemetry/default_fixedwing_imu.xml"
+   flight_plan="flight_plans/MS/mission1_single_strasbourg.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_cmpl_quat.xml modules/air_data.xml modules/airspeed_sdp3x.xml modules/digital_cam_common.xml modules/digital_cam_uart.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_energy.xml modules/imu_common.xml modules/imu_quality_assessment.xml modules/nav_basic_fw.xml modules/nav_cube.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/precision_landing.xml modules/rangefinder_i2c.xml modules/stabilization_adaptive_fw.xml"
+   gui_color="orange"
+  />
+  <aircraft
+   name="CherryMapVB"
+   ac_id="121"
+   airframe="airframes/OPENUAS/openuas_zohd_talon_250g.xml"
+   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
+   telemetry="telemetry/default_fixedwing_imu.xml"
+   flight_plan="flight_plans/MS/mission1_single_valkenburg.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/airspeed_sdp3x.xml modules/digital_cam_common.xml modules/digital_cam_uart.xml modules/electrical.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_energy.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/stabilization_adaptive_fw.xml"
+   gui_color="orange"
+  />
+  <aircraft
+   name="CherryVB"
+   ac_id="113"
+   airframe="airframes/OPENUAS/openuas_multiplex_easystar_3.xml"
+   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
+   telemetry="telemetry/default_fixedwing_imu.xml"
+   flight_plan="flight_plans/MS/mission4.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_dcm.xml modules/air_data.xml modules/airspeed_sdp3x.xml modules/digital_cam_common.xml modules/digital_cam_uart.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_energy.xml modules/imu_common.xml modules/nav_basic_fw.xml modules/nav_cube.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/rangefinder_i2c.xml modules/stabilization_adaptive_fw.xml"
+   gui_color="green"
+  />
+  <aircraft
+   name="CamTest"
+   ac_id="120"
+   airframe="airframes/OPENUAS/openuas_multiplex_easystar_3.xml"
+   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
+   telemetry="telemetry/default_fixedwing_imu.xml"
+   flight_plan="flight_plans/MS/basic_cam.xml"
+   settings="settings/fixedwing_basic.xml settings/estimation/ac_char.xml settings/control/ctl_energy.xml settings/control/ctl_energyadaptive.xml"
+   settings_modules="modules/ahrs_float_cmpl_quat.xml modules/air_data.xml modules/airspeed_sdp3x.xml modules/digital_cam_common.xml modules/digital_cam_uart.xml modules/electrical.xml modules/flight_benchmark.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_energy.xml modules/imu_common.xml modules/imu_quality_assessment.xml modules/nav_basic_fw.xml modules/nav_cube.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/photogrammetry_calculator.xml modules/rangefinder_i2c.xml modules/stabilization_adaptive_fw.xml"
+   gui_color="yellow"
+  />
+</conf>

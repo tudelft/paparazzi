@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Valkenburg Flyzone</name>
+    <Style id="flyzone">
+      <LineStyle>
+        <color>ff0080ff</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>200080ff</color>
+      </PolyStyle>
+    </Style>
+    <Placemark>
+      <name>Flyzone</name>
+      <styleUrl>#flyzone</styleUrl>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              4.41228,52.16937,0
+              4.41389,52.16642,0
+              4.41651,52.16580,0
+              4.42132,52.16811,0
+              4.42531,52.16999,0
+              4.42384,52.17302,0
+              4.41702,52.17122,0
+              4.41228,52.16937,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>
