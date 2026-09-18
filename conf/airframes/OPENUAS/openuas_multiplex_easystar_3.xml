@@ -446,7 +446,7 @@
     <servo name="S_RUDDER"         no="3" min="1100" neutral="1500" max="1900"/>
     <servo name="S_AILERON_RIGHT"  no="4" min="1900" neutral="1500" max="1100"/>
     <servo name="S_LIGHT"          no="5" min="1100" neutral="1500" max="1900"/>
-    <servo name="S_HATCH"          no="6" min="1100" neutral="1500" max="1900"/> <!-- Hatch servo pluggable -->
+    <servo name="S_HATCH"          no="6" min="1000" neutral="1450" max="1530"/> <!-- Hatch servo pluggable -->
     <servo name="S_SHUTTER"        no="7" min="1100" neutral="1500" max="1900"/> <!-- Shutter servo not available but could be added if needed -->
   </servos>
 
