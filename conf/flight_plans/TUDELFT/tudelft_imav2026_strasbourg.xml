@@ -5,7 +5,7 @@
      Read about this challenge here: https://2026.imavs.org/
 
 -->
-<flight_plan alt="193" ground_alt="143" lat0="48.806567" lon0="7.852134" max_dist_from_home="1500" name="IMAV2026" security_height="35" home_mode_height="50" qfu="12">
+<flight_plan alt="193" ground_alt="143" lat0="48.806567" lon0="7.852134" max_dist_from_home="1500" name="IMAV2026" security_height="35" home_mode_height="50" qfu="12" geofence_sector="Geofence">
 
 <!-- ******************************* WAYPOINTS ***************************** -->
   <waypoints>
@@ -36,17 +36,17 @@
     <waypoint name="_FZ8" lat="48.81250109175638" lon="7.85962794135288"/>
     <waypoint name="_FZ9" lat="48.81089414069912" lon="7.85196675859237"/> -->
 
-<!-- Mapping area 1 (Mission 1), rulebook "Card Border 1" / "Card Border 1 and 2" -->
+<!-- Mapping area 1 (Mission 1), rulebook "Card Border 1" / "Card Border 1 and 2": SW, NW, NE, SE (clockwise) -->
     <waypoint name="_MA1" lat="48.806895" lon="7.851654"/>
-    <waypoint name="_MA2" lat="48.807676" lon="7.855065"/>
+    <waypoint name="_MA2" lat="48.810883" lon="7.851214"/>
     <waypoint name="_MA3" lat="48.811362" lon="7.854512"/>
-    <waypoint name="_MA4" lat="48.810883" lon="7.851214"/>
+    <waypoint name="_MA4" lat="48.807676" lon="7.855065"/>
 
-<!-- Mapping area 2 (Mission 1), rulebook "Card Border 2" / "Card Border 1 and 2" -->
+<!-- Mapping area 2 (Mission 1), rulebook "Card Border 2" / "Card Border 1 and 2": SW, NW, NE, SE (clockwise) -->
     <waypoint name="_MX1" lat="48.807676" lon="7.855065"/>
-    <waypoint name="_MX2" lat="48.808588" lon="7.859258"/>
+    <waypoint name="_MX2" lat="48.811362" lon="7.854512"/>
     <waypoint name="_MX3" lat="48.812459" lon="7.859645"/>
-    <waypoint name="_MX4" lat="48.811362" lon="7.854512"/>
+    <waypoint name="_MX4" lat="48.808588" lon="7.859258"/>
 
 <!-- Fire zone (Mission 2), rulebook "Fire detection area": SW, SE, NE, NW -->
     <waypoint name="_FIRE1" lat="48.808494" lon="7.851707"/>
