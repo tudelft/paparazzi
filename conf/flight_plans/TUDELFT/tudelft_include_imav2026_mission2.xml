@@ -1,42 +1,48 @@
 <!DOCTYPE procedure SYSTEM "../flight_plan.dtd">
 <!--
   IMAV 2026 Mission 2 (Strasbourg) - thermal hot-spot survey of the fire zone.
-  Procedure version of flight_plans/MS/mission2_strasbourg.xml, to be
-  included from tudelft_imav2026_strasbourg.xml:
+  Included from tudelft_imav2026_strasbourg.xml:
 
     <include name="Mission" procedure="tudelft_include_imav2026_mission2.xml"/>
 
   All block names get the include name as prefix (e.g. "Mission.Takeoff");
   deroutes and IndexOfBlock() inside this file are prefixed automatically.
-  The full reasoning (camera, altitude, overlap, energy, LWIR notes) is in
-  the header of the MS plan and still applies unchanged.
 
-  FRAME: the main plan's origin (lat0 48.806567, lon0 7.852134) is NOT the
-  origin of the MS plan (lat0 48.8086670, lon0 7.8517466). All x/y below are
-  the MS values shifted by the UTM offset between the two origins:
-      dx = -24.923 m, dy = +233.862 m   (MISSION2_MS_FRAME_DX/DY)
-  The flyzone polygon in nav_mission4_geofence.h is still in the MS frame, so
-  the geofence exception converts the position back with that offset.
-  The fire detection area and the practice hot spot are given in lat/lon
-  (official IMAV 2026 coordinates), so they need no conversion.
-  HOME is defined by the main plan (the fixed-wing launch point).
+  The fire zone corners (_FIRE1.._FIRE4, Fire_zone sector), the Geofence
+  sector and HOME come from the main plan. The geofence is the main plan's
+  built-in geofence_sector (HOME mode when outside), so there is no geofence
+  exception here.
 
   THE TASK: two hot spots somewhere in the fire detection area. Report their
   GPS coordinates to 5 m, no later than 5 minutes after landing. The plan
   only guarantees coverage and well geotagged frames (DC_SHOT carries
   photo_nr, lat, lon, alt, phi, theta, psi, itow); detection and
-  georeferencing run on a laptop after touchdown. No detection logic here.
+  georeferencing run on a laptop after touchdown.
+
+  SURVEY: stock nav_survey_polygon module. Every line is flown in the same
+  direction (racetrack): line, 180 deg turn of survey_turn_radius, a return
+  leg 2 x radius to the side, a wide turn onto the next line. So the line
+  spacing can be much smaller than twice the turn radius (19 m lines, 30 m
+  turns), which nav_survey_poly_osam cannot do.
+  Lines run SOUTHBOUND (survey_line_angle 183 deg, along the zone's long
+  edges): the turns and return legs are then on the EAST side of the zone,
+  away from the west fence.
+  THREE LINES: the zone is ~57.7 m wide across the lines. The first line is
+  half a sweep inside the east edge and lines are added until one misses the
+  zone, so any survey_sweep between ~16.5 and ~23 m gives exactly 3 lines;
+  19 m spaces them evenly (~9.6 m from each edge).
 
   CAMERA: LWIR 256 x 192, 40 x 30 deg lens. At 50 m AGL: swath 36.4 m,
-  GSD 14.0 cm, along-track footprint 26.8 m. Start_Survey sets the
-  digital_cam_uart camera mask to LWIR only (4), so the AI camera does not
-  fire during this mission.
+  GSD 14.0 cm, along-track footprint 26.8 m; 19 m lines give ~48 % sidelap.
+  LWIR only (CATIA_CAMERA_MASK_LWIR), so the AI camera does not fire.
+  Distance-triggered every survey_shot_interval metres, only while the
+  aircraft is inside the main plan's Fire_zone sector: Start_Survey arms the
+  camera and disarms it; Run_Survey's pre_call switches dc_autoshoot on
+  inside the sector and off outside it. The pre_call overrides the module's
+  own dc_survey()/dc_stop() calls from the next navigation cycle.
 
   OFFICIAL COORDINATES (IMAV 2026):
-    Fire detection area: 48.808494N 7.851707E (SW, F3),
-                         48.808518N 7.852497E (SE, F4),
-                         48.809540N 7.852558E (NE, F1),
-                         48.809522N 7.851791E (NW, F2)
+    Fire detection area: see _FIRE1.._FIRE4 in the main plan.
     Hot spot TEST (practice only, NOT in the fire area): 48.807853N 7.851819E
 -->
 <procedure>
@@ -45,384 +51,18 @@
 #include "firmwares/fixedwing/guidance/energy_ctrl.h"
 #include "modules/digital_cam/dc.h"
 #include "modules/digital_cam/uart_cam_ctrl.h"
-#include "modules/nav/nav_mission4_geofence.h"
-
-/* Offset of the MS plan's origin in this plan's frame (UTM, metres).
-   Position in the MS frame = position here - offset. */
-#define MISSION2_MS_FRAME_DX (-24.923f)
-#define MISSION2_MS_FRAME_DY (233.862f)
-
-/* Buffered Strasbourg flyzone check (hexagon + MISSION4_GEOFENCE_BUFFER,
-   polygon in nav_mission4_geofence.h is in the MS frame). */
-static inline bool mission2_in_flyzone_safe(float x, float y)
-{
-  return mission4_in_strasbourg_safe(x - MISSION2_MS_FRAME_DX, y - MISSION2_MS_FRAME_DY);
-}
-
-/* digital_cam_uart camera mask for this mission: LWIR only (bit 2; bit 0
-   CHDK, bit 1 AI cam, bit 3 EARcam). The airframe's startup mask is 6
-   (AI cam + LWIR). */
-#define MISSION2_CAMERA_MASK_LWIR 4
-
-/* ---- Line / turn sequencer (replaces nav_survey_poly_osam here) ---------
-   The lines are ~19 m apart (3 over the ~57 m wide zone) but the Talon
-   needs a ~30 m turn radius. One circle can only join two neighbouring
-   lines if they are 2 R apart, so nav_survey_poly_osam's clamped circle
-   left the aircraft INSIDE its turn circle and it wandered out to it, and
-   its entry circle was half the spacing (~10 m), unflyable.
-
-   Here every turn is a "bulb" of two circles of radius R, all joins
-   tangent:
-     1. a quarter circle turning TOWARDS the next line,
-     2. a loop the other way round that ends exactly ON the next line,
-        heading along it, 2 R past the end of the line just flown.
-   The loops lie on the sweep side, away from the lines already flown.
-
-   Entry: an ANTICLOCKWISE circle tangent to the start of line 1, `lead`
-   metres before the zone. The aircraft circles there until it is at survey
-   height, then leaves it tangentially onto line 1.
-
-   Lines alternate direction. The sweep goes east (the across-line normal
-   with positive x) and line 1 is flown with the sweep side on its right,
-   so the anticlockwise entry circle sits outside the zone. Lines end
-   `overrun` metres past the zone before turning. The survey altitude is
-   held throughout. */
-#define MISSION2_MAX_LINES 8
-#define MISSION2_PH_ENTRY 0
-#define MISSION2_PH_LINE 1
-#define MISSION2_PH_TURN 2
-#define MISSION2_PH_LOOP 3
-#define MISSION2_PH_DONE 4
-
-struct mission2_survey {
-  int n, k, phase;          /* lines, current line, phase */
-  float ux, uy, nx, ny;     /* line-1 direction, sweep direction (unit) */
-  float s, r, alt;          /* spacing, turn radius, survey altitude */
-  float sx[MISSION2_MAX_LINES], sy[MISSION2_MAX_LINES];
-  float ex[MISSION2_MAX_LINES], ey[MISSION2_MAX_LINES];
-  float cx, cy, rad;        /* current circle; rad positive = clockwise */
-  float last_ang, turned, need, target_ang;
-  float sg;                 /* +1: next line on the right of this line */
-  uint8_t circle_wp;        /* shows the current circle centre in the GCS */
-};
-
-/* One state per build: a static array, not the address-of form (XML). */
-static inline struct mission2_survey *mission2_st(void)
-{
-  static struct mission2_survey st[1];
-  return st;
-}
-
-static inline float mission2_wrap_pi(float a)
-{
-  while (!signbit(a - (float)M_PI)) { a -= 2.0f * (float)M_PI; }
-  while (signbit(a + (float)M_PI)) { a += 2.0f * (float)M_PI; }
-  return a;
-}
-
-static inline float mission2_wrap_2pi(float a)
-{
-  while (signbit(a)) { a += 2.0f * (float)M_PI; }
-  while (!signbit(a - 2.0f * (float)M_PI)) { a -= 2.0f * (float)M_PI; }
-  return a;
-}
-
-/* Start following circle (cx, cy, rad) until `need` radians have been
-   travelled round it in its own direction. */
-static inline void mission2_start_circle(struct mission2_survey *m, float cx, float cy,
-    float rad, float need)
-{
-  m[0].cx = cx;
-  m[0].cy = cy;
-  m[0].rad = rad;
-  m[0].need = need;
-  m[0].turned = 0.0f;
-  m[0].last_ang = atan2f(stateGetPositionEnu_f()[0].y - cy, stateGetPositionEnu_f()[0].x - cx);
-  waypoints[m[0].circle_wp].x = cx;
-  waypoints[m[0].circle_wp].y = cy;
-}
-
-/* Fly the current circle and add up the angle travelled round it. */
-static inline void mission2_fly_circle(struct mission2_survey *m)
-{
-  nav_circle_XY(m[0].cx, m[0].cy, m[0].rad);
-  float a = atan2f(stateGetPositionEnu_f()[0].y - m[0].cy, stateGetPositionEnu_f()[0].x - m[0].cx);
-  float d = mission2_wrap_pi(a - m[0].last_ang);
-  if (!signbit(m[0].rad)) { d = -d; }   /* clockwise: the angle decreases */
-  m[0].turned += d;
-  m[0].last_ang = a;
-}
-
-/* Lay out the lines over the convex quadrilateral first_wp..first_wp+3,
-   parallel to its longest edge, the fewest equal strips no wider than
-   max_sweep (outer lines half a spacing from the edges). Returns the
-   number of lines. entry_wp is set to the entry circle centre. */
-static inline uint8_t mission2_survey_setup(uint8_t first_wp, float max_sweep, float overrun,
-    float lead, float r, float alt, uint8_t entry_wp, uint8_t circle_wp)
-{
-  struct mission2_survey *m = mission2_st();
-  uint8_t i;
-  int k;
-  float best = -1.0f, bdx = 1.0f, bdy = 0.0f;
-  for (i = 0; i != 4; i++) {
-    uint8_t a = first_wp + i;
-    uint8_t b = first_wp + ((i + 1) % 4);
-    float dx = waypoints[b].x - waypoints[a].x;
-    float dy = waypoints[b].y - waypoints[a].y;
-    float d2 = dx * dx + dy * dy;
-    if (!signbit(d2 - best)) { best = d2; bdx = dx; bdy = dy; }
-  }
-  float len = sqrtf(best);
-  if (signbit(len - 0.001f)) { len = 1.0f; }
-  /* sweep direction: across the lines, towards the east */
-  float nx = -bdy / len, ny = bdx / len;
-  if (signbit(nx)) { nx = -nx; ny = -ny; }
-  /* line-1 direction with the sweep side on its right: right(u) = n */
-  float ux = -ny, uy = nx;
-
-  float T[4], A[4];
-  float lo = 0.0f, hi = 0.0f;
-  for (i = 0; i != 4; i++) {
-    T[i] = waypoints[first_wp + i].x * nx + waypoints[first_wp + i].y * ny;
-    A[i] = waypoints[first_wp + i].x * ux + waypoints[first_wp + i].y * uy;
-    if (i == 0) { lo = T[i]; hi = T[i]; }
-    if (signbit(T[i] - lo)) { lo = T[i]; }
-    if (!signbit(T[i] - hi)) { hi = T[i]; }
-  }
-  float width = hi - lo;
-  if (signbit(max_sweep - 1.0f)) { max_sweep = 1.0f; }
-  /* -0.001: a width of exactly k strips must give k lines, not k+1 */
-  float nl = ceilf(width / max_sweep - 0.001f);
-  if (signbit(nl - 1.0f)) { nl = 1.0f; }
-  if (signbit((float)MISSION2_MAX_LINES - nl)) { nl = (float)MISSION2_MAX_LINES; }
-  int N = (int)nl;
-  float s = width / nl;
-
-  for (k = 0; k != N; k++) {
-    float Tk = lo + ((float)k + 0.5f) * s;
-    float amin = 1e9f, amax = -1e9f;
-    for (i = 0; i != 4; i++) {
-      uint8_t j = (i + 1) % 4;
-      float dt = T[j] - T[i];
-      if (signbit(fabsf(dt) - 0.001f)) { continue; }
-      float f = (Tk - T[i]) / dt;
-      if (signbit(f) || signbit(1.0f - f)) { continue; }
-      float Ak = A[i] + f * (A[j] - A[i]);
-      if (signbit(Ak - amin)) { amin = Ak; }
-      if (signbit(amax - Ak)) { amax = Ak; }
-    }
-    float a0, a1;
-    if (k % 2 == 0) {   /* along line-1 direction */
-      a0 = amin - ((k == 0) ? lead : overrun);
-      a1 = amax + overrun;
-    } else {            /* back the other way */
-      a0 = amax + overrun;
-      a1 = amin - overrun;
-    }
-    m[0].sx[k] = a0 * ux + Tk * nx;
-    m[0].sy[k] = a0 * uy + Tk * ny;
-    m[0].ex[k] = a1 * ux + Tk * nx;
-    m[0].ey[k] = a1 * uy + Tk * ny;
-  }
-
-  m[0].n = N;
-  m[0].k = 0;
-  m[0].ux = ux;
-  m[0].uy = uy;
-  m[0].nx = nx;
-  m[0].ny = ny;
-  m[0].s = s;
-  m[0].r = r;
-  m[0].alt = alt;
-  m[0].circle_wp = circle_wp;
-
-  /* Anticlockwise entry circle on the left of line 1, tangent at its start. */
-  float ecx = m[0].sx[0] - r * uy;
-  float ecy = m[0].sy[0] + r * ux;
-  m[0].target_ang = atan2f(ny, nx);   /* line-1 start seen from the centre */
-  mission2_start_circle(m, ecx, ecy, -r, 0.0f);
-  waypoints[entry_wp].x = ecx;
-  waypoints[entry_wp].y = ecy;
-  m[0].phase = MISSION2_PH_ENTRY;
-  return (uint8_t)N;
-}
-
-/* Run the survey; FALSE when the last line is done. */
-static inline bool mission2_survey_run(void)
-{
-  struct mission2_survey *m = mission2_st();
-  int k = m[0].k;
-  NavVerticalAutoThrottleMode(0.);
-  NavVerticalAltitudeMode(m[0].alt, 0.);
-  float px = stateGetPositionEnu_f()[0].x;
-  float py = stateGetPositionEnu_f()[0].y;
-
-  if (m[0].phase == MISSION2_PH_ENTRY) {
-    mission2_fly_circle(m);
-    /* leave at the tangent point, once at height and on the circle */
-    float cur = atan2f(py - m[0].cy, px - m[0].cx);
-    float togo = mission2_wrap_2pi(m[0].target_ang - cur);   /* anticlockwise */
-    float dist = sqrtf((px - m[0].cx) * (px - m[0].cx) + (py - m[0].cy) * (py - m[0].cy));
-    bool at_alt = !signbit(GetPosAlt() - (m[0].alt - 3.0f));
-    bool on_circle = signbit(fabsf(dist - m[0].r) - 10.0f);
-    /* nested, not the logical-and form: a raw ampersand is not valid XML */
-    if (at_alt) {
-      if (on_circle) {
-        if (signbit(togo - RadOfDeg(10.0f))) { m[0].phase = MISSION2_PH_LINE; }
-      }
-    }
-    return true;
-  }
-
-  if (m[0].phase == MISSION2_PH_LINE) {
-    nav_route_xy(m[0].sx[k], m[0].sy[k], m[0].ex[k], m[0].ey[k]);
-    if (nav_approaching_xy(m[0].ex[k], m[0].ey[k], m[0].sx[k], m[0].sy[k], 0.)) {
-      if (k + 1 == m[0].n) {
-        m[0].phase = MISSION2_PH_DONE;
-        return false;
-      }
-      /* quarter circle towards the next line (always on the sweep side) */
-      m[0].sg = (k % 2 == 0) ? 1.0f : -1.0f;   /* +1: next line on the right */
-      mission2_start_circle(m, m[0].ex[k] + m[0].r * m[0].nx, m[0].ey[k] + m[0].r * m[0].ny,
-                            m[0].sg * m[0].r, 0.5f * (float)M_PI);
-      m[0].phase = MISSION2_PH_TURN;
-    }
-    return true;
-  }
-
-  if (m[0].phase == MISSION2_PH_TURN) {
-    mission2_fly_circle(m);
-    if (!signbit(m[0].turned - (m[0].need - RadOfDeg(5.0f)))) {
-      /* loop the other way, ending on the next line 2 R past this line's end */
-      float dx = m[0].ex[k] - m[0].sx[k], dy = m[0].ey[k] - m[0].sy[k];
-      float dl = sqrtf(dx * dx + dy * dy);
-      if (signbit(dl - 0.001f)) { dl = 1.0f; }
-      dx /= dl;
-      dy /= dl;
-      float r = m[0].r;
-      float lcx = m[0].ex[k] + (m[0].s + r) * m[0].nx + 2.0f * r * dx;
-      float lcy = m[0].ey[k] + (m[0].s + r) * m[0].ny + 2.0f * r * dy;
-      float rad = -m[0].sg * r;
-      float exit_ang = atan2f(-m[0].ny, -m[0].nx);
-      float cur = atan2f(py - lcy, px - lcx);
-      float need = signbit(rad) ? mission2_wrap_2pi(exit_ang - cur) : mission2_wrap_2pi(cur - exit_ang);
-      if (signbit(need - RadOfDeg(30.0f))) { need += 2.0f * (float)M_PI; }
-      mission2_start_circle(m, lcx, lcy, rad, need);
-      m[0].phase = MISSION2_PH_LOOP;
-    }
-    return true;
-  }
-
-  if (m[0].phase == MISSION2_PH_LOOP) {
-    mission2_fly_circle(m);
-    if (!signbit(m[0].turned - (m[0].need - RadOfDeg(3.0f)))) {
-      m[0].k = k + 1;
-      m[0].phase = MISSION2_PH_LINE;
-    }
-    return true;
-  }
-
-  return false;
-}
-
-/* Line direction of the survey: the longest edge of the polygon, as an
-   atan(dy/dx) angle in degrees (for the camera course gate). */
-static inline float mission2_longest_edge_angle(uint8_t first_wp, uint8_t n)
-{
-  uint8_t i;
-  float best = -1.0f;
-  float bdx = 1.0f, bdy = 0.0f;
-  for (i = 0; i != n; i++) {
-    uint8_t a = first_wp + i;
-    uint8_t b = first_wp + ((i + 1) % n);
-    float dx = waypoints[b].x - waypoints[a].x;
-    float dy = waypoints[b].y - waypoints[a].y;
-    float d2 = dx * dx + dy * dy;
-    if (!signbit(d2 - best)) { best = d2; bdx = dx; bdy = dy; }
-  }
-  if (signbit(fabs(bdx) - 0.000001f)) { bdx = 0.000001f; }
-  return DegOfRad(atan(bdy / bdx));
-}
-
-/* tan(HFOV / 2) for the 40 x 30 deg LWIR lens: swath = 2 * height * this */
-#define MISSION2_TAN_HALF_HFOV 0.36397f
-
-/* True if (x, y) is at least `margin` metres inside the convex polygon
-   waypoints[first_wp .. first_wp+n-1]. The winding is taken from the signed
-   area, so a relabelled or re-dragged zone needs no code change. */
-static inline bool mission2_inside_zone(uint8_t first_wp, uint8_t n, float x, float y, float margin)
-{
-  uint8_t i;
-  float area2 = 0.0f;
-  for (i = 0; i != n; i++) {
-    uint8_t a = first_wp + i;
-    uint8_t b = first_wp + ((i + 1) % n);
-    area2 += waypoints[a].x * waypoints[b].y - waypoints[b].x * waypoints[a].y;
-  }
-  float wind = 1.0f;
-  if (signbit(area2)) { wind = -1.0f; }
-
-  for (i = 0; i != n; i++) {
-    uint8_t a = first_wp + i;
-    uint8_t b = first_wp + ((i + 1) % n);
-    float ex = waypoints[b].x - waypoints[a].x;
-    float ey = waypoints[b].y - waypoints[a].y;
-    float len = sqrtf(ex * ex + ey * ey);
-    if (signbit(len - 0.001f)) { continue; }
-    /* signed distance from this edge, positive towards the inside */
-    float dist = wind * (ex * (y - waypoints[a].y) - ey * (x - waypoints[a].x)) / len;
-    if (signbit(dist - margin)) { return false; }
-  }
-  return true;
-}
-
-/* Shoot ONLY inside the fire zone (aircraft position now AND `lookahead`
-   seconds ahead along the ground velocity, covering the lag between this
-   gate at 20 Hz and dc_periodic at 10 Hz), and only while the GROUND TRACK
-   runs along the survey lines (either direction, within
-   max_course_err_deg), so no frames come from turns or roll-outs. A frame
-   taken just inside the edge still images 13.4 m past it along track, so
-   edges stay covered.
-   Sets dc_autoshoot directly: dc_stop() sends DC_INFO on every call and
-   dc_distance() resets the last shot position.
-   [0].x, not an arrow: a raw angle bracket in this header is invalid XML. */
-static inline void mission2_shoot_in_zone(float max_roll_deg, uint8_t first_wp, uint8_t n, float lookahead,
-    float max_course_err_deg)
-{
-  /* Roll no longer gates shots: the course check below does that job. */
-  (void)max_roll_deg;
-  bool shoot = true;
-  float x = stateGetPositionEnu_f()[0].x;
-  float y = stateGetPositionEnu_f()[0].y;
-  float sx = stateGetSpeedEnu_f()[0].x;
-  float sy = stateGetSpeedEnu_f()[0].y;
-  float ax = x + sx * lookahead;
-  float ay = y + sy * lookahead;
-  if (!mission2_inside_zone(first_wp, n, x, y, 0.0f)) { shoot = false; }
-  if (!mission2_inside_zone(first_wp, n, ax, ay, 0.0f)) { shoot = false; }
-  float line_angle = mission2_longest_edge_angle(first_wp, n);
-  float track_err = fmod(fabs(DegOfRad(atan2f(sy, sx)) - line_angle), 180.0f);
-  if (!signbit(track_err - 90.0f)) { track_err = 180.0f - track_err; }
-  if (!signbit(track_err - max_course_err_deg)) { shoot = false; }
-  if (shoot) {
-    dc_autoshoot = DC_AUTOSHOOT_DISTANCE;
-  } else {
-    dc_autoshoot = DC_AUTOSHOOT_STOP;
-  }
-}
+#include "modules/nav/nav_survey_polygon.h"
   </header>
 
   <waypoints>
-    <!-- Launch / climb / hold. HOME is the main plan's fixed-wing launch
-         point (the MS plan's origin). -->
+    <!-- Launch / climb / hold. HOME is the main plan's fixed-wing launch point. -->
     <waypoint name="CLIMB" x="35.077" y="293.862" height="80."/>
     <waypoint name="_STDBY" x="15.077" y="353.862" height="80."/>
 
     <!-- Landing, same as Mission 1: TD is the centre of the official
          "Precision landing Fixedwing zone", final flown SOUTHBOUND from AF
          200 m north at 20 m AGL. height, not alt: 20 m above the main plan's
-         ground_alt (MS plan had alt 160 = 20 m above its ground_alt 140).
-         Drag AF round TD for wind. -->
+         ground_alt. Drag AF round TD for wind. -->
     <waypoint name="AF" x="-34.464" y="292.028" height="20."/>
     <waypoint name="TD" x="-10.839" y="93.428" height="0"/>
     <waypoint name="_BASELEG" x="-4.723" y="295.562"/>
@@ -430,99 +70,36 @@ static inline void mission2_shoot_in_zone(float max_roll_deg, uint8_t first_wp, 
     <!-- Practice hot spot (official), reference only - nothing flies to it. -->
     <waypoint name="HOT_TEST" lat="48.807853" lon="7.851819"/>
     <waypoint name="_HERE" x="-24.923" y="233.862"/>
-
-    <!-- Strasbourg flyzone hexagon, display only. The geofence exception
-         uses mission4_strasbourg_vx/vy in nav_mission4_geofence.h; keep
-         both in sync (those are in the MS frame, see MISSION2_MS_FRAME_DX). -->
-    <waypoint name="_FZ1" x="-32.139" y="-7.246"/>
-    <waypoint name="_FZ2" x="-60.310" y="480.779"/>
-    <waypoint name="_FZ3" x="567.305" y="653.104"/>
-    <waypoint name="_FZ4" x="539.187" y="290.616"/>
-    <waypoint name="_FZ5" x="520.123" y="259.956"/>
-    <waypoint name="_FZ6" x="539.378" y="166.731"/>
-
-    <!-- Official fire detection area: F1 NE, F2 NW, F3 SW, F4 SE
-         (counter-clockwise). ORDER MATTERS: nav_survey_poly_osam and the
-         camera gate index waypoints[F1 .. F1+3], so these four must stay
-         CONSECUTIVE and consistently wound. Lines run along the longest
-         edge (N-S here), picked in code. -->
-    <waypoint name="F1" lat="48.809540" lon="7.852558"/>
-    <waypoint name="F2" lat="48.809522" lon="7.851791"/>
-    <waypoint name="F3" lat="48.808494" lon="7.851707"/>
-    <waypoint name="F4" lat="48.808518" lon="7.852497"/>
-
-    <!-- Display only, written by the survey sequencer: ENTRY is the centre
-         of the anticlockwise entry circle, TC the centre of the circle
-         being flown right now. Declared positions are irrelevant. -->
-    <waypoint name="ENTRY" x="0.0" y="0.0"/>
-    <waypoint name="TC" x="0.0" y="0.0"/>
   </waypoints>
-
-  <sectors>
-    <sector color="red" name="Mission2_Flyzone">
-      <corner name="_FZ1"/>
-      <corner name="_FZ2"/>
-      <corner name="_FZ3"/>
-      <corner name="_FZ4"/>
-      <corner name="_FZ5"/>
-      <corner name="_FZ6"/>
-    </sector>
-    <sector color="orange" name="M2_FIREZONE">
-      <corner name="F1"/>
-      <corner name="F2"/>
-      <corner name="F3"/>
-      <corner name="F4"/>
-    </sector>
-  </sectors>
 
   <variables>
     <!-- 50 m: swath 36.4 m, GSD 14.0 cm, 2.2 px on a 0.3 m plate and 4.3 px
-         on a 0.6 m one. Drop back to ~36-40 m if the hot spots are
-         confirmed small. Line spacing and count follow automatically. -->
+         on a 0.6 m one. Read at Start_Survey. -->
     <variable init="50." var="survey_height" min="25." max="80." step="1."/>
-    <!-- MINIMUM sidelap between adjacent lines; max spacing is
-         (1 - sidelap) * swath. Use 0.5 if the lines cannot be flown along
-         the wind (crab rotates the footprint). -->
-    <variable init="0.25" var="survey_sidelap" min="0." max="0.8" step="0.05"/>
+    <!-- Distance between survey lines, m. 16.5..23 m gives 3 lines over the
+         fire zone; 19 m spaces them evenly. Read at Start_Survey. -->
+    <variable init="19." var="survey_sweep" min="10." max="40." step="0.5"/>
+    <!-- Line direction, degrees (compass). 183: southbound along the zone's
+         long edges, turns on the east side. Read at Start_Survey. -->
+    <variable init="183." var="survey_line_angle" min="0." max="359." step="1."/>
     <!-- Metres of ground track between shots. 3 m at 50 m: ~8 sightings per
          spot per pass, 87% forward overlap (for detection, not coverage).
          dc_periodic runs at 10 Hz, so do not go much below 2 m. -->
     <variable init="3." var="survey_shot_interval" min="2." max="40." step="0.5"/>
     <!-- Survey airspeed, m/s (Talon 250g sinks when held at 12). -->
     <variable init="10." var="survey_airspeed" min="8." max="16." step="0.5"/>
+    <!-- Radius of the entry circle and the 180 deg turns, metres. 30 m is
+         ~18 deg of bank at 10 m/s. Read at Start_Survey. -->
+    <variable init="30." var="survey_turn_radius" min="26." max="60." step="1."/>
     <!-- Seconds held wings-level before the launch sequence starts. -->
     <variable init="5." var="holding_delay" min="0." max="60." step="1."/>
-    <!-- Unused now: roll no longer gates shots (see shoot function). -->
-    <variable init="5." var="survey_max_roll" min="3." max="45." step="1."/>
-    <!-- Seconds the camera gate looks ahead along the ground track. -->
-    <variable init="0.1" var="survey_gate_lookahead" min="0." max="1." step="0.05"/>
-    <!-- Camera off when the ground track is more than this far off the
-         survey line direction (degrees): no frames from turns/roll-outs. -->
-    <variable init="10." var="survey_max_course_err" min="2." max="90." step="1."/>
-    <!-- Metres each line continues past the fire zone before the turn
-         starts. The turn never comes back inside: it rejoins the next line
-         2 x survey_turn_radius further out, so the aircraft is straight for
-         60+ m before re-entering. Each turn reaches about
-         overrun + 3 x radius (~100 m) past the zone. Read at Start_Survey. -->
-    <variable init="10." var="survey_overrun" min="0." max="60." step="5."/>
-    <!-- Radius of the turn circles and the entry circle, metres. 30 m is
-         ~18 deg of bank at 10 m/s (MIN_CIRCLE_RADIUS is 26). -->
-    <variable init="30." var="survey_turn_radius" min="26." max="60." step="1."/>
-    <!-- Straight run from the entry circle to the zone edge, metres. -->
-    <variable init="30." var="survey_entry_lead" min="0." max="100." step="5."/>
   </variables>
-
-  <exceptions>
-    <!-- Buffered geofence: inside the flyzone hexagon or within
-         MISSION4_GEOFENCE_BUFFER (60 m) of it, not active before takeoff.
-         Deliberately not geofence_sector: HOME is only ~16 m inside the
-         hexagon, so a hard sector fence trips on the takeoff circle. -->
-    <exception cond="!mission2_in_flyzone_safe(GetPosX(), GetPosY()) @AND !(nav_block == IndexOfBlock('Wait_GPS')) @AND !(nav_block == IndexOfBlock('Geo_init')) @AND !(nav_block == IndexOfBlock('Holding_point')) @AND !(nav_block == IndexOfBlock('Takeoff'))" deroute="Standby"/>
-  </exceptions>
 
   <blocks>
     <!-- ── Pre-flight ───────────────────────────────────────────────────── -->
     <block name="Wait_GPS">
+      <!-- Mission 2 uses the LWIR camera only, from boot (airframe default is AIcam+LWIR). -->
+      <call_once fun="uart_cam_ctrl_set_camera_mask(CATIA_CAMERA_MASK_LWIR)"/>
       <set value="1" var="autopilot.kill_throttle"/>
       <while cond="!GpsFixValid()"/>
     </block>
@@ -539,8 +116,8 @@ static inline void mission2_shoot_in_zone(float max_roll_deg, uint8_t first_wp, 
     </block>
 
     <!-- ── Launch ───────────────────────────────────────────────────────── -->
-    <!-- vmode="climb" rather than a fixed pitch (MS plan: an open-loop
-         attitude climb could not get past ~8 m AGL on this airframe). -->
+    <!-- vmode="climb" rather than a fixed pitch: an open-loop attitude climb
+         could not get past ~8 m AGL on this airframe. -->
     <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png" group="home">
       <exception cond="GetPosAlt() @GT GetAltRef() + 25" deroute="Start_Survey"/>
       <set value="0" var="autopilot.kill_throttle"/>
@@ -553,27 +130,22 @@ static inline void mission2_shoot_in_zone(float max_roll_deg, uint8_t first_wp, 
     </block>
 
     <!-- ── Survey ───────────────────────────────────────────────────────── -->
-    <!-- Lays out the lines and the entry circle (mission2_survey_setup);
-         the climb to survey height happens on the entry circle.
-         dc_distance(), NOT dc_Survey(): DC_AUTOSHOOT_SURVEY fires on rings
-         around a fixed point, wrong for a lawnmower. -->
+    <!-- Setup and run are separate blocks so the camera is armed with the
+         right interval (and disarmed) before Run_Survey's pre_call first runs.
+         The climb to survey height happens on the module's entry circle. -->
     <block name="Start_Survey" strip_button="Start Survey" strip_icon="survey.png" group="mission">
       <set var="v_ctl_auto_airspeed_setpoint" value="survey_airspeed"/>
-      <call_once fun="mission2_survey_setup(WP_F1, (1. - survey_sidelap) * 2. * survey_height * MISSION2_TAN_HALF_HFOV, survey_overrun, survey_entry_lead, survey_turn_radius, GetAltRef() + survey_height, WP_ENTRY, WP_TC)"/>
-      <!-- LWIR camera only for the hot-spot survey. -->
-      <call_once fun="uart_cam_ctrl_set_camera_mask(MISSION2_CAMERA_MASK_LWIR)"/>
+      <call_once fun="nav_survey_polygon_setup(WP__FIRE1, 4, survey_line_angle, survey_sweep, survey_shot_interval, survey_turn_radius, GetAltRef() + survey_height)"/>
+      <call_once fun="uart_cam_ctrl_set_camera_mask(CATIA_CAMERA_MASK_LWIR)"/>
       <call_once fun="dc_distance(survey_shot_interval)"/>
-      <!-- dc_distance() arms the camera; disarm so the zone gate decides
-           the first shot. The interval set above is kept. -->
+      <!-- Disarm: Run_Survey's pre_call switches it on inside the fire zone. -->
       <set var="dc_autoshoot" value="DC_AUTOSHOOT_STOP"/>
       <deroute block="Run_Survey"/>
     </block>
 
-    <!-- pre_call gates the camera every navigation cycle: shots only inside
-         the fire zone F1..F4 and only on the straight lines.
-         mission2_survey_run() returns FALSE after the last line. -->
-    <block name="Run_Survey" group="mission" pre_call="mission2_shoot_in_zone(survey_max_roll, WP_F1, 4, survey_gate_lookahead, survey_max_course_err)">
-      <call fun="mission2_survey_run()"/>
+    <!-- nav_survey_polygon_run() returns FALSE after the last line. -->
+    <block name="Run_Survey" group="mission" pre_call="dc_autoshoot = (InsideFire_zone(GetPosX(), GetPosY()) ? DC_AUTOSHOOT_DISTANCE : DC_AUTOSHOOT_STOP)">
+      <call fun="nav_survey_polygon_run()"/>
       <deroute block="Survey_Done"/>
     </block>
 
@@ -582,7 +154,8 @@ static inline void mission2_shoot_in_zone(float max_roll_deg, uint8_t first_wp, 
       <deroute block="Land_AF_TD"/>
     </block>
 
-    <!-- ── Safety hold (geofence / abort) ───────────────────────────────── -->
+    <!-- ── Safety hold / abort ──────────────────────────────────────────── -->
+    <!-- Resume with the "Start Survey" strip button - restarts from line 1. -->
     <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="home">
       <call_once fun="dc_stop()"/>
       <set var="v_ctl_auto_airspeed_setpoint" value="survey_airspeed"/>

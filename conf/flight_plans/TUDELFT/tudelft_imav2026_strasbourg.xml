@@ -206,8 +206,8 @@
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_test_precision_landing.xml"/> -->
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_test_precision_landing.xml"/> -->
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_testing.xml"/> -->
-    <include name="Mission" procedure="tudelft_include_imav2026_mission1.xml"/>
-    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission2.xml"/> -->
+    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission1.xml"/> -->
+    <include name="Mission" procedure="tudelft_include_imav2026_mission2.xml"/>
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4_orbit.xml"/> -->
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4_star.xml"/> -->
     <!-- <include name="Safety" procedure="tudelft_include_imav2026_safety.xml"/> -->
