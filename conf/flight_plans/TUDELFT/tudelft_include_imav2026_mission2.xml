@@ -135,7 +135,7 @@
          The climb to survey height happens on the module's entry circle. -->
     <block name="Start_Survey" strip_button="Start Survey" strip_icon="survey.png" group="mission">
       <set var="v_ctl_auto_airspeed_setpoint" value="survey_airspeed"/>
-      <call_once fun="nav_survey_polygon_setup(WP__FIRE1, 4, survey_line_angle, survey_sweep, survey_shot_interval, survey_turn_radius, GetAltRef() + survey_height)"/>
+      <call_once fun="nav_survey_polygon_setup(WP__FDA1, 4, survey_line_angle, survey_sweep, survey_shot_interval, survey_turn_radius, GetAltRef() + survey_height)"/>
       <call_once fun="uart_cam_ctrl_set_camera_mask(CATIA_CAMERA_MASK_LWIR)"/>
       <call_once fun="dc_distance(survey_shot_interval)"/>
       <!-- Disarm: Run_Survey's pre_call switches it on inside the fire zone. -->
