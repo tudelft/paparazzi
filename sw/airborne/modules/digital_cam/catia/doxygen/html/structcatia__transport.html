@@ -94,6 +94,9 @@ $(function(){initNavTree('structcatia__transport.html','',''); });
 </div><!--header-->
 <div class="contents">
 
+<p>Persistent state for incremental CATIA UART frame parsing.  
+ <a href="#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="protocol_8h_source.html">protocol.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
@@ -108,7 +111,10 @@ Data Fields</h2></td></tr>
 <tr class="memitem:a0335cb47b434f4445aae27c3a4520967" id="r_a0335cb47b434f4445aae27c3a4520967"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0335cb47b434f4445aae27c3a4520967">ck_a</a></td></tr>
 <tr class="memitem:a09d50637dae55f8970358511fe2d4020" id="r_a09d50637dae55f8970358511fe2d4020"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a09d50637dae55f8970358511fe2d4020">ck_b</a></td></tr>
 </table>
-<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Field Documentation</h2>
+<a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Persistent state for incremental CATIA UART frame parsing. </p>
+<p>One instance must remain associated with one ordered byte stream. A completed message remains in <code>payload</code> until its consumer clears <code>msg_received</code>; feeding later bytes before that acknowledgement is counted as an error to avoid silently overwriting it. </p>
+</div><a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Field Documentation</h2>
 <a id="a0335cb47b434f4445aae27c3a4520967" name="a0335cb47b434f4445aae27c3a4520967"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0335cb47b434f4445aae27c3a4520967">&#9670;&#160;</a></span>ck_a</h2>
 
@@ -120,6 +126,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>Running Fletcher-style checksum accumulators for the in-progress frame. </p>
 
 </div>
 </div>
@@ -148,6 +155,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>Count of framing or checksum faults observed while consuming this stream. </p>
 
 </div>
 </div>
@@ -162,6 +170,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>Message identifier from the current or most recently completed frame. </p>
 
 </div>
 </div>
@@ -176,6 +185,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>True when <code>payload</code> contains one complete validated message awaiting dispatch. </p>
 
 </div>
 </div>
@@ -190,6 +200,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>Storage for the validated payload of the most recently completed message. </p>
 
 </div>
 </div>
@@ -204,6 +215,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>Internal offset into <code>payload</code> while a frame is being assembled. </p>
 
 </div>
 </div>
@@ -218,6 +230,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>Number of payload bytes expected in the current frame. </p>
 
 </div>
 </div>
@@ -232,6 +245,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>Internal parser state: the next expected position in the frame. </p>
 
 </div>
 </div>

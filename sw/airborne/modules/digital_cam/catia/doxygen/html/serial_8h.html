@@ -142,6 +142,7 @@ Functions</h2></td></tr>
 <tr class="memitem:a761bad13a2de9da68a2b4df968787b17" id="r_a761bad13a2de9da68a2b4df968787b17"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a761bad13a2de9da68a2b4df968787b17">serial_init</a> (const char *port_name)</td></tr>
 <tr class="memdesc:a761bad13a2de9da68a2b4df968787b17"><td class="mdescLeft">&#160;</td><td class="mdescRight">Configure the shared non-blocking CATIA UART descriptor.  <br /></td></tr>
 <tr class="memitem:a5e6f1c66fb098ba0571d1ce553e7a7f7" id="r_a5e6f1c66fb098ba0571d1ce553e7a7f7"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5e6f1c66fb098ba0571d1ce553e7a7f7">ttyUSB0ChAvailable</a> (void)</td></tr>
+<tr class="memdesc:a5e6f1c66fb098ba0571d1ce553e7a7f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Preserve the legacy "character available" transport API contract.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
@@ -214,7 +215,8 @@ Variables</h2></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>0 on success or a negative setup error. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>0 on success or a negative setup error.</dd></dl>
+<p>The descriptor is set to raw 115200-bit/s 8-bit mode so line discipline cannot translate binary CATIA framing bytes. This module owns descriptor setup only; concurrent transmission must use <code><a class="el" href="serial__tx_8h.html" title="Thread-safe, non-blocking framed UART transmission for CATIA.">serial_tx.h</a></code>. </p>
 
 </div>
 </div>
@@ -240,6 +242,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Preserve the legacy "character available" transport API contract. </p>
+<dl class="section return"><dt>Returns</dt><dd>Always false because CATIA receives through the parser's nonblocking descriptor.</dd></dl>
+<p>Retained solely for platform compatibility. New code must not use this predicate to gate UART reads; it would permanently suppress them. </p>
 
 </div>
 </div>

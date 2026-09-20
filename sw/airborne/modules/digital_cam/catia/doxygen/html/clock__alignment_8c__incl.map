@@ -5,7 +5,7 @@
 <area shape="poly" id="Node000003" href="$clock__alignment_8h.html" title="Bounded mapping between flight&#45;controller microseconds and CATIA monotonic time." alt="" coords="270,110,265,104,253,99,233,95,208,92,180,91,153,92,128,95,108,99,95,104,91,110,95,116,108,121,128,125,153,128,180,129,208,128,233,125,253,121,265,116"/>
 <area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="130,40,160,79,155,80,130,46"/>
 <area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="153,131,92,173,88,168,156,126"/>
-<area shape="poly" id="Node000004" href="$protocol_8h.html" title=" " alt="" coords="237,196,234,190,226,185,214,180,199,178,182,177,165,178,149,180,137,185,129,190,126,196,129,201,137,207,149,211,165,214,182,214,199,214,214,211,226,207,234,201"/>
+<area shape="poly" id="Node000004" href="$protocol_8h.html" title="CATIA&#39;s byte&#45;stream UART framing, messages, and wire&#45;compatible payload layouts." alt="" coords="237,196,234,190,226,185,214,180,199,178,182,177,165,178,149,180,137,185,129,190,126,196,129,201,137,207,149,211,165,214,182,214,199,214,214,211,226,207,234,201"/>
 <area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="182,127,184,162,179,160,179,132"/>
 <area shape="poly" id="Node000005" title=" " alt="" coords="170,281,168,275,160,270,148,266,132,263,115,262,98,263,82,266,70,270,62,275,60,281,62,287,70,292,82,297,98,299,115,300,132,299,148,297,160,292,168,287"/>
 <area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="170,213,140,253,136,249,166,215"/>

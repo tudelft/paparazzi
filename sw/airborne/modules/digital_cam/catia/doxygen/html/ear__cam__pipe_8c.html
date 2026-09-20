@@ -162,7 +162,7 @@ Include dependency graph for ear_cam_pipe.c:</div>
 <area shape="poly" title=" " alt="" coords="241,211,318,257,312,258,240,216"/>
 <area shape="poly" title=" " alt="" coords="232,281,229,275,223,270,213,266,200,263,186,262,172,263,159,266,149,270,143,275,141,281,143,287,149,292,159,297,172,299,186,300,200,299,213,297,223,292,229,287"/>
 <area shape="poly" title=" " alt="" coords="208,213,198,249,194,246,204,217"/>
-<area shape="poly" href="protocol_8h.html" title=" " alt="" coords="116,281,113,275,106,270,93,266,78,263,61,262,44,263,28,266,16,270,8,275,5,281,8,287,16,292,28,297,44,299,61,300,78,299,93,297,106,292,113,287"/>
+<area shape="poly" href="protocol_8h.html" title="CATIA&#39;s byte&#45;stream UART framing, messages, and wire&#45;compatible payload layouts." alt="" coords="116,281,113,275,106,270,93,266,78,263,61,262,44,263,28,266,16,270,8,275,5,281,8,287,16,292,28,297,44,299,61,300,78,299,93,297,106,292,113,287"/>
 <area shape="poly" title=" " alt="" coords="180,216,103,259,100,255,183,211"/>
 <area shape="poly" title=" " alt="" coords="96,294,223,345,219,348,95,299"/>
 <area shape="poly" title=" " alt="" coords="116,367,113,361,106,356,93,352,78,349,61,348,44,349,28,352,16,356,8,361,5,367,8,373,16,378,28,382,44,385,61,386,78,385,93,382,106,378,113,373"/>
@@ -247,6 +247,7 @@ Functions</h2></td></tr>
 <tr class="memitem:a9861737bfc3041a6d61c7fe00b5b28c3" id="r_a9861737bfc3041a6d61c7fe00b5b28c3"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9861737bfc3041a6d61c7fe00b5b28c3">ear_cam_pipe_record</a> (const union <a class="el" href="uniondc__shot__union.html">dc_shot_union</a> *shot)</td></tr>
 <tr class="memdesc:a9861737bfc3041a6d61c7fe00b5b28c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Associate the newest fresh acoustic measurement with a camera shot.  <br /></td></tr>
 <tr class="memitem:af8dc579cb0563101679e0a7c1408be06" id="r_af8dc579cb0563101679e0a7c1408be06"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af8dc579cb0563101679e0a7c1408be06">ear_cam_pipe_last_shot_nr</a> (void)</td></tr>
+<tr class="memdesc:af8dc579cb0563101679e0a7c1408be06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the shot number associated with the newest stored acoustic sample.  <br /></td></tr>
 <tr class="memitem:a79f5234a2b1649c91c7d1a151b137eb8" id="r_a79f5234a2b1649c91c7d1a151b137eb8"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a79f5234a2b1649c91c7d1a151b137eb8">ear_cam_pipe_render</a> (const struct <a class="el" href="structear__loudest__spot.html">ear_loudest_spot</a> *result, char *filename, size_t filename_size, bool <a class="el" href="#a7cd628b80bf1b75f359ff3adc61ce0e8">simulated</a>)</td></tr>
 <tr class="memdesc:a79f5234a2b1649c91c7d1a151b137eb8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Render the current acoustic session into a north-up JPEG before it is cleared.  <br /></td></tr>
 <tr class="memitem:a769a8f567bbcbf2ea892269b7e8ac1f5" id="r_a769a8f567bbcbf2ea892269b7e8ac1f5"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a769a8f567bbcbf2ea892269b7e8ac1f5">ear_cam_pipe_solve</a> (struct <a class="el" href="structear__loudest__spot.html">ear_loudest_spot</a> *result)</td></tr>
@@ -256,6 +257,7 @@ Functions</h2></td></tr>
 <tr class="memitem:a7d7ac58cf9ddeec7a4a3c73fabd297e6" id="r_a7d7ac58cf9ddeec7a4a3c73fabd297e6"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7d7ac58cf9ddeec7a4a3c73fabd297e6">compare_double</a> (const void *a, const void *b)</td></tr>
 <tr class="memitem:ae2503b6e323bb14b589474021dddfc36" id="r_ae2503b6e323bb14b589474021dddfc36"><td class="memItemLeft" align="right" valign="top">static double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae2503b6e323bb14b589474021dddfc36">median_of</a> (double *values, size_t <a class="el" href="pose__log_8c.html#a76d971a3c552bc58ba9f0d5fceae9806">count</a>)</td></tr>
 <tr class="memitem:a721dd73317aca4cdfabf84ff9219ffb9" id="r_a721dd73317aca4cdfabf84ff9219ffb9"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a721dd73317aca4cdfabf84ff9219ffb9">calculated_loudestspot</a> (const struct <a class="el" href="structear__sample.html">ear_sample</a> *samples, size_t <a class="el" href="pose__log_8c.html#a76d971a3c552bc58ba9f0d5fceae9806">count</a>, struct <a class="el" href="structear__loudest__spot.html">ear_loudest_spot</a> *result)</td></tr>
+<tr class="memdesc:a721dd73317aca4cdfabf84ff9219ffb9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Estimate the loudest ground position from a supplied geotagged sample set.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
@@ -552,6 +554,18 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Estimate the loudest ground position from a supplied geotagged sample set. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">samples</td><td>Immutable acoustic samples ordered by collection time. </td></tr>
+    <tr><td class="paramname">count</td><td>Number of entries in <code class="param">samples</code>. </td></tr>
+    <tr><td class="paramname">result</td><td>Destination for the valid estimate or invalid-result marker. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 when the calculation completed; -1 for invalid arguments or insufficient data.</dd></dl>
+<p>This pure function has no process, filesystem, or global-session dependency, which makes it appropriate for deterministic tests and offline replay as well as live sessions. </p>
+
 </div>
 </div>
 <a id="ab5d2bd9a1ba7a5a862342161dbb0e33e" name="ab5d2bd9a1ba7a5a862342161dbb0e33e"></a>
@@ -626,6 +640,7 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Stop the child and release all bounded session resources. </p>
+<p>Stop EARcam activity and release its process, descriptors, and session storage. </p>
 
 </div>
 </div>
@@ -645,7 +660,7 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Solve and close the current session, clearing accumulated samples afterward. </p>
-<p>Finalize the session: fuse all samples into the loudest spot and clear the buffer. </p>
+<p>Fuse the session into its final loudest-spot result and clear stored samples. </p>
 
 </div>
 </div>
@@ -665,6 +680,7 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Allocate session storage and start or configure the acoustic backend. </p>
+<p>Start EARcam sampling or its deterministic simulated-source replacement.</p>
 <dl class="section return"><dt>Returns</dt><dd>-1 only for unrecoverable setup errors; missing hardware stays retryable. </dd></dl>
 
 </div>
@@ -683,7 +699,9 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Shot number of the newest recorded sample (0 when empty). </p>
+
+<p>Get the shot number associated with the newest stored acoustic sample. </p>
+<dl class="section return"><dt>Returns</dt><dd>The newest shot number, or 0 when the session is empty. </dd></dl>
 
 </div>
 </div>
@@ -703,6 +721,7 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Report whether an actual or simulated measurement source is ready. </p>
+<p>Report whether the live microphone server completed its ready handshake. </p>
 
 </div>
 </div>
@@ -722,6 +741,7 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Associate the newest fresh acoustic measurement with a camera shot. </p>
+<p>Associate the newest sound window with one flight-controller shot pose.</p>
 <dl class="section return"><dt>Returns</dt><dd>0 when appended, -1 when no current measurement is safe to use.</dd></dl>
 <p>The session discards its oldest half at capacity, retaining recent location evidence while bounding memory for unattended multi-day operation. </p>
 
@@ -757,7 +777,7 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Render the current acoustic session into a north-up JPEG before it is cleared. </p>
-<p>Render the current session as an acoustic "photo" photos/e%06d.jpg (north-up intensity map with the loudest spot marked). Fills filename; returns 0 on success. Must be called before <a class="el" href="ear__cam__pipe_8h.html#a4ec5b90c603695459590af5ae96ac16c" title="Solve and close the current session, clearing accumulated samples afterward.">ear_cam_pipe_finish()</a> clears the session. </p>
+<p>Render the current session as a north-up acoustic evidence JPEG. </p>
 
 </div>
 </div>
@@ -781,7 +801,7 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Set the detector band forwarded to a subsequently spawned EARcam child. </p>
-<p>Tone search band passed to earcam (&ndash;low-cut/&ndash;high-cut); 0 keeps the earcam defaults. Must be called before <a class="el" href="ear__cam__pipe_8h.html#a23619e6ec8833c82e2868f01249397d0" title="Allocate session storage and start or configure the acoustic backend.">ear_cam_pipe_init()</a>. </p>
+<p>Set the live EARcam tone-search band. </p>
 
 </div>
 </div>
@@ -810,6 +830,7 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Select deterministic virtual acoustic measurements for simulation. </p>
+<p>Replace microphone input with a virtual fixed loudspeaker for NPS or desk tests.</p>
 <p>Must precede initialization so no microphone child is launched. </p>
 
 </div>
@@ -830,7 +851,7 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Solve the current session without consuming it, for intermediate mission feedback. </p>
-<p>Intermediate solve over the samples so far; the session keeps accumulating. </p>
+<p>Solve the accumulated session without clearing it. </p>
 
 </div>
 </div>

@@ -93,6 +93,9 @@ $(function(){initNavTree('camera__speedtest_8c.html','',''); });
   <div class="headertitle"><div class="title">camera_speedtest.c File Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p>Backend-neutral still-image throughput benchmark and asynchronous progress reporter.  
+<a href="#details">More...</a></p>
 <div class="textblock"><code>#include &quot;<a class="el" href="camera__speedtest_8h_source.html">camera_speedtest.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="path__utils_8h_source.html">path_utils.h</a>&quot;</code><br />
 <code>#include &lt;errno.h&gt;</code><br />
@@ -113,7 +116,7 @@ Include dependency graph for camera_speedtest.c:</div>
 <div class="dyncontent">
 <div class="center"><img src="camera__speedtest_8c__incl.png" border="0" usemap="#acamera__speedtest_8c" loading="lazy" alt=""/></div>
 <map name="acamera__speedtest_8c" id="acamera__speedtest_8c">
-<area shape="poly" title=" " alt="" coords="971,24,966,18,952,13,930,9,903,6,872,5,842,6,814,9,793,13,779,18,774,24,779,30,793,35,814,39,842,42,872,43,903,42,930,39,952,35,966,30"/>
+<area shape="poly" title="Backend&#45;neutral still&#45;image throughput benchmark and asynchronous progress reporter." alt="" coords="971,24,966,18,952,13,930,9,903,6,872,5,842,6,814,9,793,13,779,18,774,24,779,30,793,35,814,39,842,42,872,43,903,42,930,39,952,35,966,30"/>
 <area shape="poly" href="camera__speedtest_8h.html" title="Standalone, backend&#45;neutral still&#45;camera throughput benchmark." alt="" coords="269,110,265,104,251,99,229,95,201,92,171,91,140,92,113,95,91,99,77,104,72,110,77,116,91,121,113,125,140,128,171,129,201,128,229,125,251,121,265,116"/>
 <area shape="poly" title=" " alt="" coords="790,38,268,100,267,94,791,33"/>
 <area shape="poly" href="path__utils_8h.html" title="Small path and writable&#45;directory helpers shared by CATIA backends." alt="" coords="784,110,781,104,772,99,758,95,741,92,722,91,702,92,685,95,671,99,662,104,659,110,662,116,671,121,685,125,702,128,722,129,741,128,758,125,772,121,781,116"/>
@@ -180,20 +183,30 @@ Enumerations</h2></td></tr>
 Functions</h2></td></tr>
 <tr class="memitem:a17ee4c02fe0d2b356468a2691789c23e" id="r_a17ee4c02fe0d2b356468a2691789c23e"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a17ee4c02fe0d2b356468a2691789c23e">format_image_path</a> (const struct <a class="el" href="structcamera__speedtest__config.html">camera_speedtest_config</a> *config, int image_number, char *path, size_t path_size)</td></tr>
 <tr class="memitem:aa6395cfbc66f2d466384892b7fed549d" id="r_aa6395cfbc66f2d466384892b7fed549d"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa6395cfbc66f2d466384892b7fed549d">monotonic_time_ns</a> (uint64_t *time_ns)</td></tr>
+<tr class="memdesc:aa6395cfbc66f2d466384892b7fed549d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read a non-negative monotonic timestamp in nanoseconds.  <br /></td></tr>
 <tr class="memitem:a478de544f29390bc40a11c89623848c5" id="r_a478de544f29390bc40a11c89623848c5"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a478de544f29390bc40a11c89623848c5">camera_speedtest_create_output_directory</a> (const char *base_directory, char *<a class="el" href="pose__log_8c.html#ab41bf19330e50c3c7bf3544c53f30971">output</a>, size_t output_size)</td></tr>
 <tr class="memdesc:a478de544f29390bc40a11c89623848c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Atomically create a private directory for one benchmark run.  <br /></td></tr>
 <tr class="memitem:abbfa93b0ac42458bbd46f95e818e45c8" id="r_abbfa93b0ac42458bbd46f95e818e45c8"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abbfa93b0ac42458bbd46f95e818e45c8">validate_capture</a> (const char *actual_filename, const char *expected_filename)</td></tr>
+<tr class="memdesc:abbfa93b0ac42458bbd46f95e818e45c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Confirm that a backend produced exactly the requested usable image.  <br /></td></tr>
 <tr class="memitem:a02fa226151fb9719691c5fb9875bc1ba" id="r_a02fa226151fb9719691c5fb9875bc1ba"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a02fa226151fb9719691c5fb9875bc1ba">write_progress</a> (struct <a class="el" href="structprogress__reporter.html">progress_reporter</a> *reporter, const struct <a class="el" href="structprogress__record.html">progress_record</a> *record)</td></tr>
+<tr class="memdesc:a02fa226151fb9719691c5fb9875bc1ba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write one progress record without waiting indefinitely for stdout.  <br /></td></tr>
 <tr class="memitem:a98fce0fb6642174f2b95772325cb3a48" id="r_a98fce0fb6642174f2b95772325cb3a48"><td class="memItemLeft" align="right" valign="top">static void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a98fce0fb6642174f2b95772325cb3a48">report_progress</a> (void *argument)</td></tr>
+<tr class="memdesc:a98fce0fb6642174f2b95772325cb3a48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Drain queued progress records on the dedicated reporter thread.  <br /></td></tr>
 <tr class="memitem:aa65951e87337ef8aafd47f791f0625a7" id="r_aa65951e87337ef8aafd47f791f0625a7"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa65951e87337ef8aafd47f791f0625a7">reporter_start</a> (struct <a class="el" href="structprogress__reporter.html">progress_reporter</a> *reporter)</td></tr>
+<tr class="memdesc:aa65951e87337ef8aafd47f791f0625a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize and launch the bounded progress reporter.  <br /></td></tr>
 <tr class="memitem:a2bcd2293cc26ec83172977d51921f144" id="r_a2bcd2293cc26ec83172977d51921f144"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2bcd2293cc26ec83172977d51921f144">reporter_enqueue</a> (struct <a class="el" href="structprogress__reporter.html">progress_reporter</a> *reporter, enum <a class="el" href="#ab132b2f3bf0ac11e851cb9119c086ce4">progress_kind</a> kind, unsigned sample, bool warmup, bool succeeded, uint64_t duration_ns, const char *filename)</td></tr>
+<tr class="memdesc:a2bcd2293cc26ec83172977d51921f144"><td class="mdescLeft">&#160;</td><td class="mdescRight">Queue one capture lifecycle event without performing output I/O.  <br /></td></tr>
 <tr class="memitem:aeffe9fa7a4fb02afdeb9ad37170ecc73" id="r_aeffe9fa7a4fb02afdeb9ad37170ecc73"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aeffe9fa7a4fb02afdeb9ad37170ecc73">reporter_stop</a> (struct <a class="el" href="structprogress__reporter.html">progress_reporter</a> *reporter)</td></tr>
+<tr class="memdesc:aeffe9fa7a4fb02afdeb9ad37170ecc73"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request reporter shutdown, drain queued output, and release its resources.  <br /></td></tr>
 <tr class="memitem:addaaea6c5b2f10e7181c85fc1eefc35e" id="r_addaaea6c5b2f10e7181c85fc1eefc35e"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#addaaea6c5b2f10e7181c85fc1eefc35e">camera_speedtest_find_image_block</a> (const struct <a class="el" href="structcamera__speedtest__config.html">camera_speedtest_config</a> *config, int *first_image)</td></tr>
 <tr class="memdesc:addaaea6c5b2f10e7181c85fc1eefc35e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Find an unused consecutive image-number block for warm-up and samples.  <br /></td></tr>
 <tr class="memitem:a9db01552f384565467777293c162220a" id="r_a9db01552f384565467777293c162220a"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9db01552f384565467777293c162220a">camera_speedtest_run</a> (const struct <a class="el" href="structcamera__speedtest__config.html">camera_speedtest_config</a> *config, int first_image)</td></tr>
 <tr class="memdesc:a9db01552f384565467777293c162220a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Capture one untimed warm-up image and ten timed images sequentially.  <br /></td></tr>
 </table>
-<a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
+<a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Backend-neutral still-image throughput benchmark and asynchronous progress reporter. </p>
+<p>The benchmark performs one untimed warm-up followed by ten sequential synchronous captures. It validates each returned JPEG before accepting it as evidence. Timing uses <code>CLOCK_MONOTONIC</code> around only the backend capture call, excluding setup, UART, EXIF, SODA, and terminal I/O. Progress is copied into a fixed-size queue and written by a separate bounded-I/O thread so an unread pipe or slow terminal cannot throttle capture requests. </p>
+</div><a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
 <a id="ad2b102d8cdf54159f37003c077c7d828" name="ad2b102d8cdf54159f37003c077c7d828"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad2b102d8cdf54159f37003c077c7d828">&#9670;&#160;</a></span>SPEEDTEST_FILENAME_SIZE</h2>
 
@@ -406,6 +419,16 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Read a non-negative monotonic timestamp in nanoseconds. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">time_ns</td><td>Destination for the timestamp. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 on success; -1 if the clock is unavailable, invalid, or overflows conversion.</dd></dl>
+<p>Nanoseconds retain sub-millisecond capture differences without requiring floating point arithmetic in the measurement loop. The conversion rejects impossible values rather than silently wrapping and publishing a plausible but false rate. </p>
+
 </div>
 </div>
 <a id="a98fce0fb6642174f2b95772325cb3a48" name="a98fce0fb6642174f2b95772325cb3a48"></a>
@@ -430,6 +453,16 @@ Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Drain queued progress records on the dedicated reporter thread. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">argument</td><td>Pointer to the initialized <code><a class="el" href="structprogress__reporter.html">progress_reporter</a></code>. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>Always <code>NULL</code> when the stop request is observed.</dd></dl>
+<p>Records are removed under the mutex, then formatted and written without holding it. This keeps producer critical sections constant-time and ensures slow output never prevents the benchmark thread from issuing its next capture. </p>
 
 </div>
 </div>
@@ -485,6 +518,22 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Queue one capture lifecycle event without performing output I/O. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">reporter</td><td>Running reporter. </td></tr>
+    <tr><td class="paramname">kind</td><td>Start or completion event. </td></tr>
+    <tr><td class="paramname">sample</td><td>One-based measured sample number, or zero for warm-up. </td></tr>
+    <tr><td class="paramname">warmup</td><td>True for the excluded warm-up capture. </td></tr>
+    <tr><td class="paramname">succeeded</td><td>Completion success state. </td></tr>
+    <tr><td class="paramname">duration_ns</td><td>Measured duration for completion records. </td></tr>
+    <tr><td class="paramname">filename</td><td>Expected output path copied into the fixed-size event. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 if queued; -1 when the bounded queue or filename capacity is exhausted.</dd></dl>
+<p>The queue has room for every planned start and completion event. Exhaustion is an invariant breach, so failing explicitly is safer than silently dropping operator progress. </p>
+
 </div>
 </div>
 <a id="aa65951e87337ef8aafd47f791f0625a7" name="aa65951e87337ef8aafd47f791f0625a7"></a>
@@ -510,6 +559,16 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Initialize and launch the bounded progress reporter. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">reporter</td><td>Storage owned by the caller for the reporter lifetime. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 on success; -1 after cleaning up any partially initialized resources.</dd></dl>
+<p>Regular redirected stdout is temporarily opened with append semantics so the reporter cannot overwrite buffered summary output. The duplicate nonblocking descriptor isolates progress backpressure from the benchmark's normal stdout stream. </p>
+
 </div>
 </div>
 <a id="aeffe9fa7a4fb02afdeb9ad37170ecc73" name="aeffe9fa7a4fb02afdeb9ad37170ecc73"></a>
@@ -534,6 +593,16 @@ Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Request reporter shutdown, drain queued output, and release its resources. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">reporter</td><td>Running reporter. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 only when the thread joined and all queued progress was written.</dd></dl>
+<p>Joining before closing the descriptor preserves event order and prevents a writer from racing descriptor reuse. Restoring redirected stdout flags keeps benchmark setup from leaking output-mode changes into callers that continue running after a failed test. </p>
 
 </div>
 </div>
@@ -564,6 +633,17 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Confirm that a backend produced exactly the requested usable image. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">actual_filename</td><td>Path returned by the backend capture operation. </td></tr>
+    <tr><td class="paramname">expected_filename</td><td>Deterministic path reserved before capture began. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 when the path matches and names a nonempty regular file; -1 otherwise.</dd></dl>
+<p>Path equality prevents a backend fallback or stale output from being counted as a benchmark sample. Regular-file and size checks catch missing, directory, FIFO, and empty outputs while leaving image decoding to the normal backend contract. </p>
+
 </div>
 </div>
 <a id="a02fa226151fb9719691c5fb9875bc1ba" name="a02fa226151fb9719691c5fb9875bc1ba"></a>
@@ -592,6 +672,17 @@ Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Write one progress record without waiting indefinitely for stdout. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">reporter</td><td>Reporter owning the nonblocking output descriptor. </td></tr>
+    <tr><td class="paramname">record</td><td>Immutable event to render. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 if the complete line was written; -1 when output is unavailable or partial.</dd></dl>
+<p>The 100 ms poll bound is a reporting policy, not a capture timeout. On failure the reporter records the condition and the benchmark fails after draining, rather than blocking the capture loop behind a terminal or pipe consumer. </p>
 
 </div>
 </div>

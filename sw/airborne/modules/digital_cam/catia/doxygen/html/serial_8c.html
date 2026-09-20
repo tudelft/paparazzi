@@ -170,7 +170,8 @@ Variables</h2></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>0 on success or a negative setup error. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>0 on success or a negative setup error.</dd></dl>
+<p>The descriptor is set to raw 115200-bit/s 8-bit mode so line discipline cannot translate binary CATIA framing bytes. This module owns descriptor setup only; concurrent transmission must use <code><a class="el" href="serial__tx_8h.html" title="Thread-safe, non-blocking framed UART transmission for CATIA.">serial_tx.h</a></code>. </p>
 
 </div>
 </div>

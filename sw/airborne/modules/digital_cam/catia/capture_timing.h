@@ -11,12 +11,22 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/** @brief Correlated request and frame-delivery timestamps for one LWIR capture. */
+/**
+ * @brief Correlated request and frame-delivery evidence for one LWIR capture.
+ * @details A non-callback capture has no callback sequence evidence. A callback-backed
+ * capture must provide a strictly later arrival timestamp and a nonzero sequence number,
+ * so consumers can distinguish a fresh frame from a stale parser result.
+ */
 struct capture_timing {
+  /** Monotonic microseconds immediately before the capture request was issued. */
   uint64_t request_monotonic_us;
+  /** Monotonic microseconds when the selected frame arrived. */
   uint64_t arrival_monotonic_us;
+  /** Producer sequence number for callback delivery; zero for polling delivery. */
   uint64_t callback_sequence;
+  /** Callback frames dropped before this frame; must be lower than @c callback_sequence. */
   uint64_t callback_drops;
+  /** True when arrival evidence originated from the asynchronous callback path. */
   bool callback_arrival;
 };
 

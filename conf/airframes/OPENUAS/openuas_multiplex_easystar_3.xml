@@ -364,13 +364,16 @@
       <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="40.0"/><!-- Unit: m --><!--Warning Depends on you CAMERA so find lowest denominator-->
       <!--FOR LWIR <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="26.0"/>--><!-- Unit: m -->
       <configure name="CAMERA_PORT" value="UART5"/> <!-- For the real Flightcontroller to MORA connection-->
+      <define name="DIGITAL_CAM_UART_CAMERA_MASK" value="4"/><!-- EARcam -->
+      <!-- <define name="DIGITAL_CAM_UART_CAMERA_MASK" value="10"/>AIcam + EARcam -->
     </module>
 
     <!-- RADIO_AUX3: high shoots immediately then at 1 Hz in any flight mode.
          Low or RC loss stops RC shots only; autonomous camera settings are unchanged. -->
-    <!-- <module name="digital_cam_shoot_rc">
+    <!-- Can also be used to trigger the EARcamera manually via the RC. -->
+    <module name="digital_cam_shoot_rc">
       <define name="DC_RADIO_SHOOT" value="RADIO_AUX2"/>
-    </module> -->
+    </module>
 
     <!-- Acoustic loud-spot search with the EARcam microphone on MORA (CATIA started with the earcam option).
          IMAV 2026 Mission 4 (easystar3_imav2026_mission4_earcam.xml): star of low legs around the given
@@ -447,7 +450,7 @@
     <servo name="S_RUDDER"         no="3" min="1100" neutral="1500" max="1900"/>
     <servo name="S_AILERON_RIGHT"  no="4" min="1900" neutral="1500" max="1100"/>
     <servo name="S_LIGHT"          no="5" min="1100" neutral="1500" max="1900"/>
-    <servo name="S_HATCH"          no="6" min="1100" neutral="1500" max="1900"/> <!-- Hatch servo pluggable -->
+    <servo name="S_HATCH"          no="6" min="1000" neutral="1450" max="1530"/> <!-- Hatch servo pluggable -->
     <servo name="S_SHUTTER"        no="7" min="1100" neutral="1500" max="1900"/> <!-- Shutter servo not available but could be added if needed -->
   </servos>
 
@@ -848,14 +851,14 @@
     <define name="GLIDE_VSPEED" value="1.4" unit="m/s"/>
     <define name="GLIDE_PITCH" value="10." unit="deg"/>
 
-    <define name="TAKEOFF_PITCH_ANGLE" value="20" unit="deg"/>
-    <define name="FLARE_PITCH_ANGLE" value="6" unit="deg"/>
-    <define name="NAV_GLIDE_PITCH_TRIM" value="-2.0" unit="deg"/>
+    <define name="TAKEOFF_PITCH_ANGLE" value="15" unit="deg"/>
+    <define name="FLARE_PITCH_ANGLE" value="5" unit="deg"/>
+    <define name="NAV_GLIDE_PITCH_TRIM" value="-1.0" unit="deg"/>
 
     <define name="KILL_MODE_DISTANCE" value="MAX_DIST_FROM_HOME" unit="m"/>
-    <define name="DEFAULT_CIRCLE_RADIUS" value="40.0" unit="m"/>
+    <define name="DEFAULT_CIRCLE_RADIUS" value="34.0" unit="m"/>
     <define name="HOME_RADIUS" value="DEFAULT_CIRCLE_RADIUS" unit="m"/>
-    <define name="LANDING_CIRCLE_RADIUS" value="35.0" unit="m"/>
+    <define name="LANDING_CIRCLE_RADIUS" value="32.0" unit="m"/>
     <define name="MIN_CIRCLE_RADIUS" value="30.0" unit="m"/>
     <define name="CARROT" value="5.0" unit="s"/>
 

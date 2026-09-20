@@ -96,7 +96,7 @@ ls -lh ai-camera-test.jpg
 Copy the file to your local PC with rsync via this line on your LOCAL PC, not the MORA
 
 ```sh
- rsync -av --ignore-existing --info=progress2  air@theatre:/home/air/i-camera-test.jpg .
+rsync -av --ignore-existing --info=progress2 air@theatre:/home/air/ai-camera-test.jpg .
  
  
 Inspect the actual image as well as the process exit status. A nonempty file
@@ -280,7 +280,7 @@ sudo systemctl stop catia.service
 
 Run this on MORA with its FC UART connected. Trigger `DC_SHOOT` from the flight
 controller or NPS and select AIcam in the camera mask (bit 1, mask value `2`).
-Inspect `photos/aNNNNNN.jpg`, EXIF processing, and SODA results. After stopping
+Inspect `/home/air/Pictures/aNNNNNN.jpg`, EXIF processing, and SODA results. After stopping
 the foreground run with `Ctrl+C`, restore the configured service:
 
 ```sh
@@ -328,24 +328,42 @@ This regenerates `raspberry_pi_ai_camera.html` from the local Markdown alongside
 the other guides. Do not edit the generated HTML.
 Regeneration does not overwrite this Markdown.
 
-## Backup
+## Backup and Restore
 
-Now you have a working OS, it is a good time to backup the SD to an compressed img file via a script found in CATIA "tools" directory
-
-```sh
-sudo ./fast_sd_restore.sh mora_os_backup.img.xz /dev/sdX
-```
-
-Where /dev/sdX needs to be your real device e.g. "/dev/sda" of the source SD card device
-
-### Restore
-
-And in case you need to restore the whole ready prepared SD to e.g another SD via a script found in CATIA "tools" directory
+CATIA includes two SD-image helpers in `tools/`. Run them from the Paparazzi
+repository root and give them the **whole device** (for example `/dev/sdb`), not
+a partition such as `/dev/sdb1`. Confirm the device name and size first:
 
 ```sh
-sudo ./fast_sd_restore_and_expand_CAREFULL.sh mora_os_backup.img.xz /dev/sdX
+lsblk -o NAME,SIZE,MODEL,TRAN,MOUNTPOINTS
 ```
 
-Where /dev/sdX needs to be your real device e.g. "/dev/sda" of the target SD card device
+### Create a Compressed Backup
 
-May the Force be with you...
+The backup helper unmounts active partitions on the source device, copies only
+through its last partition, and writes a multi-threaded `xz` archive. With no
+archive name, it creates `sdcard_backup_YYYYMMDD_HHMMSS.img.xz` in the current
+directory.
+
+```sh
+sudo sw/airborne/modules/digital_cam/catia/tools/fast_sd_backup.sh \
+  /dev/sdb mora_os_backup.img.xz
+```
+
+Keep the archive on storage other than the SD card being read. The command reads
+the source card; it does not modify its filesystem after unmounting it.
+
+### Restore and Expand a Backup
+
+The restore helper unmounts active partitions on the target, writes the archive,
+checks the final ext4 filesystem, and expands its final partition to use the
+whole target card:
+
+```sh
+sudo sw/airborne/modules/digital_cam/catia/tools/fast_sd_restore_and_expand.sh \
+  mora_os_backup.img.xz /dev/sdb
+```
+
+This command overwrites `/dev/sdb` completely. Wait for the final `lsblk` layout
+before removing the card; do not interrupt it while the archive is being written
+or the filesystem is being expanded.

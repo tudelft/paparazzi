@@ -94,7 +94,7 @@ $(function(){initNavTree('structcapture__timing.html','',''); });
 </div><!--header-->
 <div class="contents">
 
-<p>Correlated request and frame-delivery timestamps for one LWIR capture.  
+<p>Correlated request and frame-delivery evidence for one LWIR capture.  
  <a href="#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="capture__timing_8h_source.html">capture_timing.h</a>&gt;</code></p>
@@ -108,7 +108,8 @@ Data Fields</h2></td></tr>
 <tr class="memitem:ac461c8e15b0c4ab4a24e2c7b73633989" id="r_ac461c8e15b0c4ab4a24e2c7b73633989"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac461c8e15b0c4ab4a24e2c7b73633989">callback_arrival</a></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Correlated request and frame-delivery timestamps for one LWIR capture. </p>
+<div class="textblock"><p>Correlated request and frame-delivery evidence for one LWIR capture. </p>
+<p>A non-callback capture has no callback sequence evidence. A callback-backed capture must provide a strictly later arrival timestamp and a nonzero sequence number, so consumers can distinguish a fresh frame from a stale parser result. </p>
 </div><a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Field Documentation</h2>
 <a id="a85ebd9dbaacae478ebcf4505fd81b52c" name="a85ebd9dbaacae478ebcf4505fd81b52c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a85ebd9dbaacae478ebcf4505fd81b52c">&#9670;&#160;</a></span>arrival_monotonic_us</h2>
@@ -121,6 +122,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>Monotonic microseconds when the selected frame arrived. </p>
 
 </div>
 </div>
@@ -135,6 +137,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>True when arrival evidence originated from the asynchronous callback path. </p>
 
 </div>
 </div>
@@ -149,6 +152,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>Callback frames dropped before this frame; must be lower than <code>callback_sequence</code>. </p>
 
 </div>
 </div>
@@ -163,6 +167,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>Producer sequence number for callback delivery; zero for polling delivery. </p>
 
 </div>
 </div>
@@ -177,6 +182,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>Monotonic microseconds immediately before the capture request was issued. </p>
 
 </div>
 </div>

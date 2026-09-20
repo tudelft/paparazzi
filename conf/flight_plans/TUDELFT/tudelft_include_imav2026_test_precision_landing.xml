@@ -40,6 +40,7 @@
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
     <waypoint name="STDBY" x="49.5" y="100.1"/>
+    <waypoint name="WAIT360" x="60.0" y="90.0"/>
     <waypoint name="1" x="10.1" y="189.9"/>
     <waypoint name="2" x="132.3" y="139.1"/>
     <waypoint name="MOB" x="137.0" y="-11.6"/>
@@ -150,7 +151,7 @@
     </block>
 
     <!-- Block pre_call evaluates decisions before generated exceptions. -->
-    <block name="final" on_enter="precision_landing_setup_zone(WP_AF, WP_TD, WP__TLFW1, WP__TLFW2, WP__TLFW3, WP__TLFW4)" pre_call="precision_landing_run()" on_exit="precision_landing_release()">
+    <block name="final" on_enter="precision_landing_setup_zone(WP_AF, WP_TD, WP__PLFW1, WP__PLFW2, WP__PLFW3, WP__PLFW4)" pre_call="precision_landing_run()" on_exit="precision_landing_release()">
       <set value="precision_landing_approach_airspeed" var="v_ctl_auto_airspeed_setpoint"/>
       <!-- Commitment takes precedence over powered abort. -->
       <exception cond="precision_landing_cancelled" deroute="Standby"/>
@@ -187,6 +188,14 @@
       <exception cond="precision_landing_retry_allowed()" deroute="land"/>
       <deroute block="Standby"/>
     </block>
+
+    <block key="Ctrl+w" name="Wait360" on_enter="precision_landing_stop()">
+      <call_once fun="precision_landing_stop()"/>
+      <set value="NOMINAL_AIRSPEED" var="v_ctl_auto_airspeed_setpoint"/>
+      <set value="DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
+      <circle radius="nav_radius" wp="WAIT360"/>
+    </block>
+
   </blocks>
 </procedure>
 <!-- </flight_plan> -->

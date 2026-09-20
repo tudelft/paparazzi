@@ -25,6 +25,30 @@
     <waypoint name="SGF3" lat="48.81380786901547" lon="7.86121460297154"/>
     <waypoint name="SGF4" lat="48.80863939598765" lon="7.86403963556767"/> -->
 
+    <!-- Used for out of missionboundary tests -->
+    <waypoint name="TESTTOOFAR" x="-48." y="537."/>
+
+    <!-- ORGANIZATION Landing Fixedwing zone -->   
+    <!-- Landing Fixedwing zone : 48.807761°N 7.851868°E -->
+    <!-- Landing Fixedwing zone : 48.807767°N 7.851934°E -->
+    <waypoint name="XAF" lat="48.807761" lon="7.851868" alt="158.0"/>
+    <waypoint name="XTD" lat="48.807767" lon="7.851934" alt="139.0"/>
+
+<!-- OK Hard geofence sector corners, where the aircraft is never allowed to fly outside, needs to forcedcrash when breached-->
+<!-- Rulebook "Border geofence" -->
+    <waypoint name="_GF1" lat="48.806034" lon="7.850607"/>
+    <waypoint name="_GF2" lat="48.811254" lon="7.849834"/>
+    <waypoint name="_GF3" lat="48.813519" lon="7.861106"/>
+    <waypoint name="_GF4" lat="48.808367" lon="7.860520"/>
+
+<!-- OK Soft geofence sector corners, as a backup just in case something is amiss and we still can fly plane back -->
+    <!-- UNUSED no rulebook entry for soft geofence This fence is contracted 30m inside the Hard geofence -->
+    <!-- <waypoint name="_SGF1" lat="48.806404" lon="7.850963"/>
+    <waypoint name="_SGF2" lat="48.811060" lon="7.850273"/>
+    <waypoint name="_SGF3" lat="48.813146" lon="7.860654"/>
+    <waypoint name="_SGF4" lat="48.808562" lon="7.860133"/>  -->
+
+<!-- OK UNUSED waypoints Just in case we only use ONE airframe -->
 <!-- Flight zone, only inside there are useful targets, for going round overpass allowed-->
     <!-- <waypoint name="_FZ1" lat="48.81085705131392" lon="7.85104316760250"/>
     <waypoint name="_FZ2" lat="48.80624566949345" lon="7.85172516481609"/>
@@ -141,6 +165,8 @@
       <corner name="_MX2"/>
       <corner name="_MX3"/>
       <corner name="_MX4"/>
+      <corner name="_MX5"/>
+      <corner name="_MX6"/>
     </sector>
 
     <sector color="red" name="Fire_zone">

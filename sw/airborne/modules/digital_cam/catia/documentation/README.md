@@ -10,9 +10,10 @@ For hardware checks after deployment, continue with the
 [physical desk test](#start-here-physical-desk-test-with-mora).
 For development without a board, use [local simulation](#start-here-local-simulation).
 
-**Doc Maintainers:** edit this `README.md`, `catia-flow.dot`, or
-`desk-test-setup.svg`, then run `./update-documentation.sh`. The rendered PNGs,
-flow SVG, and HTML page are generated files.
+**Doc Maintainers:** `catia_camera_pipeline.md` is the source for the published
+Camera Pipeline page. Keep this repository README aligned with it; edit the
+Markdown and diagram sources, then run `make -C sw/airborne/modules/digital_cam/catia documentation`.
+The rendered HTML, PNGs, and SVGs are generated files.
 
 ![CATIA capture and processing flow](html/catia-flow.png)
 
@@ -423,9 +424,10 @@ checks ARM64-to-runtime upload names without contacting MORA.
 sw/airborne/modules/digital_cam/catia/run_local_demo.sh
 ```
 
-The script builds CATIA, creates the local serial bridge, and starts CATIA with
-the bundled mock image. It also enables `--debug`. Leave this terminal running
-while NPS is running.
+The script builds CATIA, creates the local serial bridge, and starts CATIA in
+test mode. It selects a random readable JPEG in `testphotos/` beside CATIA when
+available; otherwise it uses the bundled mock image. It also enables `--debug`.
+Leave this terminal running while NPS is running.
 
 The important startup line is:
 
@@ -443,8 +445,7 @@ cannot cross endpoints.
 
 The private build settings `DIGITAL_CAM_UART_LOCAL_DEVICE` and
 `DIGITAL_CAM_UART_FALLBACK_DEVICE` override these defaults when a different test
-path is needed. `SITL_SERIAL` and the hardware `CAMERA_PORT` are not used for this
-simulation selection; hardware firmware continues to use `CAMERA_PORT` normally.
+path is needed. Hardware firmware continues to use `CAMERA_PORT` normally.
 
 ### 3. Trigger a photo from Paparazzi
 
@@ -452,16 +453,16 @@ Start the aircraft simulation and trigger `DC_SHOOT`, for example through the
 camera flight-plan block. Simulation sends the shot index, position, altitude
 attitude, speed, and course to CATIA.
 
-For every completed capture, CATIA prints debug info is enabled:
+For every completed capture, CATIA prints this when debug output is enabled:
 
 ```text
 Photo take 6
 ```
 
-The corresponding local images somewhere like:
+The corresponding simulated images are saved in:
 
 ```text
-sw/airborne/modules/digital_cam/catia/photos/m000006.jpg
+sw/airborne/modules/digital_cam/Pictures/m000006.jpg
 ```
 
 ### 4. Confirm the complete chain
@@ -469,7 +470,7 @@ sw/airborne/modules/digital_cam/catia/photos/m000006.jpg
 A healthy local capture ends with messages similar to:
 
 ```text
-Shooting: got image .../photos/m000006.jpg
+Shooting: got image .../Pictures/m000006.jpg
 Shooting: EXIF metadata added
 Photo take 6
 SODA: I looked at the image. Cool, right?
@@ -532,11 +533,13 @@ On the local PC the adapter device is likely `/dev/ttyUSB0`. On MORA, CATIA uses
 already configures these local PC-side settings. See the
 `<module name="digital_cam_uart">` block of the airframe.
 
-Do not swap `SITL_SERIAL` between local and desk tests. Set it once to the local
-PC's FTDI device. Running `run_local_demo.sh` creates `/tmp/catia-sim`, which is
-selected automatically; stopping local CATIA makes the simulation return to the
-FTDI device. This selection changes only the PC-side simulation UART and does not
-change MORA's `/dev/serial0` service configuration.
+Running `run_local_demo.sh` creates `/tmp/catia-sim`, which the simulation
+selects automatically. Stopping local CATIA makes the simulation return to the
+FTDI device. Change
+`DIGITAL_CAM_UART_LOCAL_DEVICE` or `DIGITAL_CAM_UART_FALLBACK_DEVICE` in the
+`digital_cam_uart` module only when the local PTY or desk FTDI path differs. This
+selection changes only the PC-side simulation UART and does not change MORA's
+`/dev/serial0` service configuration.
 
 ### 2. First run: real UART with a mock image
 
@@ -670,11 +673,10 @@ The AI-camera backend starts `rpicam-still` directly, without a shell:
 
 ```sh
 rpicam-still \
-   -o photos/a%06d.jpg \
-  --width 4056 \
-  --height 3040 \
-  --hflip \
-  --vflip
+   -o <photo-dir>/aNNNNNN.jpg \
+   --width 2048 \
+   --height 1520 \
+   -t 200
 ```
 
 CATIA waits for the process to finish and rejects a missing, empty, or failed
@@ -694,7 +696,7 @@ shell, during CATIA initialization:
 LWIR uses the same CATIA shot dispatcher, EXIF writer, and SODA hand-off as
 AICam. Camera ID `3` selects LWIR (`2` selects AICam); legacy untargeted shots
 select the active optical backend. Each successful capture is saved as one file,
-`photos/lNNNNNN.jpg`, which carries the complete Tiny1-C temperature plane
+`<photo-dir>/lNNNNNN.jpg`, which carries the complete Tiny1-C temperature plane
 losslessly inside the JPEG as `LWIRRAW1` APP15 segments. Capture writes no
 sidecar: no `.jpg.raw` companion and no `.hotspots.json` report.
 
@@ -710,7 +712,7 @@ start CATIA with the option:
 ./catia --lwircam --lwir-raw
 ```
 
-That restores the `photos/lNNNNNN.jpg.raw` companion, the unchanged Tiny1-C UVC
+That restores the `<photo-dir>/lNNNNNN.jpg.raw` companion, the unchanged Tiny1-C UVC
 frame, and then the JPEG carries no embedded plane. For the CATIA systemd
 service on MORA, add `--lwir-raw` to the unit's `ExecStart` line and restart
 CATIA. Omit the option for the default single-file output. CATIA passes it to
@@ -740,7 +742,7 @@ SODA accepts one optional camera selector: `--aicam`, `--chdkcam`, `--lwircam`,
 or `--earcam`. Only double-dash selectors are supported. For example:
 
 ```sh
-./soda --lwircam photos/l000039.jpg
+./soda --lwircam <photo-dir>/l000039.jpg
 ```
 
 The LWIR handler prints exactly:
@@ -765,7 +767,7 @@ descriptions without requiring an image. `--version` prints only the version
 line. `--local` selects development-PC mode and logs that choice to stderr;
 the placeholder handlers still operate on the supplied local image, without
 hardware or remote connections. CATIA forwards this flag when running with
-local transport. For example, `./soda --local --lwircam photos/m000039.jpg`.
+local transport. For example, `./soda --local --lwircam ../Pictures/m000039.jpg`.
 `--` ends option parsing for filenames beginning with
 a dash. The handlers currently print only; they do not perform image analysis.
 
@@ -795,7 +797,7 @@ unchanged; query its version with `earcam --version`.
 
 For a non-specialist explanation of why a single USB microphone was chosen,
 how far it can hear a motionSCOUT alarm and what the loudest-spot fusion does
-step by step, read [EARcam Explained](earcam-loudest-spot-explained.md)
+step by step, read [EARcam Explained](earcam-loudest-spot-explained.html)
 (rendered as `earcam-loudest-spot-explained.html`).
 
 The EARcam backend starts one persistent `earcam --server` process during CATIA
@@ -946,7 +948,7 @@ With that, the whole chain flies in NPS. `conf/conf_earcam_sim.xml` defines
 `EasystarEar` (EasyStar 3 airframe, demo flight plan, earcam settings):
 
 ```sh
-make CONF_XML=conf/conf_earcam_sim.xml AIRCRAFT=EasystarEar SITL_SERIAL=/tmp/catia-sim nps.compile
+make CONF_XML=conf/conf_earcam_sim.xml AIRCRAFT=EasystarEar nps.compile
 python3 sw/simulator/nps/nps_earcam_mission.py --aircraft EasystarEar --ac-id 235 \
     --speaker 48.81050,7.85160 --time-factor 4
 ```
@@ -1010,7 +1012,7 @@ a GPS point given on the day. `easystar3_imav2026_mission4_earcam.xml`
   10 m/s and unit spread).
 
 ```sh
-make CONF_XML=conf/conf_earcam_sim.xml AIRCRAFT=EasystarM4 SITL_SERIAL=/tmp/catia-sim nps.compile
+make CONF_XML=conf/conf_earcam_sim.xml AIRCRAFT=EasystarM4 nps.compile
 python3 sw/simulator/nps/nps_earcam_mission.py --aircraft EasystarM4 --ac-id 237 \
     --speaker 48.81050,7.85160 --time-factor 4 --start-block m4_search
 ```
@@ -1165,7 +1167,8 @@ sw/airborne/modules/digital_cam/catia/catia --local --lwircam --test \
    --mock-image sw/airborne/modules/digital_cam/catia/lwircam/mock_lwir_01.jpg
 ```
 
-Trigger a shot as usual from Paparazzi. The test writes `photos/mNNNNNN.jpg`
+Trigger a shot as usual from Paparazzi. The local/test backend writes
+`../Pictures/mNNNNNN.jpg` (from the CATIA directory)
 without a JSON sidecar. Mock temperatures come from the embedded
 synthetic Kelvin-times-64 plane when available. Otherwise, decoded luminance
 is mapped linearly through black (0) = 15 C, middle gray (128) = 20 C, and
@@ -1405,7 +1408,8 @@ index `4` records acoustic samples; its final sound picture is produced on stop.
 
 ### Local and test images
 
-`local_pipe_shoot()` copies the chosen source JPEG to `photos/m%06d.jpg`. It uses
+`local_pipe_shoot()` copies the chosen source JPEG to `../Pictures/m%06d.jpg`
+(from the CATIA directory). It uses
 bounded POSIX `open()`, `read()`, and `write()` loops and handles partial writes.
 The bytes are already JPEG encoded; this stage does not decode or re-encode
 them.
@@ -1414,14 +1418,16 @@ them.
 
 `ai_cam_pipe_shoot()` uses `posix_spawnp()` to execute `rpicam-still` with a
 fixed argument list. **`rpicam-still` is the component that captures and JPEG
-encodes the image.** The default result is `photos/a%06d.jpg`.
+encodes the image.** The native build writes `catia/photos/a%06d.jpg`; MORA
+deployment writes `/home/air/Pictures/a%06d.jpg`.
 
 ### Tiny 1-C LWIR camera
 
 `lwir_cam_pipe_shoot()` uses `posix_spawn()` to execute the configured LWIR
 LWIRcam with `--capture --output <filename>`. The application owns USB acquisition,
 startup-frame rejection, YUYV-to-RGB conversion, and initial JPEG encoding.
-The default result is `photos/l%06d.jpg`. Post-capture hotspot geolocation is
+The native build writes `catia/photos/l%06d.jpg`; MORA deployment writes
+`/home/air/Pictures/l%06d.jpg`. Post-capture hotspot geolocation is
 requested from that **same already-running** process over its existing stdin/stdout
 pipe (a `GEO:<path>` line), not by spawning a second LWIRcam per shot; a fresh
 process is spawned only as a fallback when no persistent server is running
@@ -1430,7 +1436,8 @@ process is spawned only as a fallback when no persistent server is running
 ### CHDK camera
 
 `chdk_pipe_shoot()` instructs the CHDK camera to capture and download a JPEG.
-CATIA moves the downloaded file to `photos/c%06d.jpg`.
+The native build moves the downloaded file to `catia/photos/c%06d.jpg`; MORA
+deployment writes `/home/air/Pictures/c%06d.jpg`.
 
 ### Optional transform and EXIF
 
@@ -2143,13 +2150,18 @@ its source files ad hoc.
 
 ## Output Locations
 
-On MORA (ARM64 deployment), photos are saved to `~/Pictures/` (`/home/air/Pictures`)
-and EARcam acoustic session logs plus debug data are saved to `~/usher_debug_data/` (`/home/air/usher_debug_data`).
-In local development, output defaults to `photos/` and `earlogs/` beside CATIA.
+On MORA (ARM64 deployment), every CATIA image is saved to `~/Pictures/`
+(`/home/air/Pictures`). EARcam acoustic session logs and debug data are saved to
+`~/usher_debug_data/` (`/home/air/usher_debug_data`).
+
+On a development PC, the simulated local/test backend saves images to
+`sw/airborne/modules/digital_cam/Pictures/`. Native physical backends use the
+explicit paths below. These are build-time defaults; the startup log prints the
+resolved directory actually in use.
 
 | Source | Development PC | MORA board | Filename example |
 | --- | --- | --- | --- |
-| Local or `--test` | `catia/photos/` | `~/Pictures/` | `m000006.jpg` |
+| Local or `--test` | `sw/airborne/modules/digital_cam/Pictures/` | `~/Pictures/` | `m000006.jpg` |
 | AI camera | `catia/photos/` | `~/Pictures/` | `a000006.jpg` |
 | LWIR camera | `catia/photos/` | `~/Pictures/` | `l000006.jpg` |
 | CHDK | `catia/photos/` | `~/Pictures/` | `c000006.jpg` |
@@ -2201,7 +2213,7 @@ described by its `ExecStart` line.
 | `--pose-log DIR` | Record 10 Hz flight pose samples as CSV in `DIR` | Evidence for how far the aircraft moved between images; off by default so no flight writes unexpected files |
 | `--clock-align` | Send clock probes to bound the FC-to-MORA time offset | Turns "the timestamps look close" into a measured interval; costs UART traffic, so it is opt-in |
 | `--lwir-calibration FILE` | Camera YAML used to turn LWIR hotspots into coordinates | Without measured optics and mounting, no hotspot can become a trustworthy latitude/longitude; naming the file prevents silently using a stale or wrong calibration |
-| `--lwir-raw` | Keep `photos/lNNNNNN.jpg.raw` instead of storing temperatures in the JPEG | Calibration and evidence work may want the untouched combined sensor frame; the default single file is smaller and simpler to recover |
+| `--lwir-raw` | Keep `<photo-dir>/lNNNNNN.jpg.raw` instead of storing temperatures in the JPEG | Calibration and evidence work may want the untouched combined sensor frame; the default single file is smaller and simpler to recover |
 | `--lwir-motion-compensation` | Advance LWIR GPS over the measured capture delay | Capture happens slightly after the trigger pose; this bounded correction can reduce that offset, but it is unvalidated, so it is off by default |
 | `--speedtest` | Take one warm-up plus ten timed still photos with one selected real camera, report throughput, then exit | Measures the camera's actual acquisition-and-JPEG-save path without confusing UART queueing, EXIF, or SODA time with camera speed |
 | `--help` / `--version` | Print help or the build version | Confirms which build is actually installed on MORA |

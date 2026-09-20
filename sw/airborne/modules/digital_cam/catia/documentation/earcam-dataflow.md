@@ -55,8 +55,8 @@ The `earcam` process runs as a background capture daemon on MORA:
 CATIA manages the lifecycle, fusion, logging, and solver execution:
 
 - Receives UART frames and matches them to the latest loudness window.
-- Records geotagged samples into an in-memory ring buffer (up to 8192 samples).
-- Persists raw samples to disk in `~/usher_debug_data/ear_*.csv`.
+- Records geotagged samples into an in-memory ring buffer (up to 16384 samples).
+- Persists raw samples to `/home/air/usher_debug_data/ear_*.csv` on MORA.
 - Executes `calculated_loudestspot()` in under 1 ms upon receiving a stop trigger.
 - Transmits `EAR_RESULT` (`lat`, `lon`, `AGL`, `alt`, `confidence`) back to the
   flight controller to relocate the `DROP` waypoint.
@@ -80,7 +80,8 @@ CATIA manages the lifecycle, fusion, logging, and solver execution:
 Session logs saved in `~/usher_debug_data/` can be re-analyzed on the ground:
 
 1. **`ear_heatmap_replay`**: reads `ear_YYYYMMDD_HHMMSS.csv` and generates the
-   north-up acoustic heatmap JPEG (`photos/eNNNNNN.jpg`) and its `.geo` sidecar.
+  north-up acoustic heatmap JPEG (`/home/air/Pictures/eNNNNNN.jpg` on MORA) and
+  its `.geo` sidecar.
 2. **`ear_heatmap_overlay.py`**: composites the acoustic heatmap over Google
    satellite imagery tiles, drawing flight tracks, sample points, and the computed
    loudest-spot crosshair.

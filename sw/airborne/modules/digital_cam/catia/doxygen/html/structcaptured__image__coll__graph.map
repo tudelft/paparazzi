@@ -1,0 +1,5 @@
+<map id="captured_image" name="captured_image">
+<area shape="poly" id="Node000001" title=" " alt="" coords="166,134,162,128,150,123,133,119,110,116,85,115,61,116,38,119,21,123,9,128,5,134,9,140,21,145,38,149,61,152,85,153,110,152,133,149,150,145,162,140"/>
+<area shape="poly" id="Node000002" href="$structcapture__timing.html" title="Correlated request and frame&#45;delivery timestamps for one LWIR capture." alt="" coords="161,24,157,18,146,13,130,9,109,6,85,5,62,6,41,9,25,13,14,18,10,24,14,30,25,35,41,39,62,42,85,43,109,42,130,39,146,35,157,30"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="88,57,88,115,83,114,83,60"/>
+</map>

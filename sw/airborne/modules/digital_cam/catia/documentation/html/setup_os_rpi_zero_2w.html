@@ -221,9 +221,8 @@ footer { padding: 25px 20px; color: var(--surface); background: var(--black); bo
         <strong>On this page</strong>
         <div class="toc">
 <ul>
-<li><a href="#getting-you-os-ready-from-scratch">Getting you OS ready from scratch</a></li>
-<li><a href="#headless-ssid-and-pass-change">Headless ssid and pass change</a></li>
-<li><a href="#get-os-to-work-with-uart">Get OS to work with UART</a><ul>
+<li><a href="#prepare-a-pi-zero-2-w-for-catia">Prepare a Pi Zero 2 W for CATIA</a><ul>
+<li><a href="#configure-uart-for-catia">Configure UART for CATIA</a></li>
 <li><a href="#preventing-sleep-and-suspend-states">Preventing Sleep and Suspend States</a></li>
 </ul>
 </li>
@@ -232,188 +231,57 @@ footer { padding: 25px 20px; color: var(--surface); background: var(--black); bo
 
       </div>
     </nav>
-    <main><h1 id="getting-you-os-ready-from-scratch">Getting you OS ready from scratch</h1>
-<p>First make sure you router is setu so it can accepp the connection request from RPI</p>
-<p>WPA2 (NOT WPA2 with SHA256) and NO TKIP bit </p>
-<p>To flash Raspberry Pi OS onto a microSD card for a Raspberry Pi Zero 2 W with preconfigured credentials, network settings, and SSH keys, use the official <strong>Raspberry Pi Imager</strong> software.
-You can download it here Download https://www.raspberrypi.com/software/ MUST be .appimage since the official Ubuntu 26.04 still has OLD version</p>
-<p>So for more future luxury when you still conditioned to type rpi-imager .. this below with start the new one everytime your conditioned finger or scripps call it:</p>
-<p><code>cd /usr/bin &amp;&amp; sudo mv rpi-imager rpi-imager.old &amp;&amp; sudo ln -s rpi-imager -&gt; /opt/imager_2.0.11.1_amd64.AppImage</code></p>
+    <main><h1 id="prepare-a-pi-zero-2-w-for-catia">Prepare a Pi Zero 2 W for CATIA</h1>
+<p>Use the official <a href="https://www.raspberrypi.com/software/">Raspberry Pi Imager</a> to
+write Raspberry Pi OS to a microSD card. Use a current 64-bit Raspberry Pi OS
+image for MORA. Do not replace or rename <code>/usr/bin/rpi-imager</code>; package-managed
+launchers should remain under package-manager control.</p>
+<p>Before flashing, make sure the selected Wi-Fi network is reachable by a Raspberry
+Pi Zero 2 W. It supports 2.4 GHz Wi-Fi; use WPA2/WPA3 personal security, not
+enterprise authentication or TKIP.</p>
 <ol>
-<li><strong>Select Device and OS:</strong> Target Selection.
-Launch Raspberry Pi Imager on your computer. Click <strong>CHOOSE DEVICE</strong> and select <strong>Raspberry Pi Zero 2 W</strong>. Click <strong>CHOOSE OS</strong> and select <strong>Raspberry Pi OS</strong> (64-bit or 32-bit Lite/Desktop).</li>
+<li>In Imager, select <strong>Raspberry Pi Zero 2 W</strong>, a current 64-bit Raspberry Pi
+   OS image, and the intended microSD card. Confirm its capacity and name before
+   continuing: writing erases the selected card.</li>
+<li>Open OS customization. Set a hostname, a non-default user, the 2.4 GHz Wi-Fi
+   network and country, then enable SSH. Prefer public-key authentication; paste
+   the public key from the development PC into <strong>Authorized keys</strong>.</li>
+<li>Write the card and wait for Imager's verification to succeed. Eject it,
+   insert it into MORA, and power the board.</li>
+<li>From the development PC, confirm the configured account and network work:</li>
 </ol>
-<p>To verify: Confirm that both "Raspberry Pi Zero 2 W" and your selected OS title are displayed in the main selection boxes.</p>
-<ol start="2">
-<li><strong>Select Target Storage:</strong> Drive Selection.
-Insert your microSD card into your computer's card reader. Click <strong>CHOOSE STORAGE</strong> and select your microSD card from the list.</li>
-</ol>
-<p>To verify: Ensure the storage capacity and drive name displayed match your microSD card rather than an external backup drive.</p>
-<ol start="3">
-<li><strong>Open OS Customization:</strong> Shortcut: Ctrl + Shift + X.
-Press <strong>Ctrl + Shift + X</strong> on your keyboard (or click <strong>NEXT</strong> and select <strong>EDIT SETTINGS</strong> when the prompt appears) to open the OS Customization window.</li>
-</ol>
-<p>To verify: Confirm that a modal window titled "OS Customization" opens displaying the <strong>GENERAL</strong> and <strong>SERVICES</strong> tabs.</p>
-<ol start="4">
-<li><strong>Configure Username and Wi-Fi Access:</strong> GENERAL Tab.
-In the <strong>GENERAL</strong> tab, set up your primary user and wireless configuration:</li>
-</ol>
-<ul>
-<li><strong>Set hostname</strong>: Check this box and enter a hostname (e.g., <code>pi-zero2w.local</code>).</li>
-<li><strong>Set username and password</strong>: Check this box and define your user account (the legacy default <code>pi</code>/<code>raspberry</code> login is disabled by default).</li>
-<li><strong>Configure wireless LAN</strong>: Check this box and fill in your network credentials:</li>
-<li><strong>SSID</strong>: Enter your Wi-Fi network name. <em>(Note: Raspberry Pi Zero 2 W only supports </em><em>2.4 GHz</em><em> Wi-Fi networks).</em></li>
-<li><strong>Password</strong>: Enter your Wi-Fi password.</li>
-<li><strong>Wireless LAN country</strong>: Select your country code to enable the Wi-Fi radio under local regulations.</li>
-</ul>
-<p>To verify: Double-check that your Wi-Fi network name and password are typed correctly and your country code is set.</p>
-<ol start="5">
-<li><strong>Configure SSH and Public Keys:</strong> SERVICES Tab.
-Select the <strong>SERVICES</strong> tab to set up remote command-line access:</li>
-</ol>
-<ul>
-<li>Check <strong>Enable SSH</strong>.</li>
-<li>Select <strong>Allow public-key authentication only</strong> for security, or choose <strong>Use password authentication</strong> to log in using the account password created in Step 4.</li>
-<li>If using public-key authentication, open a terminal on your host computer, copy the contents of your public SSH key file (typically <code>~/.ssh/id_rsa.pub</code> or <code>~/.ssh/id_ed25519.pub</code>), and paste the string into the <strong>Authorized keys</strong> field.</li>
-</ul>
-<p>To verify: Ensure the "Enable SSH" checkbox is marked and your key string begins with <code>ssh-rsa</code> or <code>ssh-ed25519</code>.</p>
-<ol start="6">
-<li><strong>Save and Flash:</strong> Writing to SD Card.
-Click <strong>SAVE</strong> at the bottom of the OS Customization window, then click <strong>WRITE</strong> (or <strong>NEXT</strong> then <strong>YES</strong>). Confirm the warning prompt that all data on the SD card will be overwritten.</li>
-</ol>
-<p>To verify: Wait until the write and verification progress bar reaches 100% and displays a "Write Successful" modal before removing the card.</p>
-<p>Once finished, eject the microSD card, insert it into your Raspberry Pi Zero 2 W, and connect power. The device will automatically connect to your 2.4 GHz Wi-Fi network and apply your username and SSH configurations on first boot. Refer to the <a href="https://www.raspberrypi.com/documentation/computers/getting-started.html">Raspberry Pi Official Documentation</a> for video guidance on software installation.</p>
-<p>Auto Host Naming
-The best approach is reading the Pi’s hardcoded CPU serial number at boot using a systemd service, then executing specific program logic based on a mapping configuration.</p>
-<p><strong>1. Retrieve the Unique Hardware ID</strong>
-Every Raspberry Pi Zero 2 W has a unique SoC serial number available directly via Linux devicetree:</p>
-<p><code>cat /sys/firmware/devicetree/base/serial-number</code></p>
-<p><strong>2. Create the Router Script</strong>
-Write a Python script (e.g., <code>/usr/local/bin/board_router.py</code>) that reads the serial number on boot and launches the designated program or behavior:</p>
-<pre><code class="language-python">import os
-import sys
-import subprocess
-
-def get_serial():
-    try:
-        with open('/sys/firmware/devicetree/base/serial-number', 'r') as f:
-            return f.read().replace('\x00', '').strip()
-    except Exception as e:
-        sys.exit(f&quot;Failed to read serial: {e}&quot;)
-
-# Map Pi Serial Numbers to specific programs or commands
-BOARD_CONFIGS = {
-    &quot;10000000a1b2c3d4&quot;: [&quot;/usr/bin/python3&quot;, &quot;/opt/apps/sensor_node.py&quot;],
-    &quot;10000000e5f6a7b8&quot;: [&quot;/usr/bin/python3&quot;, &quot;/opt/apps/display_node.py&quot;],
-}
-
-DEFAULT_CMD = [&quot;/usr/bin/python3&quot;, &quot;/opt/apps/default_node.py&quot;]
-
-serial = get_serial()
-cmd = BOARD_CONFIGS.get(serial, DEFAULT_CMD)
-
-# Replace current process with the target program
-os.execv(cmd[0], cmd)
-
+<p><code>sh
+   ssh air@theatre</code></p>
+<p>For Imager-specific screens and recovery options, see the official
+<a href="https://www.raspberrypi.com/documentation/computers/getting-started.html">Raspberry Pi getting-started documentation</a>.</p>
+<h2 id="configure-uart-for-catia">Configure UART for CATIA</h2>
+<p>On MORA, disable Bluetooth and dedicate the full UART to CATIA. Run the following
+on MORA, then reboot:</p>
+<pre><code class="language-sh">sudo nano /boot/firmware/config.txt
+sudo raspi-config
+sudo reboot
 </code></pre>
-<p><strong>3. Set Up a Systemd Boot Service</strong>
-Create <code>/etc/systemd/system/board-router.service</code>:</p>
-<pre><code class="language-ini">[Unit]
-Description=Hardware-Specific Startup Launcher
-After=network.target
-
-[Service]
-Type=simple
-ExecStart=/usr/bin/python3 /usr/local/bin/board_router.py
-Restart=on-failure
-User=root
-
-[Install]
-WantedBy=multi-user.target
-
+<p>Under the existing <code>[all]</code> section in <code>config.txt</code>, add:</p>
+<pre><code class="language-ini">enable_uart=1
+dtoverlay=disable-bt
 </code></pre>
-<p>Enable the service once on the master card before cloning: <code>sudo systemctl enable board-router.service</code>.</p>
-<p><strong>4. Master SD Card Preparation Checklist</strong>
-To prevent network and security conflicts across clones, perform these cleanup steps on the master card right before shut down and cloning:</p>
-<ul>
-<li><strong>Reset Systemd Machine ID</strong>: Run <code>sudo truncate -s 0 /etc/machine-id</code> so each cloned Pi generates its own unique ID on boot.</li>
-<li><strong>Clear SSH Host Keys</strong>: Delete <code>sudo rm /etc/ssh/ssh_host_*</code>. Add <code>dpkg-reconfigure openssh-server</code> to a first-boot script if you want new keys auto-generated upon clone startup.</li>
-<li><strong>Set Dynamic Hostname</strong>: You can add <code>subprocess.run(["hostnamectl", "set-hostname", f"pi-{serial[:6]}"])</code> inside your router script to automatically name each Pi on boot.</li>
-</ul>
-<p>Are you looking to launch completely different applications per board, or just pass unique configuration values (like IDs or local roles) to the same codebase?</p>
-<p>Make it an AccessPoint</p>
-<p>https://raspberrytips.com/access-point-setup-raspberry-pi/</p>
-<h1 id="headless-ssid-and-pass-change">Headless ssid and pass change</h1>
-<p>Method 1: The Pre-configured NetworkManager File (Headless Fix)If you cannot plug the Pi into a monitor and keyboard, you can write a NetworkManager configuration file directly onto the SD card's boot partition. [1] (https://github.com/raspberrypi/trixie-feedback/issues/61)Safely remove the SD card from your Pi and plug it into your computer.Open the partition named bootfs (or boot).Create a new folder named conf inside the root of the boot partition if it doesn't already exist.Inside that conf folder, create a new file named wlan0 (with no file extension, or your operating system may require you to name it wlan0.nmconnection).Paste the following configuration, replacing YOUR_SSID and YOUR_PASSWORD with your actual network details:</p>
-<p>[connection]
- id=Preconfigured-WiFi
- type=wifi
- interface-name=wlan0</p>
-<p>[wifi]
- mode=infrastructure
- ssid=YOUR_SSID</p>
-<p>[wifi-security]
- auth-alg=open
- key-mgmt=wpa-psk
- psk=YOUR_PASSWORD</p>
-<p>[ipv4]
- method=auto</p>
-<p>[ipv6]
- method=auto</p>
-<h1 id="get-os-to-work-with-uart">Get OS to work with UART</h1>
-<p>On MORA, disable Bluetooth and dedicate the full UART to CATIA</p>
-<p>Open and edit the boot configuration:</p>
-<p>sudo nano /boot/firmware/config.txt</p>
-<p>Under [all] add:</p>
-<p><code>text
-   enable_uart=1
-   dtoverlay=disable-bt</code></p>
-<p>Then run sudo raspi-config → Interface Options → Serial Port:</p>
-<p>Serial login shell: No
-Serial hardware: Yes</p>
-<p>Reboot, then check:</p>
+<p>In <code>raspi-config</code>, select <strong>Interface Options &gt; Serial Port</strong>, answer <strong>No</strong> to
+the login shell, and <strong>Yes</strong> to serial hardware. After reboot, verify the full
+UART mapping and user access:</p>
+<pre><code class="language-sh">ls -l /dev/serial0 /dev/ttyAMA0
+id -nG
+</code></pre>
+<p>Expected mapping: <code>/dev/serial0 -&gt; ttyAMA0</code>. The account running CATIA must be a
+member of <code>dialout</code>; add it with <code>sudo usermod -aG dialout air</code>, then log out and
+back in.</p>
 <h2 id="preventing-sleep-and-suspend-states">Preventing Sleep and Suspend States</h2>
-<p>Configure a headless Raspberry Pi Zero 2 W to run continuously without ever entering a sleep, suspend, hibernate, or standby state**.
-It keeps the system awake indefinitely, when powerd, while allowing normal, safe hardware speeds.</p>
-<p>This is need to avoid issues with e.g. a RPI AI Camera</p>
-<p><strong>Step 1:</strong> 
-Block All Systemd Sleep &amp; Suspend StatesThe most secure way to stop a Linux system from sleeping is to <strong>mask</strong> its power-saving targets. This completely disconnects the sleep commands from the operating system, making it impossible for background processes to trigger them.</p>
-<p>Run the following command in your terminal:</p>
-<pre><code class="language-bash">sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+<p>Raspberry Pi OS normally does not suspend a headless Pi. If a board is managed
+by software that might request suspend, disable those targets explicitly:</p>
+<pre><code class="language-sh">sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
 </code></pre>
-<p><strong>Step 2:</strong>
-Disable Kernel-Level Console BlankingBy default, the Linux kernel triggers a low-power "blanking" standby mode after 10 minutes of inactivity. Even on a headless system, disabling this prevents the kernel from spinning down display architectures.
-1. Open the boot command configuration file:
-   <code>bash
-   sudo nano /boot/firmware/cmdline.txt</code>
-   <em>(Note: If you are using an older OS version, this file is located at <code>/boot/cmdline.txt</code>).</em>
-2. Append the following argument to the end of the existing text block.
-   <strong>Crucial:</strong> Keep everything on a <strong>single, continuous line</strong>. Do not press Enter or add a new line.
-   <code>text
-   consoleblank=0</code></p>
-<ol start="3">
-<li>Save and exit (<code>Ctrl + O</code>, <code>Enter</code>, then <code>Ctrl + X</code>).</li>
-</ol>
-<p><strong>Step 3:</strong>
-Ensure Normal, Non-Overclocked Settings (Optional)If you previously added aggressive hardware-forcing settings to your configuration file, you should remove them to let the Pi manage its temperatures naturally while staying awake.
-1. Open the boot configuration file:
-   <code>bash
-   sudo nano /boot/firmware/config.txt</code></p>
-<ol start="2">
-<li>
-<p>Look at the bottom of the file and ensure these lines are either <strong>removed</strong> or commented out with a <code>#</code>:
-   <code>ini
-   # force_turbo=1
-   # arm_freq_min=1000</code></p>
-</li>
-<li>
-<p>Save and exit (<code>Ctrl + O</code>, <code>Enter</code>, then <code>Ctrl + X</code>).</p>
-</li>
-</ol>
-<p><strong>Step 4:</strong> Apply ChangesReboot your Raspberry Pi to firmly lock all of these configurations into place:</p>
-<pre><code class="language-bash">sudo reboot
-</code></pre>
-<p>The Raspberry Pi Zero 2 W is now permanently awake and will never go to sleep!</p></main>
+<p>This does not overclock the board and is not a substitute for stable power and
+thermal management. Revert it with <code>sudo systemctl unmask sleep.target
+suspend.target hibernate.target hybrid-sleep.target</code> if suspend is later needed.</p></main>
   </div>
   <footer>CATIA documentation / Paparazzi UAV</footer>
 </body>

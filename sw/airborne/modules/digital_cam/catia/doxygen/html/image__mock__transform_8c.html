@@ -141,7 +141,7 @@ Include dependency graph for image_mock_transform.c:</div>
 <area shape="poly" title=" " alt="" coords="920,31,1120,52,1234,68,1348,88,1359,93,1354,93,1346,94,1233,73,1119,57,920,36"/>
 <area shape="poly" title=" " alt="" coords="1576,110,1574,104,1567,99,1556,95,1542,92,1527,91,1512,92,1498,95,1487,99,1480,104,1478,110,1480,116,1487,121,1498,125,1512,128,1527,129,1542,128,1556,125,1567,121,1574,116"/>
 <area shape="poly" title=" " alt="" coords="928,28,1177,47,1323,65,1468,88,1478,93,1473,93,1467,94,1322,70,1176,53,928,33"/>
-<area shape="poly" href="protocol_8h.html" title=" " alt="" coords="186,196,184,190,176,185,164,180,148,178,131,177,114,178,98,180,86,185,78,190,76,196,78,201,86,207,98,211,114,214,131,214,148,214,164,211,176,207,184,201"/>
+<area shape="poly" href="protocol_8h.html" title="CATIA&#39;s byte&#45;stream UART framing, messages, and wire&#45;compatible payload layouts." alt="" coords="186,196,184,190,176,185,164,180,148,178,131,177,114,178,98,180,86,185,78,190,76,196,78,201,86,207,98,211,114,214,131,214,148,214,164,211,176,207,184,201"/>
 <area shape="poly" title=" " alt="" coords="127,127,131,162,126,161,125,132"/>
 <area shape="poly" title=" " alt="" coords="186,281,184,275,176,270,164,266,148,263,131,262,114,263,98,266,86,270,78,275,76,281,78,287,86,292,98,297,114,299,131,300,148,299,164,297,176,292,184,287"/>
 <area shape="poly" title=" " alt="" coords="133,213,133,248,129,246,129,217"/>
@@ -193,6 +193,7 @@ Functions</h2></td></tr>
 <tr class="memitem:afca7faf2e819ca7999636fcf22111d46" id="r_afca7faf2e819ca7999636fcf22111d46"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afca7faf2e819ca7999636fcf22111d46">create_black_frame</a> (const char *filename)</td></tr>
 <tr class="memitem:a2873a3e1e22deff06993c20703efeb15" id="r_a2873a3e1e22deff06993c20703efeb15"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2873a3e1e22deff06993c20703efeb15">replace_image_atomically</a> (const char *filename, const struct <a class="el" href="structdecoded__image.html">decoded_image</a> *image)</td></tr>
 <tr class="memitem:a65f50d420e81d34a2e60d5659ace9bd8" id="r_a65f50d420e81d34a2e60d5659ace9bd8"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a65f50d420e81d34a2e60d5659ace9bd8">image_mock_transform</a> (const char *filename, const union <a class="el" href="uniondc__shot__union.html">dc_shot_union</a> *shot)</td></tr>
+<tr class="memdesc:a65f50d420e81d34a2e60d5659ace9bd8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rewrite a local test JPEG to simulate the shot attitude.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Deterministic attitude-based JPEG transform used by local CATIA simulation. </p>
@@ -718,6 +719,17 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Rewrite a local test JPEG to simulate the shot attitude. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">filename</td><td>Writable path to the JPEG to transform in place. </td></tr>
+    <tr><td class="paramname">shot</td><td>Flight pose containing fixed-point roll, pitch, yaw, and position fields. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><code>IMAGE_MOCK_TRANSFORM_APPLIED</code>, <code>IMAGE_MOCK_TRANSFORM_SKIPPED</code>, or -1 on failure.</dd></dl>
+<p>The transform uses a perspective projection and an atomic temporary-file rename so consumers never observe a partial JPEG. Near-horizon frames are skipped or synthesized by configured policy because planar image projection becomes numerically untrustworthy there. </p><dl class="section warning"><dt>Warning</dt><dd>This is simulation evidence only; it does not model a calibrated physical camera. </dd></dl>
 
 </div>
 </div>

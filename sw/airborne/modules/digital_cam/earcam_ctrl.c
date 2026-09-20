@@ -705,6 +705,31 @@ bool earcam_result_within(uint8_t wp_id, float radius_m)
   return dx * dx + dy * dy <= radius_m * radius_m;
 }
 
+uint8_t earcam_result_to_waypoint_in_circle(uint8_t wp_id, uint8_t wp_center, float radius_m)
+{
+  if (!earcam_result_valid || wp_id >= nb_waypoint || wp_center >= nb_waypoint ||
+      !isfinite(radius_m) || radius_m < 0.01f) {
+    return 1;
+  }
+  float result_x, result_y;
+  result_to_local_xy(&result_lla, &result_x, &result_y);
+  const float center_x = WaypointX(wp_center);
+  const float center_y = WaypointY(wp_center);
+  const float delta_x = result_x - center_x;
+  const float delta_y = result_y - center_y;
+  const float distance = hypotf(delta_x, delta_y);
+  if (!isfinite(distance)) {
+    return 1;
+  }
+  if (distance > radius_m) {
+    const float scale = (radius_m - 0.01f) / distance;
+    result_x = center_x + delta_x * scale;
+    result_y = center_y + delta_y * scale;
+  }
+  set_wp_xy(wp_id, result_x, result_y);
+  return 0;
+}
+
 /* ------------------------------------------------------------------ */
 /* Low release: complements nav_drop (approach, release point, hatch) */
 /* ------------------------------------------------------------------ */

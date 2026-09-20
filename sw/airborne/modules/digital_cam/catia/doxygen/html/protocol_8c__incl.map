@@ -1,6 +1,6 @@
 <map id="protocol.c" name="protocol.c">
 <area shape="poly" id="Node000001" title="Incremental parser for CATIA&#39;s UART framing protocol." alt="" coords="181,24,179,18,171,13,159,9,143,6,126,5,109,6,93,9,81,13,73,18,71,24,73,30,81,35,93,39,109,42,126,43,143,42,159,39,171,35,179,30"/>
-<area shape="poly" id="Node000002" href="$protocol_8h.html" title=" " alt="" coords="181,110,179,104,171,99,159,95,143,92,126,91,109,92,93,95,81,99,73,104,71,110,73,116,81,121,93,125,109,128,126,129,143,128,159,125,171,121,179,116"/>
+<area shape="poly" id="Node000002" href="$protocol_8h.html" title="CATIA&#39;s byte&#45;stream UART framing, messages, and wire&#45;compatible payload layouts." alt="" coords="181,110,179,104,171,99,159,95,143,92,126,91,109,92,93,95,81,99,73,104,71,110,73,116,81,121,93,125,109,128,126,129,143,128,159,125,171,121,179,116"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="127,41,129,76,123,75,125,46"/>
 <area shape="poly" id="Node000003" title=" " alt="" coords="116,196,113,190,106,185,93,180,78,178,61,177,44,178,28,180,16,185,8,190,5,196,8,201,16,207,28,211,44,214,61,214,78,214,93,211,106,207,113,201"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="115,127,86,167,82,163,110,130"/>

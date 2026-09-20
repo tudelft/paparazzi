@@ -280,8 +280,8 @@ periodic targeted camera commands over UART at 115200 baud:</p>
 <p>CATIA manages the lifecycle, fusion, logging, and solver execution:</p>
 <ul>
 <li>Receives UART frames and matches them to the latest loudness window.</li>
-<li>Records geotagged samples into an in-memory ring buffer (up to 8192 samples).</li>
-<li>Persists raw samples to disk in <code>~/usher_debug_data/ear_*.csv</code>.</li>
+<li>Records geotagged samples into an in-memory ring buffer (up to 16384 samples).</li>
+<li>Persists raw samples to <code>/home/air/usher_debug_data/ear_*.csv</code> on MORA.</li>
 <li>Executes <code>calculated_loudestspot()</code> in under 1 ms upon receiving a stop trigger.</li>
 <li>Transmits <code>EAR_RESULT</code> (<code>lat</code>, <code>lon</code>, <code>AGL</code>, <code>alt</code>, <code>confidence</code>) back to the
   flight controller to relocate the <code>DROP</code> waypoint.</li>
@@ -347,7 +347,8 @@ periodic targeted camera commands over UART at 115200 baud:</p>
 <p>Session logs saved in <code>~/usher_debug_data/</code> can be re-analyzed on the ground:</p>
 <ol>
 <li><strong><code>ear_heatmap_replay</code></strong>: reads <code>ear_YYYYMMDD_HHMMSS.csv</code> and generates the
-   north-up acoustic heatmap JPEG (<code>photos/eNNNNNN.jpg</code>) and its <code>.geo</code> sidecar.</li>
+  north-up acoustic heatmap JPEG (<code>/home/air/Pictures/eNNNNNN.jpg</code> on MORA) and
+  its <code>.geo</code> sidecar.</li>
 <li><strong><code>ear_heatmap_overlay.py</code></strong>: composites the acoustic heatmap over Google
    satellite imagery tiles, drawing flight tracks, sample points, and the computed
    loudest-spot crosshair.</li>

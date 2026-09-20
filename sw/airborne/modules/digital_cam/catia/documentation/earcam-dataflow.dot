@@ -23,7 +23,7 @@ digraph earcam_dataflow {
     fillcolor="#f0fdf4"; style="rounded,filled"; margin=22; fontcolor="#111111";
     newest [label="newest 50 ms window\nlevel  trend  contrast  clip", fillcolor="#dcfce7", color="#16a34a"];
     fuse   [label="position + newest window\n= one geotagged sample", fillcolor="#dcfce7", color="#16a34a"];
-    buffer [label="RAM buffer (max 8192)\n+ earlogs/*.csv", fillcolor="#dcfce7", color="#16a34a"];
+    buffer [label="RAM buffer (max 16384)\n+ /home/air/usher_debug_data/*.csv", fillcolor="#dcfce7", color="#16a34a"];
     solve  [label="calculated_loudestspot()\n< 1 ms", fillcolor="#fef08a", color="#ca8a04"];
   }
 

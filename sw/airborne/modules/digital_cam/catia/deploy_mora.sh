@@ -8,6 +8,8 @@ MORA_SSH_TARGET=${1:-air@theatre}
 MORA_INSTALL_DIR=${2:-/home/air/digital_cam}
 BUILD_JOBS=${BUILD_JOBS:-$(nproc)}
 
+echo "MORA CATIA: deploy with: BUILD_JOBS=32 sw/airborne/modules/digital_cam/catia/deploy_mora.sh air@theatre"
+
 if [[ "$MORA_INSTALL_DIR" != "/home/air/digital_cam" ]]; then
   echo "deploy_mora.sh: catia.service requires /home/air/digital_cam" >&2
   exit 2

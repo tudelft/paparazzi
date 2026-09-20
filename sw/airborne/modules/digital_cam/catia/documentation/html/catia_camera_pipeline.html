@@ -346,7 +346,9 @@ as shown in step 4. Never put a sudo password into a script or chat.</p>
 <p>On the Raspberry Pi Zero 2 W MORA (<code>theatre</code>), disable Bluetooth and dedicate
 the full UART to CATIA. Wi-Fi remains enabled. This is a one-time board setup,
 not something to repeat for every application deployment.</p>
-<p>Connect from the development PC:</p>
+<ol>
+<li>Connect from the development PC:</li>
+</ol>
 <pre><code class="language-sh">ssh air@theatre
 </code></pre>
 <p>Run the following steps <strong>on MORA</strong>. Enter sudo passwords directly in that
@@ -354,46 +356,46 @@ terminal.</p>
 <ol>
 <li>Open the boot configuration:</li>
 </ol>
-<p><code>sh
-   sudo nano /boot/firmware/config.txt</code></p>
+<pre><code class="language-sh">sudo nano /boot/firmware/config.txt
+</code></pre>
 <p>Under the existing <code>[all]</code> section, add or update these settings:</p>
-<p><code>ini
-   enable_uart=1
-   dtoverlay=disable-bt</code></p>
+<pre><code class="language-ini">enable_uart=1
+dtoverlay=disable-bt
+</code></pre>
 <p>NOTE: Remove <code>dtoverlay=miniuart-bt</code> if present; it is the alternative setup that
-   retains Bluetooth. Do not leave both overlays enabled. Save and exit.</p>
+retains Bluetooth. Do not leave both overlays enabled. Save and exit.</p>
 <ol>
 <li>Disable the Bluetooth services:</li>
 </ol>
-<p><code>sh
-   sudo systemctl disable --now hciuart.service bluetooth.service</code></p>
+<pre><code class="language-sh">sudo systemctl disable --now hciuart.service bluetooth.service
+</code></pre>
 <p>If either service is absent, skip that service and disable the one that
-   exists. An absent Bluetooth service does not prevent UART setup.</p>
+exists. An absent Bluetooth service does not prevent UART setup.</p>
 <ol>
 <li>Configure the serial port:</li>
 </ol>
-<p><code>sh
-   sudo raspi-config</code></p>
+<pre><code class="language-sh">sudo raspi-config
+</code></pre>
 <p>Choose <strong>Interface Options &gt; Serial Port</strong>. Set <strong>Login shell over serial</strong>
-   to <strong>No</strong> and <strong>Serial hardware enabled</strong> to <strong>Yes</strong>, then finish.</p>
+to <strong>No</strong> and <strong>Serial hardware enabled</strong> to <strong>Yes</strong>, then finish.</p>
 <ol>
 <li>Reboot to apply the configuration:</li>
 </ol>
-<p><code>sh
-   sudo reboot</code></p>
+<pre><code class="language-sh">sudo reboot
+</code></pre>
 <p>The SSH connection closes. Once MORA is reachable again, reconnect from
-   the PC with <code>ssh air@theatre</code>.</p>
+the PC with <code>ssh air@theatre</code>.</p>
 <ol>
 <li>Verify the devices on MORA:</li>
 </ol>
-<p><code>sh
-   ls -l /dev/serial0 /dev/ttyAMA0</code></p>
+<pre><code class="language-sh">ls -l /dev/serial0 /dev/ttyAMA0
+</code></pre>
 <p>Expected mapping for this board configuration:</p>
-<p><code>text
-   /dev/serial0 -&gt; ttyAMA0</code></p>
+<pre><code class="language-text">/dev/serial0 -&gt; ttyAMA0
+</code></pre>
 <p>Confirm that <code>/dev/ttyAMA0</code> is a character device accessible to <code>air</code>
-   through its <code>dialout</code> group. Do not create a manual symlink to compensate
-   for missing OS configuration.</p>
+through its <code>dialout</code> group. Do not create a manual symlink to compensate
+for missing OS configuration.</p>
 <p>MORA TX remains <strong>GPIO14, physical pin 8</strong>; RX remains <strong>GPIO15, physical pin 10</strong>.
 No PC-side FTDI configuration change is needed. Cross TX/RX, use a common
 ground and <strong>3.3 V UART logic</strong>, and configure both ends for <strong>115200 baud</strong>.
@@ -658,9 +660,10 @@ checks ARM64-to-runtime upload names without contacting MORA.</p>
 <h3 id="2-start-the-local-camera-service">2. Start the local camera service</h3>
 <pre><code class="language-sh">sw/airborne/modules/digital_cam/catia/run_local_demo.sh
 </code></pre>
-<p>The script builds CATIA, creates the local serial bridge, and starts CATIA with
-the bundled mock image. It also enables <code>--debug</code>. Leave this terminal running
-while NPS is running.</p>
+<p>The script builds CATIA, creates the local serial bridge, and starts CATIA in
+test mode. It selects a random readable JPEG in <code>testphotos/</code> beside CATIA when
+available; otherwise it uses the bundled mock image. It also enables <code>--debug</code>.
+Leave this terminal running while NPS is running.</p>
 <p>The important startup line is:</p>
 <pre><code class="language-text">Started OK
 </code></pre>
@@ -673,21 +676,20 @@ Buffered bytes and parser state are cleared at each switch so a partial frame
 cannot cross endpoints.</p>
 <p>The private build settings <code>DIGITAL_CAM_UART_LOCAL_DEVICE</code> and
 <code>DIGITAL_CAM_UART_FALLBACK_DEVICE</code> override these defaults when a different test
-path is needed. <code>SITL_SERIAL</code> and the hardware <code>CAMERA_PORT</code> are not used for this
-simulation selection; hardware firmware continues to use <code>CAMERA_PORT</code> normally.</p>
+path is needed. Hardware firmware continues to use <code>CAMERA_PORT</code> normally.</p>
 <h3 id="3-trigger-a-photo-from-paparazzi">3. Trigger a photo from Paparazzi</h3>
 <p>Start the aircraft simulation and trigger <code>DC_SHOOT</code>, for example through the
 camera flight-plan block. Simulation sends the shot index, position, altitude
 attitude, speed, and course to CATIA.</p>
-<p>For every completed capture, CATIA prints debug info is enabled:</p>
+<p>For every completed capture, CATIA prints this when debug output is enabled:</p>
 <pre><code class="language-text">Photo take 6
 </code></pre>
-<p>The corresponding local images somewhere like:</p>
-<pre><code class="language-text">sw/airborne/modules/digital_cam/catia/photos/m000006.jpg
+<p>The corresponding simulated images are saved in:</p>
+<pre><code class="language-text">sw/airborne/modules/digital_cam/Pictures/m000006.jpg
 </code></pre>
 <h3 id="4-confirm-the-complete-chain">4. Confirm the complete chain</h3>
 <p>A healthy local capture ends with messages similar to:</p>
-<pre><code class="language-text">Shooting: got image .../photos/m000006.jpg
+<pre><code class="language-text">Shooting: got image .../Pictures/m000006.jpg
 Shooting: EXIF metadata added
 Photo take 6
 SODA: I looked at the image. Cool, right?
@@ -737,11 +739,13 @@ remain wire-compatible. Source callers must use the renamed symbols when rebuilt
 <code>/dev/serial0</code> device. Both ends run at 115200 baud. The example <code>Easystar_3</code> simulated airframe
 already configures these local PC-side settings. See the
 <code>&lt;module name="digital_cam_uart"&gt;</code> block of the airframe.</p>
-<p>Do not swap <code>SITL_SERIAL</code> between local and desk tests. Set it once to the local
-PC's FTDI device. Running <code>run_local_demo.sh</code> creates <code>/tmp/catia-sim</code>, which is
-selected automatically; stopping local CATIA makes the simulation return to the
-FTDI device. This selection changes only the PC-side simulation UART and does not
-change MORA's <code>/dev/serial0</code> service configuration.</p>
+<p>Running <code>run_local_demo.sh</code> creates <code>/tmp/catia-sim</code>, which the simulation
+selects automatically. Stopping local CATIA makes the simulation return to the
+FTDI device. Change
+<code>DIGITAL_CAM_UART_LOCAL_DEVICE</code> or <code>DIGITAL_CAM_UART_FALLBACK_DEVICE</code> in the
+<code>digital_cam_uart</code> module only when the local PTY or desk FTDI path differs. This
+selection changes only the PC-side simulation UART and does not change MORA's
+<code>/dev/serial0</code> service configuration.</p>
 <h3 id="2-first-run-real-uart-with-a-mock-image">2. First run: real UART with a mock image</h3>
 <p>Start CATIA from the laptop and keep the SSH terminal open:</p>
 <pre><code class="language-sh">ssh -t air@theatre \
@@ -872,11 +876,10 @@ bridge.</p>
 <h3 id="ai-camera-command">AI camera command</h3>
 <p>The AI-camera backend starts <code>rpicam-still</code> directly, without a shell:</p>
 <pre><code class="language-sh">rpicam-still \
-   -o photos/a%06d.jpg \
-  --width 4056 \
-  --height 3040 \
-  --hflip \
-  --vflip
+   -o &lt;photo-dir&gt;/aNNNNNN.jpg \
+   --width 2048 \
+   --height 1520 \
+   -t 200
 </code></pre>
 <p>CATIA waits for the process to finish and rejects a missing, empty, or failed
 capture.</p>
@@ -890,7 +893,7 @@ shell, during CATIA initialization:</p>
 <p>LWIR uses the same CATIA shot dispatcher, EXIF writer, and SODA hand-off as
 AICam. Camera ID <code>3</code> selects LWIR (<code>2</code> selects AICam); legacy untargeted shots
 select the active optical backend. Each successful capture is saved as one file,
-<code>photos/lNNNNNN.jpg</code>, which carries the complete Tiny1-C temperature plane
+<code>&lt;photo-dir&gt;/lNNNNNN.jpg</code>, which carries the complete Tiny1-C temperature plane
 losslessly inside the JPEG as <code>LWIRRAW1</code> APP15 segments. Capture writes no
 sidecar: no <code>.jpg.raw</code> companion and no <code>.hotspots.json</code> report.</p>
 <p>Thermal detection runs exactly once, in the geolocation pass, which reads those
@@ -901,7 +904,7 @@ result that geolocation did not compute again, and was removed.</p>
 start CATIA with the option:</p>
 <pre><code class="language-sh">./catia --lwircam --lwir-raw
 </code></pre>
-<p>That restores the <code>photos/lNNNNNN.jpg.raw</code> companion, the unchanged Tiny1-C UVC
+<p>That restores the <code>&lt;photo-dir&gt;/lNNNNNN.jpg.raw</code> companion, the unchanged Tiny1-C UVC
 frame, and then the JPEG carries no embedded plane. For the CATIA systemd
 service on MORA, add <code>--lwir-raw</code> to the unit's <code>ExecStart</code> line and restart
 CATIA. Omit the option for the default single-file output. CATIA passes it to
@@ -924,7 +927,7 @@ executable in this directory. Deployment installs it as
 <code>/home/air/digital_cam/soda</code>.</p>
 <p>SODA accepts one optional camera selector: <code>--aicam</code>, <code>--chdkcam</code>, <code>--lwircam</code>,
 or <code>--earcam</code>. Only double-dash selectors are supported. For example:</p>
-<pre><code class="language-sh">./soda --lwircam photos/l000039.jpg
+<pre><code class="language-sh">./soda --lwircam &lt;photo-dir&gt;/l000039.jpg
 </code></pre>
 <p>The LWIR handler prints exactly:</p>
 <pre><code class="language-text">Now I can do nifty stuff for lwircam
@@ -944,7 +947,7 @@ descriptions without requiring an image. <code>--version</code> prints only the 
 line. <code>--local</code> selects development-PC mode and logs that choice to stderr;
 the placeholder handlers still operate on the supplied local image, without
 hardware or remote connections. CATIA forwards this flag when running with
-local transport. For example, <code>./soda --local --lwircam photos/m000039.jpg</code>.
+local transport. For example, <code>./soda --local --lwircam ../Pictures/m000039.jpg</code>.
 <code>--</code> ends option parsing for filenames beginning with
 a dash. The handlers currently print only; they do not perform image analysis.</p>
 <p>Run <code>bash tests/soda_test.sh</code> from the CATIA directory for CLI tests. The
@@ -968,7 +971,7 @@ unchanged; query its version with <code>earcam --version</code>.</p>
 <h3 id="earcam-acoustic-backend">EARcam acoustic backend</h3>
 <p>For a non-specialist explanation of why a single USB microphone was chosen,
 how far it can hear a motionSCOUT alarm and what the loudest-spot fusion does
-step by step, read <a href="earcam-loudest-spot-explained.md">EARcam Explained</a>
+step by step, read <a href="earcam-loudest-spot-explained.html">EARcam Explained</a>
 (rendered as <code>earcam-loudest-spot-explained.html</code>).</p>
 <p>The EARcam backend starts one persistent <code>earcam --server</code> process during CATIA
 initialization. <code>earcam</code> (source in <code>earcam/</code>, symlinked to the
@@ -1132,7 +1135,7 @@ loudspeaker: CATIA synthesizes the level from each shot's own position
 (inverse-distance law, +/-1.5 dB noise) and no <code>earcam</code> process is started.
 With that, the whole chain flies in NPS. <code>conf/conf_earcam_sim.xml</code> defines
 <code>EasystarEar</code> (EasyStar 3 airframe, demo flight plan, earcam settings):</p>
-<pre><code class="language-sh">make CONF_XML=conf/conf_earcam_sim.xml AIRCRAFT=EasystarEar SITL_SERIAL=/tmp/catia-sim nps.compile
+<pre><code class="language-sh">make CONF_XML=conf/conf_earcam_sim.xml AIRCRAFT=EasystarEar nps.compile
 python3 sw/simulator/nps/nps_earcam_mission.py --aircraft EasystarEar --ac-id 235 \
     --speaker 48.81050,7.85160 --time-factor 4
 </code></pre>
@@ -1192,7 +1195,7 @@ a GPS point given on the day. <code>easystar3_imav2026_mission4_earcam.xml</code
   2400,3200</code> in <code>catia.service</code> (2.6-3.0 kHz plus 3 percent Doppler at
   10 m/s and unit spread).</li>
 </ul>
-<pre><code class="language-sh">make CONF_XML=conf/conf_earcam_sim.xml AIRCRAFT=EasystarM4 SITL_SERIAL=/tmp/catia-sim nps.compile
+<pre><code class="language-sh">make CONF_XML=conf/conf_earcam_sim.xml AIRCRAFT=EasystarM4 nps.compile
 python3 sw/simulator/nps/nps_earcam_mission.py --aircraft EasystarM4 --ac-id 237 \
     --speaker 48.81050,7.85160 --time-factor 4 --start-block m4_search
 </code></pre>
@@ -1367,7 +1370,8 @@ prevents the SODA hand-off. Other camera test modes retain the image-copy path.<
 <pre><code class="language-sh">sw/airborne/modules/digital_cam/catia/catia --local --lwircam --test \
    --mock-image sw/airborne/modules/digital_cam/catia/lwircam/mock_lwir_01.jpg
 </code></pre>
-<p>Trigger a shot as usual from Paparazzi. The test writes <code>photos/mNNNNNN.jpg</code>
+<p>Trigger a shot as usual from Paparazzi. The local/test backend writes
+<code>../Pictures/mNNNNNN.jpg</code> (from the CATIA directory)
 without a JSON sidecar. Mock temperatures come from the embedded
 synthetic Kelvin-times-64 plane when available. Otherwise, decoded luminance
 is mapped linearly through black (0) = 15 C, middle gray (128) = 20 C, and
@@ -1639,22 +1643,26 @@ pending captures/processing and hardware startup when switching, especially LWIR
 warm-up; block selection does not imply instantaneous sensor readiness. EARcam
 index <code>4</code> records acoustic samples; its final sound picture is produced on stop.</p>
 <h3 id="local-and-test-images">Local and test images</h3>
-<p><code>local_pipe_shoot()</code> copies the chosen source JPEG to <code>photos/m%06d.jpg</code>. It uses
+<p><code>local_pipe_shoot()</code> copies the chosen source JPEG to <code>../Pictures/m%06d.jpg</code>
+(from the CATIA directory). It uses
 bounded POSIX <code>open()</code>, <code>read()</code>, and <code>write()</code> loops and handles partial writes.
 The bytes are already JPEG encoded; this stage does not decode or re-encode
 them.</p>
 <h3 id="raspberry-pi-ai-camera">Raspberry Pi AI camera</h3>
 <p><code>ai_cam_pipe_shoot()</code> uses <code>posix_spawnp()</code> to execute <code>rpicam-still</code> with a
 fixed argument list. <strong><code>rpicam-still</code> is the component that captures and JPEG
-encodes the image.</strong> The default result is <code>photos/a%06d.jpg</code>.</p>
+encodes the image.</strong> The native build writes <code>catia/photos/a%06d.jpg</code>; MORA
+deployment writes <code>/home/air/Pictures/a%06d.jpg</code>.</p>
 <h3 id="tiny-1-c-lwir-camera">Tiny 1-C LWIR camera</h3>
 <p><code>lwir_cam_pipe_shoot()</code> uses <code>posix_spawn()</code> to execute the configured LWIR
 LWIRcam with <code>--capture --output &lt;filename&gt;</code>. The application owns USB acquisition,
 startup-frame rejection, YUYV-to-RGB conversion, and initial JPEG encoding.
-The default result is <code>photos/l%06d.jpg</code>.</p>
+The native build writes <code>catia/photos/l%06d.jpg</code>; MORA deployment writes
+<code>/home/air/Pictures/l%06d.jpg</code>.</p>
 <h3 id="chdk-camera">CHDK camera</h3>
 <p><code>chdk_pipe_shoot()</code> instructs the CHDK camera to capture and download a JPEG.
-CATIA moves the downloaded file to <code>photos/c%06d.jpg</code>.</p>
+The native build moves the downloaded file to <code>catia/photos/c%06d.jpg</code>; MORA
+deployment writes <code>/home/air/Pictures/c%06d.jpg</code>.</p>
 <h3 id="optional-transform-and-exif">Optional transform and EXIF</h3>
 <p>After any backend returns a JPEG, the shared processing pipeline runs:</p>
 <ol>
@@ -2344,9 +2352,13 @@ codec remains self-contained and cross-compiles reliably. A future switch to
 libjpeg-turbo should build it as a proper separate library rather than compile
 its source files ad hoc.</p>
 <h2 id="output-locations">Output Locations</h2>
-<p>On MORA (ARM64 deployment), photos are saved to <code>~/Pictures/</code> (<code>/home/air/Pictures</code>)
-and EARcam acoustic session logs plus debug data are saved to <code>~/usher_debug_data/</code> (<code>/home/air/usher_debug_data</code>).
-In local development, output defaults to <code>photos/</code> and <code>earlogs/</code> beside CATIA.</p>
+<p>On MORA (ARM64 deployment), every CATIA image is saved to <code>~/Pictures/</code>
+(<code>/home/air/Pictures</code>). EARcam acoustic session logs and debug data are saved to
+<code>~/usher_debug_data/</code> (<code>/home/air/usher_debug_data</code>).</p>
+<p>On a development PC, the simulated local/test backend saves images to
+<code>sw/airborne/modules/digital_cam/Pictures/</code>. Native physical backends use the
+explicit paths below. These are build-time defaults; the startup log prints the
+resolved directory actually in use.</p>
 <table>
 <thead>
 <tr>
@@ -2359,7 +2371,7 @@ In local development, output defaults to <code>photos/</code> and <code>earlogs/
 <tbody>
 <tr>
 <td>Local or <code>--test</code></td>
-<td><code>catia/photos/</code></td>
+<td><code>sw/airborne/modules/digital_cam/Pictures/</code></td>
 <td><code>~/Pictures/</code></td>
 <td><code>m000006.jpg</code></td>
 </tr>
@@ -2508,7 +2520,7 @@ described by its <code>ExecStart</code> line.</p>
 </tr>
 <tr>
 <td><code>--lwir-raw</code></td>
-<td>Keep <code>photos/lNNNNNN.jpg.raw</code> instead of storing temperatures in the JPEG</td>
+<td>Keep <code>&lt;photo-dir&gt;/lNNNNNN.jpg.raw</code> instead of storing temperatures in the JPEG</td>
 <td>Calibration and evidence work may want the untouched combined sensor frame; the default single file is smaller and simpler to recover</td>
 </tr>
 <tr>

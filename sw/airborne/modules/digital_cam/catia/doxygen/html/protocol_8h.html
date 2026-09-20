@@ -93,6 +93,9 @@ $(function(){initNavTree('protocol_8h.html','',''); });
   <div class="headertitle"><div class="title">protocol.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p>CATIA's byte-stream UART framing, messages, and wire-compatible payload layouts.  
+<a href="#details">More...</a></p>
 <div class="textblock"><code>#include &lt;inttypes.h&gt;</code><br />
 <code>#include &lt;stdbool.h&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
@@ -100,7 +103,7 @@ Include dependency graph for protocol.h:</div>
 <div class="dyncontent">
 <div class="center"><img src="protocol_8h__incl.png" border="0" usemap="#aprotocol_8h" loading="lazy" alt=""/></div>
 <map name="aprotocol_8h" id="aprotocol_8h">
-<area shape="poly" title=" " alt="" coords="181,24,179,18,171,13,159,9,143,6,126,5,109,6,93,9,81,13,73,18,71,24,73,30,81,35,93,39,109,42,126,43,143,42,159,39,171,35,179,30"/>
+<area shape="poly" title="CATIA&#39;s byte&#45;stream UART framing, messages, and wire&#45;compatible payload layouts." alt="" coords="181,24,179,18,171,13,159,9,143,6,126,5,109,6,93,9,81,13,73,18,71,24,73,30,81,35,93,39,109,42,126,43,143,42,159,39,171,35,179,30"/>
 <area shape="poly" title=" " alt="" coords="116,110,113,104,106,99,93,95,78,92,61,91,44,92,28,95,16,99,8,104,5,110,8,116,16,121,28,125,44,128,61,129,78,128,93,125,106,121,113,116"/>
 <area shape="poly" title=" " alt="" coords="115,41,86,81,82,78,110,44"/>
 <area shape="poly" title=" " alt="" coords="245,110,243,104,235,99,224,95,209,92,193,91,176,92,162,95,150,99,143,104,140,110,143,116,150,121,162,125,176,128,193,129,209,128,224,125,235,121,243,116"/>
@@ -112,7 +115,7 @@ This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
 <div class="center"><img src="protocol_8h__dep__incl.png" border="0" usemap="#aprotocol_8hdep" loading="lazy" alt=""/></div>
 <map name="aprotocol_8hdep" id="aprotocol_8hdep">
-<area shape="poly" title=" " alt="" coords="1481,24,1478,18,1470,13,1458,9,1443,6,1425,5,1408,6,1393,9,1381,13,1373,18,1370,24,1373,30,1381,35,1393,39,1408,42,1425,43,1443,42,1458,39,1470,35,1478,30"/>
+<area shape="poly" title="CATIA&#39;s byte&#45;stream UART framing, messages, and wire&#45;compatible payload layouts." alt="" coords="1481,24,1478,18,1470,13,1458,9,1443,6,1425,5,1408,6,1393,9,1381,13,1373,18,1370,24,1373,30,1381,35,1393,39,1408,42,1425,43,1443,42,1458,39,1470,35,1478,30"/>
 <area shape="poly" href="catia_8c.html" title="Main CATIA daemon coordinating flight&#45;controller triggers and camera backends." alt="" coords="848,281,846,275,840,270,831,266,819,263,805,262,792,263,780,266,771,270,765,275,763,281,765,287,771,292,780,297,792,299,805,300,819,299,831,297,840,292,846,287"/>
 <area shape="poly" title=" " alt="" coords="1352,27,1208,35,1025,46,850,65,779,78,726,94,676,116,634,143,620,158,612,175,613,193,622,213,651,241,688,259,727,270,766,278,760,278,726,276,686,264,648,245,618,216,607,194,607,174,615,155,630,139,674,111,725,89,778,73,849,59,1025,41,1207,29,1358,27"/>
 <area shape="poly" href="clock__alignment_8h.html" title="Bounded mapping between flight&#45;controller microseconds and CATIA monotonic time." alt="" coords="1195,110,1190,104,1178,99,1158,95,1133,92,1105,91,1078,92,1053,95,1033,99,1021,104,1016,110,1021,116,1033,121,1053,125,1078,128,1105,129,1133,128,1158,125,1178,121,1190,116"/>
@@ -177,6 +180,7 @@ Data Structures</h2></td></tr>
 <tr class="memitem:catia_5Fclock_5Freply_5Funion" id="r_catia_5Fclock_5Freply_5Funion"><td class="memItemLeft" align="right" valign="top">union &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="unioncatia__clock__reply__union.html">catia_clock_reply_union</a></td></tr>
 <tr class="memitem:catia_5Fpose_5Fclocked_5Funion" id="r_catia_5Fpose_5Fclocked_5Funion"><td class="memItemLeft" align="right" valign="top">union &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="unioncatia__pose__clocked__union.html">catia_pose_clocked_union</a></td></tr>
 <tr class="memitem:catia_5Ftransport" id="r_catia_5Ftransport"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcatia__transport.html">catia_transport</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Persistent state for incremental CATIA UART frame parsing.  <a href="structcatia__transport.html#details">More...</a><br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-define-members" class="groupheader"><a id="define-members" name="define-members"></a>
 Macros</h2></td></tr>
@@ -229,7 +233,7 @@ Macros</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a5e9c2ac460e65e3a4de4323a1d8933f2" id="r_a5e9c2ac460e65e3a4de4323a1d8933f2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5e9c2ac460e65e3a4de4323a1d8933f2">parse_catia</a> (struct <a class="el" href="structcatia__transport.html">catia_transport</a> *t, uint8_t c)</td></tr>
-<tr class="memdesc:a5e9c2ac460e65e3a4de4323a1d8933f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Consume one UART byte and advance a CATIA transport parser.  <br /></td></tr>
+<tr class="memdesc:a5e9c2ac460e65e3a4de4323a1d8933f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Consume one byte from a CATIA UART stream.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
@@ -238,13 +242,15 @@ Variables</h2></td></tr>
 <tr class="memitem:aa2f17c75a6a3c14694ef145fa41cd323" id="r_aa2f17c75a6a3c14694ef145fa41cd323"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structcatia__transport.html">catia_transport</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa2f17c75a6a3c14694ef145fa41cd323">catia_protocol</a></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>|STX|length|... payload=(length-4) bytes ...|Checksum A|Checksum B|</p>
+<div class="textblock"><p>CATIA's byte-stream UART framing, messages, and wire-compatible payload layouts. </p>
+<p>All multi-byte fields use the historic CATIA native layout and must remain wire compatible with deployed flight-controller firmware. Callers should treat the unions as serialization storage, not a portable network byte-order protocol.</p>
+<p>|STX|length|... payload=(length-4) bytes ...|Checksum A|Checksum B|</p>
 <p>where checksum is computed over length and payload: </p><div class="fragment"><div class="line"><a class="code hl_variable" href="#a29a6da435489469e13cca1eaa4e912be">catia_ck_a</a> = <a class="code hl_variable" href="#a43847eec492887c26565cb0d1983c2d9">catia_ck_b</a> = length</div>
 <div class="line"><span class="keywordflow">for each</span> <span class="keywordtype">byte</span> b in payload</div>
 <div class="line">    <a class="code hl_variable" href="#a29a6da435489469e13cca1eaa4e912be">catia_ck_a</a> += b;</div>
 <div class="line">    <a class="code hl_variable" href="#a43847eec492887c26565cb0d1983c2d9">catia_ck_b</a> += <a class="code hl_variable" href="#a29a6da435489469e13cca1eaa4e912be">catia_ck_a</a>;</div>
 <div class="ttc" id="aprotocol_8h_html_a29a6da435489469e13cca1eaa4e912be"><div class="ttname"><a href="#a29a6da435489469e13cca1eaa4e912be">catia_ck_a</a></div><div class="ttdeci">uint8_t catia_ck_a</div><div class="ttdef"><b>Definition</b> protocol.c:14</div></div>
-<div class="ttc" id="aprotocol_8h_html_a43847eec492887c26565cb0d1983c2d9"><div class="ttname"><a href="#a43847eec492887c26565cb0d1983c2d9">catia_ck_b</a></div><div class="ttdeci">uint8_t catia_ck_b</div><div class="ttdef"><b>Definition</b> protocol.h:221</div></div>
+<div class="ttc" id="aprotocol_8h_html_a43847eec492887c26565cb0d1983c2d9"><div class="ttname"><a href="#a43847eec492887c26565cb0d1983c2d9">catia_ck_b</a></div><div class="ttdeci">uint8_t catia_ck_b</div><div class="ttdef"><b>Definition</b> protocol.h:225</div></div>
 </div><!-- fragment --> </div><a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
 <a id="a9617652a0a242e411eec4d95759607d3" name="a9617652a0a242e411eec4d95759607d3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9617652a0a242e411eec4d95759607d3">&#9670;&#160;</a></span>CATIA_BUFFER_EMPTY</h2>
@@ -819,8 +825,8 @@ Variables</h2></td></tr>
 <div class="line">  }</div>
 <div class="ttc" id="aprotocol_8c_html_a29a6da435489469e13cca1eaa4e912be"><div class="ttname"><a href="protocol_8c.html#a29a6da435489469e13cca1eaa4e912be">catia_ck_a</a></div><div class="ttdeci">uint8_t catia_ck_a</div><div class="ttdef"><b>Definition</b> protocol.c:14</div></div>
 <div class="ttc" id="aprotocol_8c_html_a43847eec492887c26565cb0d1983c2d9"><div class="ttname"><a href="protocol_8c.html#a43847eec492887c26565cb0d1983c2d9">catia_ck_b</a></div><div class="ttdeci">uint8_t catia_ck_b</div><div class="ttdef"><b>Definition</b> protocol.c:14</div></div>
-<div class="ttc" id="aprotocol_8h_html_a06042253b7acc49c42227ecfa9088903"><div class="ttname"><a href="#a06042253b7acc49c42227ecfa9088903">CatiaSizeOf</a></div><div class="ttdeci">#define CatiaSizeOf(_payload)</div><div class="ttdef"><b>Definition</b> protocol.h:225</div></div>
-<div class="ttc" id="aprotocol_8h_html_aacd744a917e61146ec8b7175b4761683"><div class="ttname"><a href="#aacd744a917e61146ec8b7175b4761683">STX</a></div><div class="ttdeci">#define STX</div><div class="ttdef"><b>Definition</b> protocol.h:223</div></div>
+<div class="ttc" id="aprotocol_8h_html_a06042253b7acc49c42227ecfa9088903"><div class="ttname"><a href="#a06042253b7acc49c42227ecfa9088903">CatiaSizeOf</a></div><div class="ttdeci">#define CatiaSizeOf(_payload)</div><div class="ttdef"><b>Definition</b> protocol.h:229</div></div>
+<div class="ttc" id="aprotocol_8h_html_aacd744a917e61146ec8b7175b4761683"><div class="ttname"><a href="#aacd744a917e61146ec8b7175b4761683">STX</a></div><div class="ttdeci">#define STX</div><div class="ttdef"><b>Definition</b> protocol.h:227</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -940,7 +946,16 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Consume one UART byte and advance a CATIA transport parser. </p>
+<p>Consume one byte from a CATIA UART stream. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">t</td><td>Persistent parser state for that stream. </td></tr>
+    <tr><td class="paramname">c</td><td>Newly received byte.</td></tr>
+  </table>
+  </dd>
+</dl>
+<p>Frames may be arbitrarily split across calls. On a valid complete frame this sets <code>t-&gt;msg_received</code> and leaves the decoded bytes in <code>t-&gt;payload</code>. The caller must dispatch the message and clear that flag before supplying bytes for the next frame. </p><dl class="section warning"><dt>Warning</dt><dd>This function is not thread-safe. Serialize access to each <code class="param">t</code> instance and do not alter its fields while a frame is in progress.</dd></dl>
+<p>Consume one byte from a CATIA UART stream.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">t</td><td>Persistent parser state owned by the receiving transport. </td></tr>
