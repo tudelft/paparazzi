@@ -281,14 +281,14 @@
 
   <blocks>
     <block name="Boot">
-      <deroute block="Mission.Wait_GPS"/>
+      <deroute block="Mission.Wait GPS"/>
     </block>
     <block name="GeoFence">
       <call_once fun="NavKillThrottle()"/>
       <go wp="HOME"/>
     </block>
-    <block name="Geoinit">
-    <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()+survey_height" wp="_STDBY"/>
+    <block name="RecoverFromGeoFence">
+    <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()" wp="STDBY"/>
     </block>
   </blocks>
 
