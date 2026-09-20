@@ -15,10 +15,10 @@
     </program>
     <program name="UnifiedMoCap" command="sw/ext/unifiedmocaprouter/build/mocap-router"/>
     <program name="Link Combiner" command="sw/ground_segment/python/redundant_link/link_combiner.py"/>
-    <program name="GCS" command="sw/ground_segment/cockpit/pprzgcs">
+    <program name="GCS" command="$pprzgcs">
       <arg flag="-speech"/>
     </program>
-    <program name="Flight Plan Editor" command="sw/ground_segment/cockpit/pprzgcs">
+    <program name="Flight Plan Editor" command="$pprzgcs">
       <arg flag="-edit"/>
     </program>
     <program name="Messages" command="sw/ground_segment/tmtc/messages"/>
@@ -55,7 +55,7 @@
       <arg flag="-fbw" variable="fbw_serial_port"/>
       <arg flag="-ap" variable="ap_serial_port"/>
     </program>
-    <program name="GCS Classic" command="sw/ground_segment/cockpit/pprzgcs">
+    <program name="GCS Classic" command="$pprzgcs">
       <arg flag="--speech"/>
       <arg flag="--layout" constant="classic_layout.xml"/>
     </program>
@@ -263,10 +263,6 @@
       </program>
     </session>
     <session name="Simulate IMAV2026 outdoor competition">
-      <program name="Simulator">
-        <arg flag="-t" constant="nps"/>
-        <arg flag="-a" constant="Easystar_3"/>
-      </program>
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
         <arg flag="-a" constant="Adam"/>

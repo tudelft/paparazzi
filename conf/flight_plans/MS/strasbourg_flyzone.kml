@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Strasbourg Flyzone</name>
+    <!-- Hexagon (FZ1-FZ6), not the original 4-corner digitization — refined
+         directly in the pprzgcs Flight Plan Editor over satellite imagery.
+         Regenerated from the real ENU FZ1-FZ6 in ms_swarm_strasbourg.xml via
+         an equirectangular back-projection about lat0=48.8057046
+         lon0=7.8496176; treat as approximate documentation, NOT authoritative
+         — pprzgcs cannot actually import this as a sector ("Sector from KML
+         not implemented!"), and it is not read by nav_in_strasbourg() either.
+         The real coordinates live only in ms_swarm_strasbourg.xml and
+         nav_couzin_fw.h. -->
+    <Style id="flyzone">
+      <LineStyle>
+        <color>ff0080ff</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>200080ff</color>
+      </PolyStyle>
+    </Style>
+    <Placemark>
+      <name>Flyzone</name>
+      <styleUrl>#flyzone</styleUrl>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              7.85168060,48.80650496,0
+              7.85139581,48.81074480,0
+              7.85981078,48.81243703,0
+              7.85942801,48.80917740,0
+              7.85916849,48.80890169,0
+              7.85943061,48.80806337,0
+              7.85168060,48.80650496,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

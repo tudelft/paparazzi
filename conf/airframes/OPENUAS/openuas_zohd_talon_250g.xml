@@ -358,7 +358,12 @@
     <module name="nav" type="survey_polygon">
       <define name="POLYSURVEY_DEFAULT_DISTANCE" value="40"/>
     </module>
-    <module name="nav" type="survey_poly_osam"/>
+    <module name="nav" type="survey_poly_osam">
+      <!-- Mission 1 flies lines ~51-53 m apart in order: U-turn radius is
+           half that (~26 m, ~22 deg bank at 10 m/s). Default 30 would force
+           a wider turn that overshoots the next line. -->
+      <define name="POLY_OSAM_MIN_RADIUS" value="24"/>
+    </module>
 
     <!-- In case we need it to survey an area -->
     <module name="nav" type="smooth"/>

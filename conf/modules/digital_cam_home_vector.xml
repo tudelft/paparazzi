@@ -1,0 +1,54 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="digital_cam_home_vector" dir="digital_cam">
+  <doc>
+    <description>
+      Visual-homing CNN home-vector following through CATIA over the UART link to MORA.
+
+      During a homing block the module sends AI-cam-targeted shoot commands through
+      digital_cam_uart at home_vector_period_s; CATIA running with --aicam-home on the
+      MORA companion computer runs each captured frame through the on-sensor IMX500
+      visual-homing network and replies with a fresh predicted body-frame direction-to-home
+      every shot (CATIA_HOME_VECTOR_RESULT, unlike earcam's CATIA_EAR_RESULT which only
+      replies on an explicit solve). This module rotates that body-frame vector into world
+      frame using the aircraft's current heading and nudges a dedicated HOME waypoint
+      home_vector_leg_distance_m ahead along it, so existing nav/guidance flying toward
+      that waypoint follows the CNN's prediction continuously.
+
+      Typical flight plan sequence: home_vector_start(WP_HOME) at the start of a homing
+      block, then navigate toward WP_HOME (Goto/Stay) for the block's duration,
+      home_vector_stop() to end it.
+
+      The body-to-world rotation assumes Paparazzi's standard NED yaw convention (psi: 0 =
+      North, positive clockwise) and has not yet been empirically verified against real
+      hardware -- bench-test it against a known heading and a known real-world home
+      direction before trusting it for a real flight.
+
+      Other modules (e.g. digital_cam_earcam) can register a receive handler for CATIA
+      messages this module does not consume; digital_cam_uart currently supports only one
+      registered handler at a time, so do not select both digital_cam_home_vector and
+      digital_cam_earcam in the same airframe until that is extended.
+    </description>
+    <define name="HOME_VECTOR_PERIOD_S" value="0.5" description="default shoot period in seconds while active"/>
+    <define name="HOME_VECTOR_LEG_DISTANCE_M" value="50" description="distance the HOME waypoint is placed ahead of the aircraft on every fresh prediction"/>
+    <define name="HOME_VECTOR_REPORT_PERIOD_S" value="1.0" description="minimum interval between DC_SHOT telemetry reports of home-vector shots (0 = every sample)"/>
+  </doc>
+  <settings>
+    <dl_settings name="control">
+      <dl_settings name="home_vector">
+        <dl_setting max="5" min="0.1" step="0.1" var="home_vector_period_s" shortname="hv_period" unit="s"/>
+        <dl_setting max="200" min="5" step="5" var="home_vector_leg_distance_m" shortname="hv_leg_dist" unit="m"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <dep>
+    <depends>digital_cam_uart</depends>
+  </dep>
+  <header>
+    <file name="home_vector_ctrl.h"/>
+  </header>
+  <init fun="home_vector_init()"/>
+  <periodic fun="home_vector_periodic()" freq="20" autorun="TRUE"/>
+  <makefile target="ap|sim|nps">
+    <file name="home_vector_ctrl.c"/>
+  </makefile>
+</module>

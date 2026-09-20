@@ -1,0 +1,2087 @@
+<?xml version="1.0"?>
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+<!--
+  IMAV Mision4 — Valkenburg flyzone
+  Cherry-only: drop a first-aid package to a mannequin, located by a
+  sound-emitting device, somewhere within a 30 m-radius circle around
+  SEARCH_CENTER (25 m per the mission brief itself, widened to 30 m to
+  match the EasyStar3 airframe's own MIN_CIRCLE_RADIUS once Cherry moved
+  onto it — see Search Mission4's own comment). No swarm/couzin flocking
+  behavior in this file or in
+  Cherry's airframe module list — that lives on a different branch. The
+  geofence check (mission4_in_valkenburg()/_safe(), header above) is a
+  standalone helper (modules/nav/nav_mission4_geofence.h) with no
+  dependency on the swarm module.
+
+  Site/launch/land infrastructure (HOME/AF/TD/_BASELEG/_STDBY/FZ1-FZ6
+  geofence) is shared with mission1_strasbourg.xml — see that file's
+  header for the full anchoring/history notes.
+
+  Earlier search-pattern approaches tried here and moved away from — see
+  git history and Search Mission4's own comment for the full detail: a
+  diagonal "X" (2 corner-to-corner diagonals — never solved its sharp-turn
+  imprecision despite extensive CARROT/approaching_time/sequencing
+  tuning), a 3-line lawnmower (verified via telemetry at 95.7% area
+  coverage, better coverage than the X but not the shape wanted), and
+  nav_survey_poly_osam (the module mission1.xml/mission1_strasbourg.xml
+  use for mapping), which got permanently stuck circling in its entry
+  phase and never started sweeping at all.
+
+  Two phases, flown by Cherry only (fixed-wing Talon, NOT a rotorcraft —
+  IMAV2022_drop.xml in this repo, this project's other drop-mission flight
+  plan, is written for a hovering vehicle and doesn't apply directly here):
+    1. Search (Search Mission4 / Phase2 Entry / Phase2): one 30 m-radius
+       circle around SEARCH_CENTER, continuously sampling a PLACEHOLDER
+       simulated sound-pressure-level reading (mission4_sample_signal(),
+       header above — swap only that one function for a real sensor once
+       hardware exists), tracking whichever single sample was loudest
+       (mission4_best_x/y). Since every sample from that circle was
+       taken while flying it, the loudest one sits ON the circle itself.
+       Phase2 Entry then flies (idle-throttle glide, same as Phase 1 and
+       Phase2 itself — see that block's own comment for why it's no
+       longer powered/level) genuinely TO that point first, before Phase2
+       flies a STRAIGHT CHORD from there, straight through SEARCH_CENTER
+       to the diametrically opposite point, rather than another circle: a
+       circle can never get closer to its own center than its radius
+       (every point on a 30 m circle is exactly 30 m out, even one
+       centered exactly on the true source — an earlier design tried
+       repeated re-centered circles for this and hit that floor, see
+       Phase2's own comment), while a straight
+       line isn't bound by MIN_CIRCLE_RADIUS at all and can cut right
+       through the interior. Phase2 (the chord itself — idle-throttle,
+       quiet, unlike the powered transit to reach it) commits to the
+       drop in real time, the moment the readings along that chord have
+       gone from improving to consistently worse (mission4_peak_passed(),
+       header above) — confirming the true peak was just flown past —
+       rather than finishing the chord and only deciding afterward.
+       Neither step ever inverts a reading into a distance or fits a
+       curve to the samples (tried and reverted): real hardware is a
+       single microphone against one uncalibrated beeping device, which
+       only gives relative loudness comparisons between sample points,
+       not anything a distance/curve fit can honestly be built from —
+       every decision here only ever compares readings against each
+       other or against the immediately preceding one.
+    2. Drop (Drop Mission4 / Drop Release): a dedicated glide approach down
+       to drop_height (1.5 m default, must stay <2 m for the drop to
+       validate) over DROP_POINT, DropOpen() (no-op placeholder — see
+       header), then climbs back out and lands. Triggered automatically by
+       sound_detected going true (placeholder: set true once the search
+       completes, see Search Mission4 Phase2) or manually via
+       the "Start Drop Mission4" strip button (clickable any time, same as
+       the Land buttons already interrupt the search); DROP_POINT itself
+       is a placeholder (same spot as SEARCH_CENTER) until detection can
+       set it for real — see that waypoint's comment.
+
+  SEARCH_CENTER is a PLACEHOLDER (currently near the top-left corner, close
+  to the FZ1-FZ2 "left wall" — the expected competition location per the
+  brief) — "the GPS point for the search area will be provided on the day
+  of the mission", so this MUST be repositioned (drag it in the pprzgcs
+  Flight Plan Editor, or edit its x/y here, or set lat/lon directly) before
+  flying for real.
+
+  Launch sequence: same as mission1_strasbourg.xml — Wait GPS → Geo init →
+  Holding point → Takeoff, staggered by mission1_holding_delay() for
+  a single aircraft (the farther-area-first logic
+  is moot with one aircraft, but the helper is reused as-is since Cherry
+  still needs a short, fixed delay rather than the 5-AC rank formula).
+  Takeoff derotues straight to Start Mission4 once climbed out; Standby
+  exists only as the geofence exception's fallback target below, not as an
+  active holding pattern Cherry ever normally enters.
+-->
+<flight_plan alt="50" ground_alt="0" lat0="52.1681239" lon0="4.4124784" max_dist_from_home="1500" name="Mision4" security_height="5">
+  <header>
+#include "autopilot.h"
+#include "firmwares/fixedwing/guidance/energy_ctrl.h"
+/* Quoted, not angle-bracketed: this header text sits inside the flight
+   plan XML, and gen_aircraft does not re-escape it on output, so an angle
+   bracket here corrupts the generated per-aircraft flight_plan.xml (the
+   same round-trip problem the abi_event comment above describes). Quotes
+   resolve to the system header just the same. */
+#include "stdio.h"
+#include "modules/datalink/datalink.h"
+#include "modules/nav/nav_mission4_geofence.h"
+#include "modules/relative_localization_filter/relative_localization_filter.h"
+#include "firmwares/fixedwing/guidance/energy_ctrl.h"
+#include "modules/core/abi.h"
+
+/* Real AGL for the drop-release gate below, not GPS/baro-derived
+   altitude: GetPosAlt()/GetAltRef() is precise in simulation (NPS gives
+   perfect ground truth) but on real hardware that combination is nowhere
+   near accurate enough to reliably trigger a release in a 0.5 m-wide
+   window right above the ground - a real sub-2 m drop genuinely needs
+   the rangefinder (sonar_i2c, airframe file) actually feeding this,
+   which is exactly what USE_SONAR_I2C_AGL=TRUE (also set in the
+   airframe) turns on: sonar_i2c.c broadcasts an AGL Abi message whenever
+   it gets a valid, in-range, rotation-compensated reading. Subscribing
+   here directly (mission4_agl_sonar_init(), called once from Start
+   Mission4 below) rather than relying on some existing INS module to
+   consume it and expose it through the normal state interface: this
+   airframe's own ins_alt_float.c (the INS module Cherry-family airframes
+   actually use) has no AGL Abi subscriber at all, confirmed by reading
+   it - the message would otherwise just be broadcast and ignored.
+   mission4_sonar_agl_time (autopilot.flight_time at the last valid
+   reading) exists so the release gate below can tell a genuinely fresh
+   sonar reading from a stale one (e.g. still up at search_height, far
+   outside the sensor's real range - sonar_i2c.c only broadcasts once a
+   reading is in-range and positive, so no update at all simply means no
+   real ground return yet, same as it would on real hardware). */
+static float mission4_sonar_agl = -1.0f;
+static float mission4_sonar_agl_time = -1000.0f;
+/* 1-element array, not a plain struct: avoids ever needing the address-
+   of operator on this variable below. A bare use of that operator in
+   real header code (not a comment) corrupts the per-aircraft generated
+   flight_plan.xml the same way angle brackets do elsewhere in this file
+   (confirmed the same way: gen_aircraft's writer doesn't re-escape
+   header text on output, so even a correctly-escaped entity in the
+   source round-trips back out unescaped and breaks re-parsing
+   downstream) - avoiding the character entirely, not escaping it, is
+   the only fix confirmed to actually survive the round trip. An array
+   name decays to a pointer to its first element on its own, so passing
+   the array directly below is identical in practice to taking this
+   variable's address, without ever writing that operator. */
+static abi_event mission4_agl_ev[1];
+
+static void mission4_agl_cb(uint8_t sender_id __attribute__((unused)),
+                             uint32_t stamp __attribute__((unused)),
+                             float distance)
+{
+  mission4_sonar_agl = distance;
+  mission4_sonar_agl_time = autopilot.flight_time;
+}
+
+static inline void mission4_agl_sonar_init(void)
+{
+  AbiBindMsgAGL(AGL_RANGEFINDER_I2C_ID, mission4_agl_ev, mission4_agl_cb);
+}
+
+/* rangefinder_i2c is only loaded on the ap target; skip its report in NPS. */
+static inline void mission4_rangefinder_report_start(void)
+{
+#ifdef RANGEFINDER_I2C_ADDR
+  rangefinder_i2c_rangefinder_i2c_report_status = MODULES_START;
+#endif
+}
+
+/* Fresh sonar AGL, or GetPosAlt()-GetAltRef() as a fallback: used by the
+   release gate below so the mission still works (on GPS/baro alone,
+   simulation-accurate but not realistic) even before the sonar has ever
+   reported - e.g. mid-search, or if a real sensor drops out. 0.5 s
+   freshness window is generous relative to SONAR_I2C_PERIODIC_FREQUENCY
+   (100 Hz, airframe file) - only meant to catch "never reported yet" or
+   "stopped reporting", not to be a tight filter. */
+static inline float mission4_agl(void)
+{
+  if (!signbit(autopilot.flight_time - mission4_sonar_agl_time - 0.5f)) {
+    return GetPosAlt() - GetAltRef();
+  }
+  return mission4_sonar_agl;
+}
+
+/* Shortest usable run-in: place DROP_APPROACH on the bearing from the
+   source BACK TOWARD the aircraft, at whatever distance the aircraft
+   already is, clamped to a workable range.
+
+   It used to be planted 150 m due EAST of DROP_POINT unconditionally. With
+   the source able to be anywhere that is an arbitrary direction: the
+   aircraft finishes the search somewhere on the pattern and then has to fly
+   out to an approach point that may be on the far side, adding transit and
+   forcing the spiral to shed everything the transit could have shed on the
+   way. Measured: 25 s and 0.88 of a revolution spiralling off 23 m, on top
+   of a 150 m run-in the aircraft was not lined up for.
+
+   Aiming the approach at the aircraft makes the transit, the descent and
+   the final glide one straight line - it flies in descending and keeps
+   going through the release with no turn.
+
+   Clamped below at MISSION4_APPR_MIN for TURN SETTLING, not for the glide
+   slope. The aircraft arrives from the search on an arbitrary heading and
+   has to turn onto the approach line: at 12.5 m/s the turn radius is 16 m
+   at this airframe's 45 deg ROLL_MAX_SETPOINT and about 28 m at a more
+   typical 30 deg, so a reversal costs 50-87 m of travel before it is even
+   pointing the right way, plus a few seconds to settle. Measured with a
+   58 m approach: still 4.8 deg off the bearing to the source AT RELEASE,
+   throwing the payload 1.7 m sideways - larger than every other error
+   combined, and larger than the ballistics this whole gate computes.
+   130 m leaves ~120 m of straight, settled run-in after the turn.
+   Clamped above at MISSION4_APPR_MAX so a search ending far out does not
+   produce an enormous run-in. Between those the approach starts wherever
+   the aircraft already is. */
+#define MISSION4_APPR_MIN 130.0f
+#define MISSION4_APPR_MAX 200.0f
+/* Shortest run-in still worth flying: below this the aircraft cannot settle
+   after the turn onto the approach and the angular error at release starts
+   to dominate (measured 4.8 deg, 1.7 m sideways, on a 58 m approach). */
+#define MISSION4_APPR_FLOOR 60.0f
+
+/* True if the whole approach line - not just its far end - stays inside
+   the geofence. The aircraft flies every metre between DROP_APPROACH and
+   the source, so testing only the endpoint lets the middle of the run-in
+   cross the boundary. */
+static inline bool mission4_appr_line_ok(float sx, float sy, float ux, float uy, float ad)
+{
+  int k;
+  for (k = 0; k != 5; k++) {
+    float f = 0.25f * (float)k;
+    if (!mission4_in_valkenburg_safe(sx + ux * ad * f, sy + uy * ad * f)) { return FALSE; }
+  }
+  return TRUE;
+}
+
+static inline void mission4_place_approach(uint8_t drop_wp, uint8_t appr_wp)
+{
+  float sx = waypoints[drop_wp].x, sy = waypoints[drop_wp].y;
+  float dx = GetPosX() - sx, dy = GetPosY() - sy;
+  float d = sqrtf(dx * dx + dy * dy);
+  if (signbit(d - 1.0f)) { dx = 0.0f; dy = 1.0f; d = 1.0f; }
+
+  /* Preferred bearing is DUE EAST, reproducing the original fixed
+     "150 m east of DROP_POINT" placement, which worked: east stays inside
+     the FZ1-FZ6 polygon from anywhere in the search area, so the aircraft
+     flies out east, turns, and runs back in westward.
+     An earlier version preferred the bearing back toward the aircraft, on
+     the reasoning that it needs less turning. That was wrong here: from a
+     source near the northern edge it points north or west, 73-83 m outside
+     the polygon, so the geofence exception fired mid-approach and derouted
+     to Standby before the release every time.
+     The scan below still exists so the approach adapts if east is ever
+     blocked - a source in a different part of the zone, or nearer the
+     eastern wall - but east is tried first and will normally win, so the
+     behaviour matches the original by default. */
+  float base = 3.14159265f / 2.0f;   /* due east */
+  (void)dx; (void)dy;
+  float want = d;
+  if (signbit(want - MISSION4_APPR_MIN)) { want = MISSION4_APPR_MIN; }
+  if (!signbit(want - MISSION4_APPR_MAX)) { want = MISSION4_APPR_MAX; }
+
+  float ad = want;
+  int guard = 0;
+  while (guard != 12) {
+    int i;
+    for (i = 0; i != 37; i++) {
+      int half = (i + 1) / 2;
+      float sgn = ((i % 2) == 0) ? 1.0f : -1.0f;
+      float b = base + sgn * (float)half * (10.0f * 3.14159265f / 180.0f);
+      float ux = sinf(b), uy = cosf(b);
+      if (mission4_appr_line_ok(sx, sy, ux, uy, ad)) {
+        waypoints[appr_wp].x = sx + ux * ad;
+        waypoints[appr_wp].y = sy + uy * ad;
+        return;
+      }
+    }
+    ad -= 10.0f;
+    if (signbit(ad - MISSION4_APPR_FLOOR)) { break; }
+    guard++;
+  }
+  /* No bearing at any length keeps the line inside - the source must be
+     hard against the boundary. Fall back to the shortest run-in toward the
+     aircraft and let the geofence exception handle it. */
+  waypoints[appr_wp].x = sx + (dx / d) * MISSION4_APPR_FLOOR;
+  waypoints[appr_wp].y = sy + (dy / d) * MISSION4_APPR_FLOOR;
+}
+
+/* Distance ahead of DROP_POINT at which the release must be COMMANDED so
+   the payload lands on it, rather than a fixed 15 m guess:
+
+     lead = v * (TRIGGER_DELAY + sqrt(2h/g))
+
+   The first term is the mechanism's own latency - the aircraft keeps
+   flying between the command and the payload actually leaving - and the
+   second is the ballistic throw during the fall. Measured on a real drop:
+   released 13.3 m short of the true source at 1.26 m AGL and 12 m/s, where
+   the lead needed was 18.1 m, so the payload would have landed 4.8 m past
+   the target. The fixed 15 m gate happened to be close at one particular
+   speed and height and drifts as either changes.
+
+   Note the split: at 12 m/s the trigger delay contributes 12.0 m of that
+   18.1 m and the fall only 6.1 m. TRIGGER_DELAY is still a TODO guess in
+   the airframe file, so it is by far the dominant uncertainty - at 0.5 s
+   the lead is 12.1 m, at 1.5 s it is 24.1 m. Computing it here does not
+   make the drop accurate on its own; it makes TRIGGER_DELAY the single
+   number to calibrate on real hardware instead of a hidden bias inside a
+   magic constant.
+
+   Height comes from mission4_agl (the rangefinder), clamped non-negative
+   so a bad reading cannot produce a NaN in the sqrt. */
+/* True only while the aircraft is CLOSING on the target. The release gate
+   compares a squared distance against the squared lead, which is unsigned -
+   it would fire just as readily five metres PAST the target as five metres
+   before, throwing the payload that much further beyond. It has not
+   happened yet only because the altitude window has always opened on the
+   inbound leg; if the descent ever lagged, the first moment both conditions
+   were true could be on the far side. Comparing the current squared range
+   with the previous tick's is enough to tell the two apart. */
+static float mission4_prev_d2 = 1.0e9f;
+
+static inline bool mission4_closing(uint8_t drop_wp)
+{
+  float dx = GetPosX() - waypoints[drop_wp].x;
+  float dy = GetPosY() - waypoints[drop_wp].y;
+  float d2 = dx * dx + dy * dy;
+  bool closing = signbit(d2 - mission4_prev_d2);
+  mission4_prev_d2 = d2;
+  return closing;
+}
+
+static inline float mission4_release_lead(void)
+{
+  float _v = stateGetHorizontalSpeedNorm_f();
+  /* Sink rate, positive downward. The aircraft is still descending on the
+     final glide (measured -0.63 m/s at release), and that matters twice. */
+  /* [0].z, not an arrow: a raw angle bracket in this header survives into
+     the generated per-aircraft flight_plan.xml unescaped and breaks its
+     re-parse (same trap as the stdio include and the signbit comparisons
+     above). Indexing the returned pointer reads the same field. */
+  float _w = -(stateGetSpeedEnu_f()[0].z);
+  if (signbit(_w)) { _w = 0.f; }   /* climbing: no help from sink, ignore */
+
+  /* 1. The payload leaves TRIGGER_DELAY AFTER the command, by which time
+        the aircraft has sunk _w*TRIGGER_DELAY further. Using the height at
+        the command instant overestimates the drop height, and so the fall
+        time and the throw. */
+  float _h = mission4_agl() - _w * TRIGGER_DELAY;
+  if (signbit(_h)) { _h = 0.f; }
+
+  /* 2. It also inherits the aircraft's downward velocity, so it is not a
+        free fall from rest: h = w*t + g*t^2/2, solved for t. */
+  float _t = (-_w + sqrtf(_w * _w + 2.f * 9.81f * _h)) / 9.81f;
+
+  /* Drag acts on AIRSPEED, not ground speed: the payload is decelerated
+     toward the air mass, so a tailwind reduces the drag it feels and a
+     headwind increases it. Project wind onto the ground track and use the
+     relative speed for drag, keeping ground speed for the throw. Wind is
+     zero in NPS so this cannot be validated here, but it is the largest
+     uncorrected real-world term after the acoustic estimate. */
+  float _dir = stateGetHorizontalSpeedDir_f();
+  float _wn = stateGetHorizontalWindspeed_f()[0].x;
+  float _we = stateGetHorizontalWindspeed_f()[0].y;
+  float _walong = _we * sinf(_dir) + _wn * cosf(_dir);
+  float _vrel = _v - _walong;
+
+  /* First-order drag on the throw: decelerates at (ALPHA/MASS)*vrel^2, so
+     the payload travels less far than the ballistic v*t and lands SHORT of
+     a no-drag prediction - about 0.4 m for the real 250 g package in still
+     air at 12 m/s. Clamped so a bad ALPHA/MASS cannot invert the throw. */
+  float _throw = _v * _t;
+  float _drag = 0.5f * ((float)ALPHA / (float)MASS) * _vrel * _vrel * _t * _t;
+  if (!signbit(_drag - _throw)) { _drag = 0.f; }
+
+  /* Half a nav tick of travel, removing the gate's quantisation BIAS: the
+     exception is evaluated once per NAVIGATION_FREQUENCY tick and fires on
+     the first one already inside the lead, so on average the aircraft is
+     half a tick past the ideal point - 0.3 m at 12 m/s and 20 Hz, always
+     the same direction, so the payload consistently lands long. */
+  float _tick = _v / (2.0f * (float)NAVIGATION_FREQUENCY);
+
+  return _v * TRIGGER_DELAY + (_throw - _drag) + _tick;
+}
+
+#ifdef SITL
+/* Numerically integrate where the payload ACTUALLY lands, rather than
+   predicting it from the closed-form lead. Test scaffolding only - it never
+   compiles on the aircraft.
+
+   This matters because MISS, the IMPACT marker and the release gate itself
+   all come from one formula: lead = v*(TRIGGER_DELAY + fall) with a
+   first-order drag term. If that formula is wrong, every one of those
+   numbers is wrong in the same direction and still looks small and
+   plausible. Integrating the trajectory separately - Euler steps, drag
+   acting on the air-relative velocity, gravity, real wind - gives a second
+   opinion that shares none of the closed form's approximations: no
+   linearised drag, no assumed constant sink, no small-angle anything.
+   Agreement between them is evidence the formula holds; a gap is the size
+   of its error.
+
+   It still cannot validate the PHYSICS - TRIGGER_DELAY, ALPHA and MASS are
+   estimates, and this integration trusts them exactly as the formula does.
+   Only a real drop test closes that loop. What this catches is mistakes in
+   the maths, which is a different and more tractable class of error. */
+static inline void mission4_sim_payload(uint8_t impact_wp)
+{
+  float dir = stateGetHorizontalSpeedDir_f();
+  float v = stateGetHorizontalSpeedNorm_f();
+  float x = GetPosX(), y = GetPosY(), z = mission4_agl();
+  float vx = v * sinf(dir), vy = v * cosf(dir);
+  float vz = stateGetSpeedEnu_f()[0].z;            /* positive up */
+  float we = stateGetHorizontalWindspeed_f()[0].y; /* east  */
+  float wn = stateGetHorizontalWindspeed_f()[0].x; /* north */
+  float am = (float)ALPHA / (float)MASS;
+  float dt = 0.005f;
+  int k;
+
+  /* Still bolted to the aircraft for TRIGGER_DELAY: it simply goes wherever
+     the aircraft goes, so continue on the current velocity. */
+  int n = (int)(TRIGGER_DELAY / dt);
+  for (k = 0; k != n; k++) { x += vx * dt; y += vy * dt; z += vz * dt; }
+
+  /* Free flight: drag decelerates it toward the air mass, gravity pulls it
+     down, stop at ground contact. */
+  for (k = 0; k != 4000; k++) {
+    if (signbit(z)) { break; }
+    float rx = vx - we, ry = vy - wn, rz = vz;
+    float sp = sqrtf(rx * rx + ry * ry + rz * rz);
+    float b = am * sp;
+    vx -= rx * b * dt;
+    vy -= ry * b * dt;
+    vz -= rz * b * dt + 9.81f * dt;
+    x += vx * dt; y += vy * dt; z += vz * dt;
+  }
+  waypoints[impact_wp].x = x;
+  waypoints[impact_wp].y = y;
+}
+#endif
+
+/* Record the release conditions at the instant the gate fires. The drop
+   is over in about a second - measured 1.0 s below 1.5 m AGL, with the
+   climb-out crossing 2 m and 3 m only 0.2 s apart - so a GCS strip
+   updating at a few Hz can easily show 2 m on the way down and 3 m on the
+   way up while never displaying the actual release height. Sent as an
+   INFO_MSG so it lands in the GCS console AND in var/logs, and printed to
+   stdout under SITL where the sim console is right there.
+   Both altitude sources are reported: mission4_agl() is what the gate
+   actually decided on (the rangefinder, or GPS/baro if the sonar has gone
+   stale - see mission4_agl above), while GetPosAlt()-GetAltRef() is what
+   the GCS strip shows. They agreed within 6 cm in simulation, but they are
+   different sensors and on real hardware they will not. */
+static inline void mission4_log_release(uint8_t drop_wp, uint8_t true_wp, uint8_t impact_wp)
+{
+  char _m4msg[128];
+  float _agl_gate = mission4_agl();
+  float _agl_baro = GetPosAlt() - GetAltRef();
+  float _spd = stateGetHorizontalSpeedNorm_f();
+  float _lead = mission4_release_lead();
+  float _px = GetPosX(), _py = GetPosY();
+  /* Distance to the ESTIMATE the gate actually aimed at - the only one of
+     these available on a real flight. */
+  float _ex = _px - waypoints[drop_wp].x, _ey = _py - waypoints[drop_wp].y;
+  float _d_est = sqrtf(_ex * _ex + _ey * _ey);
+  /* Distance to the hidden true source, and the predicted impact error:
+     project the release point forward by the computed lead along the
+     current ground track (where the payload is actually going) and measure
+     from there. Test scaffolding only - true_wp is the simulator's ground
+     truth, the same one mission4_sample_signal reads to synthesise SPL, and
+     neither exists on a real flight. */
+  float _tx = _px - waypoints[true_wp].x, _ty = _py - waypoints[true_wp].y;
+  float _d_true = sqrtf(_tx * _tx + _ty * _ty);
+  float _dir = stateGetHorizontalSpeedDir_f();
+  float _ix = _px + _lead * sinf(_dir), _iy = _py + _lead * cosf(_dir);
+  float _mx = _ix - waypoints[true_wp].x, _my = _iy - waypoints[true_wp].y;
+  float _miss = sqrtf(_mx * _mx + _my * _my);
+  /* Stamp the predicted landing point so the GCS shows it. Same projection
+     the MISS figure uses: release point advanced by the computed lead along
+     the current ground track. */
+  waypoints[impact_wp].x = _ix;
+  waypoints[impact_wp].y = _iy;
+  waypoints[impact_wp].a = waypoints[true_wp].a;
+  float _sim = -1.0f;
+#ifdef SITL
+  /* Overwrite the marker with the integrated result - it is the better
+     estimate - and keep the closed-form MISS alongside so the two can be
+     compared. */
+  mission4_sim_payload(impact_wp);
+  float _sx = waypoints[impact_wp].x - waypoints[true_wp].x;
+  float _sy = waypoints[impact_wp].y - waypoints[true_wp].y;
+  _sim = sqrtf(_sx * _sx + _sy * _sy);
+#endif
+  int _n = snprintf(_m4msg, sizeof(_m4msg),
+                    "DROP agl=%.2f spd=%.1f lead=%.1f dTrue=%.1f MISS=%.2f SIM=%.2f",
+                    _agl_gate, _spd, _lead, _d_true, _miss, _sim);
+  /* signbit, not a comparison operator: a raw angle bracket in this header
+     corrupts the generated flight_plan.xml on round-trip (see the include
+     note above and the abi_event comment). Same idiom mission4_agl uses. */
+  if (!signbit((float)_n)) {
+    DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, (uint8_t)_n, _m4msg);
+  }
+#ifdef SITL
+  printf("[MISSION4] release: AGL %.2f m (sonar) / %.2f m (baro), %.1f m/s, lead %.1f m\n"
+         "           %.1f m from estimate, %.1f m from TRUE source\n"
+         "           predicted MISS %.2f m, integrated payload lands %.2f m from source\n",
+         _agl_gate, _agl_baro, _spd, _lead, _d_est, _d_true, _miss, _sim);
+  fflush(stdout);
+#endif
+}
+
+/* Drop mechanism placeholder — no-op until the real release hardware exists,
+   same pattern as IMAV2022_drop.xml (this repo's other drop-mission flight
+   plan): redefine SwitchServoOn/Off (or DropOpen/DropClose directly) once
+   the actual servo/mechanism is known, nothing else in this file needs to
+   change. */
+#ifndef SwitchServoOn
+#define SwitchServoOn(_x) {}
+#endif
+#ifndef SwitchServoOff
+#define SwitchServoOff(_x) {}
+#endif
+#define DropOpen SwitchServoOff
+#define DropClose SwitchServoOn
+
+/* Squared 2D distance (ignores altitude) from the aircraft to waypoint `wp`.
+   Used by the Drop Mission4 Final exception to gate DropOpen() on actually
+   being near DROP_POINT, not just on altitude — a circle around DROP_POINT
+   (Drop Mission4 above) stays radius() away from it the whole time, so
+   altitude alone isn't enough to confirm the aircraft is over the target.
+   No comparison operator here on purpose: gen_aircraft's flight-plan writer
+   does not re-escape header text on output, so a literal or escaped angle
+   bracket in a header function corrupts the per-aircraft generated
+   flight_plan.xml downstream (confirmed: xmllint fails on the regenerated
+   file). The threshold check
+   itself lives in the exception's cond= attribute using @LT instead, which
+   is the paparazzi-native placeholder for this exact reason. */
+static inline float mission4_dist2_to_wp(uint8_t wp) {
+  float dx = GetPosX() - waypoints[wp].x;
+  float dy = GetPosY() - waypoints[wp].y;
+  return dx * dx + dy * dy;
+}
+
+/* PLACEHOLDER sound-source localization: simulates a flying-microphone
+   sound-pressure-level (SPL) reading as a function of 3D distance
+   (including the aircraft's own altitude, not just horizontal offset)
+   to a hidden test source (TRUE_SOUND_SOURCE, waypoints section below,
+   assumed to sit near ground level, matching a mannequin/beeper on the
+   ground) — swap only this one decay computation for a real sensor read
+   once hardware exists; everything else (sampling, best-point tracking,
+   the search below) stays the same. Uses the real Motion
+   Scout KTR alarm's own spec (95 dB at 3 m) with the standard inverse-
+   square free-field spreading law, not an arbitrary placeholder curve —
+   see mission4_sample_signal() below for how that calibration is used.
+   Records every sample into a fixed-size array (position + SPL, matching
+   "position X,Y,Z ... with sound pressure level measured at that
+   location") and separately tracks the single best sample seen across
+   the WHOLE search — not reset between phases — since the true peak
+   could occur in any pass, not necessarily whichever runs last.
+   "Best" is NOT simply "highest recorded SPL": this mission descends
+   from ~70 m down to ~2 m AGL over the course of the search (idle-
+   throttle glide, quieter than powered circling — see search_height's
+   own comment), so raw SPL readings taken at very different altitudes
+   aren't a fair comparison — a high-altitude sample "spends" most of
+   its distance budget on altitude, not horizontal offset, and would
+   lose to a low-altitude sample even if it was actually closer
+   horizontally. mission4_sample_signal() below instead inverts each
+   SPL reading into an implied slant range (via the same 95 dB/3 m
+   model) and subtracts out the aircraft's own altitude — known
+   precisely from GPS/baro, unlike the acoustic model — to isolate the
+   horizontal component, and tracks whichever sample implies the
+   SMALLEST horizontal range as "best". This is a narrower, more
+   defensible use of the calibration than trying to pinpoint an exact
+   2D fix by full multilateration (discussed and reverted earlier): it
+   only separates a known quantity (own altitude) from an estimated one
+   (slant range), not two unknowns from one reading.
+   Throttled to 20 Hz (MISSION4_SAMPLE_PERIOD) — matching this
+   airframe's own NAVIGATION_FREQUENCY (airframe file, 20 Hz) exactly,
+   not just "fast": since the acoustic model (below) is an exact
+   noiseless formula — no sensor noise term at all — the ONLY thing
+   limiting how close mission4_best_x/y can land to the true source is
+   how finely the flight path itself gets sampled, and the flight plan's
+   own exceptions (this function is called from one) are only ever
+   evaluated once per nav tick regardless of how low this period is set
+   — 20 Hz is the actual ceiling, not an arbitrary choice; anything
+   faster would just re-sample the same tick and buy nothing. At
+   GLIDE_AIRSPEED (10 m/s) that's a sample every ~0.5 m along the track,
+   as tight as this airframe's own nav loop can resolve. 600 samples
+   comfortably covers a full Phase 1 lap plus the Phase 2 chord
+   (confirmed via telemetry: sampling is active for ~28 s total across
+   both) with room to spare. */
+#define MISSION4_MAX_SAMPLES 600
+#define MISSION4_SAMPLE_PERIOD 0.05f
+#define MISSION4_KTR_REF_SPL 95.0f   /* Motion Scout KTR: 95 dB at 3 m */
+#define MISSION4_KTR_REF_DIST 3.0f
+
+static float mission4_sample_x[MISSION4_MAX_SAMPLES];
+static float mission4_sample_y[MISSION4_MAX_SAMPLES];
+static float mission4_sample_spl[MISSION4_MAX_SAMPLES];
+/* Altitude at each sample. The SPL calibration gives a SLANT range; the
+   solver needs the horizontal leg, so it has to know how high the aircraft
+   was for each reading. Previously only x/y/spl were kept, which is why the
+   samples could not be solved even in principle. */
+static float mission4_sample_z[MISSION4_MAX_SAMPLES];
+/* uint16_t, not uint8_t: MISSION4_MAX_SAMPLES is 600, so a uint8_t counter
+   wrapped at 255 and the bounds check below (count - MAX, always negative)
+   could never stop it - samples 256+ silently overwrote slots 0..255 and
+   the array never held more than a partial, cyclically-corrupted set. */
+static uint16_t mission4_sample_count = 0;
+static float mission4_last_sample_time = -1000.0f;
+static float mission4_best_horiz = 1.0e6f;
+static float mission4_best_x = 0.0f;
+static float mission4_best_y = 0.0f;
+/* Fixed entry point for Search Mission4 Phase2's diameter chord below —
+   captured once at the start of the block from mission4_best_x/y at that
+   point, not re-read afterward, so further sampling during the chord
+   itself (which keeps updating mission4_best_x/y) can't shift the
+   chord's own endpoints out from under it mid-flight. */
+static float mission4_diameter_start_x = 0.0f;
+static float mission4_diameter_start_y = 0.0f;
+
+/* Real-time "peak passed" detection for Phase2's diameter chord: rather
+   than flying the whole chord and only deciding afterward by looking
+   back at every recorded sample, watch the TREND as readings come in.
+   mission4_worse_streak counts consecutive samples that were no better
+   than the one right before them (not the best-ever — the immediately
+   preceding one, so this tracks direction of travel, not overall best).
+   Once that streak reaches MISSION4_PEAK_CONFIRM_COUNT, it means the
+   aircraft was closing in on the source and has now been moving away
+   from it for a few readings in a row — the peak was just passed, so
+   the search can commit and turn back toward it (mission4_best_x/y
+   already holds that position) instead of continuing on toward the
+   chord's far end. The streak requirement (not "any single worse
+   reading") exists purely to reject a noisy blip — this simulation has
+   none, but a real sensor will, and this logic needs to still work with
+   one.
+   mission4_phase2_samples/MISSION4_PEAK_MIN_SAMPLES guard against a
+   different failure than the streak alone can catch: confirmed via
+   telemetry that the streak reached MISSION4_PEAK_CONFIRM_COUNT within
+   about a second of entering Phase 2, cutting the chord off almost
+   immediately — not because of stale state carried over from phase 1
+   (that's a separate, already-fixed bug; verified this one is genuine
+   phase-2 data), but because the aircraft is still curving onto the
+   chord's own line right at the start (the same settling transient
+   measured on the drop approach elsewhere in this file — several
+   metres of cross-track error for the first stretch of any new straight
+   leg, here reading as "getting worse" before the aircraft has actually
+   gotten established on the line at all). Requiring a minimum sample
+   count before the streak check is even consulted gives that transient
+   time to clear before trusting the trend.
+   Both constants below are sample COUNTS, not durations — scaled up
+   10x total (3 to 30, 6 to 60) alongside MISSION4_SAMPLE_PERIOD's own
+   10x rate increase (0.5s to 0.05s, above) so the physical time windows
+   they were originally tuned against (1.5 s confirm, 3 s settle) stay
+   the same; leaving them as sample counts after that change would have
+   silently shrunk both windows by 10x and made the peak-passed trigger
+   far noisier/earlier than it was ever tuned for. */
+#define MISSION4_PEAK_CONFIRM_COUNT 30   /* ~1.5 s at MISSION4_SAMPLE_PERIOD */
+#define MISSION4_PEAK_MIN_SAMPLES 60   /* ~3 s at MISSION4_SAMPLE_PERIOD */
+
+static float mission4_prev_horiz = 1.0e6f;
+static uint8_t mission4_worse_streak = 0;
+static uint8_t mission4_phase2_samples = 0;
+
+/* Least-squares multilateration over every sample collected during the
+   search, replacing "DROP_POINT = wherever the aircraft was when the signal
+   peaked".
+
+   That previous rule could never be better than how close the flight path
+   happened to pass: it reports an aircraft position, not a source position.
+   Measured 2.3 m from the true source on a real run - already outside the
+   2 m delivery requirement before the drop itself contributes any error,
+   and not improvable by any amount of drop-geometry tuning.
+
+   Each sample inverts the same SPL calibration used elsewhere into a slant
+   range, then removes the (precisely known) altitude to get a horizontal
+   range h_i from an aircraft position (x_i, y_i):
+
+       (x_i - X)^2 + (y_i - Y)^2 = h_i^2
+
+   Expanded, with S = X^2 + Y^2 held as a third unknown, that is LINEAR:
+
+       2*x_i*X + 2*y_i*Y - S = x_i^2 + y_i^2 - h_i^2
+
+   so the whole set solves as one 3x3 normal-equation system rather than
+   needing an iterative fit. Every sample contributes, from positions all
+   around the pattern, so the result is a genuine intersection of ranges
+   instead of one lucky closest approach.
+
+   Accumulated in double: coordinates are local metres, so x^2 terms reach
+   1e5 and the normal equations square that again - float would lose most
+   of the precision the extra samples are supposed to buy.
+
+   No angle-bracket operators anywhere, same constraint as the rest of this
+   header (see mission4_sample_signal): loop bounds use !=, comparisons use
+   signbit on a subtraction.
+
+   Returns FALSE and leaves DROP_POINT untouched if there are too few
+   samples or the geometry is degenerate (all samples nearly collinear, so
+   the ranges do not pin a point) - the caller then keeps the old
+   best-sample estimate, which is poor but never absurd. */
+static inline bool mission4_solve_source(uint8_t drop_wp)
+{
+  if (signbit((float)mission4_sample_count - 8.0f)) { return FALSE; }
+
+  double s11 = 0.0, s12 = 0.0, s13 = 0.0, s22 = 0.0, s23 = 0.0, s33 = 0.0;
+  double t1 = 0.0, t2 = 0.0, t3 = 0.0;
+  uint16_t i;
+  uint16_t n = mission4_sample_count;
+
+  for (i = 0; i != n; i++) {
+    double zi = (double)mission4_sample_z[i];
+    double slant = (double)MISSION4_KTR_REF_DIST *
+                   pow(10.0, ((double)MISSION4_KTR_REF_SPL - (double)mission4_sample_spl[i]) / 20.0);
+    double h2 = slant * slant - zi * zi;
+    /* Sample taken essentially overhead, or a range shorter than the
+       aircraft's own altitude: no usable horizontal information. */
+    if (signbit((float)h2)) { continue; }
+    double xi = (double)mission4_sample_x[i];
+    double yi = (double)mission4_sample_y[i];
+    double r  = xi * xi + yi * yi - h2;
+    double a1 = 2.0 * xi, a2 = 2.0 * yi, a3 = -1.0;
+    s11 += a1 * a1; s12 += a1 * a2; s13 += a1 * a3;
+    s22 += a2 * a2; s23 += a2 * a3; s33 += a3 * a3;
+    t1  += a1 * r;  t2  += a2 * r;  t3  += a3 * r;
+  }
+
+  /* Symmetric 3x3 solve via the adjugate. */
+  double A11 = s22 * s33 - s23 * s23;
+  double A12 = s13 * s23 - s12 * s33;
+  double A13 = s12 * s23 - s13 * s22;
+  double A22 = s11 * s33 - s13 * s13;
+  double A23 = s13 * s12 - s11 * s23;
+  double det = s11 * A11 + s12 * A12 + s13 * A13;
+  if (signbit((float)(fabs(det) - 1.0e-3))) { return FALSE; }
+
+  double X = (A11 * t1 + A12 * t2 + A13 * t3) / det;
+  double Y = (A12 * t1 + A22 * t2 + A23 * t3) / det;
+
+  waypoints[drop_wp].x = (float)X;
+  waypoints[drop_wp].y = (float)Y;
+  return TRUE;
+}
+
+static inline bool mission4_peak_passed(void) {
+  if (signbit((float)mission4_phase2_samples - (float)MISSION4_PEAK_MIN_SAMPLES)) {
+    return false;
+  }
+  if (signbit((float)mission4_worse_streak - (float)MISSION4_PEAK_CONFIRM_COUNT)) {
+    return false;
+  }
+  /* Side effect, same reason DROP_POINT moved into mission4_sample_signal()
+     above: this return value drives a flight-plan exception, which
+     deroutes immediately when true, skipping the rest of the calling
+     block — so a sound_detected=TRUE stage placed after Phase2's go leg
+     would almost never actually run, since firing early is this
+     function's entire purpose. Setting it here instead means it's
+     genuinely true the instant the search actually commits, regardless
+     of which exit path (this exception, or the chord completing
+     naturally) got there. */
+  sound_detected = TRUE;
+  return true;
+}
+
+static inline bool mission4_sample_signal(uint8_t source_wp, uint8_t drop_wp) {
+  /* No raw angle-bracket comparison operators anywhere in this function
+     on purpose, including greater-or-equal — gen_aircraft's flight-plan
+     writer does not re-escape header text on output, so even a
+     correctly-escaped entity in the source corrupts the per-aircraft
+     generated flight_plan.xml downstream once it round-trips back out
+     (confirmed earlier this session, see mission4_dist2_to_wp's comment
+     above for the original finding). signbit() on a subtraction does
+     the same comparisons without needing the operator characters at
+     all. */
+  if (!signbit(autopilot.flight_time - mission4_last_sample_time - MISSION4_SAMPLE_PERIOD)) {
+    mission4_last_sample_time = autopilot.flight_time;
+    /* True 3D distance (source assumed near ground level, so the
+       aircraft's own altitude IS the vertical leg of this triangle) —
+       this is the simulator's hidden ground truth, never exposed to the
+       search logic directly, only through the spl value below. */
+    float dx = GetPosX() - waypoints[source_wp].x;
+    float dy = GetPosY() - waypoints[source_wp].y;
+    float dz = GetPosAlt() - GetAltRef();
+    float dist = sqrtf(dx * dx + dy * dy + dz * dz);
+    float spl = MISSION4_KTR_REF_SPL - 20.0f * log10f(dist / MISSION4_KTR_REF_DIST);
+    if (signbit((float)mission4_sample_count - (float)MISSION4_MAX_SAMPLES)) {
+      mission4_sample_x[mission4_sample_count] = GetPosX();
+      mission4_sample_y[mission4_sample_count] = GetPosY();
+      mission4_sample_spl[mission4_sample_count] = spl;
+      mission4_sample_z[mission4_sample_count] = GetPosAlt() - GetAltRef();
+      mission4_sample_count++;
+    }
+    /* Altitude-compensated ranking: invert spl back into an implied
+       slant range using the same calibration, then subtract the
+       aircraft's own (precisely known) altitude to isolate the
+       horizontal component — see the function-level comment above for
+       why this matters here. Clamped at zero for the case an implied
+       slant range comes out at or below the aircraft's own altitude
+       (numerically odd but not impossible with a noisy real sensor;
+       treated as "effectively directly overhead"). */
+    float own_alt = GetPosAlt() - GetAltRef();
+    float slant = MISSION4_KTR_REF_DIST * powf(10.0f, (MISSION4_KTR_REF_SPL - spl) / 20.0f);
+    float horiz2 = slant * slant - own_alt * own_alt;
+    if (signbit(horiz2)) {
+      horiz2 = 0.0f;
+    }
+    float horiz = sqrtf(horiz2);
+    if (signbit(horiz - mission4_best_horiz)) {
+      mission4_best_horiz = horiz;
+      mission4_best_x = GetPosX();
+      mission4_best_y = GetPosY();
+      /* DROP_POINT tracks the current best CONTINUOUSLY, right here,
+         rather than only being finalized as a trailing stage after
+         Phase2's go leg — confirmed via telemetry this matters: when
+         mission4_peak_passed() below fires, it's an exception, and
+         exceptions deroute immediately, skipping the rest of the block
+         entirely (the same "exceptions run before stages" mechanism
+         documented elsewhere in this file, just biting a different way
+         here) — so a one-time finalization stage placed after the go leg
+         almost never actually ran, since interrupting the leg early via
+         peak_passed is the exception's entire purpose. DROP_POINT was
+         found stuck at its own placeholder default (identical to
+         SEARCH_CENTER's coordinates) after a real run for exactly this
+         reason — never updated at all, not corrupted data. Writing it
+         here instead means it's always current the instant a new best
+         is found, regardless of which exit path the search eventually
+         takes. waypoints[drop_wp] directly, not WaypointX(WP_DROP_POINT):
+         the WP_* macros aren't defined until after this header's own
+         functions in the generated flight_plan.h (confirmed by checking
+         it directly), the same reason mission4_dist2_to_wp() above takes
+         a waypoint index parameter instead of a hardcoded WP_ constant. */
+      waypoints[drop_wp].x = mission4_best_x;
+      waypoints[drop_wp].y = mission4_best_y;
+    }
+    /* Trend tracking for mission4_peak_passed() above: this sample vs.
+       the immediately preceding one (not the best-ever), so this is
+       "which way is it moving right now", independent of best-tracking. */
+    if (!signbit(horiz - mission4_prev_horiz)) {
+      mission4_worse_streak++;
+    } else {
+      mission4_worse_streak = 0;
+    }
+    mission4_prev_horiz = horiz;
+    /* Counts every sample regardless of which block is active — reset to
+       0 at the end of phase 1 (same place/reasoning as
+       mission4_worse_streak's reset), so it only actually measures "how
+       many samples into phase 2" by the time phase 2 can read it. */
+    mission4_phase2_samples++;
+  }
+  return false;
+}
+
+/* Mission4 (Valkenburg): a single aircraft, so a short fixed launch delay -
+   same helper name/shape as mission1_strasbourg.xml so the Holding point and
+   Geo init blocks below are identical to that file's.
+   No AC_ID special-casing anywhere in this plan, unlike mission4_strasbourg
+   which gates on AC_ID 112 because Cadby shares that file. Here the gating
+   would only be a trap: whichever aircraft is assigned this plan should fly
+   it, and hardcoding one id means a different one silently falls through to
+   Standby instead of starting the mission. */
+static inline float mission1_geo_init_delay(void) {
+  return 5;
+}
+static inline float mission1_holding_delay(void) {
+  return 5;
+}
+  </header>
+  <waypoints>
+    <!-- Launch / land infrastructure -->
+    <waypoint name="HOME" x="0.0" y="0.0"/>
+    <!-- LANDING: westbound final, 270 deg, into the prevailing westerly
+         (the same wind assumption as the drop run-in). AF is 200 m east of TD
+         at 20 m AGL - the glide that lands the EasyStar in SITL at
+         Strasbourg. TD is 66 m inside the FZ1-FZ2 west edge, so the ~30 m
+         float and ~15 m roll after the motor is killed stay inside the
+         flyzone. Use Land RIGHT: the baseleg circle sits north of AF, ~178 m
+         clear of the fence. Placed by computation, not from a surveyed strip:
+         drag AF/TD round for the real field and wind. -->
+    <waypoint name="AF" x="288.0" y="32.0" alt="20.0"/>
+    <waypoint name="_BASELEG" x="288.0" y="72.0"/>
+    <!-- height="0" (real ground level), not left to default: with no
+         alt/height of its own this silently inherited the flight_plan's
+         top-level alt="190" default (the same one used for waypoints
+         that were never meant to define a real altitude, like
+         SEARCH_CENTER) — 190 = 50 m AGL, HIGHER than AF's 175 (35 m
+         AGL). final's NavGlide(AF, TD) linearly interpolates FROM AF's
+         altitude TO TD's, so with TD above AF that leg was commanding a
+         climb, not a landing descent — confirmed via telemetry (altitude
+         rising the whole time final ran, never dropping below the
+         10 m AGL exception, until the geofence safety net eventually
+         reset the whole mission back to Standby, since the aircraft just
+         kept flying outward and up with nothing left to stop it). This
+         bug was always latent — TD never had a real altitude — but
+         invisible until final's own premature-arrival bug (fixed just
+         before this) was gone and it actually started executing this
+         leg's real glide-down logic for the first time. -->
+    <waypoint height="0" name="TD" x="88.0" y="32.0"/>
+    <!-- Scratch "current position" waypoint for the Drop Mission4 glide
+         approach below — set via NavSetWaypointHere() at block entry, same
+         idiom as IMAV2022_drop.xml's _HERE. Placeholder position irrelevant. -->
+    <waypoint name="_HERE" x="0.0" y="0.0"/>
+
+    <!-- Standby orbit — the geofence exception's fallback holding point. -->
+    <waypoint name="_STDBY" x="150.000" y="60.000"/>
+
+    <!-- Required only because nav_couzin_fw.c (still compiled into
+         Cherry's airframe, see that module's comment there) hard-
+         references WP_SWARM_TGT/WP_S1/WP_S2 directly in C, not just via
+         flight-plan <go wp="..."/> calls — removing these waypoints
+         breaks that module's build even though no block in this file
+         actually flies to any of them. Dead weight kept alive by a
+         compiled dependency, not by anything mission4 itself does. -->
+    <waypoint name="SWARM_TGT" x="180.000" y="90.000"/>
+    <waypoint name="S1" x="380.000" y="-60.000"/>
+    <waypoint name="S2" x="640.000" y="220.000"/>
+
+    <!-- Valkenburg polygon corners — the real FZ1-FZ7 boundary, converted
+         from MS/valkenburg_flyzone.kml into this plan's local frame.
+         Used for GCS sector display; the actual hard geofence check is
+         mission4_in_valkenburg()/_safe() in nav_mission4_geofence.h. -->
+    <waypoint name="FZ1" x="-13.546" y="138.715"/>
+    <waypoint name="FZ2" x="96.380" y="-189.677"/>
+    <waypoint name="FZ3" x="275.267" y="-258.695"/>
+    <waypoint name="FZ4" x="603.682" y="-1.547"/>
+    <waypoint name="FZ5" x="876.109" y="207.733"/>
+    <waypoint name="FZ6" x="775.741" y="545.031"/>
+    <waypoint name="FZ7" x="310.089" y="344.656"/>
+
+    <!-- PLACEHOLDER — reposition before the real mission (see header), or set
+         lat/lon directly once the real GPS point is given: e.g.
+         <waypoint name="SEARCH_CENTER" lat="..." lon="..."/> instead of x/y —
+         the compiler converts it relative to lat0/lon0 automatically.
+         Currently near the top-left corner (FZ2), 60 m in from the FZ1-FZ2
+         "left wall" — matches the expected competition location per the
+         brief. Originally sized (16-84 m clearance, checked with shapely
+         — see Search Mission4 Phase2's comment) against a 25 m-radius
+         search circle; the circle is now 30 m (EasyStar3's own
+         MIN_CIRCLE_RADIUS, Search Mission4's comment) and that clearance
+         number is stale — worst case is up to 5 m tighter now, still
+         plausibly safe given the original margin but not re-verified
+         with shapely at the new radius yet. This is the center Search
+         Mission4's first circle flies around, and where DROP_POINT
+         defaults to. -->
+    <waypoint name="SEARCH_CENTER" x="270.000" y="40.000"/>
+
+    <!-- PLACEHOLDER test target for the sound-source localization logic
+         (Search Mission4 / Search Mission4 Phase2 below, and
+         mission4_sample_signal() in the header above) — stands in for
+         the real mannequin's sound-emitting device until real hardware
+         exists. Deliberately off-center within the 30 m detection circle
+         around SEARCH_CENTER (not AT SEARCH_CENTER) so the search logic
+         has something genuine to find, rather than trivially already
+         being at the answer. Only mission4_sample_signal() ever reads
+         this waypoint — the search logic itself never looks at it
+         directly, it only sees simulated SPL readings, same as it would
+         with a real sensor. Remove/ignore this once real detection
+         hardware exists; nothing else needs to change, since the search
+         logic only ever consumes mission4_sample_signal()'s return
+         value, not this waypoint. -->
+    <waypoint name="TRUE_SOUND_SOURCE" x="278.000" y="47.000"/>
+
+    <!-- Scratch waypoint: entry point of Phase2's diameter chord —
+         mission4_best_x/y captured once at the start of that block
+         (header above, mission4_diameter_start_x/y), the loudest sample
+         found anywhere on Phase 1's circle. Since every Phase 1 sample
+         was taken while flying that circle, this point sits ON the
+         circle's circumference. Placeholder position irrelevant. -->
+    <waypoint name="DIAMETER_START" x="0.0" y="0.0"/>
+
+    <!-- Scratch waypoint: the far end of Phase2's diameter chord —
+         computed as DIAMETER_START reflected through SEARCH_CENTER
+         (2*SEARCH_CENTER - DIAMETER_START), i.e. the point diametrically
+         opposite it on the same circle. The straight line between these
+         two points passes through SEARCH_CENTER itself, getting as close
+         as physically possible (0 m) to the circle's own center — a
+         circle can never do that (every point on a circle is exactly its
+         radius from the center by definition), which is the whole reason
+         this is a straight chord and not another circle. Placeholder
+         position irrelevant. -->
+    <waypoint name="DIAMETER_END" x="0.0" y="0.0"/>
+
+    <!-- Drop target ("shadow point") — PLACEHOLDER position, (0,0) like
+         DIAMETER_START/END and DROP_APPROACH below: its real position is
+         set continuously from the moment Search Mission4 starts sampling
+         (mission4_sample_signal(), header above, updates it every sample
+         to mission4_best_x/y — whichever reading anywhere in the search
+         had the smallest implied horizontal range), so this declared
+         value never actually matters once flying. Used to sit at the
+         same coordinates as SEARCH_CENTER instead — changed because that
+         made the two markers overlap exactly on the GCS map before a
+         mission starts, unreadable as two labels stacked on one point;
+         that made sense back when DROP_POINT was only set once, at the
+         end, but now that it's live from the first sample, there's no
+         reason left to default it to a real, meaningful position at all.
+         Altitude is overwritten to drop_height AGL at Drop Mission4
+         entry — see that block. -->
+    <waypoint name="DROP_POINT" x="0.0" y="0.0"/>
+
+    <!-- Long final-approach entry point for the drop descent — placeholder
+         position (0,0), recomputed every time relative to DROP_POINT by
+         Drop Mission4 below (150 m due east of DROP_POINT, at
+         search_height), so it stays correct even once DROP_POINT is
+         repositioned by a real detection. See Drop Mission4's comment for
+         why this exists: a short circle-then-pass approach kept crashing
+         near the ground regardless of vmode (glide/climb/alt all failed
+         differently); a long straight glide — the same mechanism the
+         actual runway landing ("final" block below) already uses
+         successfully — needs real distance to work, and 150 m east has
+         83-112 m of clearance to the true Flyzone boundary at typical
+         DROP_POINT positions (checked with shapely), comfortably inside
+         the geofence-safe buffer. If DROP_POINT moves somewhere with less
+         room to the east on the real day, recheck clearance in that
+         direction (or pick a different fixed offset) before flying. -->
+    <waypoint name="DROP_APPROACH" x="0.0" y="0.0"/>
+    <!-- Levelling point for the drop pass, placed by Drop Mission4 at
+         level_distance short of DROP_POINT. The approach glide aims HERE
+         at release_height, not straight at DROP_POINT, so the aircraft
+         arrives at a settled, known height with the rangefinder giving
+         steady readings, and only then dips through the release window.
+         Position is recomputed from DROP_POINT every pass, same as
+         DROP_APPROACH, so it follows wherever the source turns out to be. -->
+    <waypoint name="DROP_LEVEL" x="0.0" y="0.0"/>
+    <!-- Where the payload is predicted to land, stamped by
+         mission4_log_release at the instant the gate fires. Purely a
+         display aid: nothing navigates to it. Without it the GCS shows only
+         the aircraft, which releases several metres short and then overflies
+         the target before climbing - so the drop reads as "released after
+         passing the spot" when it was actually released before. -->
+    <waypoint name="IMPACT" x="0.0" y="0.0"/>
+
+  </waypoints>
+
+  <sectors>
+    <!-- Flyzone polygon — 7 corners, real boundary, from
+         MS/valkenburg_flyzone.kml. -->
+    <sector color="red" name="Flyzone">
+      <corner name="FZ1"/>
+      <corner name="FZ2"/>
+      <corner name="FZ3"/>
+      <corner name="FZ4"/>
+      <corner name="FZ5"/>
+      <corner name="FZ6"/>
+      <corner name="FZ7"/>
+    </sector>
+    <kml file="MS/valkenburg_flyzone.kml"/>
+  </sectors>
+
+  <variables>
+    <!-- Starting altitude for the search — climbed to under power once
+         (Climb to Search Height block below), then not touched again
+         until Drop Release's climb-out. All three search legs (Phase 1's
+         circle, Phase 2 Entry, Phase 2's chord) draw from this budget as
+         one continuous idle-throttle descent.
+         80 m (the previous value) was sized assuming the commanded
+         -1.5 m/s glide rate was close to the real achieved one - the
+         first full mission4 run on the now-fixed EasyStar3 (proper
+         takeoff, real thrust/gains) showed that assumption was badly
+         wrong: real loss across all three search legs combined (~55 s)
+         was only ~18 m, roughly 0.33 m/s average - throttle is clearly
+         doing a lot more compensating against the commanded rate than it
+         was for whichever airframe/tuning that -1.5 m/s figure was
+         originally measured against. Left at 80 m, that shallow real
+         descent meant the aircraft reached Drop Mission4 with ~64 m AGL
+         still on board - way more than Drop Mission4 Final's own budget
+         can shed in one pass, so it needed 4+ retry loops (each a full
+         out-and-back approach glide, real time - not a quick fallback)
+         just to bleed the excess off before ever finding the release
+         window.
+         50 m is a reasoned re-estimate from that same real data (~18 m
+         search-leg loss, extrapolating a similarly shallow rate for Drop
+         Mission4's own 150 m transit), not a from-scratch guess, but
+         still needs a fresh telemetry check - the real sink rate could
+         easily differ again now that less altitude means a different
+         throttle/energy state throughout. Being short here fails
+         outright (see header note on why a fixed wing can't fly the
+         search pattern itself down at drop_height directly, ~2 m AGL,
+         sustained tight turns that low); being long just costs the
+         retry loop above, real but recoverable. -->
+    <variable init="50." var="search_height" min="40." max="90." step="1."/>
+    <!-- Drop pass target altitude — separate from search_height, see the
+         file header for why a fixed wing can't fly the search pattern
+         itself this low. max=1.8, not 2.0: Drop Mission4's release gate is
+         a hard "<2m AGL" check, so the target needs real margin below that
+         or the glide could approach 2m without ever reading strictly less
+         than it, never triggering release. -->
+    <variable init="1.5" var="drop_height" min="0.5" max="1.8" step="0.1"/>
+    <!-- Altitude the 150 m final glide starts from, held by Drop Mission4's
+         spiral before it hands over. Sized from the airframe, not guessed:
+         gliding sink is V/(L/D) with L/D=11, so at the 12 m/s cruise
+         setpoint the glide can shed 13.6 m over 150 m in still air, but
+         only 9.6 m against a 5 m/s tailwind (groundspeed sets the time
+         available, airspeed sets the sink rate). 10 m leaves 9.2 m to
+         spend down to DROP_POINT's 0.8 m aim point, which fits the
+         tailwind case. Erring low is the safe direction: descending
+         SLOWER than best glide just needs a little throttle, descending
+         faster needs a dive the airspeed loop will not allow. max is
+         13, below the 13.6 m still-air ceiling. -->
+    <!-- 10 m, raised with MISSION4_APPR_MIN: the longer run-in exists for
+         turn settling, and flying all 130 m of it at 4 m AGL would be a
+         needlessly long low exposure. From 10 m the slope to
+         release_height over 130 m is 1:14, inside the airframe's 1:11 best
+         glide, the aircraft is under 4 m only for the last ~44 m, and at
+         the 7.4 m release lead it is at 1.42 m - inside the 0.5-2.0 gate,
+         with the 2 m crossing 15.7 m out so DISTANCE stays the binding
+         condition rather than altitude. -->
+    <variable init="10." var="approach_height" min="3." max="16." step="0.5"/>
+    <!-- Height held over DROP_LEVEL before the final dip. 2 m is above the
+         release window (0.5-1.5) so the gate cannot fire early, and low
+         enough that the dip is small and gentle. -->
+    <variable init="2.5" var="level_height" min="1.6" max="5." step="0.1"/>
+    <!-- How far short of DROP_POINT the aircraft levels off. 40 m at the
+         12 m/s cruise gives ~3 s of settled flight before the dip starts,
+         and makes the dip 1.5 m over 40 m (1:27) - far shallower than the
+         airframe's 1:11 best glide, so it is flown under power with real
+         authority in both directions rather than ballistically. -->
+    <variable init="80." var="level_distance" min="20." max="120." step="5."/>
+    <!-- Altitude the glide aims at over DROP_POINT.
+         0.9, not 1.0, because of the 1 m deadband in nav_set_altitude()
+         (firmwares/fixedwing/nav.c): it only forwards a new altitude to the
+         vertical loop once the command has moved MORE than 1 m since the
+         last one it forwarded, so a glide arrives as a staircase. Ramping
+         4.0 -> 1.0 m gives commands 3.0 and 2.0 and then stops: the last
+         step needs |1.0 - 2.0| > 1.0, which is exactly 1.0 and fails the
+         strict inequality, leaving 2.00 m as the final command and the
+         aircraft settling at 1.66 m. Every approach height lands in the
+         same trap (6 m -> 1.98, 10 m -> 1.94), which is why the aircraft
+         never went below 2 m on any geometry tried. Aiming 0.1 m lower
+         makes that last difference 1.1 and the third step fires, so the
+         commanded altitude actually reaches 1.0 m.
+         This is a workaround at the flight-plan level; the real fix is the
+         deadband itself, which is shared by every fixedwing airframe. -->
+    <variable init="0.9" var="release_height" min="0.5" max="1.4" step="0.1"/>
+    <!-- PLACEHOLDER for real sound detection. Once real hardware/logic
+         exists, have it set this TRUE whenever the target is located (any
+         time, even mid-search) — Search Mission4's exception already
+         handles derouting into the drop pass as soon as it goes true, no
+         other change needed here. For now, with no real detection, Search
+         Mission4 Phase2 sets it TRUE once the search commits (either the
+         real-time peak-passed detection fires, or the chord completes
+         without one — see that block), so the automatic search->drop
+         handoff can be tested end-to-end before the hardware exists. -->
+    <variable init="0" type="bool" var="sound_detected"/>
+  </variables>
+
+  <exceptions>
+    <!-- Geofence: exit Valkenburg polygon → orbit _STDBY. Same 60 m buffer
+         convention as mission1_strasbourg.xml's nav_in_strasbourg_safe,
+         via this file's own standalone copy (mission4_in_valkenburg_safe,
+         nav_mission4_geofence.h, header above — no swarm/couzin
+         dependency, see that header's own comment). -->
+    <exception cond="!mission4_in_valkenburg_safe(GetPosX(), GetPosY()) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Takeoff'))" deroute="Standby"/>
+  </exceptions>
+
+  <blocks>
+    <!-- ── Pre-flight ───────────────────────────────────────────────────────── -->
+
+    <block name="Wait GPS">
+      <!-- Subscribed here, not Start Mission4: this only needs to happen
+           once, as early as possible, well before it's ever actually
+           needed (the release gate, far later) - matching how a real
+           module's own init() would run at boot, not mid-mission. -->
+      <!-- Confirmed via telemetry (disabled this call as a diagnostic,
+           re-enabled here): the Takeoff phugoid oscillation is bit-for-
+           bit identical with the sonar subscription on or off - proves
+           it's genuinely unrelated, not just unlikely. Ground_alt was
+           ruled out the same way at the Strasbourg site (140 m there,
+           0 m here) - the same aircraft flies both with no oscillation
+           difference, so elevation is not the differentiator either. -->
+      <call_once fun="mission4_agl_sonar_init()"/>
+      <set value="1" var="autopilot.kill_throttle"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), mission1_geo_init_delay())"/>
+      <call_once fun="NavSetGroundReferenceHere()"/>
+      <!-- Start the rangefinder's own telemetry. sonar_i2c's report
+           periodic is declared autorun="FALSE" (conf/modules/sonar_i2c.xml),
+           so it initialises to MODULES_STOP and no SONAR message is ever
+           sent - the sensor runs and feeds AGL over Abi regardless, it is
+           only the reporting that is off, which makes it invisible in the
+           logs. Started here rather than left to a GCS toggle so every run
+           records it, including on the ground: a ground reading is the
+           reference that says whether the sonar agrees with
+           GetPosAlt()-GetAltRef(), which matters because the drop gate
+           trusts the sonar and the release window is only 1 m wide. -->
+      <call_once fun="mission4_rangefinder_report_start()"/>
+    </block>
+
+
+    <block name="Holding point">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <exception cond="NavBlockTime() @GT mission1_holding_delay()" deroute="Takeoff"/>
+      <attitude roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+
+    <!-- ── Launch ────────────────────────────────────────────────────────────── -->
+    <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png" group="home">
+      <!-- Cherry goes straight from climb-out into the search pattern;
+           Standby below only ever gets reached via the geofence
+           exception's fallback, never through here. -->
+      <exception cond="GetPosAlt() @GT GetAltRef() + 25" deroute="Start Mission4"/>
+      <set value="0" var="autopilot.kill_throttle"/>
+      <set value="1" var="autopilot.launch"/>
+      <set value="0" var="autopilot.flight_time"/>
+      <!-- Explicit "from" for the route leg below: hmode="route" without
+           one falls back to whatever "last_wp" happens to be textually
+           (a fragile, deprecated reference - see gen_flight_plan.ml),
+           and this is the very first active navigation block, so there's
+           nothing meaningful for that to point at. NavSetWaypointHere
+           captures the real launch position instead - same _HERE
+           waypoint and pattern already used by Drop Release, well after
+           this in the mission, so no conflict. -->
+      <call_once fun="NavSetWaypointHere(WP__HERE)"/>
+      <!-- vmode="climb" (closed-loop, energy-managed), not the old fixed-
+           pitch vmode="throttle": tried pitch=25 (Cherry's own working
+           value) and pitch=14 (a shallower guess) at thrust from 1x up
+           to 5x the airframe's declared table, and separately fixed a
+           real H_CTL gain/inertia mismatch (airframe file, PITCH_PGAIN
+           etc.) that was causing genuine attitude-control instability -
+           all of that combined still couldn't sustain a climb past
+           ~8 m AGL, capped at almost exactly the same ceiling regardless
+           of how much thrust was available. Confirmed via telemetry why:
+           airspeed kept climbing well past this airframe's own
+           MAXIMUM_AIRSPEED (over 25 m/s, vs. a 17 m/s limit) while
+           altitude stalled out - a fixed pitch ATTITUDE has no feedback
+           connecting it to whether the aircraft is actually gaining
+           altitude, so once moving fast enough, more available thrust
+           just becomes more speed, not more climb. vmode="climb" is the
+           same closed-loop idiom already proven to work later in this
+           exact mission (Climb to Search Height, below) - it manages
+           throttle and pitch together to hold an actual commanded
+           climb RATE instead of a blind attitude, so it should keep
+           trying to climb rather than let excess energy leak into
+           overspeed. climb="1.0", not 2.0 or 4.0 (both tried and
+           produced the same result: a brief hop then settling back,
+           throttle pegged at 92% the whole time with zero margin left in
+           reserve - asking for more never helped, since the ceiling was
+           never about the target). Pulled the real number instead of
+           guessing: checked the WORKING Cherry airframe's own actual
+           takeoff telemetry (same 10 m/s launch speed, same closed-loop
+           idiom in spirit) rather than trusting its documented "4.5 m/s
+           max climb" figure, and Cherry's real sustained climb rate is
+           only ~1.0-1.25 m/s - throttle settles at a steady 84%, with
+           real margin left over, not pinned at max. That's the actual
+           gap: not that EasyStar3 needs to match some fast climb Cherry
+           achieves, but that Cherry's own real climb is this modest, and
+           EasyStar3 (already at max throttle with zero margin the whole
+           time) needs a target it can actually sustain rather than one
+           that keeps it thrust-starved from the first tick. Also worth
+           matching Cherry's patience: its own climb took a full 23 s to
+           reach 25 m AGL, so a short test window judging this "failed"
+           at 15-20 s may simply not have given it enough time. Routes
+           toward _STDBY while climbing rather than holding a fixed
+           heading, matching the existing fallback leg below and giving
+           it a real direction to make route-mode progress in. -->
+      <!-- Climb toward SEARCH_CENTER, not _STDBY: the aircraft has to get
+           to the search area anyway, and Climb to Search Height (the next
+           block) circles SEARCH_CENTER for the rest of the climb, so
+           heading there now makes one continuous climb instead of orbiting
+           _STDBY for ~23 s first and then transiting. climb="2.0" matches
+           the airframe's own ALTITUDE_MAX_CLIMB rather than the old 1.0,
+           which was what made the +25 m handoff take so long. -->
+      <go climb="2.0" from="_HERE" hmode="route" vmode="climb" wp="SEARCH_CENTER"/>
+      <!-- Circle-climb over _STDBY until the +25 m exception above fires,
+           instead of the previous <go approaching_time="5" height=...> leg.
+           That leg completed instantly once the aircraft was already at
+           _STDBY, so the block ran out of navigation before it ran out of
+           climb: at climb="1.0" reaching +25 m takes 25 s, but _STDBY is
+           reached in about 13 s, so Takeoff fell straight through to
+           Standby at ~15 m AGL and the mission never started - confirmed
+           via telemetry (ENTER Standby AGL=15.13 m at t=13.3 s). Circling
+           keeps it climbing in place with nowhere to "arrive", so the
+           exception is reached on altitude rather than on geometry.
+           Deroutes into Start Mission4, not Standby, if the circle's own
+           until somehow wins the race first - Standby here was only ever
+           the fall-through, never an intended step. -->
+      <circle climb="2.0" radius="DEFAULT_CIRCLE_RADIUS" until="GetPosAlt() @GT GetAltRef()+25" vmode="climb" wp="SEARCH_CENTER"/>
+      <deroute block="Start Mission4"/>
+    </block>
+
+    <!-- ── Safety holding pattern ───────────────────────────────────────────── -->
+    <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="home">
+      <!-- Restore powered cruise here too: the global geofence exception
+           deroutes to Standby from ANY block, including the propeller-off
+           search legs, and this block has to be able to hold altitude. -->
+      <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="0.16"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="12."/>
+      <!-- Only reached via the geofence exception above (or, in principle,
+           Takeoff's own fallback deroute, though Takeoff's exception
+           always fires first for Cherry) — just orbits _STDBY safely
+           until an operator intervenes. -->
+      <while cond="TRUE">
+        <go approaching_time="0" height="50.0" wp="_STDBY"/>
+      </while>
+    </block>
+
+    <!-- ── Search + drop (IMAV Mision4) ─────────────────────────────────────── -->
+    <block name="Start Mission4" strip_button="Start Mission4" strip_icon="survey.png" group="home">
+      <!-- sound_detected is a persistent global — never reset by anything
+           else, so a stale TRUE left over from an earlier test (or an
+           earlier loop through Search Mission4 within the same continuous
+           run) would make its exception fire almost immediately on the
+           next entry into Search Mission4, well before both search
+           circles actually complete. Force it clean here, once, at
+           mission start. -->
+      <set var="sound_detected" value="FALSE"/>
+      <deroute block="Climb to Search Height"/>
+    </block>
+
+    <!-- Powered climb up to search_height (~70 m — see that variable's
+         comment for the full budget), the only powered segment between
+         here and Drop Release's climb-out: everything from Search
+         Mission4 through the drop itself is one continuous idle-throttle
+         descent, so it all has to start from altitude, under power,
+         first. Reuses the same closed-loop climbing-circle idiom Drop
+         Release already uses successfully to climb back out after the
+         drop (vmode="climb", positive rate) rather than an open-loop
+         throttle+pitch climb — safer for a sustained multi-second climb
+         than Takeoff's brief fixed-attitude climb-out, which is only
+         tuned for a short escape to +25 m, not this much further.
+         DEFAULT_CIRCLE_RADIUS, not MIN_CIRCLE_RADIUS (currently 40 m vs
+         30 m on EasyStar3 — both pulled symbolically from the airframe
+         file, so this stays correct across airframes without editing):
+         this is just gaining altitude, not part of the search geometry,
+         so there's no reason to fly it at the tighter/riskier radius —
+         40 m around SEARCH_CENTER stays well inside the 53.7 m
+         clearance to the true Flyzone boundary either way (that
+         clearance is SEARCH_CENTER's own distance to the boundary, not
+         dependent on radius, so still accurate).
+         Also sets the search airspeed here (GLIDE_AIRSPEED, this
+         airframe's own best-L/D speed) rather than waiting until Search
+         Mission4 starts: v_ctl_auto_airspeed_setpoint slews at only
+         0.3 m/s/s (AIRSPEED_SETPOINT_SLEW, airframe file), so setting it
+         during this climb gives settling time before the descending
+         circles begin, instead of still transitioning during Phase 1's
+         own first few samples — the exact slew time depends on which
+         airframe's GLIDE_AIRSPEED is active (was ~7 s for Cherry's
+         12->10 m/s gap; EasyStar3's 12->7.5 m/s gap needs re-checking). -->
+    <block name="Climb to Search Height" group="mission">
+      <set var="v_ctl_auto_airspeed_setpoint" value="GLIDE_AIRSPEED"/>
+      <exception cond="GetPosAlt() @GT GetAltRef() + search_height" deroute="Search Mission4"/>
+      <circle climb="4.0" radius="DEFAULT_CIRCLE_RADIUS" vmode="climb" wp="SEARCH_CENTER"/>
+    </block>
+
+    <!-- Phase 1: circle the full 30 m detection radius once around
+         SEARCH_CENTER, continuously sampling simulated sound-pressure-
+         level (mission4_sample_signal(), header above) via a side-
+         effecting exception (evaluated every tick, before this block's
+         own stage — the same mechanism this file already uses elsewhere
+         for periodic checks).
+         The exception's deroute target is "Drop Mission4", NOT "Search
+         Mission4" (this block itself) — confirmed via telemetry this
+         matters, not just cosmetic: gen_flight_plan.ml emits every
+         exception as "if ((nav_block != TARGET) && COND) { ... }", a
+         guard meant to stop a block from re-deroute-ing to itself. With
+         COND = mission4_sample_signal(...) (always returns false, so
+         this exception was never actually meant to fire), a
+         self-targeting deroute made TARGET equal the CURRENT block, so
+         the guard (nav_block != nav_block) was always false — and by C's
+         && short-circuit rule, the right-hand side (the sampling call
+         itself) never even evaluated while inside this block, silently
+         defeating the whole "run every tick" trick. mission4_best_x/y
+         stayed at their compile-time 0.0f the entire time, confirmed by
+         routing to them directly as a diagnostic — the aircraft flew
+         straight to (0,0), never updated. Targeting a genuinely
+         different block (Drop Mission4, itself never actually reached
+         either, since the condition stays false) keeps the guard
+         (nav_block != Drop_Mission4's index) true while in THIS block,
+         so the sampling call now actually executes every tick, as
+         originally intended.
+         30 m circle radius (radius="30"), not DEFAULT_CIRCLE_RADIUS
+         (40 m): the mission brief's own detection radius is 25 m, but
+         Cherry now flies the EasyStar3 airframe (0.70 kg empty, 0.25 kg
+         carried payload — see the JSBSim aircraft file), whose own
+         MIN_CIRCLE_RADIUS is 30 m, not 25 — a real declared limit on how
+         tightly this specific airframe can safely bank at speed, not
+         arbitrary. Widened the search circle to match it rather than fly
+         tighter than the airframe's own rating; the mission's own 25 m
+         spec is a target-area size, not something this circle strictly
+         has to equal. Hardcoded to 30, not the symbolic MIN_CIRCLE_RADIUS
+         constant, same reasoning as before airframe-swap: this number
+         needs to be a deliberate choice tied to the mission geometry
+         (matching the airframe's rating on purpose), not something that
+         silently drifts if a future airframe swap changes the constant
+         again without a matching decision about the search radius.
+         climb=-1.5 (below) and search_height/altitude-budget numbers
+         throughout this file were tuned against the old ZOHD Cherry
+         airframe's real JSBSim behavior — not yet re-verified against
+         EasyStar3's different mass/GLIDE_AIRSPEED/GLIDE_RATIO. Expect
+         these to need fresh telemetry-driven retuning, same as every
+         other empirically-tuned number in this file.
+         Replaces the earlier "X" pattern entirely: a circle has zero
+         sharp turns (unlike the X's 135 deg corners, which were never
+         fully solved despite extensive CARROT/approaching_time/
+         sequencing tuning — see git history for that whole effort), and
+         gives genuinely continuous sampling around the whole periphery
+         instead of 4-5 corner readings. No separate transit through
+         SEARCH_CENTER first: a <circle> joins smoothly from wherever the
+         aircraft currently is regardless of entry heading (already
+         proven throughout this file — Drop Mission4's circle has never
+         once needed a controlled entry heading either), so the extra
+         transit leg the X pattern needed isn't necessary here.
+         mission4_sample_count and mission4_best_horiz are reset here,
+         once, at the start of phase 1 — mission4_best_x/y are NOT reset
+         going into phase 2 below, since the best sample found so far
+         should carry over, not be discarded. -->
+    <block name="Search Mission4" group="mission">
+      <exception cond="sound_detected" deroute="Drop Mission4"/>
+      <exception cond="mission4_sample_signal(WP_TRUE_SOUND_SOURCE, WP_DROP_POINT)" deroute="Drop Mission4"/>
+      <!-- Acoustic search must be propeller-off: the microphone cannot
+           pick the source out of the aircraft's own motor noise. Commanding
+           a steep climb rate is not enough on its own - the energy
+           controller's throttle is
+             nominal_cruise_throttle + climb_increment*climb_sp + error terms
+           so with this airframe's 0.16 nominal and 0.091 increment,
+           climb=-1.11 still leaves 0.059 of feedforward (matching the
+           3-16% measured, see the climb= comment below) and zeroing it
+           would need climb=-1.76, i.e. 19.4 m/s at this glide ratio, past
+           AIRSPEED_MAX. Zeroing the nominal term instead makes the whole
+           expression go negative for any descent and clamp at zero
+           throttle, with pitch still fully closed-loop. Not
+           autopilot.kill_throttle, which would be exact on real hardware
+           but freezes the FDM in NPS (nps_autopilot_fixedwing.c ANDs it
+           into nps_autopilot.launch, which gates nps_fdm_run_step).
+           Airspeed drops to 9 m/s at the same time: gliding sink is
+           V/(L/D), so slower is quieter AND stays up longer - 0.82 m/s
+           instead of 1.09 at the 12 m/s cruise setpoint, which is 61 s of
+           listening from 50 m instead of 46 s. 9, not GLIDE_AIRSPEED
+           (7.5), to keep margin over MINIMUM_AIRSPEED (7.0).
+           RESTORED in Drop Mission4 (where all seven search exceptions
+           lead) and in Standby (where the global geofence exception
+           leads) - a zeroed cruise throttle must never outlive the
+           search, or the aircraft cannot hold altitude to recover. -->
+      <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="0."/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="9."/>
+      <set var="mission4_sample_count" value="0"/>
+      <!-- Plain decimal, not scientific notation (1.0e6): the flight
+           plan's own expression parser (Fp_proc, a different, simpler
+           parser than the C compiler that handles the header) doesn't
+           understand the "e" exponent syntax and fails on it — 9999 is
+           more than high enough as a "no reading yet" sentinel, since a
+           horizontal range this large never legitimately occurs in a
+           30 m-radius search area. Smaller-is-better here (a range, not
+           an SPL level), so the sentinel is a large positive value, not
+           a very negative one. -->
+      <set var="mission4_best_horiz" value="9999"/>
+      <!-- climb="-1.5", not -1.11: confirmed via telemetry that -1.11
+           (GLIDE_AIRSPEED/GLIDE_RATIO, 10/9, the airframe's own declared
+           best-glide figures) still needed 3-16% throttle to HOLD in
+           this block's steady state, not 0% — meaning this airframe's
+           real (JSBSim-modeled) sink rate at GLIDE_AIRSPEED is actually
+           a bit steeper than the idealized 9:1 ratio, so the closed loop
+           was using small throttle pulses specifically to shallow the
+           descent back up to exactly -1.11. Commanding a rate at or
+           past the airframe's true natural sink instead removes any
+           reason for the loop to add power: once the target is as steep
+           as (or steeper than) what the aircraft already does unpowered,
+           there's nothing left to correct for, and throttle should
+           settle at its floor (0%) instead of hunting a few percent
+           above it — this is the standard energy-controller behavior
+           when the commanded rate saturates at the idle-throttle limit,
+           not an unsafe condition (the airspeed loop still holds
+           GLIDE_AIRSPEED via pitch alone in that regime, so there's no
+           dive/stall risk). -1.5 is a first estimate, not a measured
+           number — needs confirming via fresh telemetry (throttle really
+           at 0%, and the actual achieved sink rate, which may now differ
+           from -1.5 itself since the aircraft is throttle-limited rather
+           than tracking the command exactly). If throttle is still
+           nonzero after this, the true natural rate is steeper still and
+           this needs to go further negative. Whatever the real achieved
+           rate turns out to be also changes how much altitude Phase 1 +
+           Phase 2 actually spend, so search_height (below) likely needs
+           re-checking against it too, same as every other altitude-
+           budget number in this file. -->
+      <circle climb="-1.5" radius="30" until="NavCircleCount() @GT 1" vmode="climb" wp="SEARCH_CENTER"/>
+      <deroute block="Search Mission4 Phase2 Entry"/>
+    </block>
+
+    <!-- No longer powered/level — reverted on purpose. This block used to
+         hold altitude under power (climb="0.0") specifically so the
+         search-to-loudest-point transit didn't spend any glide budget;
+         that traded a real acoustic cost for it, though: transitioning
+         FROM this block's powered state INTO Phase2's idle-throttle
+         chord right after was a large step change in commanded climb
+         rate (0.0 -> the chord's target), and the throttle loop's step
+         response to that shows up as several seconds of real engine
+         noise right at the start of the chord — exactly where
+         mission4_sample_signal() is already recording. Matching this
+         block's own climb rate to the chord's removes that step
+         entirely: same target on both sides of the block boundary,
+         nothing for the throttle loop to react to. The altitude-budget
+         savings this design used to buy back are gone with it —
+         search_height (below) needs raising back up to cover this leg's
+         own descent too, not just Phase 1 + Phase 2 chord's.
+         Now sampling here too (exception added below, same pattern as
+         Search Mission4/Phase2): this leg cuts from wherever Phase 1's
+         lap happened to end across to DIAMETER_START (Phase 1's own
+         loudest point) — real interior territory Phase 1's circle never
+         actually flew over, since every Phase-1 sample sat on the 30 m
+         edge. With this leg now genuinely quiet, there's no reason left
+         to waste that stretch of flight; mission4_worse_streak and
+         mission4_phase2_samples both get reset to 0 at the end of this
+         block regardless (last stage below), so any counting this
+         sampling does here can't leak into Phase 2's own peak-detection
+         trend.
+         exceeding_time, not approaching_time: nav_approaching_xy's
+         cross-track-blind "crossed the plane" branch would otherwise let
+         this "arrive" while still well off to the side, defeating the
+         entire point of actually reaching the loudest point before the
+         real search leg begins. -->
+    <block name="Search Mission4 Phase2 Entry" group="mission">
+      <exception cond="sound_detected" deroute="Drop Mission4"/>
+      <exception cond="mission4_sample_signal(WP_TRUE_SOUND_SOURCE, WP_DROP_POINT)" deroute="Drop Mission4"/>
+      <set var="mission4_diameter_start_x" value="mission4_best_x"/>
+      <set var="mission4_diameter_start_y" value="mission4_best_y"/>
+      <set var="WaypointX(WP_DIAMETER_START)" value="mission4_diameter_start_x"/>
+      <set var="WaypointY(WP_DIAMETER_START)" value="mission4_diameter_start_y"/>
+      <go climb="-1.5" exceeding_time="1.5" from="SEARCH_CENTER" hmode="route" vmode="climb" wp="DIAMETER_START"/>
+      <!-- Reset here, not as a stage inside Phase2 itself: exceptions
+           (including Phase2's mission4_peak_passed()) are checked before
+           a block's own stages run, every tick — including the very
+           first tick after entering Phase2, before any of ITS stages
+           (a reset among them) get a chance to execute. A reset placed
+           there would already be too late to stop a stale, already-high
+           streak (left over from this transit's own approach — nothing
+           resets it between individual samples otherwise) from firing
+           the exception immediately. Resetting here, as the last action
+           before the deroute below, means Phase2 always starts clean.
+           mission4_phase2_samples reset alongside it, same reasoning —
+           it needs to read as 0 once Phase2's own exceptions start
+           checking it, not whatever this transit left it at. -->
+      <set var="mission4_worse_streak" value="0"/>
+      <set var="mission4_phase2_samples" value="0"/>
+      <deroute block="Search Mission4 Phase2"/>
+    </block>
+
+    <!-- Phase 2: a straight chord across the search circle instead of
+         another circle. Phase 1's loudest sample (mission4_best_x/y) is
+         itself a point ON the 30 m circle, since every phase-1 sample
+         was taken while flying that circle — DIAMETER_START (set by
+         Search Mission4 Phase2 Entry above, which actually flies there
+         first) is that point. DIAMETER_END is DIAMETER_START reflected
+         through SEARCH_CENTER — the diametrically opposite point on the
+         same circle, making this the LONGEST possible chord, so it
+         passes as close as physically possible (0 m) to SEARCH_CENTER
+         at its midpoint.
+         Why a chord and not another re-centered circle (the original
+         design here): a circle can never get closer to its own center
+         than its radius — even a circle centered exactly on the true
+         source never brings the aircraft closer than 30 m, since every
+         point on it is exactly that far out by definition. A straight
+         line has no such floor; MIN_CIRCLE_RADIUS only constrains
+         turning, not straight flight, so this can cut directly through
+         the interior of the search area instead of only ever grazing
+         its edge.
+         Real-time commit, not "fly the whole chord and decide
+         afterward": mission4_peak_passed() (header above) watches the
+         trend as each sample comes in — once the reading has been
+         getting worse for a few samples in a row after having been
+         getting better, that means the aircraft just flew past the true
+         peak, and the exception below fires immediately, breaking off
+         toward the drop right there rather than continuing on toward
+         DIAMETER_END for no benefit. If the peak is never confirmed
+         (chord flown in full without a clear reversal — e.g. the true
+         source sits very close to the chord's own line, so there's
+         nothing but a long, gentle rise, or right at DIAMETER_END
+         itself), completing the chord and falling through below is the
+         fallback, same "commit to whatever's best so far" principle as
+         everywhere else in this search.
+         mission4_worse_streak is reset to 0 at the END of Search Mission4
+         Phase2 Entry above (not as a stage here — see that block's
+         comment for why doing it here would already be too late).
+         DIAMETER_START is genuinely flown to first (Phase2 Entry, above)
+         rather than just used as a "from" reference on a single leg
+         starting from wherever phase 1 happened to end (tried first,
+         reverted): confirmed via telemetry the aircraft's actual
+         position when phase 1 hands off can be nowhere near
+         DIAMETER_START OR the true diameter line — the single-leg
+         version cut straight to the vicinity of DIAMETER_END without
+         ever passing near DIAMETER_START or SEARCH_CENTER at all, not
+         flying anything resembling the intended chord. Genuinely
+         visiting DIAMETER_START first (using exceeding_time there too,
+         for the same cross-track-blind-arrival reason as this leg
+         below) is what actually makes this a chord through the loudest
+         point, not just a shortcut toward the far end.
+         Geofence: this leg is a straight line between two points that
+         are each already ON phase 1's own geofence-verified circle — a
+         straight line between two points on a circle is itself a chord
+         of that same circle, so every point on it is mathematically
+         guaranteed to stay within the same 30 m disk around
+         SEARCH_CENTER that phase 1 already flies at its very edge. No
+         separate clearance check needed; this is strictly safer than
+         the circle itself, never farther from SEARCH_CENTER than phase
+         1 already gets. -->
+    <block name="Search Mission4 Phase2" group="mission">
+      <exception cond="sound_detected" deroute="Drop Mission4"/>
+      <!-- deroute="Drop Mission4" here too, not this block itself — same
+           nav_block-guard/&& short-circuit bug as phase 1's identical
+           exception, see that comment for the full explanation. Applies
+           equally to mission4_peak_passed() below: it needs to actually
+           fire when true, so it can't target this block either. -->
+      <exception cond="mission4_sample_signal(WP_TRUE_SOUND_SOURCE, WP_DROP_POINT)" deroute="Drop Mission4"/>
+      <exception cond="mission4_peak_passed()" deroute="Drop Mission4"/>
+      <!-- DIAMETER_START itself is already set (and already flown to) by
+           Search Mission4 Phase2 Entry above — mission4_diameter_start_x/y
+           persists across the block change (a plain static, not reset in
+           between), so it's still valid to read here. -->
+      <set var="WaypointX(WP_DIAMETER_END)" value="2*WaypointX(WP_SEARCH_CENTER) - mission4_diameter_start_x"/>
+      <set var="WaypointY(WP_DIAMETER_END)" value="2*WaypointY(WP_SEARCH_CENTER) - mission4_diameter_start_y"/>
+      <!-- exceeding_time, not approaching_time, same reasoning as Phase2
+           Entry's own leg above: nav_approaching_xy's OR'd "crossed the
+           plane perpendicular to the leg through the target" condition
+           only checks which side of that plane the aircraft is on, not
+           how far along the leg it's actually traveled, so it can declare
+           "arrived" almost immediately regardless of how precisely the
+           aircraft actually starts on the line. Confirmed via telemetry
+           (identical, bit-for-bit, across two separate runs — this sim is
+           deterministic, so that rules out noise) that this exact failure
+           mode hit this leg before Phase2 Entry existed. exceeding_time
+           requires actually traveling a set distance PAST that plane
+           along the leg's own direction instead — genuine forward
+           progress, not just which side of a line the start point
+           happens to fall on. 1.5 s is deliberately modest, not the
+           ~36 m CARROT default — was ~15 m past DIAMETER_END at Cherry's
+           10 m/s GLIDE_AIRSPEED, now ~11.25 m at EasyStar3's 7.5 m/s
+           (same 1.5 s, different airspeed — the code value doesn't need
+           to change, just this description of what it implies
+           distance-wise): DIAMETER_END already sits exactly on the 30 m
+           safe disk's edge, so any overshoot here pushes the aircraft
+           outside it — that ~11-15 m keeps the worst case at roughly
+           41-45 m from SEARCH_CENTER, still comfortably inside the 53.7 m
+           clearance to the true Flyzone boundary that circle already has
+           (tighter margin than before the radius widened, 8.7-12.7 m
+           instead of 13.7 m, but still positive). This is now
+           purely a last-resort fallback in practice: mission4_peak_passed()
+           (checked every tick, independent of this leg's own logic) is
+           what's actually meant to end this leg early, the moment the
+           real peak is confirmed passed. -->
+      <!-- climb="-1.5", matching Search Mission4's own circle above (that
+           block's comment has the full reasoning) — same airframe, same
+           GLIDE_AIRSPEED, so the same throttle-floor argument applies
+           here on the chord too, and this is the other block where
+           mission4_sample_signal() actually runs, so keeping it quiet
+           matters just as much. -->
+      <go climb="-1.5" exceeding_time="1.5" from="DIAMETER_START" hmode="route" vmode="climb" wp="DIAMETER_END"/>
+      <!-- DROP_POINT no longer needs setting here — mission4_sample_signal()
+           (header above) now keeps it continuously current. sound_detected
+           still does: this stage is the fallback for the chord completing
+           naturally (exceeding_time) WITHOUT mission4_peak_passed() ever
+           having fired — that function sets sound_detected as a side
+           effect itself when IT fires (header above), so this line only
+           actually matters on that fallback path, but is harmless to
+           repeat if peak_passed already set it. -->
+      <set var="sound_detected" value="TRUE"/>
+      <deroute block="Search Mission4 Phase2"/>
+    </block>
+
+    <!-- Manual trigger for now (sound detection isn't wired in) — clickable
+         at any time regardless of the current block, same as the Land
+         buttons already interrupt the search loop below. Once detection
+         exists, it should deroute here directly instead of needing a click. -->
+    <block name="Start Drop Mission4" strip_button="Start Drop Mission4" strip_icon="down.png" group="mission">
+      <deroute block="Drop Mission4"/>
+    </block>
+
+    <!-- Long straight glide into DROP_POINT — NOT a tight circle-then-pass
+         next to the ground (tried repeatedly, see git history): a
+         30 m-radius circle down to near drop_height, followed by a short
+         (30-40 m) final pass to actually get over the point, kept
+         crashing right at that final low-altitude transition regardless
+         of which vmode drove the pass (glide's distance-proportional
+         slope, a fixed climb rate, a closed-loop altitude hold, even a
+         purely level pass after circling all the way down first) —
+         confirmed via the GPS climb field each time: climb rate would go
+         from level/climbing to an accelerating dive (down to -1.5 to
+         -1.8 m/s) within a few tenths of a second, at under 1 m AGL, with
+         no altitude or time margin left for any command to recover.
+         Every attempt was trying to lose meaningful altitude in a very
+         short distance right next to the ground.
+         The actual runway landing below ("final" block: <go from="AF"
+         hmode="route" vmode="glide" wp="TD"/>) has never once failed in
+         any test this session, and it works by giving the glide real
+         distance to work with. This does the same thing for the drop:
+         DROP_APPROACH (waypoint above) is set 150 m east of DROP_POINT,
+         at the aircraft's OWN current altitude (GetPosAlt(), not
+         search_height) — comfortably outside the search area, using
+         open space already confirmed clear (83-112 m to the true
+         boundary at typical DROP_POINT positions).
+         GetPosAlt(), not search_height: Phase 1's circle and Phase 2's
+         chord above now fly as one continuous idle-throttle descent
+         (search_height's own comment, header above) rather than holding
+         a fixed altitude, so by the time Phase 2 hands off here the
+         aircraft is well below search_height already — using that
+         variable directly would aim DROP_APPROACH way too high and
+         force an unwanted powered climb
+         right before what's supposed to be a single unbroken glide down
+         to the drop.
+         Distance budget, using this airframe's own best-glide figures
+         (GLIDE_AIRSPEED 10 m/s, GLIDE_RATIO 9 — set once, back in Climb
+         to Search Height, and never changed since, so this leg flies at
+         the same speed/ratio the search circles and search_height's own
+         budget already assume): 150 m of travel at that ratio sheds
+         150/9 ~= 16.7 m, matching what search_height's comment budgeted
+         for this leg. If the aircraft arrives here with more than that
+         still to lose (real performance short of the idealized ratio),
+         it simply won't reach drop_height by the end of the leg and
+         loops back via the existing retry safety net (Drop Mission4
+         Final's fallback deroute) rather than failing outright. -->
+    <block name="Drop Mission4" group="mission">
+      <!-- Solve the source position from every sample collected during the
+           search, before any of the approach geometry below is computed
+           from DROP_POINT. Called here rather than in the search blocks so
+           it sees the complete sample set regardless of which exception
+           ended the search, and once rather than per-tick since it is a
+           full pass over up to 600 samples. On failure it leaves the
+           search's own best-sample estimate in place. -->
+      <call_once fun="mission4_solve_source(WP_DROP_POINT)"/>
+      <!-- Restore powered cruise: the search zeroed these to fly the
+           acoustic legs propeller-off (see Search Mission4). Every search
+           exception lands here, and the approach/retry loop and Drop
+           Release's climb-out all need real throttle authority. -->
+      <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="0.16"/>
+      <!-- 9 m/s for the drop pass, not the 12 m/s cruise: every timing
+           error in the release scales with speed. The lead is
+           v*(delay+fall), the gate's tick quantisation is v/(2*20 Hz), and
+           sensitivity to a wrong TRIGGER_DELAY is v per second of error -
+           so a quarter less speed is a quarter less error on all three at
+           once. It also halves the turn radius onto the approach (16 m to
+           8 m at full bank), which is what left the aircraft 4.8 deg off
+           the bearing at release. Well clear of MINIMUM_AIRSPEED (7.0) and
+           the 5.3 m/s stall. -->
+      <set var="v_ctl_auto_airspeed_setpoint" value="9."/>
+      <call_once fun="NavSetWaypointPosAndAltHere(WP__HERE)"/>
+      <!-- The glide's aim altitude at DROP_POINT is drop_height-0.7, NOT
+           drop_height itself — confirmed via telemetry this matters:
+           aiming exactly at drop_height (1.5 m) made the slope cross the
+           2 m release threshold only ~5.5 m before DROP_POINT, well
+           inside the 15 m distance gate below, so by the time both gate
+           conditions actually lined up the aircraft had kept gliding
+           down to ~0.5 m AGL — right at the ground, with no margin left
+           for Drop Release's climb-out to act. Aiming lower (0.8 m
+           default) makes the slope cross 2 m about 12.7 m before
+           DROP_POINT — comfortably inside the 15 m gate — so the
+           exception catches it much closer to 2 m AGL, not partway to
+           the ground. The drop_height variable itself (the officially
+           configured/tunable target) is untouched; this offset only
+           affects where the glide slope is aimed internally.
+           Tried shrinking this margin to ~1-1.5 m to match trilateration
+           (header above) making DROP_POINT itself sub-meter accurate —
+           reverted after two different failures caught via telemetry:
+           tightening the exception's distance gate to match let the
+           <go> leg's own "arrived" logic below win the race instead (its
+           OR'd "crossed the target's perpendicular plane" condition
+           doesn't care about cross-track offset, so a few metres of
+           real cross-track error kept triggering it early); switching
+           that leg to exceeding_time to close off that path let the
+           glide continue right past the tightened gate — which the real
+           several-metre cross-track error on this 150 m approach was
+           apparently never satisfying — with nothing left to catch it,
+           and it flew into the ground. The 15 m gate below is loose
+           enough to comfortably contain that real cross-track error;
+           narrowing it needs that error actually measured and margins
+           picked from real data, not narrowed on a guess. -->
+      <!-- Aim the final segment at release_height, the MIDDLE of the
+           release window, so the aircraft levels off INSIDE it and holds
+           rather than descending through it. Aiming at the window's floor
+           (0.5) was measured to fire the gate at 1.49 m with exactly one
+           telemetry sample inside 0.5-1.5 - any monotonic descent trips the
+           gate the instant it crosses the 1.5 ceiling, so the release
+           height is set by wherever that crossing lands rather than by
+           anything chosen. Levelling at 1.0 m instead leaves 0.5 m of
+           margin either side, so a slope error of up to +-0.4 m still
+           releases inside the window, on a settled altitude the
+           rangefinder has had time to read steadily.
+           This matters more than release height accuracy does: the payload
+           throw goes as sqrt(h), so a 1 m height error moves the impact
+           point under 3 m, while a 0.2 s error in TRIGGER_DELAY (still a
+           TODO guess in the airframe) moves it 2.4 m at 12 m/s. Repeatable
+           beats precise here. -->
+      <set var="WaypointAlt(WP_DROP_POINT)" value="GetAltRef()+release_height"/>
+      <call_once fun="mission4_place_approach(WP_DROP_POINT, WP_DROP_APPROACH)"/>
+      <set var="WaypointX(WP_DROP_LEVEL)" value="WaypointX(WP_DROP_POINT) + level_distance"/>
+      <set var="WaypointY(WP_DROP_LEVEL)" value="WaypointY(WP_DROP_POINT)"/>
+      <!-- DROP_LEVEL holds at level_height (2.5 m), well above the release
+           window, and the dip to release_height happens over the last
+           level_distance metres. Holding at release_height instead was
+           tried and rejected: it put the aircraft at 1 m AGL from 60 m out,
+           unnecessarily low for 5 s, and still arrived high because the
+           altitude loop lagged the slope.
+           The geometry is chosen so the DISTANCE gate is the binding one,
+           not the altitude gate. Dipping 2.5 -> 1.0 m over 80 m crosses
+           1.5 m at 26.7 m out, comfortably outside the 15 m distance
+           gate - so by the time the gate can fire, the aircraft is at
+           1.28 m, mid-window, still settling rather than grazing the
+           1.5 m ceiling on the way past. Every earlier geometry crossed
+           1.5 m at or inside the gate, which is why the release kept
+           landing at 1.49-1.53 m or not firing at all.
+           It is also only below 1.5 m for the last 2.2 s, instead of 5 s
+           at 1 m. -->
+      <set var="WaypointAlt(WP_DROP_LEVEL)" value="GetAltRef()+level_height"/>
+      <!-- Placeholder value, immediately stale: this leg flies vmode="climb"
+           below (continuing the idle-throttle descent), which drives its
+           own altitude from the climb rate, not from this waypoint's
+           stored value — so by the time the aircraft actually reaches
+           DROP_APPROACH it's lower than this. Re-stamped with the real
+           arrival altitude right after the <go> below, once it's known. -->
+      <!-- Approach altitude is now COMMANDED, not recorded. It used to be
+           stamped from GetPosAlt() before and after a fixed-rate transit,
+           which made two open-loop legs in series: the transit descended
+           at climb="-1.11" for however long the leg happened to take, and
+           the glide then started from wherever that left it. Measured both
+           failure directions with the same code - 39 m AGL at the drop
+           when the search shed only 18 m, and 1.4 m when it shed 30 m. In
+           the second case the glide had nothing left to do, so the
+           aircraft flew ~180 m LEVEL at 1.4 m AGL for 15 s waiting for the
+           15 m distance gate, which is not survivable over real terrain.
+           approach_height is picked so the 150 m glide sits inside this
+           airframe's own performance: sink is V/(L/D) and L/D is 11, so at
+           the 12 m/s cruise setpoint the most it can lose over 150 m is
+           13.6 m. 10 m (9.2 m down to DROP_POINT's 0.8 m) leaves margin
+           for a tailwind, which is the binding case - groundspeed sets the
+           time available while airspeed sets the sink rate, so a 5 m/s
+           tailwind cuts the budget to 9.6 m. Sizing for that costs nothing
+           in calm or headwind, because the aircraft can always descend
+           SLOWER than best glide (energy control just adds throttle) and
+           never faster without diving. -->
+      <set var="WaypointAlt(WP_DROP_APPROACH)" value="GetAltRef()+approach_height"/>
+      <!-- Spiral down over DROP_APPROACH to that altitude instead of
+           descending along the transit. Altitude lost in a turn costs no
+           approach distance, which is the only way to shed a large surplus
+           without needing an approach leg longer than the airframe can
+           glide. The until is a floor, not the target: it exits as soon as
+           the aircraft is at or below approach_height, so arriving already
+           low simply passes straight through. -->
+      <!-- Descend ALONG the transit: vmode="glide" from _HERE (stamped
+           with the current altitude by NavSetWaypointPosAndAltHere above)
+           to DROP_APPROACH at approach_height, instead of flying the
+           transit level and then spiralling off the surplus. The run-in is
+           distance the aircraft must cover anyway, so spending it on the
+           descent is free - at 12 m/s a 50-150 m transit sheds 4-14 m at
+           best glide. -->
+      <go approaching_time="0.5" from="_HERE" hmode="route" vmode="glide" wp="DROP_APPROACH"/>
+      <!-- Spiral only if the transit was not enough - it exits immediately
+           when already at or below approach_height, so in the normal case
+           this costs nothing and the whole approach stays one straight
+           line. Measured before the transit descended: 25 s and 0.88 of a
+           revolution shedding 23 m here. -->
+      <circle climb="-1.0" radius="nav_radius" until="GetPosAlt() @LT GetAltRef()+approach_height" vmode="climb" wp="DROP_APPROACH"/>
+      <!-- Fly onto DROP_APPROACH before handing over. The spiral exits
+           wherever it happens to be on the circle, typically still short of
+           the waypoint, and nav_glide commands altitude from
+           nav_leg_progress - the projection onto the DROP_APPROACH ->
+           DROP_LEVEL line. Starting the glide off the leg means progress is
+           at or below zero, so the commanded altitude sits at or above the
+           start altitude and the controller adds throttle to hold it:
+           measured 13 s of powered level flight at 10 m AGL, 15-19%
+           throttle, burning a third of the approach before any descent
+           began. This leg puts it at the start of the slope, at
+           approach_height, so the glide begins at progress zero. -->
+      <go approaching_time="0.5" from="_HERE" hmode="route" wp="DROP_APPROACH"/>
+      <deroute block="Drop Mission4 Final"/>
+    </block>
+
+    <!-- The actual glide, DROP_APPROACH -> DROP_POINT (150 m; at this
+         airframe's own best-glide ratio of 9:1, needs ~135 m minimum —
+         see Drop Mission4's comment for the full distance budget).
+         Because the glide slope is computed directly from DROP_APPROACH's
+         real arrival altitude (re-stamped at the end of Drop Mission4,
+         not the search_height variable) to drop_height at DROP_POINT,
+         altitude naturally crosses the 2 m-AGL release threshold only a
+         few metres before
+         actually reaching DROP_POINT — so both gate conditions below
+         become true at very nearly the same moment, over the last few
+         metres of a single smooth pass, rather than needing a separate
+         maneuver to reconcile them.
+         approaching_time="0.2" (not the default CARROT, ~36 m, that the
+         real runway "final" block below leaves unspecified): confirmed
+         via telemetry that CARROT let this <go> register "arrived" and
+         fall through to the safety-net deroute while still ~25 m out and
+         ~4.5 m AGL — well before the glide had covered enough of the
+         150 m to actually finish losing altitude — so it just bounced
+         between this block and Drop Mission4 forever, never satisfying
+         the exception below. 0.2 s is the same value already tuned on
+         the search pattern's own legs (~2.4 m tolerance).
+         (This gate/margin pairing was tried tighter, down to ~1-1.5 m,
+         to match trilateration — header above — making DROP_POINT itself
+         sub-meter accurate; reverted after telemetry showed the real
+         cross-track error on this 150 m straight glide runs to several
+         metres, so a gate that tight either let the <go> leg's own
+         "arrived" logic race ahead of the exception via its
+         cross-track-blind "crossed the target's perpendicular plane"
+         condition, or — once that path was closed off with
+         exceeding_time — left the exception never satisfied at all
+         while the aircraft kept gliding down, straight into the ground.
+         Getting the release genuinely tighter needs the real cross-track
+         error measured first and a gate sized to it, not narrowed on a
+         guess — see Drop Mission4's comment above for the fuller
+         account.)
+         DropOpen() (Drop Release) only fires once ALL THREE hold: within
+         15 m of DROP_POINT horizontally (mission4_dist2_to_wp(), header
+         above, compared against 15*15 via @LT), below 1.5 m AGL, AND
+         above 0.5 m AGL — not on altitude alone, so it actually releases
+         over the target, and not arbitrarily close to the ground either.
+         mission4_agl() (header above), not raw GetPosAlt()-GetAltRef():
+         uses the sonar's real AGL reading once it's actually reporting
+         (near the ground, exactly where this gate fires), falling back to
+         GPS/baro only while the sonar hasn't reported yet or has gone
+         stale — see that function's own comment for why GPS/baro alone
+         isn't realistic enough for a window this tight on real hardware,
+         only in simulation.
+         [0.5,1.5] m: back to the wider 1 m window (it was briefly
+         tightened to [1.0,1.5] on GPS/baro alone, header above shows the
+         history) now that the gate is reading a real sensor rather than
+         a simulation-perfect estimate — the sonar's own accuracy (real
+         noise/range limits, not GPS/baro's artificial precision) is the
+         actual constraint now, not how narrow this window can safely be
+         made. The glide's own aim point (drop_height-0.7 ~= 0.8 m AGL
+         exactly at DROP_POINT, Drop Mission4's own comment) sits
+         comfortably inside this window again, same as the original
+         [0.5,1.5] tuning. Still comfortably above the ~0.055 m per-tick
+         altitude step at the 20 Hz nav loop (search_height's comment).
+         If it reaches DROP_POINT without all three gate conditions true
+         yet (shouldn't happen given the slope math above, but as a
+         safety net — including if the descent overshoots past 0.5 m AGL
+         before the horizontal gate lines up), loops back to Drop
+         Mission4 to fly back out to DROP_APPROACH and try the whole
+         glide again, rather than continuing on with the
+         conditions unmet. -->
+    <block name="Drop Mission4 Final" group="mission">
+      <!-- Ceiling is 2.0 m, not 1.5: nav_set_altitude() in
+           firmwares/fixedwing/nav.c only passes a new altitude to the
+           controller when it differs from the last one by more than 1 m,
+           so a glide's smooth ramp reaches the vertical loop as whole-metre
+           steps. Measured on this approach: commanded 4.00, then 3.00,
+           then 2.00, and the leg ended before another full metre had
+           accumulated - so the aircraft is never given a target below
+           2.00 m and settled at 1.66 m, just above a 1.5 m gate, on every
+           geometry tried (single glide, level-then-dip, and three
+           different approach heights). The window is the competition's own
+           "below 2 m" rule; the floor stays at 0.5 m. -->
+      <exception cond="(mission4_agl() @LT 2.0) @AND (mission4_agl() @GT 0.5) @AND mission4_closing(WP_DROP_POINT) @AND (mission4_dist2_to_wp(WP_DROP_POINT) @LT (mission4_release_lead()*mission4_release_lead()))" deroute="Drop Release"/>
+      <!-- One glide, DROP_APPROACH -> DROP_POINT. The two-segment
+           level-then-dip version this replaces existed only to compensate
+           for approach_height being too high: with the gate at 15 m out,
+           the altitude when it trips is
+             alt = release_height + (15/150)*(approach_height - release_height)
+           so from 10 m that is 1.9 m - above the window, and the gate then
+           cannot fire until the aircraft has descended to 1.5 m at 8 m out,
+           which is the grazing release measured repeatedly (1.49, 1.53, or
+           no fire at all). From approach_height 4 m it is 1.30 m, and the
+           1.5 m crossing happens 25 m out, safely outside the gate - so
+           the DISTANCE gate is the binding one and the aircraft is
+           mid-window when it fires, with a single leg and no intermediate
+           waypoint. Same low-altitude exposure as the staged version
+           (6.2 s below 2.5 m vs 6.7 s), two fewer stages.
+           DROP_LEVEL is still positioned above so switching back is one
+           line, but nothing flies to it now. -->
+      <go approaching_time="0.2" from="DROP_APPROACH" hmode="route" vmode="glide" wp="DROP_POINT"/>
+      <deroute block="Drop Mission4"/>
+    </block>
+
+    <!-- DropOpen() is a no-op placeholder until the real release mechanism
+         exists (see header) — this is the hook point for it. Climbs back
+         out afterward rather than continuing down into a landing, since
+         this is a pass over the target, not a touchdown.
+         Was vmode="throttle" + pitch="20" (the same open-loop pattern
+         Takeoff uses) — confirmed via telemetry (var/logs/*.data, GPS
+         speed field) that this crashed the aircraft: entry to this block
+         happens below 2 m AGL still on the previous glide's descending
+         trajectory, and throttle+pitch-hold is an indirect, response-lag-
+         prone way to arrest that — speed collapsed from ~12.7 m/s to
+         exactly 0.0 m/s within about a second of block entry, then
+         position/altitude froze at ground level for the rest of the run
+         (never reached Land Right AF-TD). Switched to vmode="climb", the
+         same direct closed-loop climb-rate mechanism Drop Mission4 above
+         already uses successfully for the descent (climb="-1.0") — it
+         commands the vertical trajectory directly instead of depending on
+         an indirect pitch/throttle response, so it should arrest the
+         descent immediately rather than during a lagged transition.
+         Also switched from <attitude> (roll=0, no horizontal navigation —
+         holds whatever heading the aircraft happened to have) to <go>
+         routing back to SEARCH_CENTER while climbing: confirmed via
+         telemetry that the open-loop straight-ahead climb flew the
+         aircraft straight out of mission4_in_valkenburg_safe (DROP_POINT is
+         only ~60 m from the FZ1-FZ2 wall, and the heading coming out of
+         the final glide pass isn't controlled), tripping the flight
+         plan's global geofence exception into Standby instead of ever
+         reaching Land Right AF-TD. SEARCH_CENTER is the same safely-
+         central point (224 m clearance to the nearest boundary) already
+         used for the search transit-in above, so routing there keeps the
+         climb-out inside the safe zone regardless of the entry heading. -->
+    <block name="Drop Release" group="mission">
+      <call_once fun="mission4_log_release(WP_DROP_POINT, WP_TRUE_SOUND_SOURCE, WP_IMPACT)"/>
+      <call_once fun="DropOpen()"/>
+      <call_once fun="NavSetWaypointHere(WP__HERE)"/>
+      <!-- Restore normal cruise airspeed here: Search Mission4 Phase2
+           Entry (header/that block's own comment) set
+           v_ctl_auto_airspeed_setpoint down to GLIDE_AIRSPEED for the
+           search + drop and never had a reason to touch it again until
+           now — confirmed via telemetry it was still sitting at 10 m/s
+           through this whole block, which is why the climb rate below
+           actually achieved was only ~1 m/s despite commanding 4.0: this
+           airframe's climb performance is airspeed-dependent, and the
+           4.0 m/s figure (see that comment) was specifically tuned
+           assuming normal cruise speed, not the slower glide speed.
+           Restoring it here, before the climb leg below, matters for the
+           landing sequence too — Land Right/Left AF-TD onward would
+           otherwise also inherit the slower search-time airspeed with no
+           block of theirs ever resetting it either. -->
+      <set var="v_ctl_auto_airspeed_setpoint" value="NOMINAL_AIRSPEED"/>
+      <!-- Exception (checked every tick, before either stage below) fires
+           the moment the climb target is reached, from either stage — not
+           tied to arrival at SEARCH_CENTER, since DROP_POINT is usually
+           close to SEARCH_CENTER by the time the search converges (not
+           identical to it — DROP_POINT tracks the actual best sample
+           found, header above) and a <go>'s own "until" would otherwise
+           race against its approaching_time arrival check on an already-
+           nearby point, potentially cutting the climb short before the
+           target altitude is actually reached.
+           35 m, not search_height: climbing all the way back to
+           search_height (60 m) has no functional reason to it — the
+           actual landing pattern's own entry altitude is set independently
+           by nav_compute_baseleg(WP_AF, ...) in the land block below, from
+           AF's own declared altitude (175 m absolute, 35 m AGL at this
+           site's ~140 m ground level — matched to this exception's own
+           35 m target on purpose, see below), and that block holds it via
+           its own closed-loop circle regardless of what altitude it's
+           entered at. search_height only ever ended up as this block's
+           climb target because it was a convenient already-defined "safe
+           cruise altitude" from back when it was much lower (15 m) — now
+           that it's 60 m for the search's own reasons, reusing it here
+           just overshoots the landing pattern's target for no benefit.
+           AF's altitude used to be 190 m (~50 m AGL), which left land's
+           own baseleg circle needing to power back up ~15 m the moment it
+           was entered — confirmed via telemetry (ESTIMATOR z climbing
+           from ~175 to ~186 right as the land block starts, exactly a
+           closed-loop NavVerticalAltitudeMode chasing WaypointAlt(_BASELEG)
+           above where this block already leaves off). Lowering AF to
+           175 m makes the baseleg target match this exception's own exit
+           altitude exactly, so land has nothing left to climb for and can
+           go straight into holding/descending through the pattern. -->
+      <exception cond="GetPosAlt() @GT GetAltRef() + 35" deroute="Land Right AF-TD"/>
+      <!-- climb="2.0" wasn't enough margin — confirmed via telemetry a
+           second ground-strike crash (same signature: speed collapsing to
+           exactly 0.0 m/s, altitude freezing at ground level) after this
+           block started being entered as low as ~0.76 m AGL (Drop Mission4
+           Final's closed-loop descent can still land slightly below its
+           own drop_height target depending on entry energy, especially
+           right at the moment its own gate exception fires). A 2 m/s climb
+           demand isn't authoritative enough to arrest a real ground-strike
+           trajectory from under 1 m with zero margin for response lag.
+           climb="4.0" gives the vertical-mode controller a much larger
+           commanded rate error to correct, which drives it toward max
+           throttle immediately rather than a gentle correction. -->
+      <go approaching_time="1.0" climb="4.0" from="_HERE" hmode="route" vmode="climb" wp="SEARCH_CENTER"/>
+      <!-- Fallback if altitude isn't reached by the time it arrives at
+           SEARCH_CENTER (e.g. DROP_POINT is already far from the wall on
+           the real competition day): keep climbing in a safe, central
+           circle rather than exiting toward Land not yet at altitude. -->
+      <circle climb="4.0" radius="DEFAULT_CIRCLE_RADIUS" vmode="climb" wp="SEARCH_CENTER"/>
+    </block>
+
+    <!-- ── Landing ───────────────────────────────────────────────────────────── -->
+    <block name="Land Right AF-TD" strip_button="Land right (wp AF-TD)" strip_icon="land-right.png" group="land">
+      <set value="DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
+      <deroute block="land"/>
+    </block>
+
+    <block name="Land Left AF-TD" strip_button="Land left (wp AF-TD)" strip_icon="land-left.png" group="land">
+      <set value="-DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
+      <deroute block="land"/>
+    </block>
+
+    <block name="land">
+      <call_once fun="nav_compute_baseleg(WP_AF, WP_TD, WP__BASELEG, nav_radius)"/>
+      <circle radius="nav_radius" until="NavCircleCount() @GT 0.5" wp="_BASELEG"/>
+      <circle radius="nav_radius" until="NavQdrCloseTo(DegOfRad(baseleg_out_qdr)-(nav_radius/fabs(nav_radius))*10)                      @AND (fabs(GetPosAlt() - WaypointAlt(WP__BASELEG)) @LT 3)" wp="_BASELEG"/>
+    </block>
+
+    <block name="final">
+      <!-- Glide AF -> TD; below 10 m AGL go to flare (motor killed).
+           Plain go, no exceeding_time: that was only needed while AF sat
+           13 m from TD (arrival already true on entry). With AF 200 m out
+           it would carry the route ~300 m past TD, out of the flyzone. -->
+      <exception cond="GetAltRef() + 10 @GT GetPosAlt()" deroute="flare"/>
+      <go from="AF" hmode="route" vmode="glide" wp="TD"/>
+    </block>
+
+    <block name="flare">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <go approaching_time="0" from="AF" hmode="route" throttle="0.0" vmode="throttle" wp="TD"/>
+      <attitude roll="0.0" throttle="0.0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</flight_plan>
