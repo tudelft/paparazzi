@@ -199,6 +199,7 @@
       <corner name="_PLFW4"/>
     </sector>
   </sectors>
+  
 
   <includes>
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_test_drop.xml"/> -->
@@ -206,13 +207,62 @@
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_test_precision_landing.xml"/> -->
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_test_precision_landing.xml"/> -->
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_testing.xml"/> -->
-    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission1.xml"/> -->
-    <include name="Mission" procedure="tudelft_include_imav2026_mission2.xml"/>
-    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4_orbit.xml"/> -->
+   <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission1.xml"/> -->
+    <include name="Mission" procedure="tudelft_include_imav2026_mission2.xml"/> 
+    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4.xml"/> -->
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4_star.xml"/> -->
     <!-- <include name="Safety" procedure="tudelft_include_imav2026_safety.xml"/> -->
   </includes>
+
+  <exceptions>
+    <!-- RC-Loss -->
+    <!-- Handled by FTD-Radio-Control -->
+
+    <!-- Datalink-Loss: -->
+    <!-- Handled in Mission Navigation -->
+
+    <!-- GPS-Failure: -->
+    <!-- Handled in Mission Navigation -->
+
+    <!-- Baro-Failure: -->
+    <!-- Inform Operator, Fly lower, keep flying on GPS -->
+
+    <!-- Hard GeoFence -->
+    <!-- TODO Maybe ADD aditional exception with 2 sec timer here just to be sure to avoid position GPS spikes or some other jitter issues -->
+  <exception cond="((!InsideGeofence(GetPosX(), GetPosY()))) @AND gps_has_been_good()" deroute="GeoFence"/>
+
+    <!-- Failure of Autopilot -->
+    <!-- FTD will failsafe if no commands arrive during 100ms -->
+
+    <!-- Failure of Geofence detection processor -->
+    <!-- FTD will failsafe if no heartbeat arrives from AP (with GPS) during 100ms -->
+
+    <!-- Soft Altitude GeoFence 2800ft MSL-->
+    <!-- RE_ENABLE CDW <exception cond="MoreThan(GetAmsl(), 2800) @AND gps_has_been_good()" deroute="AlmostHeightViolation" />-->
+
+    <!-- Hard Altitude GeoFence 3000ft MSL
+    Removed: because: theoretically impossible to climb 200ft without engine.
+    - Kill is as safe as Forcecrash, but happens lower.
+    - Only option to reach hard geofence = sensor failure: then the plane IS NOT TOO high, but the engine will be killed.
+    <exception cond="MoreThan(GetAmsl(), 3000) @AND gps_has_been_good()" deroute="HeightViolation" />
+    -->
+
+    <!-- Case of loss of GPS AND loss of datalink -->
+    <!-- <exception cond="And(datalink_time @GT 10, !GpsFixValid())" deroute="DatalinkAndGpsFailure"/> -->
+
+  </exceptions>
+
   <blocks>
-    <block name="Boot"/>
+    <block name="Boot">
+      <deroute block="Mission.Wait_GPS"/>
+    </block>
+    <block name="GeoFence">
+      <call_once fun="NavKillThrottle()"/>
+      <go wp="HOME"/>
+    </block>
+    <block name="Geoinit">
+    <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()+survey_height" wp="_STDBY"/>
+    </block>
   </blocks>
+
 </flight_plan>
