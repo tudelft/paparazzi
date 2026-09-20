@@ -5,94 +5,119 @@
      Read about this challenge here: https://2026.imavs.org/
 
 -->
-<flight_plan alt="193" ground_alt="143" lat0="48.806567" lon0="7.852134" max_dist_from_home="1500" name="IMAV2026" security_height="35" home_mode_height="50"qfu="12">
+<flight_plan alt="193" ground_alt="143" lat0="48.806567" lon0="7.852134" max_dist_from_home="900" name="IMAV2026" security_height="35" home_mode_height="50" qfu="12">
 
 <!-- ******************************* WAYPOINTS ***************************** -->
   <waypoints>
-    <!-- <waypoint name="HOME" x="0.0" y=".0"/> -->
-<!-- Hard geofence sector corners, so that the aircraft is never allowed outside, needs forcedcrash-->
-    <waypoint name="_GF1" lat="48.80570456695289" lon="7.84961762660713"/>
-    <waypoint name="_GF2" lat="48.81084279436229" lon="7.84723708200721"/>
-    <waypoint name="_GF3" lat="48.81380786901547" lon="7.86121460297154"/>
-    <waypoint name="_GF4" lat="48.80863939598765" lon="7.86403963556767"/>
+    <!-- ALL waypoints for SECTORS are defined in the SW, NW, NE, SE -->
 
-<!-- Soft geofence sector corners, as a backup just in case something is amiss and we still can fly plane back -->
-    <!-- <waypoint name="SGF1" lat="48.80570456695289" lon="7.84961762660713"/>
-    <waypoint name="SGF2" lat="48.81084279436229" lon="7.84723708200721"/>
-    <waypoint name="SGF3" lat="48.81380786901547" lon="7.86121460297154"/>
-    <waypoint name="SGF4" lat="48.80863939598765" lon="7.86403963556767"/> -->
+    <!-- Fixed-wing launch point (48.8086670N 7.8517466E, origin of the MS plans), inside Takeoff_Landing_zone_Fixedwing.
+         Defined here only: included procedures must not define HOME. -->
+    <waypoint name="HOME" x="-24.0" y="233.0"/>
 
+    <!-- Used for out of missionboundary tests -->
+    <waypoint name="TESTTOOFAR" x="-48." y="537."/>
+
+    <!-- ORGANIZATION Landing Fixedwing zone -->   
+    <!-- Landing Fixedwing zone : 48.807761°N 7.851868°E -->
+    <!-- Landing Fixedwing zone : 48.807767°N 7.851934°E -->
+    <waypoint name="XAF" lat="48.807761" lon="7.851868" alt="158.0"/>
+    <waypoint name="XTD" lat="48.807767" lon="7.851934" alt="139.0"/>
+
+<!-- OK Hard geofence sector corners, where the aircraft is never allowed to fly outside, needs to forcedcrash when breached-->
+<!-- Rulebook "Border geofence" -->
+    <waypoint name="_GF1" lat="48.806034" lon="7.850607"/>
+    <waypoint name="_GF2" lat="48.811254" lon="7.849834"/>
+    <waypoint name="_GF3" lat="48.813519" lon="7.861106"/>
+    <waypoint name="_GF4" lat="48.808367" lon="7.860520"/>
+
+<!-- OK Soft geofence sector corners, as a backup just in case something is amiss and we still can fly plane back -->
+    <!-- UNUSED no rulebook entry for soft geofence This fence is contracted 30m inside the Hard geofence -->
+    <!-- <waypoint name="_SGF1" lat="48.806404" lon="7.850963"/>
+    <waypoint name="_SGF2" lat="48.811060" lon="7.850273"/>
+    <waypoint name="_SGF3" lat="48.813146" lon="7.860654"/>
+    <waypoint name="_SGF4" lat="48.808562" lon="7.860133"/>  -->
+
+<!-- OK UNUSED waypoints Just in case we only use ONE airframe -->
 <!-- Flight zone, only inside there are useful targets, for going round overpass allowed-->
-    <!-- <waypoint name="_FZ1" lat="48.81085705131392" lon="7.85104316760250"/>
-    <waypoint name="_FZ2" lat="48.80624566949345" lon="7.85172516481609"/>
-    <waypoint name="_FZ3" lat="48.80644449303783" lon="7.85281750022357"/>
-    <waypoint name="_FZ4" lat="48.80700442812408" lon="7.85227393518809"/>
-    <waypoint name="_FZ5" lat="48.80852715461505" lon="7.85924210211808"/>
-    <waypoint name="_FZ6" lat="48.80902410515276" lon="7.85906300339434"/>
-    <waypoint name="_FZ7" lat="48.80930449429145" lon="7.85930000122145"/>
-    <waypoint name="_FZ8" lat="48.81250109175638" lon="7.85962794135288"/>
-    <waypoint name="_FZ9" lat="48.81089414069912" lon="7.85196675859237"/> -->
+    <!-- <waypoint name="_CAX1" lat="48.806895" lon="7.851654"/>
+    <waypoint name="_CAX2" lat="48.810883" lon="7.851214"/>
+    <waypoint name="_CAX3" lat="48.811362" lon="7.854512"/>
+    <waypoint name="_CAX4" lat="48.812459" lon="7.859645"/>
+    <waypoint name="_CAX5" lat="48.808588" lon="7.859258"/>
+    <waypoint name="_CAX6" lat="48.807676" lon="7.855065"/> -->
 
-<!-- Mapping area 1 (Mission 1) -->
-    <waypoint name="_MA1" lat="48.80693509354554" lon="7.85164127905473"/>
-    <waypoint name="_MA2" lat="48.80768200909922" lon="7.85500210052321"/>
-    <waypoint name="_MA3" lat="48.81139279833167" lon="7.85440157563368"/>
-    <waypoint name="_MA4" lat="48.81085311865281" lon="7.85105155114396"/>
+<!-- OK Mapping area 1 (Mission 1), rulebook "Card Border 1" -->
+    <waypoint name="_MA1" lat="48.806895" lon="7.851654"/>
+    <waypoint name="_MA2" lat="48.810883" lon="7.851214"/>
+    <waypoint name="_MA3" lat="48.811362" lon="7.854512"/>
+    <waypoint name="_MA4" lat="48.807676" lon="7.855065"/>
 
-<!-- Mapping area 2 (Mission 1) -->
-    <waypoint name="_MX1" lat="48.80762099075623" lon="7.85503862863751"/>
-    <waypoint name="_MX2" lat="48.80853085515681" lon="7.85922936963215"/>
-    <waypoint name="_MX3" lat="48.80902546150865" lon="7.85905139132392"/>
-    <waypoint name="_MX4" lat="48.80930953485449" lon="7.85929233676662"/>
-    <waypoint name="_MX5" lat="48.81249409545106" lon="7.85962245499655"/>
-    <waypoint name="_MX6" lat="48.81139512077117" lon="7.85441047025036"/>
+<!-- Mapping area 2 (Mission 1), rulebook "Card Border 2" -->
+    <waypoint name="_MX1" lat="48.807676" lon="7.855065"/>
+    <waypoint name="_MX2" lat="48.811362" lon="7.854512"/>
+    <waypoint name="_MX3" lat="48.812459" lon="7.859645"/>
+    <waypoint name="_MX4" lat="48.808588" lon="7.859258"/>
 
-<!-- Fire zone (Mission 2) -->
-    <waypoint name="_FIRE1" lat="48.80902783246171" lon="7.85289329256999"/>
-    <waypoint name="_FIRE2" lat="48.80916266922539" lon="7.85391504353729"/>
-    <waypoint name="_FIRE3" lat="48.81072613097682" lon="7.85342158470375"/>
-    <waypoint name="_FIRE4" lat="48.81060036833018" lon="7.85241003689887"/>
+<!-- OK  Fire zone (Mission 2), rulebook "Fire detection area" -->
+    <waypoint name="_FDA1" lat="48.808494" lon="7.851707"/>
+    <waypoint name="_FDA2" lat="48.809522" lon="7.851791"/>
+    <waypoint name="_FDA3" lat="48.809540" lon="7.852558"/>
+    <waypoint name="_FDA4" lat="48.808518" lon="7.852497"/>
 
-<!-- Dead man area (Mission 4) -->
-    <!-- <waypoint name="DMA1"  lat="48.81063598702768" lon="7.851967313095118"/>
-    <waypoint name="DMA2"  lat="48.81068663657088" lon="7.851885616275968"/>
-    <waypoint name="DMA3"  lat="48.81071785511318" lon="7.851748680628827"/>
-    <waypoint name="DMA4"  lat="48.81070426216232" lon="7.851595892999059"/>
-    <waypoint name="DMA5"  lat="48.81066424008195" lon="7.851485853499867"/>
-    <waypoint name="DMA6"  lat="48.81059602654957" lon="7.851402498090652"/>
-    <waypoint name="DMA7"  lat="48.81054910018192" lon="7.851379107966034"/>
-    <waypoint name="DMA8"  lat="48.81043958522253" lon="7.851372347815815"/>
-    <waypoint name="DMA9"  lat="48.81036165071058" lon="7.851395505300484"/>
-    <waypoint name="DMA10" lat="48.81027524700231" lon="7.851452462913910"/>
-    <waypoint name="DMA11" lat="48.81022286394178" lon="7.851536359937978"/>
-    <waypoint name="DMA12" lat="48.81019431297392" lon="7.851643730785032"/>
-    <waypoint name="DMA13" lat="48.81019700000000" lon="7.851758099999999"/>
-    <waypoint name="DMA14" lat="48.81022950962421" lon="7.851884013744701"/>
-    <waypoint name="DMA15" lat="48.81028099708648" lon="7.851985427377592"/>
-    <waypoint name="DMA16" lat="48.81037442226479" lon="7.852043721827000"/>
-    <waypoint name="DMA17" lat="48.81047316755133" lon="7.852047122386534"/>
-    <waypoint name="DMA18" lat="48.81056314958684" lon="7.852020166194695"/> -->
+<!-- Hot spot TEST (only for practice) : 48.807853°N 7.851819°E -->
+    <waypoint name="TESTHS" lat="48.807853" lon="7.851819"/>
 
-<!-- Drop zone (Mission 3) -->
-    <!-- <waypoint name="_DROP1" lat="48.80625637325760" lon="7.851733579757754"/>
-    <waypoint name="_DROP2" lat="48.80629723694464" lon="7.851972690092925"/>
-    <waypoint name="_DROP3" lat="48.80690569624477" lon="7.851858729534955"/>
-    <waypoint name="_DROP4" lat="48.80684704383820" lon="7.851642524745504"/> -->
+<!-- Hot spot waypoints DYNAMIC, will be updated during the mission -->
+    <waypoint name="HS1" lat="48.807850" lon="7.851820"/>
+    <waypoint name="HS2" lat="48.807851" lon="7.851821"/>
 
-<!-- Takeoff and Landing zone Multirotor -->
-    <!-- <waypoint name="_TLMR1" lat="48.80642425852793" lon="7.852095289137102"/>
-    <waypoint name="_TLMR2" lat="48.80647391182048" lon="7.852394923506179"/>
-    <waypoint name="_TLMR3" lat="48.80663346155104" lon="7.852326710895678"/>
-    <waypoint name="_TLMR4" lat="48.80659080367964" lon="7.852030820403031"/> -->
+<!-- OK Manequin Research Area (Mission 4) -->
+    <!--NEEDS UPDATE at competition day -->
+    <!-- Better make it something like IsInsideCircle from one Waypoint-->
+    <!-- Decagon with flat top aligned with West - East-->
 
-<!-- Takeoff and Landing zone VTOL Fixed-wing STRICT -->
-    <waypoint name="_TLFW1" lat="48.80768085648797" lon="7.851538570590959"/>
-    <waypoint name="_TLFW2" lat="48.80774095849599" lon="7.852196652380861"/>
-    <waypoint name="_TLFW3" lat="48.80906601377884" lon="7.852087722616552"/>
-    <waypoint name="_TLFW4" lat="48.80899886628665" lon="7.851348534388965"/>
+    <waypoint name="_MRP1" lat="48.810302" lon="7.851437"/>
+    <waypoint name="_MRP2" lat="48.810456" lon="7.851372"/>
+    <waypoint name="_MRP3" lat="48.810610" lon="7.851437"/>
+    <waypoint name="_MRP4" lat="48.810705" lon="7.851605"/>
+    <waypoint name="_MRP5" lat="48.810705" lon="7.851814"/>
+    <waypoint name="_MRP6" lat="48.810610" lon="7.851983"/>
+    <waypoint name="_MRP7" lat="48.810456" lon="7.852047"/>
+    <waypoint name="_MRP8" lat="48.810302" lon="7.851983"/>
+    <waypoint name="_MRP9" lat="48.810207" lon="7.851814"/>
+    <waypoint name="_MRP10" lat="48.810207" lon="7.851605"/>
+
+<!-- Water Intake zone (Mission 3) -->
+ 
+    <!-- <waypoint name="_WINTAKE1" lat="48.80625637325760" lon="7.851733579757754"/>
+    <waypoint name="_WINTAKE2" lat="48.80629723694464" lon="7.851972690092925"/>
+    <waypoint name="_WINTAKE3" lat="48.80690569624477" lon="7.851858729534955"/>
+    <waypoint name="_WINTAKE4" lat="48.80684704383820" lon="7.851642524745504"/> -->
+
+<!-- Water Drop zone (Mission 3) -->
+ 
+    <!-- <waypoint name="_WDROP1" lat="48.80625637325760" lon="7.851733579757754"/>
+    <waypoint name="_WDROP2" lat="48.80629723694464" lon="7.851972690092925"/>
+    <waypoint name="_WDROP3" lat="48.80690569624477" lon="7.851858729534955"/>
+    <waypoint name="_WDROP4" lat="48.80684704383820" lon="7.851642524745504"/> -->
+
+
+<!--OK Takeoff and Landing point Multirotor -->
+ <!-- <waypoint name="TLMR" lat="48.806623" lon="7.852214"/> -->
+
+<!-- OK Takeoff and Landing point VTOL -->
+    <!-- <waypoint name="TLVTOL" lat="48.807315" lon="7.851966"/>-->
+
+<!-- OK Precision landing Fixedwing zone (rulebook), 5 x 20 m box, long axis 353/173 deg -->
+    <waypoint name="_PLFW1" lat="48.807315" lon="7.851951"/>
+    <waypoint name="_PLFW2" lat="48.807494" lon="7.851915"/>
+    <waypoint name="_PLFW3" lat="48.807500" lon="7.851982"/>
+    <waypoint name="_PLFW4" lat="48.807315" lon="7.852020"/>
 
   </waypoints>
 
+<!-- ******************************* SECTORS ***************************** -->
 <!--
     Ignored the following areas(sectors), they are not needed in the flight plan:
     - Waiting area and spectator area
@@ -103,23 +128,18 @@
   <sectors>
     <!-- A underscore ( _  ) in front of a waypoint name means the waypoint is not visible, 
     Which is good then, therefore corners cannot be accidentally changed -->
-    <sector color="white" name="Geofence">
+    <sector color="red" name="Geofence">
       <corner name="_GF1"/>
       <corner name="_GF2"/>
       <corner name="_GF3"/>
       <corner name="_GF4"/>
     </sector>
 
-    <!-- <sector color="black" name="Flight_zone">
-      <corner name="_FZ1"/>
-      <corner name="_FZ2"/>
-      <corner name="_FZ3"/>
-      <corner name="_FZ4"/>
-      <corner name="_FZ5"/>
-      <corner name="_FZ6"/>
-      <corner name="_FZ7"/>
-      <corner name="_FZ8"/>
-      <corner name="_FZ9"/>
+    <!-- <sector color="yellow" name="SoftGeofence">
+      <corner name="_SGF1"/>
+      <corner name="_SGF2"/>
+      <corner name="_SGF3"/>
+      <corner name="_SGF4"/> 
     </sector> -->
 
     <sector color="lightblue" name="Mapping_area_1">
@@ -129,76 +149,95 @@
       <corner name="_MA4"/>
     </sector>
 
-    <sector color="gray" name="Mapping_area_2">
+    <sector color="white" name="Mapping_area_2">
       <corner name="_MX1"/>
       <corner name="_MX2"/>
       <corner name="_MX3"/>
       <corner name="_MX4"/>
-      <corner name="_MX5"/>
-      <corner name="_MX6"/>
     </sector>
 
-    <sector color="red" name="Fire_zone">
-      <corner name="_FIRE1"/>
-      <corner name="_FIRE2"/>
-      <corner name="_FIRE3"/>
-      <corner name="_FIRE4"/>
+    <!-- A sector in case we want to map MA and MX in one run-->
+
+    <!-- <sector color="black" name="Mapping_area_1_and_2_combined">
+      <corner name="_CAX1"/>
+      <corner name="_CAX2"/>
+      <corner name="_CAX3"/>
+      <corner name="_CAX4"/>
+      <corner name="_CAX5"/>
+      <corner name="_CAX6"/>
+    </sector> -->
+
+    <!-- A sector with fire to detect aka hot spots-->
+    <sector color="green" name="Fire_zone">
+      <corner name="_FDA1"/>
+      <corner name="_FDA2"/>
+      <corner name="_FDA3"/>
+      <corner name="_FDA4"/>
     </sector>
 
-    <!-- <sector color="green" name="Dead_man_area">
-      <corner name="_DMA1"/>
-      <corner name="_DMA2"/>
-      <corner name="_DMA3"/>
-      <corner name="_DMA4"/>
-      <corner name="_DMA5"/>
-      <corner name="_DMA6"/>
-      <corner name="_DMA7"/>
-      <corner name="_DMA8"/>
-      <corner name="_DMA9"/>
-      <corner name="_DMA10"/>
-      <corner name="_DMA11"/>
-      <corner name="_DMA12"/>
-      <corner name="_DMA13"/>
-      <corner name="_DMA14"/>
-      <corner name="_DMA15"/>
-      <corner name="_DMA16"/>
-      <corner name="_DMA17"/>
-      <corner name="_DMA18"/>
+    <!-- We now use a Circle midpoint for the Dead_man_area instead of defining corners -->
+    <!-- <sector color="cadetblue" name="Dead_man_area">
+      <corner name="_MRP1"/>
+      <corner name="_MRP2"/>
+      <corner name="_MRP3"/>
+      <corner name="_MRP4"/>
+      <corner name="_MRP5"/>
+      <corner name="_MRP6"/>
+      <corner name="_MRP7"/>
+      <corner name="_MRP8"/>
+      <corner name="_MRP9"/>
+      <corner name="_MRP10"/>
     </sector> -->
 
-    <!-- <sector color="purple" name="Drop_zone">
-      <corner name="_DROP1"/>
-      <corner name="_DROP2"/>
-      <corner name="_DROP3"/>
-      <corner name="_DROP4"/>
+<!-- Water intake zone -->
+    <!-- <sector color="blue" name="Water_intake_zone">
+      <corner name="_WINTAKE1"/>
+      <corner name="_WINTAKE2"/>
+      <corner name="_WINTAKE3"/>
+      <corner name="_WINTAKE4"/>
     </sector> -->
 
-    <!-- <sector color="pink" name="Takeoff_Landing_zone_Multirotor">
-      <corner name="_TLMR1"/>
-      <corner name="_TLMR2"/>
-      <corner name="_TLMR3"/>
-      <corner name="_TLMR4"/>
+<!-- Water drop zone -->
+    <!-- <sector color="purple" name="Water_drop_zone">
+      <corner name="_WDROP1"/>
+      <corner name="_WDROP2"/>
+      <corner name="_WDROP3"/>
+      <corner name="_WDROP4"/>
     </sector> -->
 
-    <sector color="yellow" name="Takeoff_Landing_zone_Fixedwing">
-      <corner name="_TLFW1"/>
-      <corner name="_TLFW2"/>
-      <corner name="_TLFW3"/>
-      <corner name="_TLFW4"/>
+    <sector color="coral" name="Precision_landing_zone">
+      <corner name="_PLFW1"/>
+      <corner name="_PLFW2"/>
+      <corner name="_PLFW3"/>
+      <corner name="_PLFW4"/>
     </sector>
+
   </sectors>
 
+  <modules>
+    <module name="digital_cam_earcam"/>
+  </modules>
+
   <includes>
+
+<!-- ************** TESTING ****************************-->
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_test_drop.xml"/> -->
     <!-- Precision landing aims at TD; Takeoff_Landing_zone_Fixedwing is the outer abort boundary. -->
-    <include name="Testing" procedure="tudelft_include_imav2026_test_precision_landing.xml"/>
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_test_precision_landing.xml"/> -->
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_testing.xml"/> -->
-    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission1.xml"/> -->
-    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission2.xml"/> -->
-    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4.xml"/> -->
-    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4.xml"/> -->
+
+<!-- ************** SAFETY ****************************-->
     <!-- <include name="Safety" procedure="tudelft_include_imav2026_safety.xml"/> -->
+<!-- ************** MISSSION 1 ****************************-->   
+    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission1.xml"/> -->
+<!-- ************** MISSSION 2 ****************************-->
+    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission2.xml"/> -->
+<!-- ************** MISSSION 3 ****************************-->
+    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission3.xml"/> -->
+<!-- ************** MISSSION 4 ****************************-->
+    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4.xml"/> -->
+    <include name="Mission" procedure="tudelft_include_imav2026_mission4_simple.xml"/>
+
   </includes>
   <blocks>
     <block name="Boot"/>

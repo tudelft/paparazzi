@@ -15,8 +15,8 @@
     <waypoint name="S2" x="274.4" y="209.5"/>
     <waypoint name="_BASELEG" x="168.8" y="-13.8"/>
     <waypoint name="CLIMB" x="-114.5" y="162.3"/>
-    <!-- MotionSCOUT position to be found and re-positioned by the system -->
-    <waypoint name="MSCOUT" x="-54.0" y="62.0"/>
+    <!-- Poor Tanguy firefighter with MotionSCOUT, the position to be found and re-positioned by the system -->
+    <waypoint name="TANGUY" x="-54.0" y="62.0"/>
     <!-- Autoland -->
     <waypoint alt="315.0" name="AF" x="177.4" y="45.1"/>
     <waypoint alt="295.0" name="TD" x="28.8" y="57.0"/>
@@ -44,6 +44,9 @@
       <set value="0" var="autopilot.kill_throttle"/>
       <set value="0" var="autopilot.flight_time"/>
       <!-- <set value="1" var="autopilot.launch"/> -->
+      <!-- WP2 = WP1 shifted 32m to the right (east) -->
+      <set var="waypoints[WP_TANGUY].x" value="WaypointX(WP_TANGUY) + 32"/>
+      <!-- <set var="waypoints[WP_TANGUY].y" value="WaypointY(WP_TANGUY)"/> -->
       <attitude roll="0" throttle="1.0" vmode="throttle" pitch="DegOfRad(TAKEOFF_PITCH_ANGLE)" until="GetPosAlt() @GT GetAltRef()+10"/>
     </block>
     <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="home">
