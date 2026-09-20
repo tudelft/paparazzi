@@ -228,9 +228,9 @@
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_testing.xml"/> -->
 
 <!-- ************** SAFETY ****************************-->
-    <include name="Safety" procedure="tudelft_include_imav2026_safety.xml"/>
+    <!-- <include name="Safety" procedure="tudelft_include_imav2026_safety.xml"/> -->
 <!-- ************** MISSSION 1 ****************************-->   
-    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission1.xml"/> -->
+    <include name="Mission" procedure="tudelft_include_imav2026_mission1.xml"/>
 <!-- ************** MISSSION 2 ****************************-->
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission2.xml"/> -->
 <!-- ************** MISSSION 3 ****************************-->
