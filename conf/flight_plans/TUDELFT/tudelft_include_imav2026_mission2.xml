@@ -1,0 +1,192 @@
+<!DOCTYPE procedure SYSTEM "../flight_plan.dtd">
+<!--
+  IMAV 2026 Mission 2 (Strasbourg) - thermal hot-spot survey of the fire zone.
+  Included from tudelft_imav2026_strasbourg.xml:
+
+    <include name="Mission" procedure="tudelft_include_imav2026_mission2.xml"/>
+
+  All block names get the include name as prefix (e.g. "Mission.Takeoff");
+  deroutes and IndexOfBlock() inside this file are prefixed automatically.
+
+  The fire zone corners (_FIRE1.._FIRE4, Fire_zone sector), the Geofence
+  sector and HOME come from the main plan. The geofence is the main plan's
+  built-in geofence_sector (HOME mode when outside), so there is no geofence
+  exception here.
+
+  THE TASK: two hot spots somewhere in the fire detection area. Report their
+  GPS coordinates to 5 m, no later than 5 minutes after landing. The plan
+  only guarantees coverage and well geotagged frames (DC_SHOT carries
+  photo_nr, lat, lon, alt, phi, theta, psi, itow); detection and
+  georeferencing run on a laptop after touchdown.
+
+  SURVEY: stock nav_survey_polygon module. Every line is flown in the same
+  direction (racetrack): line, 180 deg turn of survey_turn_radius, a return
+  leg 2 x radius to the side, a wide turn onto the next line. So the line
+  spacing can be much smaller than twice the turn radius (19 m lines, 30 m
+  turns), which nav_survey_poly_osam cannot do.
+  Lines run SOUTHBOUND (survey_line_angle 183 deg, along the zone's long
+  edges): the turns and return legs are then on the EAST side of the zone,
+  away from the west fence.
+  THREE LINES: the zone is ~57.7 m wide across the lines. The first line is
+  half a sweep inside the east edge and lines are added until one misses the
+  zone, so any survey_sweep between ~16.5 and ~23 m gives exactly 3 lines;
+  19 m spaces them evenly (~9.6 m from each edge).
+
+  CAMERA: LWIR 256 x 192, 40 x 30 deg lens. At 50 m AGL: swath 36.4 m,
+  GSD 14.0 cm, along-track footprint 26.8 m; 19 m lines give ~48 % sidelap.
+  LWIR only (CATIA_CAMERA_MASK_LWIR), so the AI camera does not fire.
+  Distance-triggered every survey_shot_interval metres, only while the
+  aircraft is inside the main plan's Fire_zone sector: Start_Survey arms the
+  camera and disarms it; Run_Survey's pre_call switches dc_autoshoot on
+  inside the sector and off outside it. The pre_call overrides the module's
+  own dc_survey()/dc_stop() calls from the next navigation cycle.
+
+  OFFICIAL COORDINATES (IMAV 2026):
+    Fire detection area: see _FIRE1.._FIRE4 in the main plan.
+    Hot spot TEST (practice only, NOT in the fire area): 48.807853N 7.851819E
+-->
+<procedure>
+  <header>
+#include "autopilot.h"
+#include "firmwares/fixedwing/guidance/energy_ctrl.h"
+#include "modules/digital_cam/dc.h"
+#include "modules/digital_cam/uart_cam_ctrl.h"
+#include "modules/nav/nav_survey_polygon.h"
+  </header>
+
+  <waypoints>
+    <!-- Launch / climb / hold. HOME is the main plan's fixed-wing launch point. -->
+    <waypoint name="CLIMB" x="35.077" y="293.862" height="80."/>
+    <waypoint name="_STDBY" x="15.077" y="353.862" height="80."/>
+
+    <!-- Landing, same as Mission 1: TD is the centre of the official
+         "Precision landing Fixedwing zone", final flown SOUTHBOUND from AF
+         200 m north at 20 m AGL. height, not alt: 20 m above the main plan's
+         ground_alt. Drag AF round TD for wind. -->
+    <waypoint name="AF" x="-34.464" y="292.028" height="20."/>
+    <waypoint name="TD" x="-10.839" y="93.428" height="0"/>
+    <waypoint name="_BASELEG" x="-4.723" y="295.562"/>
+
+    <!-- Practice hot spot (official), reference only - nothing flies to it. -->
+    <waypoint name="HOT_TEST" lat="48.807853" lon="7.851819"/>
+    <waypoint name="_HERE" x="-24.923" y="233.862"/>
+  </waypoints>
+
+  <variables>
+    <!-- 50 m: swath 36.4 m, GSD 14.0 cm, 2.2 px on a 0.3 m plate and 4.3 px
+         on a 0.6 m one. Read at Start_Survey. -->
+    <variable init="50." var="survey_height" min="25." max="80." step="1."/>
+    <!-- Distance between survey lines, m. 16.5..23 m gives 3 lines over the
+         fire zone; 19 m spaces them evenly. Read at Start_Survey. -->
+    <variable init="19." var="survey_sweep" min="10." max="40." step="0.5"/>
+    <!-- Line direction, degrees (compass). 183: southbound along the zone's
+         long edges, turns on the east side. Read at Start_Survey. -->
+    <variable init="183." var="survey_line_angle" min="0." max="359." step="1."/>
+    <!-- Metres of ground track between shots. 3 m at 50 m: ~8 sightings per
+         spot per pass, 87% forward overlap (for detection, not coverage).
+         dc_periodic runs at 10 Hz, so do not go much below 2 m. -->
+    <variable init="3." var="survey_shot_interval" min="2." max="40." step="0.5"/>
+    <!-- Survey airspeed, m/s (Talon 250g sinks when held at 12). -->
+    <variable init="10." var="survey_airspeed" min="8." max="16." step="0.5"/>
+    <!-- Radius of the entry circle and the 180 deg turns, metres. 30 m is
+         ~18 deg of bank at 10 m/s. Read at Start_Survey. -->
+    <variable init="30." var="survey_turn_radius" min="26." max="60." step="1."/>
+    <!-- Seconds held wings-level before the launch sequence starts. -->
+    <variable init="5." var="holding_delay" min="0." max="60." step="1."/>
+  </variables>
+
+  <blocks>
+    <!-- ── Pre-flight ───────────────────────────────────────────────────── -->
+    <block name="Wait_GPS">
+      <!-- Mission 2 uses the LWIR camera only, from boot (airframe default is AIcam+LWIR). -->
+      <call_once fun="uart_cam_ctrl_set_camera_mask(CATIA_CAMERA_MASK_LWIR)"/>
+      <set value="1" var="autopilot.kill_throttle"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+
+    <block name="Geo_init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetGroundReferenceHere()"/>
+    </block>
+
+    <block name="Holding_point">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <exception cond="NavBlockTime() @GT holding_delay" deroute="Takeoff"/>
+      <attitude roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+
+    <!-- ── Launch ───────────────────────────────────────────────────────── -->
+    <!-- vmode="climb" rather than a fixed pitch: an open-loop attitude climb
+         could not get past ~8 m AGL on this airframe. -->
+    <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png" group="home">
+      <exception cond="GetPosAlt() @GT GetAltRef() + 25" deroute="Start_Survey"/>
+      <set value="0" var="autopilot.kill_throttle"/>
+      <set value="1" var="autopilot.launch"/>
+      <set value="0" var="autopilot.flight_time"/>
+      <call_once fun="NavSetWaypointHere(WP__HERE)"/>
+      <go climb="2.0" from="_HERE" hmode="route" vmode="climb" wp="CLIMB"/>
+      <circle climb="2.0" radius="DEFAULT_CIRCLE_RADIUS" until="GetPosAlt() @GT GetAltRef()+25" vmode="climb" wp="CLIMB"/>
+      <deroute block="Start_Survey"/>
+    </block>
+
+    <!-- ── Survey ───────────────────────────────────────────────────────── -->
+    <!-- Setup and run are separate blocks so the camera is armed with the
+         right interval (and disarmed) before Run_Survey's pre_call first runs.
+         The climb to survey height happens on the module's entry circle. -->
+    <block name="Start_Survey" strip_button="Start Survey" strip_icon="survey.png" group="mission">
+      <set var="v_ctl_auto_airspeed_setpoint" value="survey_airspeed"/>
+      <call_once fun="nav_survey_polygon_setup(WP__FIRE1, 4, survey_line_angle, survey_sweep, survey_shot_interval, survey_turn_radius, GetAltRef() + survey_height)"/>
+      <call_once fun="uart_cam_ctrl_set_camera_mask(CATIA_CAMERA_MASK_LWIR)"/>
+      <call_once fun="dc_distance(survey_shot_interval)"/>
+      <!-- Disarm: Run_Survey's pre_call switches it on inside the fire zone. -->
+      <set var="dc_autoshoot" value="DC_AUTOSHOOT_STOP"/>
+      <deroute block="Run_Survey"/>
+    </block>
+
+    <!-- nav_survey_polygon_run() returns FALSE after the last line. -->
+    <block name="Run_Survey" group="mission" pre_call="dc_autoshoot = (InsideFire_zone(GetPosX(), GetPosY()) ? DC_AUTOSHOOT_DISTANCE : DC_AUTOSHOOT_STOP)">
+      <call fun="nav_survey_polygon_run()"/>
+      <deroute block="Survey_Done"/>
+    </block>
+
+    <block name="Survey_Done" group="mission">
+      <call_once fun="dc_stop()"/>
+      <deroute block="Land_AF_TD"/>
+    </block>
+
+    <!-- ── Safety hold / abort ──────────────────────────────────────────── -->
+    <!-- Resume with the "Start Survey" strip button - restarts from line 1. -->
+    <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="home">
+      <call_once fun="dc_stop()"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="survey_airspeed"/>
+      <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()+survey_height" wp="_STDBY"/>
+    </block>
+
+    <!-- ── Landing ──────────────────────────────────────────────────────── -->
+    <!-- Negative radius: baseleg circle east of AF, away from the west fence. -->
+    <block name="Land_AF_TD" strip_button="Land (wp AF-TD)" strip_icon="land-left.png" group="land">
+      <call_once fun="dc_stop()"/>
+      <set value="-DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
+      <deroute block="land"/>
+    </block>
+
+    <block name="land">
+      <call_once fun="nav_compute_baseleg(WP_AF, WP_TD, WP__BASELEG, nav_radius)"/>
+      <circle radius="nav_radius" until="NavCircleCount() @GT 0.5" wp="_BASELEG"/>
+      <circle radius="nav_radius" until="NavQdrCloseTo(DegOfRad(baseleg_out_qdr)-(nav_radius/fabs(nav_radius))*10) @AND (10 @GT fabs(GetPosAlt() - WaypointAlt(WP__BASELEG)))" wp="_BASELEG"/>
+      <deroute block="final"/>
+    </block>
+
+    <block name="final">
+      <!-- Glide AF -> TD; below 10 m AGL go to flare (motor killed). -->
+      <exception cond="GetAltRef() + 10 @GT GetPosAlt()" deroute="flare"/>
+      <go from="AF" hmode="route" vmode="glide" wp="TD"/>
+    </block>
+
+    <block name="flare">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <go approaching_time="0" from="AF" hmode="route" throttle="0.0" vmode="throttle" wp="TD"/>
+      <attitude roll="0.0" throttle="0.0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</procedure>

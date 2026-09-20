@@ -332,6 +332,7 @@
       <define name="NAV_DROP_USE_AGL_DIST" value="TRUE"/><!-- fall height from the rangefinder for the 2 m release -->
       <define name="NAV_DROP_RELEASE_WITH_DELAY" value="TRUE"/><!-- release on crossing RELEASE (approaching_time 0) -->
     </module>
+    <module name="wind_circle"/><!-- onboard wind from one circle, no datalink needed; mission4 orbit/star drop uses the state wind -->
     <!-- <module name="nav" type="skid_landing"/> -->
 
     <!-- We have to choose on best suited for our takeoff-->
@@ -961,7 +962,7 @@
 
   <section name="SIMULATOR" prefix="NPS_">
     <define name="USE_CROW_ACTUATORS" value="TRUE"/>
-    <define name="JSBSIM_LAUNCHSPEED" value="10.0"/>
+    <define name="JSBSIM_LAUNCHSPEED" value="NOMINAL_AIRSPEED"/><!-- launch at the airspeed this airframe is tuned for; 10 m/s left it 2 m/s below its 12 m/s setpoint -->
     <define name="JSBSIM_LAUNCH_HEIGHT" value="1.6" unit="m"/>
     <!-- <define name="JSBSIM_MODEL" value="YardStik" type="string"/> -->
     <define name="JSBSIM_MODEL" value="openuas_jsbsim_multiplex_easystar3" type="string"/>
