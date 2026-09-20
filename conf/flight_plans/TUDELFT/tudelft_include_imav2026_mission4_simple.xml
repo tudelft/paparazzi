@@ -1,4 +1,4 @@
-<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+<!-- <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd"> -->
 
 <!-- 
   SIMPLIEFIED MISSION4 Just in case the real Mission4 does not work so well
@@ -6,28 +6,39 @@
   EARcam search: listen for X seconds in a flower around MRP, then descend
   to Z(30?) m above the ground reference and refine for X seconds around TANGUY.
   CATIA must have the real or simulated EARcam backend enabled. -->
-<flight_plan alt="190" ground_alt="140" lat0="48.808252" lon0="7.856789" max_dist_from_home="900" name="IMAV2026_EARCAM" security_height="40" home_mode_height="50"> 
+<!-- <flight_plan alt="190" ground_alt="140" lat0="48.808252" lon0="7.856789" max_dist_from_home="900" name="IMAV2026_EARCAM" security_height="40" home_mode_height="50">  -->
 <!---->
-<!-- <procedure> -->
+<procedure>
   <header>
 #include "modules/datalink/datalink.h"
 #include "modules/digital_cam/dc.h"
 #include "modules/digital_cam/earcam_ctrl.h"
 #include "math/pprz_random.h"
 
+//Enable energy control commands from within flightplan
+    #include "firmwares/fixedwing/guidance/energy_ctrl.h"
+
+// States
+    #define AircraftIsBooting()  LessThan(nav_block,4)  // LessThan(nav_block,IndexOfBlock('Mission.ReadyForDeparture'))
+
 #define DropClose() ({ commands[COMMAND_HATCH] = MIN_PPRZ; })
 #define DropOpen() ({ commands[COMMAND_HATCH] = SERVO_HATCH_OPEN; })
   </header>
 
+  <variables>
+    <variable var="tanguy_random_radius" type="float" init="0."/>
+    <variable var="tanguy_random_angle" type="float" init="0."/>
+  </variables>
+
   <waypoints>
-    <waypoint name="HOME" x="-24.0" y="233.0"/>
-    <!--<waypoint name="HOME" x="0" y="0" height="2."/>--><!-- SET from MAIN flight plan -->
+    <!--<waypoint name="HOME" x="0" y="0" height="2."/>--><!-- LEAVEIN PLACE but it is SET from MAIN flight plan -->
 
     <waypoint name="STDBY" x="20." y="80." height="50."/><!-- UNused in the current flight plan -->
-    <waypoint name="CLIMB" x="50." y="100." height="50."/>
+    <waypoint name="CLIMB" lat="48.8089501" lon="7.8517956" height="50."/>
 
-    <waypoint name="AF" x="-21." y="66." alt="158."/>
-    <waypoint name="TD" x="-127." y="0." alt="139."/>
+    <waypoint name="AF" lat="48.8078099" lon="7.8518863" alt="158."/><!-- TODO: Better Dynamical Positioning n Height  -->
+    <waypoint name="TD" lat="48.8074036" lon="7.8519650" alt="139."/><!-- TODO: Better Dynamical Positioning n Height-->
+
     <!-- ORGANIZATION Landing Fixedwing zone -->   
     <!-- Landing Fixedwing zone : 48.807761°N 7.851868°E -->
     <!-- Landing Fixedwing zone : 48.807767°N 7.851934°E -->
@@ -42,18 +53,12 @@
     <waypoint name="MRP" lat="48.81050" lon="7.85160"/>
     <waypoint name="_MRP_EDGE" lat="48.81050" lon="7.85160"/>
     <!-- Poor Tanguy firefighter with MotionSCOUT, the position to be found and re-positioned by the system -->
-    <waypoint name="TANGUY" lat="48.81050" lon="7.85160" height="1.7"/>
+    <waypoint name="TANGUY" lat="48.81050" lon="7.85160" height="1.7"/><!-- Zero actually, but in case we make aFP mistake and use this instead of drop -->
     <waypoint name="_TANGUY_EDGE" x="-25.0" y="62.0" height="0."/>
+    <!-- USED only for height reference  for the refine listen run MUST BE above treetops -->
+    <waypoint name="REFINE" lat="48.81050" lon="7.85160" height="17"/>
   </waypoints>
 
-  <variables>
-    <variable var="tanguy_random_radius" type="float" init="0."/>
-    <variable var="tanguy_random_angle" type="float" init="0."/>
-  </variables>
-
-  <modules>
-    <module name="math"/>
-  </modules>
 
   <exceptions>
     <exception cond="radio_control_get(RADIO_AUX1) @GT MAX_PPRZ - 1" deroute="forced_crash"/>
@@ -89,7 +94,7 @@
       <set var="autopilot.flight_time" value="0"/>
       <set var="autopilot.launch" value="1"/>
       <exception cond="GetPosAlt() @GT GetAltRef()+25" deroute="go_find_tanguy_and_rescue"/>
-      <attitude pitch="nav_takeoff_pitch_setting" roll="0" throttle="1.0" until="MoreThan(NavBlockTime(), 2)" vmode="throttle"/>
+      <attitude pitch="10" roll="0" throttle="1.0" until="MoreThan(NavBlockTime(), 2)" vmode="throttle"/>
       <go wp="CLIMB"/>
     </block>
 
@@ -136,9 +141,18 @@
     <!-- 3. Refine around an in-circle estimate, otherwise around MRP.
           Reach 30 m before starting the second 40-second listening pass. -->
     <block name="refine_setup">
+      <exception cond="earcam_result_within(WP_MRP, 25)" deroute="refine_setup_result"/>
       <set var="WaypointX(WP_TANGUY)" value="WaypointX(WP_MRP)"/>
       <set var="WaypointY(WP_TANGUY)" value="WaypointY(WP_MRP)"/>
-      <call_once fun="earcam_result_within(WP_MRP, 25) ? earcam_result_to_waypoint(WP_TANGUY) : 0"/>
+      <deroute block="refine_setup_geometry"/>
+    </block>
+
+    <block name="refine_setup_result">
+      <call_once fun="earcam_result_to_waypoint(WP_TANGUY)"/>
+      <deroute block="refine_setup_geometry"/>
+    </block>
+
+    <block name="refine_setup_geometry">
       <set var="WaypointX(WP__TANGUY_EDGE)" value="WaypointX(WP_TANGUY) + 29"/>
       <set var="WaypointY(WP__TANGUY_EDGE)" value="WaypointY(WP_TANGUY)"/>
       <call_once fun="nav_flower_setup(WP_TANGUY, WP__TANGUY_EDGE)"/>
@@ -147,12 +161,12 @@
 
     <block name="refine_descend">
       <exception cond="NavBlockTime() @GT 90" deroute="find_loudspot_failed"/>
-      <call break="true" fun="nav_flower_run()" until="fabs(GetPosAlt() - WaypointAlt(WP_TANGUY)) @LT 2"/>
+      <call break="true" fun="nav_flower_run()" until="LessThan(fabs(GetPosAlt() - WaypointAlt(WP_REFINE)), 2)"/>
       <deroute block="refine_flower"/>
     </block>
 
     <block name="refine_flower">
-      <call break="true" fun="nav_flower_run()" until="NavBlockTime() >= 40"/>
+      <call break="true" fun="nav_flower_run()" until="NavBlockTime() @GT 39"/><!-- TODO: Adjust the 40s duration based on actual testing results -->
       <deroute block="loudspot"/>
     </block>
 
@@ -228,6 +242,7 @@ extern bool_t compute_alignment(uint8_t w1, uint8_t w2, uint8_t start, uint8_t e
     ********************* Autolanding ***********************
     *********************************************************
     -->
+    <!-- TODO: Use the Precision-Landing module options for the final approach when that reliably works tested -->
 
       <!-- CDW call_once fun="nav_compute_flare_from_aftd(WP_AF, WP_TD, WP_FLARE)"/-->
     <!-- <block name="ComputeLandingApproach" >
@@ -236,6 +251,7 @@ extern bool_t compute_alignment(uint8_t w1, uint8_t w2, uint8_t start, uint8_t e
       <call_once fun="DownlinkSendWpNr(WP_FLARE)"/>
       </block> -->
 
+    <!-- TODO: Make it NON circle and mind tree hight-->
     <block name="land" strip_button="Land" strip_icon="land-right.png">
       <call_once fun="nav_compute_baseleg(WP_AF, WP_TD, WP__BASELEG, nav_radius)"/>
       <circle radius="nav_radius" until="NavCircleCount() @GT 0.5" wp="_BASELEG"/>
@@ -264,5 +280,5 @@ extern bool_t compute_alignment(uint8_t w1, uint8_t w2, uint8_t start, uint8_t e
     </block>
 
   </blocks>
-<!-- </procedure> -->
-</flight_plan>
+</procedure>
+<!-- </flight_plan> -->

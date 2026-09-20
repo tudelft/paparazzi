@@ -726,12 +726,6 @@ uint8_t earcam_result_to_waypoint_in_circle(uint8_t wp_id, uint8_t wp_center, fl
     result_x = center_x + delta_x * scale;
     result_y = center_y + delta_y * scale;
   }
-#if FIXEDWING_FIRMWARE
-  if (fabsf(result_x - WaypointX(WP_HOME)) > max_dist_from_home ||
-      fabsf(result_y - WaypointY(WP_HOME)) > max_dist_from_home) {
-    return 1;
-  }
-#endif
   set_wp_xy(wp_id, result_x, result_y);
   return 0;
 }

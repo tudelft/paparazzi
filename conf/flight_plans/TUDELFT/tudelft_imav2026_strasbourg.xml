@@ -5,7 +5,7 @@
      Read about this challenge here: https://2026.imavs.org/
 
 -->
-<flight_plan alt="193" ground_alt="143" lat0="48.806567" lon0="7.852134" max_dist_from_home="1000" name="IMAV2026" security_height="35" home_mode_height="50" qfu="12">
+<flight_plan alt="193" ground_alt="143" lat0="48.806567" lon0="7.852134" max_dist_from_home="900" name="IMAV2026" security_height="35" home_mode_height="50" qfu="12">
 
 <!-- ******************************* WAYPOINTS ***************************** -->
   <waypoints>
@@ -213,6 +213,10 @@
     </sector>
 
   </sectors>
+
+  <modules>
+    <module name="digital_cam_earcam"/>
+  </modules>
 
   <includes>
 
