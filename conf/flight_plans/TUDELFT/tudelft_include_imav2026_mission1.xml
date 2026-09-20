@@ -529,6 +529,24 @@ static inline void mission1_shoot_in_area(float max_roll_deg, float lookahead,
       <attitude roll="0" throttle="0" vmode="throttle" until="FALSE"/>
     </block>
 
+    <!-- Airborne test of the visual-homing CNN home-vector loop: MORA must be running
+         catia --aicam-home (not plain --aicam/--aicam-detect). home_vector_ctrl (module
+         digital_cam_home_vector) shoots at home_vector_period_s, decodes each
+         CATIA_HOME_VECTOR_RESULT reply, and nudges WP_HOME home_vector_leg_distance_m
+         ahead along the predicted world-frame direction; this block just flies straight
+         at wherever WP_HOME currently sits. NOT wired into the autonomous mission
+         sequence -- trigger manually (bench/first-flight test) via strip button, stop
+         via "Standby" (its on_enter calls home_vector_stop(), since this loop otherwise
+         keeps shooting/nudging independently of dc_stop()). Requires
+         digital_cam_home_vector selected in the airframe, and NOT at the same time as
+         digital_cam_earcam (see that module's doc: one CATIA UART reply handler only).
+         Verify the body->world rotation on the bench against a known heading before
+         trusting this in the air (see home_vector_ctrl.c). -->
+    <block name="Test_Homing" strip_button="Test Homing" strip_icon="survey.png" group="mission">
+      <call_once fun="home_vector_start(WP_HOME)"/>
+      <go hmode="direct" wp="HOME"/>
+    </block>
+
     <!-- ── Launch ───────────────────────────────────────────────────────── -->
     <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png" group="home">
       <exception cond="GetPosAlt() @GT GetAltRef() + 25" deroute="Survey_Area1_Left"/>
@@ -614,7 +632,7 @@ static inline void mission1_shoot_in_area(float max_roll_deg, float lookahead,
     <!-- ── Safety hold (geofence / abort) ───────────────────────────────── -->
     <!-- Resume with the "Map Area 1/2" strip buttons - re-entering an area
          restarts its survey AND its photo numbering from x001. -->
-    <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="home">
+    <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="home" on_enter="home_vector_stop()">
       <call_once fun="dc_stop()"/>
       <set var="v_ctl_auto_airspeed_setpoint" value="mapping_airspeed"/>
       <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()+mapping_height" wp="_STDBY"/>

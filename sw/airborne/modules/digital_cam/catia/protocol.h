@@ -216,6 +216,24 @@ union catia_pose_clocked_union {
   uint8_t bin[CATIA_POSE_CLOCKED_MSG_SIZE];
 };
 
+// Sent after every --aicam-home shot (not just on an explicit solve, unlike EAR): the
+// visual-homing CNN predicts a fresh body-frame direction to home on every frame.
+#define CATIA_HOME_VECTOR_RESULT           12
+#define CATIA_HOME_VECTOR_RESULT_MSG_SIZE  (4*4)
+
+#define CATIA_HOME_VECTOR_INVALID          0
+#define CATIA_HOME_VECTOR_VALID            1
+
+union catia_home_vector_result_union {
+  struct {
+    int32_t status;      // CATIA_HOME_VECTOR_VALID or CATIA_HOME_VECTOR_INVALID
+    int32_t dx_scaled;   // body-frame direction-to-home x (forward), unit vector * 10000
+    int32_t dy_scaled;   // body-frame direction-to-home y (right), unit vector * 10000
+    int32_t dist_mm;     // predicted distance to home, millimetres
+  } data;
+  uint8_t bin[CATIA_HOME_VECTOR_RESULT_MSG_SIZE];
+};
+
 // Each platform supplies CameraLinkTransmit; this shared header stays OS-independent.
 
 extern uint8_t catia_ck_a, catia_ck_b;
