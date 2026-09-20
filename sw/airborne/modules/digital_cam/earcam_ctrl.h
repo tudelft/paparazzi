@@ -145,6 +145,10 @@ extern float earcam_refine_height_min_m;
 extern uint8_t earcam_result_from_waypoint(uint8_t wp_id);
 /** True when a valid result lies within radius_m of wp_id. */
 extern bool earcam_result_within(uint8_t wp_id, float radius_m);
+/** Move wp_id to the result, projecting outside estimates 1 cm inside the circle.
+ *  Preserves altitude and the raw result. Returns 1 without moving on invalid input
+ *  or when the projected position exceeds fixed-wing HOME waypoint limits. */
+extern uint8_t earcam_result_to_waypoint_in_circle(uint8_t wp_id, uint8_t wp_center, float radius_m);
 
 /*
  * Quiet sampling (fixed-wing): a pusher propeller masks the alarm, so samples are

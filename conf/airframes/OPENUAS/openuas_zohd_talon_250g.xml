@@ -388,8 +388,8 @@
       <!-- <define name="DC_AUTOSHOOT_PERIOD" value="5.0" unit="sec"/> -->
       <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="40"/><!-- Unit: m -->
       <!--FOR LWIR <define name="DC_AUTOSHOOT_DISTANCE_INTERVAL" value="26"/>--><!-- Unit: m -->
-      <define name="DIGITAL_CAM_UART_CAMERA_MASK" value="6"/><!-- AIcam + LWIR -->
       <configure name="CAMERA_PORT" value="UART1"/> <!-- UART port on which the real Flightcontroller is connected to MORA -->
+      <define name="DIGITAL_CAM_UART_CAMERA_MASK" value="6"/><!-- AIcam + LWIR -->
     </module>
 
     <!-- RADIO_AUX3: high shoots immediately then at 1 Hz in any flight mode.
