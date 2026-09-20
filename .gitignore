@@ -114,7 +114,7 @@ Cargo.lock
 # /sw/ground_segment/tmtc/
 /sw/ground_segment/tmtc/ivy_tcp_aircraft
 /sw/ground_segment/tmtc/settings
-#/sw/ground_segment/tmtc/messages
+/sw/ground_segment/tmtc/messages
 /sw/ground_segment/tmtc/ivy_tcp_controller
 /sw/ground_segment/tmtc/link
 /sw/ground_segment/tmtc/broadcaster
@@ -148,9 +148,9 @@ Cargo.lock
 /sw/lib/ocaml/expr_lexer.ml
 
 # /sw/logalizer/
-#/sw/logalizer/logplotter
+/sw/logalizer/logplotter
 /sw/logalizer/play
-#/sw/logalizer/plotter
+/sw/logalizer/plotter
 /sw/logalizer/gtk_export.ml
 /sw/logalizer/sd2log
 /sw/logalizer/plotprofile
@@ -166,7 +166,7 @@ Cargo.lock
 /sw/misc/link/pprzlink_router_cc
 
 # /sw/simulator/
-#/sw/simulator/gaia
+/sw/simulator/gaia
 /sw/simulator/simhitl
 
 # /sw/supervision/
