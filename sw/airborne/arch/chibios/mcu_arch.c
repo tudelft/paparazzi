@@ -67,41 +67,6 @@ static void mpuConfigureNonCachedRam(void);
 #endif
 IN_BCKP_SECTION(volatile bool hard_fault);
 
-/*
- * Set hard fault handlers to trigger a soft reset
- * This will set a flag that can be tested at startup
- */
-
-CH_IRQ_HANDLER(HardFault_Handler)
-{
-  hard_fault = true;
-  mcu_reboot(MCU_REBOOT_FAST);
-}
-
-CH_IRQ_HANDLER(NMI_Handler)
-{
-  hard_fault = true;
-  mcu_reboot(MCU_REBOOT_FAST);
-}
-
-CH_IRQ_HANDLER(MemManage_Handler)
-{
-  hard_fault = true;
-  mcu_reboot(MCU_REBOOT_FAST);
-}
-
-CH_IRQ_HANDLER(BusFault_Handler)
-{
-  hard_fault = true;
-  mcu_reboot(MCU_REBOOT_FAST);
-}
-
-CH_IRQ_HANDLER(UsageFault_Handler)
-{
-  hard_fault = true;
-  mcu_reboot(MCU_REBOOT_FAST);
-}
-
 bool recovering_from_hard_fault;
 
 // select correct register
@@ -131,6 +96,34 @@ bool recovering_from_hard_fault;
 #endif
 
 #endif /* USE_HARD_FAULT_RECOVERY */
+
+/** Reset from fault context without acquiring RTOS locks. */
+void mcu_fault_reboot(void)
+{
+#if USE_HARD_FAULT_RECOVERY
+  hard_fault = true;
+#endif
+  mcu_reboot(MCU_REBOOT_FAST);
+}
+
+/* A single set of handlers also supports existing recovery-mode users. */
+#if USE_HARD_FAULT_RECOVERY || CHIBIOS_REBOOT_ON_FAULT
+CH_IRQ_HANDLER(HardFault_Handler) { mcu_fault_reboot(); }
+CH_IRQ_HANDLER(NMI_Handler) { mcu_fault_reboot(); }
+CH_IRQ_HANDLER(MemManage_Handler) { mcu_fault_reboot(); }
+CH_IRQ_HANDLER(BusFault_Handler) { mcu_fault_reboot(); }
+CH_IRQ_HANDLER(UsageFault_Handler) { mcu_fault_reboot(); }
+#endif
+
+/* chSysHalt calls this with interrupts disabled. Other aircraft retain the
+ * default halt behaviour unless they explicitly opt into rebooting. */
+void mcu_chibios_halt(const char *reason)
+{
+  (void)reason;
+#if CHIBIOS_REBOOT_ON_FAULT
+  mcu_fault_reboot();
+#endif
+}
 
 /**
  * @brief RTC backup register values
@@ -291,15 +284,16 @@ static void mcu_deep_sleep(void)
  */
 static void mcu_set_rtcbackup(uint32_t val) {
 #if !defined(STM32F1)
-  if ((RCC->BDCR & RCC_BDCR_RTCEN) == 0) {
-    RCC->BDCR |= STM32_RTCSEL;
-    RCC->BDCR |= RCC_BDCR_RTCEN;
-  }
 #ifdef PWR_CR_DBP
   PWR->CR |= PWR_CR_DBP;
 #else
   PWR->CR1 |= PWR_CR1_DBP;
 #endif
+  if ((RCC->BDCR & RCC_BDCR_RTCEN) == 0) {
+    RCC->BDCR |= STM32_RTCSEL;
+    RCC->BDCR |= RCC_BDCR_RTCEN;
+  }
+
 #endif
 
 #if defined(STM32F1)

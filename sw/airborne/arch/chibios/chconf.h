@@ -809,7 +809,8 @@
  *          the system is halted.
  */
 #define CH_CFG_SYSTEM_HALT_HOOK(reason) {                                   \
-  /* System halt code here.*/                                               \
+  extern void mcu_chibios_halt(const char *);                               \
+  mcu_chibios_halt(reason);                                                 \
 }
 
 /**

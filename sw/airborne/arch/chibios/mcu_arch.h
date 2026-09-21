@@ -35,6 +35,8 @@
 #include <hal.h>
 
 extern void mcu_arch_init(void);
+extern void mcu_fault_reboot(void);
+extern void mcu_chibios_halt(const char *reason);
 
 #if USE_HARD_FAULT_RECOVERY
 extern bool recovering_from_hard_fault;
