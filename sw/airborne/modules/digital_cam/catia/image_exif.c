@@ -420,9 +420,12 @@ static int rewrite_jpeg(FILE *input, FILE *output, const unsigned char *exif_dat
 
 static int save_exif(const char *filename, ExifData *exif);
 
-int image_exif_write_hotspots(const char *filename, const char *information)
+/** @brief Append a tagged freeform analysis record to a JPEG's EXIF user comment.
+ * @param tag Versioned record name, e.g. "LWIR_HOTSPOTS_V1" (shared logic for every
+ * per-backend analysis-result writer; only the tag differs between them). */
+static int write_tagged_comment(const char *filename, const char *tag, const char *information)
 {
-  if (filename == NULL || information == NULL || strlen(information) > 8192) return -1;
+  if (filename == NULL || tag == NULL || information == NULL || strlen(information) > 8192) return -1;
   ExifData *exif = exif_data_new_from_file(filename);
   if (exif == NULL) return -1;
   ExifEntry *description = exif_content_get_entry(exif->ifd[EXIF_IFD_0], EXIF_TAG_IMAGE_DESCRIPTION);
@@ -431,8 +434,14 @@ int image_exif_write_hotspots(const char *filename, const char *information)
     return -1;
   }
   size_t description_length = strnlen((const char *)description->data, description->size);
-  const char separator[] = "\nLWIR_HOTSPOTS_V1\n";
-  size_t length = ASCII_COMMENT_PREFIX_SIZE + description_length + strlen(separator) + strlen(information) + 1;
+  char separator[64];
+  int separator_len = snprintf(separator, sizeof(separator), "\n%s\n", tag);
+  if (separator_len < 0 || (size_t)separator_len >= sizeof(separator)) {
+    exif_data_unref(exif);
+    return -1;
+  }
+  size_t length = ASCII_COMMENT_PREFIX_SIZE + description_length + (size_t)separator_len
+                  + strlen(information) + 1;
   ExifEntry *entry = replace_tag(exif, EXIF_IFD_EXIF, EXIF_TAG_USER_COMMENT, EXIF_FORMAT_UNDEFINED, length);
   if (entry == NULL) {
     exif_data_unref(exif);
@@ -442,9 +451,19 @@ int image_exif_write_hotspots(const char *filename, const char *information)
   size_t offset = 0;
   for (size_t index = 0; index < sizeof(prefix); ++index) entry->data[offset++] = prefix[index];
   for (size_t index = 0; index < description_length; ++index) entry->data[offset++] = description->data[index];
-  for (size_t index = 0; index < strlen(separator); ++index) entry->data[offset++] = (unsigned char)separator[index];
+  for (size_t index = 0; index < (size_t)separator_len; ++index) entry->data[offset++] = (unsigned char)separator[index];
   for (size_t index = 0; index < strlen(information); ++index) entry->data[offset++] = (unsigned char)information[index];
   return save_exif(filename, exif);
+}
+
+int image_exif_write_hotspots(const char *filename, const char *information)
+{
+  return write_tagged_comment(filename, "LWIR_HOTSPOTS_V1", information);
+}
+
+int image_exif_write_vehicle_detections(const char *filename, const char *information)
+{
+  return write_tagged_comment(filename, "AICAM_VEHICLES_V1", information);
 }
 
 int image_exif_write(const char *filename, const union dc_shot_union *shot)

@@ -24,6 +24,11 @@ int image_exif_write_timed(const char *filename, const union dc_shot_union *shot
  * @param information Bounded UTF-8/ASCII analysis record.
  * @return 0 on atomic rewrite success, otherwise -1. */
 int image_exif_write_hotspots(const char *filename, const char *information);
+/** @brief Append structured vehicle-detection evidence (AICam) to JPEG EXIF.
+ * @param filename Existing JPEG.
+ * @param information Bounded UTF-8/ASCII analysis record.
+ * @return 0 on atomic rewrite success, otherwise -1. */
+int image_exif_write_vehicle_detections(const char *filename, const char *information);
 /** @brief Add flight metadata using authoritative capture timing when available.
  * @param filename Existing JPEG to rewrite atomically.
  * @param shot Flight-controller shot payload.
