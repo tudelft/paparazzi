@@ -180,10 +180,14 @@ static void digital_cam_uart_reset_protocol_state(void)
 
 
 #define CameraLinkDev (&((CAMERA_LINK).device))
-#define CameraLinkTransmit(c) CameraLinkDev->put_byte(CameraLinkDev->periph, 0, c)
+/* Each frame producer owns a local camera_fd, initialized to zero for stream
+ * backends. ChibiOS sets it when reserving the UART transmit mutex; preserve it
+ * for every byte and finish the frame with CameraLinkSendMessage(). */
+#define CameraLinkTransmit(c) CameraLinkDev->put_byte(CameraLinkDev->periph, camera_fd, c)
 #define CameraLinkChAvailable() CameraLinkDev->char_available(CameraLinkDev->periph)
 #define CameraLinkGetch() CameraLinkDev->get_byte(CameraLinkDev->periph)
-#define CameraLinkCheckFreeSpace(len) CameraLinkDev->check_free_space(CameraLinkDev->periph, NULL, len)
+#define CameraLinkCheckFreeSpace(len) CameraLinkDev->check_free_space(CameraLinkDev->periph, &camera_fd, len)
+#define CameraLinkSendMessage() CameraLinkDev->send_message(CameraLinkDev->periph, camera_fd)
 
 #ifdef DIGITAL_CAM_UART_SIM_BACKEND
 /**
@@ -684,6 +688,7 @@ void digital_cam_uart_event(void)
 #if PERIODIC_TELEMETRY
 static void send_thumbnails(struct transport_tx *trans, struct link_device *dev)
 {
+  long camera_fd = 0;
   static int cnt = 0;
   if (digital_cam_uart_thumbnails > 0) {
     if (digital_cam_uart_thumbnails == 1) {
@@ -704,6 +709,7 @@ static void send_thumbnails(struct transport_tx *trans, struct link_device *dev)
     if (CameraLinkCheckFreeSpace(CatiaSizeOf(0))) {
       CatiaHeader(CATIA_BUFFER_EMPTY, 0);
       CatiaTrailer();
+      CameraLinkSendMessage();
     }
   }
 }
@@ -771,6 +777,7 @@ static void fill_shot_message(union dc_shot_union *msg)
  */
 static void reply_clock_request(void)
 {
+  long camera_fd = 0;
   if (catia_protocol.payload_len != CATIA_CLOCK_REQUEST_MSG_SIZE) return;
   union catia_clock_reply_union reply = {0};
   reply.data.receive_us = get_sys_time_usec();
@@ -785,6 +792,7 @@ static void reply_clock_request(void)
   CatiaHeader(CATIA_CLOCK_REPLY, CATIA_CLOCK_REPLY_MSG_SIZE);
   for (size_t index = 0; index < sizeof(reply.bin); ++index) CatiaPutUint8(reply.bin[index]);
   CatiaTrailer();
+  CameraLinkSendMessage();
   pose_clock_token = reply.data.request;
   last_clock_reply_us = reply.data.transmit_us;
   clock_reply_sent = true;
@@ -798,6 +806,7 @@ static void reply_clock_request(void)
  */
 static void send_pose_sample(void)
 {
+  long camera_fd = 0;
   const uint32_t sequence = pose_sequence++;
   const bool clocked = pose_clock_token.data.token_low != 0 || pose_clock_token.data.token_high != 0;
   const uint8_t payload_size = clocked ? CATIA_POSE_CLOCKED_MSG_SIZE : CATIA_POSE_SAMPLE_MSG_SIZE;
@@ -834,6 +843,7 @@ static void send_pose_sample(void)
     for (size_t index = 0; index < sizeof(pose_clock_token.bin); ++index) CatiaPutUint8(pose_clock_token.bin[index]);
   }
   CatiaTrailer();
+  CameraLinkSendMessage();
 }
 #endif
 
@@ -846,6 +856,7 @@ static void send_pose_sample(void)
  */
 static bool send_shot_frame(uint8_t camera_id)
 {
+  long camera_fd = 0;
   if (camera_id == CATIA_CAMERA_ALL) {
     if (!CameraLinkCheckFreeSpace(CatiaSizeOf(CATIA_SHOOT_MSG_SIZE))) {
       return false;
@@ -856,6 +867,7 @@ static bool send_shot_frame(uint8_t camera_id)
       CatiaPutUint8(dc_shot_msg.bin[i]);
     }
     CatiaTrailer();
+    CameraLinkSendMessage();
     return true;
   }
   if (!CameraLinkCheckFreeSpace(CatiaSizeOf(CATIA_SHOOT_TARGETED_MSG_SIZE))) {
@@ -869,6 +881,7 @@ static bool send_shot_frame(uint8_t camera_id)
     CatiaPutUint8(msg.bin[i]);
   }
   CatiaTrailer();
+  CameraLinkSendMessage();
   return true;
 }
 
@@ -885,6 +898,7 @@ uint8_t digital_cam_uart_shoot(uint8_t camera_id, bool report)
 
 uint8_t digital_cam_uart_stop(uint8_t camera_id, bool keep_session)
 {
+  long camera_fd = 0;
   if (!CameraLinkCheckFreeSpace(CatiaSizeOf(CATIA_STOP_TARGETED_MSG_SIZE))) {
     return 1;
   }
@@ -898,6 +912,7 @@ uint8_t digital_cam_uart_stop(uint8_t camera_id, bool keep_session)
     CatiaPutUint8(bin[i]);
   }
   CatiaTrailer();
+  CameraLinkSendMessage();
   return 0;
 }
 
@@ -905,6 +920,7 @@ uint8_t digital_cam_uart_stop(uint8_t camera_id, bool keep_session)
 /* Command The Camera */
 void dc_send_command(uint8_t cmd)
 {
+  long camera_fd = 0;
   switch (cmd) {
     case DC_SHOOT:
       if (digital_cam_uart_camera_mask != CATIA_CAMERA_MASK_NONE
@@ -917,6 +933,7 @@ void dc_send_command(uint8_t cmd)
           CatiaPutUint8(msg.bin[index]);
         }
         CatiaTrailer();
+        CameraLinkSendMessage();
         dc_send_shot_position();
       }
       break;

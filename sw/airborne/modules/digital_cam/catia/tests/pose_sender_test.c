@@ -26,6 +26,7 @@ struct test_device {
   int (*check_free_space)(void *, long *, uint16_t);
   void *periph;
   void (*put_byte)(void *, long, uint8_t);
+  void (*send_message)(void *, long);
   int (*char_available)(void *);
   uint8_t (*get_byte)(void *);
 };
@@ -50,6 +51,8 @@ static uint8_t incoming[256];
 static size_t incoming_size, incoming_index;
 static int free_space = 256;
 static uint16_t space_requested;
+static bool tx_locked;
+static unsigned reservations, completions;
 static uint32_t clock_value;
 static unsigned int clock_reads, position_reports, periodic_calls;
 int dc_photo_nr = 20;
@@ -57,7 +60,7 @@ int dc_photo_nr = 20;
 static void put_byte(void *unused, long descriptor, uint8_t value)
 {
   (void)unused;
-  (void)descriptor;
+  assert(tx_locked && descriptor == 1);
   assert(transmitted_size < sizeof(transmitted));
   transmitted[transmitted_size++] = value;
 }
@@ -66,15 +69,26 @@ static uint8_t get_byte(void *unused) { (void)unused; return incoming[incoming_i
 
 static int check_free_space(void *parent, long *descriptor, uint16_t length)
 {
-  assert(parent != NULL && descriptor == NULL);
+  assert(parent != NULL && descriptor != NULL && !tx_locked);
   space_requested = length;
-  return free_space >= length ? free_space : 0;
+  if (free_space < length) return 0;
+  *descriptor = 1;
+  tx_locked = true;
+  ++reservations;
+  return free_space;
+}
+static void send_message(void *parent, long descriptor)
+{
+  assert(parent != NULL && tx_locked && descriptor == 1);
+  tx_locked = false;
+  ++completions;
 }
 static struct uart_periph test_uart = {
   .device = {
     .check_free_space = check_free_space,
     .periph = &test_uart,
     .put_byte = put_byte,
+    .send_message = send_message,
     .char_available = char_available,
     .get_byte = get_byte
   }
@@ -94,6 +108,7 @@ void dc_send_command_common(uint8_t command) { (void)command; }
 
 static struct catia_transport parse_transmitted(void)
 {
+  assert(!tx_locked && reservations == completions);
   struct catia_transport transport = {0};
   for (size_t index = 0; index < transmitted_size; ++index) parse_catia(&transport, transmitted[index]);
   assert(transport.msg_received && transport.error == 0);
@@ -104,9 +119,17 @@ static void request_clock(uint32_t low, uint32_t high, size_t length)
 {
   union catia_clock_request_union token = {.data = {low, high}};
   transmitted_size = 0;
+  long camera_fd = 0;
+  /* Build simulated incoming traffic with ample space, independently of the
+   * capacity configured for the aircraft's reply. */
+  int saved_space = free_space;
+  free_space = 256;
+  assert(CameraLinkCheckFreeSpace(CatiaSizeOf(length)));
+  free_space = saved_space;
   CatiaHeader(CATIA_CLOCK_REQUEST, length);
   for (size_t index = 0; index < length; ++index) CatiaPutUint8(token.bin[index]);
   CatiaTrailer();
+  CameraLinkSendMessage();
   incoming_size = transmitted_size;
   incoming_index = 0;
   for (size_t index = 0; index < incoming_size; ++index) incoming[index] = transmitted[index];
@@ -251,6 +274,14 @@ int main(void)
   }
   assert(transmitted_size == 0 && dc_photo_nr == previous_photo_nr && position_reports == previous_reports);
   assert(uart_cam_ctrl_set_camera(CATIA_CAMERA_AICAM));
+  transmitted_size = 0;
+  free_space = 0;
+  dc_send_command(DC_SHOOT);
+  assert(digital_cam_uart_shoot(CATIA_CAMERA_ALL, false) == 1);
+  assert(digital_cam_uart_shoot(CATIA_CAMERA_AICAM, false) == 1);
+  assert(digital_cam_uart_stop(CATIA_CAMERA_AICAM, false) == 1);
+  assert(transmitted_size == 0);
+  assert(!tx_locked && reservations == completions);
   (void)state;
   puts("Actual FC sender: pose, backpressure, runtime camera selection and legacy commands passed");
 }
