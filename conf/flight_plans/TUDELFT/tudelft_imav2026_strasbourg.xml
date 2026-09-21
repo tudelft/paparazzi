@@ -285,7 +285,8 @@
       <deroute block="Mission.Wait_GPS"/>
     </block>
     <block name="GeoFence">
-      <call_once fun="NavKillThrottle()"/>
+      <!-- <call_once fun="NavKillThrottle()"/> -->
+      <set value="1" var="autopilot.kill_throttle"/>
       <go wp="HOME"/>
     </block>
     <block name="RecoverFromGeoFence">
