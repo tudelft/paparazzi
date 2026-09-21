@@ -18,21 +18,37 @@ pipe, not a tty, so unflushed output would simply never arrive.
 
 This is the live-capture sibling of vehicle_detect_live.py (the standalone desk-test
 script): same model-loading/detection logic, but request-response instead of a free-running
-loop, and it always saves a frame (with a box drawn only when a vehicle was found) because
-CATIA needs exactly one output file per shot regardless of the detection outcome.
+loop, and it always saves a frame because CATIA needs exactly one output file per shot
+regardless of the detection outcome.
 
-The stdout reply only ever carries the single best-confidence box (CATIA's protocol has
-room for one). Every qualifying box for a shot -- not just the best one -- is additionally
-appended as its own row to a detections CSV (see append_detection_rows()), one row per
-vehicle, so a shot with 3 trucks produces 3 rows sharing that image's filename.
+The saved frame is always the plain, undecorated capture -- no box is ever drawn here, so
+every photo under the configured photo directory is a clean flight-record image regardless
+of whether a vehicle was seen. The stdout reply only ever carries the single best-confidence
+box (CATIA's protocol has room for one). Everything past detection -- drawing the box,
+saving an annotated copy and a per-vehicle crop into their own review folders, recording a
+bbox CSV -- is handled downstream by SODA, not here.
+
+Defaults to the IMX500's 2028x1520 binned sensor mode rather than its full 4056x3040
+resolution, because MORA's CMA pool cannot fit the full-resolution buffers: a 4056x3040
+XBGR8888 main stream costs ~49MB per buffer, so the previous 4056x3040/buffer_count=4
+default needed ~197MB against a 256MB CmaTotal that only ever has ~90-120MB free, and
+picamera2 died at startup with "OSError: [Errno 12] Cannot allocate memory". Measured on
+the board: 4056x3040 fits only at buffer_count<=2 (leaving ~20MB CMA headroom, too tight
+to run alongside catia and SODA), while 2028x1520 at buffer_count=3 leaves ~90MB free.
+Detection quality is unaffected -- the on-sensor network always sees its own 320x320 input
+tensor, and the binned mode keeps the full field of view -- and crops still carry 4x the
+pixels of the old 1536x1152 default. Pass --main-size 4056x3040 --buffer-count 2 to trade
+that headroom back for maximum crop detail.
+
+--fps explicitly caps the FrameRate control below the sensor's ceiling for the selected
+mode (~10fps at full resolution): requesting a higher rate makes libcamera pick a smaller,
+binned sensor mode, silently defeating --main-size.
 """
 import argparse
-import csv
 import os
 import sys
 import time
 
-from PIL import ImageDraw, ImageFont
 from picamera2 import Picamera2
 from picamera2.devices import IMX500
 from picamera2.devices.imx500 import NetworkIntrinsics
@@ -53,11 +69,21 @@ def get_args():
     parser.add_argument("--threshold", type=float, default=0.6, help="Detection confidence threshold")
     parser.add_argument("--iou", type=float, default=0.65, help="IoU threshold (kept for parity; NMS is baked on-chip)")
     parser.add_argument("--max-detections", type=int, default=5, help="Cap on detections per frame")
-    parser.add_argument("--main-size", default="1536x1152", help="WxH of the saved main stream")
+    parser.add_argument("--main-size", default="2028x1520",
+                         help="WxH of the saved main stream (default: the IMX500's binned sensor "
+                              "mode, the largest that fits MORA's CMA pool -- see the module "
+                              "docstring for the measured numbers)")
+    parser.add_argument("--buffer-count", type=int, default=3,
+                         help="Camera buffers to allocate. Each costs width*height*4 bytes of "
+                              "CMA, so this trades capture smoothness against the CMA ceiling "
+                              "that --main-size is bounded by")
+    parser.add_argument("--fps", type=int, default=8,
+                         help="FrameRate control for the main stream. Must stay explicitly below "
+                              "the sensor's full-resolution ceiling (~10fps per the rpicam docs) "
+                              "-- otherwise libcamera silently falls back to a smaller, binned "
+                              "sensor mode that can sustain a higher rate, defeating --main-size")
     parser.add_argument("--frame-timeout", type=float, default=2.0,
                          help="Max seconds to wait for a fresh output tensor per request")
-    parser.add_argument("--csv", default=None,
-                         help="Path to the detections CSV (default: detections.csv next to each saved image)")
     return parser.parse_args()
 
 
@@ -94,46 +120,6 @@ def extract_vehicle_hits(np_outputs, metadata, imx500, picam2, intrinsics, vehic
         if len(hits) >= max_detections:
             break
     return hits
-
-
-def load_label_font():
-    try:
-        return ImageFont.load_default(size=32)
-    except TypeError:
-        return ImageFont.load_default()  # older Pillow without the size= param
-
-
-def draw_hits(image, hits, font):
-    draw = ImageDraw.Draw(image)
-    for d in hits:
-        x, y, w, h = d.box
-        draw.rectangle([x, y, x + w, y + h], outline=(0, 255, 0), width=4)
-        label = f"vehicle {d.conf:.2f}"
-        label_origin = (x, max(0, y - 34))
-        label_box = draw.textbbox(label_origin, label, font=font)
-        draw.rectangle(label_box, fill=(0, 255, 0))
-        draw.text(label_origin, label, fill=(0, 0, 0), font=font)
-
-
-DETECTION_CSV_HEADER = ["image", "vehicle_index", "confidence", "box_x", "box_y", "box_w", "box_h"]
-
-
-def append_detection_rows(csv_path, image_filename, hits):
-    """Append one row per detected vehicle in this shot to the shared detections CSV.
-
-    Rows accumulate across the whole run (append mode); the header is written once, the
-    first time csv_path doesn't exist yet. box_x/box_y/box_w/box_h are the same pixel
-    coordinates drawn on the saved image, so a row can be cross-checked against the JPEG
-    by eye.
-    """
-    write_header = not os.path.exists(csv_path)
-    with open(csv_path, "a", newline="") as f:
-        writer = csv.writer(f)
-        if write_header:
-            writer.writerow(DETECTION_CSV_HEADER)
-        for index, hit in enumerate(hits, start=1):
-            x, y, w, h = hit.box
-            writer.writerow([os.path.basename(image_filename), index, f"{hit.conf:.4f}", x, y, w, h])
 
 
 def capture_once(picam2, imx500, intrinsics, vehicle_idx, args, deadline):
@@ -199,10 +185,15 @@ def main():
 
     picam2 = Picamera2(imx500.camera_num)
     width, height = (int(v) for v in args.main_size.split("x"))
+    # args.fps (not intrinsics.inference_rate) drives the main stream's FrameRate control:
+    # the packaged network's own inference_rate is tuned for its on-chip detection tap, not
+    # for what the host-side "main" JPEG stream can sustain at full sensor resolution, and
+    # requesting a rate the full-resolution mode can't hit makes libcamera silently pick a
+    # smaller, binned sensor mode instead (see Notes/Mission 1/Vehicle Detection.md).
     config = picam2.create_preview_configuration(
         main={"size": (width, height)},
-        controls={"FrameRate": intrinsics.inference_rate or 10},
-        buffer_count=4,
+        controls={"FrameRate": args.fps},
+        buffer_count=args.buffer_count,
     )
 
     log("AICAM_SERVER: uploading network firmware to the IMX500 sensor -- observed 17s "
@@ -214,9 +205,10 @@ def main():
     if intrinsics.preserve_aspect_ratio:
         imx500.set_auto_aspect_ratio()
 
-    label_font = load_label_font()
     log(f"AICAM_SERVER: ready (labels={intrinsics.labels}, vehicle_idx={vehicle_idx}, "
-        f"threshold={args.threshold})")
+        f"threshold={args.threshold}, main_size={width}x{height}, fps={args.fps}, "
+        f"buffer_count={args.buffer_count}, "
+        f"main_stream_cma={width * height * 4 * args.buffer_count / 1e6:.0f}MB)")
     reply("AICAM_SERVER_READY")
 
     try:
@@ -232,17 +224,9 @@ def main():
                     log(f"AICAM_SERVER: no frame available for {filename}")
                     continue
 
-                if hits:
-                    draw_hits(image, hits, label_font)
                 image.save(filename)
 
                 if hits:
-                    csv_path = args.csv or os.path.join(os.path.dirname(filename) or ".", "detections.csv")
-                    try:
-                        append_detection_rows(csv_path, filename, hits)
-                    except OSError as exc:
-                        log(f"AICAM_SERVER: failed to write {csv_path}: {exc!r}")
-
                     best = max(hits, key=lambda d: d.conf)
                     x, y, w, h = best.box
                     reply(f"AICAM_SERVER_OK count={len(hits)} conf={best.conf:.4f} "

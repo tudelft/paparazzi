@@ -383,7 +383,10 @@ The native camera suffix avoids colliding with the existing `lwircam` and
 Native CATIA launches the top-level native camera executables. ARM64 CATIA
 uses `/dev/serial0` and `/home/air/digital_cam` runtime paths, with unsuffixed
 program names. Native objects use `.build/project` and ARM64 objects use
-`.build/arm64/project`; JPEG and EXIF objects are also separate. Never override
+`.build/arm64/project`; JPEG and EXIF objects are also separate. `soda` links
+the same vendored JPEG/EXIF object trees CATIA does (needed for its vehicle
+-detection post-processing, see "Vehicle detection post-processing" above),
+not just its own `soda.cpp`/`soda_vehicle_postprocess.cpp`. Never override
 `CC`/`CXX` on the default dual build: use `native` or `arm64` targets instead.
 
 Every `arm64` build appends `-g0` to the optimization flags and runs
@@ -723,9 +726,11 @@ Coordinates have a top-left origin, with x increasing right and y down.
 CATIA writes the flight-provided altitude and attitude into the JPEG EXIF.
 
 The current `soda` verifies that the image is readable and nonempty, then
-dispatches to a placeholder function for the requested camera.
-It does not consume hotspot JSON, geolocate hotspots, or send hotspot results
-back to the flight controller. Hotspot results are read from the JPEG EXIF.
+dispatches to a placeholder function for the requested camera. (Vehicle
+detection is the one exception -- see "Vehicle detection post-processing"
+below.) It does not consume hotspot JSON, geolocate hotspots, or send hotspot
+results back to the flight controller. Hotspot results are read from the JPEG
+EXIF.
 
 ### SODA camera dispatch
 
@@ -765,11 +770,77 @@ the placeholder handlers still operate on the supplied local image, without
 hardware or remote connections. CATIA forwards this flag when running with
 local transport. For example, `./soda --local --lwircam ../Pictures/m000039.jpg`.
 `--` ends option parsing for filenames beginning with
-a dash. The handlers currently print only; they do not perform image analysis.
+a dash. The per-camera handlers themselves still print only; they do not
+perform image analysis. Vehicle-detection post-processing (below) is a
+separate, unconditional step that runs before those handlers, independent of
+which selector was passed.
 
 Run `bash tests/soda_test.sh` from the CATIA directory for CLI tests. The
 `tests/lwir_integration_test.sh` regression also checks all four CATIA-to-SODA
-camera selectors.
+camera selectors. Run `bash tests/soda_vehicle_postprocess_test.sh` for the
+vehicle-detection post-processing tests described below.
+
+### Vehicle detection post-processing
+
+Before dispatching to a per-camera handler, every `soda` invocation checks the
+image's own EXIF for a vehicle-detection hit, regardless of which `--*cam`
+selector CATIA passed (`--aicam` looks identical whether or not
+`--aicam-detect` produced the image, so EXIF is the only reliable signal).
+This is implemented in `soda_vehicle_postprocess.cpp`/`.h`, compiled and
+linked into `soda` alongside `soda.cpp` (see the `$(SODA_OUTPUT)` Makefile
+rule, which links the same vendored libexif/libjpeg object trees `catia`
+does).
+
+Detection itself still happens on-chip, in `vehicle_detect_server.py`, spawned
+by `vehicle_detect_pipe.c` exactly as before; `catia.c`'s
+`image_exif_write_vehicle_detections()` (unchanged) writes the result into
+`EXIF_TAG_USER_COMMENT` as an `AICAM_VEHICLES_V1` record before SODA is
+spawned for that shot. SODA only reads this record back -- it never talks to
+the detection server or the IMX500 sensor itself. If the record is absent, or
+reports `status=ok; count=0` or `status=analysis_failed`, SODA does nothing
+further (the common case for every shot from every backend other than
+`--aicam-detect`).
+
+`vehicle_detect_server.py` never draws on the frame it saves at the requested
+path -- that file is always the plain, undecorated capture, so every photo
+under the configured photo directory is a clean flight-record image regardless
+of the detection outcome. SODA is the only place a detection box ever gets
+burned into a JPEG, and only onto its own copies:
+
+On a genuine hit (`count >= 1`; only the single best-confidence box is ever
+available -- CATIA's own line protocol never carries more than one), SODA:
+
+- Decodes the plain source JPEG once and draws a green rectangle outline (no
+  confidence-text label -- that would need a font-rendering dependency for a
+  label already in the console log and the CSV row) at the detected box.
+- Saves that annotated full frame into a `vehicles_captured/` directory. The
+  original file at the source path is never modified.
+- Crops the detected box (padded 18% on every side, clamped to the frame) from
+  that same annotated buffer into a `tight_crop_vehicles/` directory, so the
+  crop shows the box too.
+- Appends one row (image, count, confidence, box_x, box_y, box_w, box_h) to
+  `vehicles_captured/detections.csv`, safe against multiple SODA processes
+  appending at once.
+
+If the JPEG decode fails, SODA falls back to an unannotated raw copy into
+`vehicles_captured/` (so the hit isn't lost entirely) and skips the crop.
+
+Both directories are created as **siblings of the source image's own
+directory** -- there is no separately configured base directory the way
+`CATIA_VEHICLE_DETECT_PHOTO_DIR` configures where `--aicam-detect` frames are
+saved in the first place. This has a real consequence worth knowing before
+`--aicam-detect` is enabled operationally: since `CATIA_VEHICLE_DETECT_PHOTO_DIR`
+still defaults to `~/Pictures/vehicles_captured/` on MORA, SODA's
+`vehicles_captured/` and `tight_crop_vehicles/` end up **nested inside** that
+same directory (`~/Pictures/vehicles_captured/vehicles_captured/` and
+`~/Pictures/vehicles_captured/tight_crop_vehicles/`), alongside the older,
+unrelated `~/Pictures/vehicles_captured/detections/` copy
+`vehicle_detect_pipe_save_detection_copy()` already makes in C. All three are
+harmless but overlapping; changing `CATIA_VEHICLE_DETECT_PHOTO_DIR`'s default
+back to the plain AI-camera photo directory would flatten this back to a
+single, non-nested `~/Pictures/vehicles_captured/` -- a one-line Makefile
+default, out of scope for the change that introduced SODA's side of this
+pipeline.
 
 ### Application versions
 
@@ -2161,6 +2232,11 @@ resolved directory actually in use.
 | --- | --- | --- | --- |
 | Local or `--test` | `sw/airborne/modules/digital_cam/Pictures/` | `~/Pictures/` | `m000006.jpg` |
 | AI camera | `catia/photos/` | `~/Pictures/` | `a000006.jpg` |
+| AI camera (`--aicam-detect`) | `catia/photos/` | `~/Pictures/vehicles_captured/` | `a000006.jpg` |
+| Vehicle detection copy (on a hit, from catia) | `catia/photos/detections/` | `~/Pictures/vehicles_captured/detections/` | `a000006.jpg` |
+| Vehicle detection copy (on a hit, from SODA) | `catia/photos/vehicles_captured/` | `~/Pictures/vehicles_captured/vehicles_captured/` | `a000006.jpg` |
+| Vehicle detection crop (per vehicle, from SODA) | `catia/photos/tight_crop_vehicles/` | `~/Pictures/vehicles_captured/tight_crop_vehicles/` | `a000006_vehicle01.jpg` |
+| Vehicle detection CSV (from SODA) | `catia/photos/vehicles_captured/detections.csv` | `~/Pictures/vehicles_captured/vehicles_captured/detections.csv` | n/a |
 | LWIR camera | `catia/photos/` | `~/Pictures/` | `l000006.jpg` |
 | CHDK | `catia/photos/` | `~/Pictures/` | `c000006.jpg` |
 | EARcam photo | `catia/photos/` | `~/Pictures/` | `e000006.jpg` |
@@ -2174,6 +2250,7 @@ make -C sw/airborne/modules/digital_cam/catia \
    CATIA_LOCAL_PHOTO_DIR=/data/photos \
    CATIA_AI_CAM_PHOTO_DIR=/data/photos \
    CATIA_AI_CAM_COMMAND=/usr/bin/rpicam-still \
+   CATIA_VEHICLE_DETECT_PHOTO_DIR=/data/vehicles_captured \
     CATIA_LWIR_CAM_PHOTO_DIR=/data/photos \
     CATIA_CHDK_PHOTO_DIR=/data/photos \
    CATIA_LWIR_CAM_COMMAND=/opt/catia/lwircam \
@@ -2291,7 +2368,12 @@ normally only configure CATIA. Run them directly for bench work and analysis.
 | `--help` / `--version` | Print help or build version | Verifies the deployed binary |
 
 **SODA** (`soda`, per-camera post-capture dispatch) takes the image path and
-camera identity from CATIA; it has no user-facing behavior options yet.
+camera identity from CATIA; it has no user-facing behavior options yet beyond
+its own CLI selectors. It does, unconditionally and independent of those
+selectors, check every image's EXIF for a vehicle-detection hit and -- on one
+-- copy it into `vehicles_captured/`, save a padded crop into
+`tight_crop_vehicles/`, and record it in `vehicles_captured/detections.csv`;
+see "Vehicle detection post-processing" above.
 
 **EARcam** (`earcam`, acoustic capture) is configured through CATIA's
 `--earcam*` options above, which set the device, band and simulated source.
@@ -2349,6 +2431,16 @@ For LWIR capture diagnostics, use `catia --lwircam --debug`. If device
 selection succeeds but `uvc_camera_open` reports error `-3`, inspect the raw USB
 node permissions. It must be writable by `plugdev`. The bus/device numbers can
 change after reconnecting; use `lsusb -d 0bda:5840` to find the current node.
+
+### No `vehicles_captured/`, `tight_crop_vehicles/`, or `detections.csv` ever appear
+
+None of this exists unless CATIA was actually launched with `--aicam-detect`
+(not plain `--aicam`) -- that's what starts `vehicle_detect_pipe_init()` and
+the on-chip detection server in the first place. Confirm with
+`pgrep -af catia` or by checking the launching command/service directly.
+`catia.service`'s `ExecStart` does not currently pass `--aicam-detect`; this is
+a known, deliberate gap, not a bug -- enabling it operationally is a separate
+decision from the vehicle-detection pipeline described above.
 Re-run `deploy_mora.sh` or reload `/etc/udev/rules.d/99-tiny1c.rules` if its
 group or mode is wrong.
 

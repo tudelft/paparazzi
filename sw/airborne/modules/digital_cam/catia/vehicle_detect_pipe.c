@@ -258,6 +258,7 @@ int vehicle_detect_pipe_init(const char *unused)
     fprintf(stderr, "VEHICLE_DETECT_PIPE:\tphoto directory is not writable: %s\n", photo_dir);
     return -1;
   }
+
   if (access(CATIA_VEHICLE_DETECT_COMMAND, X_OK) != 0) {
     fprintf(stderr, "VEHICLE_DETECT_PIPE:\tcapture command is not executable: %s: %s\n",
             CATIA_VEHICLE_DETECT_COMMAND, strerror(errno));

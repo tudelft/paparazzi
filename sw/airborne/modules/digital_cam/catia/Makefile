@@ -10,7 +10,7 @@ OUTPUT_SUFFIX ?=
 CROSS_COMPILE ?= aarch64-linux-gnu-
 MORA_INSTALL_DIR ?= /home/air/digital_cam
 MORA_PHOTO_DIR ?= /home/air/Pictures
-MORA_VEHICLE_DETECT_PHOTO_DIR ?= /home/air/Pictures/vehicles_captured
+MORA_VEHICLE_DETECT_PHOTO_DIR ?= /home/air/Pictures
 MORA_DEBUG_DIR ?= /home/air/usher_debug_data
 ARM64_SYSROOT ?=
 ARM64_PKG_CONFIG_LIBDIR ?= $(ARM64_SYSROOT)/usr/lib/aarch64-linux-gnu/pkgconfig:$(ARM64_SYSROOT)/usr/share/pkgconfig
@@ -76,7 +76,7 @@ CFLAGS = $(OPTFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined \
 	-Dnear_horizon_roll_deg=$(NEAR_HORIZON_ROLL_DEG) \
 	-Dnear_horizon_pitch_deg=$(NEAR_HORIZON_PITCH_DEG) \
 	-Dnear_horizon_combined_tilt_deg=$(NEAR_HORIZON_COMBINED_TILT_DEG)
-CXXFLAGS = $(OPTFLAGS) -Wall -Wextra -Werror
+CXXFLAGS = $(OPTFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined
 VENDOR_CFLAGS = $(OPTFLAGS) -w
 DEPFLAGS = -MMD -MP
 LDFLAGS += -static
@@ -198,8 +198,10 @@ $(CONFIG_STAMP): FORCE
 	@cmp -s $@.tmp $@ || cp $@.tmp $@
 	@rm -f $@.tmp
 
-$(SODA_OUTPUT): soda.cpp version.h $(CONFIG_STAMP)
-	$(CXX) $(CPPFLAGS) $(LDFLAGS) $(CXXFLAGS) soda.cpp -o $@
+$(SODA_OUTPUT): soda.cpp soda_vehicle_postprocess.cpp soda_vehicle_postprocess.h version.h path_utils.h \
+		$(LIBEXIF_OBJECTS) $(LIBJPEG_OBJECTS) $(CONFIG_STAMP)
+	$(CXX) $(CPPFLAGS) $(LDFLAGS) $(CXXFLAGS) soda.cpp soda_vehicle_postprocess.cpp \
+	  $(LIBEXIF_OBJECTS) $(LIBJPEG_OBJECTS) -o $@ $(LDLIBS)
 
 # Ground-side: re-render an earlogs/*.csv session into the heatmap JPEG + .geo sidecar.
 ear_heatmap_replay: $(BUILD_DIR)/project/ear_heatmap_replay.o $(BUILD_DIR)/project/ear_cam_pipe.o \

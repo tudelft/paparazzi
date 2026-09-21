@@ -3,7 +3,8 @@ set -euo pipefail
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 temporary=$(mktemp -d /tmp/catia-soda-test.XXXXXXXX)
 trap 'rm -rf "$temporary"' EXIT
-g++ -std=c++11 -Wall -Wextra -Werror "$root/soda.cpp" -o "$temporary/soda"
+make -s -C "$root" soda
+cp "$root/soda" "$temporary/soda"
 image="$root/lwircam/mock_lwir_01.jpg"
 for camera in aicam chdkcam lwircam earcam; do
   [[ $("$temporary/soda" "--$camera" "$image") == "Now I can do nifty stuff for $camera" ]]
@@ -11,8 +12,11 @@ for camera in aicam chdkcam lwircam earcam; do
 done
 [[ $("$temporary/soda" "$image") == 'SODA: I looked at the image. Cool, right?' ]]
 "$temporary/soda" --help > /dev/null
-"$temporary/soda" --local --help | grep -q '^SODA v1\.0 (Git unknown)'
-"$temporary/soda" --version | grep -q '^SODA v1\.0 (Git unknown)'
+# The Makefile build (unlike the old ad hoc "g++ soda.cpp" compile this test used to do)
+# embeds the real checked-out commit via CATIA_GIT_SHA, so accept either that or the
+# no-git-available fallback rather than hardcoding "unknown".
+"$temporary/soda" --local --help | grep -qE '^SODA v1\.0 \(Git ([0-9a-f]{12}|unknown)\)$'
+"$temporary/soda" --version | grep -qE '^SODA v1\.0 \(Git ([0-9a-f]{12}|unknown)\)$'
 [[ $("$temporary/soda" --local --lwircam "$image") == 'Now I can do nifty stuff for lwircam' ]]
 expect_failure()
 {

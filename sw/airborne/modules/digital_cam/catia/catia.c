@@ -1008,11 +1008,6 @@ static void finish_image(const union dc_shot_union *shoot, struct captured_image
          * original, not just the raw frame. No-op when nothing was detected. */
         vehicle_detect_pipe_save_detection_copy(filename);
       } else if (image->camera_id == CATIA_CAMERA_AICAM && aicam_home_enabled) {
-        /** Unlike vehicle detection (EXIF only), the flight controller needs this every
-         * shot to keep the HOME waypoint updated -- the prediction was already produced
-         * by home_vector_pipe_shoot() as part of this same capture; just forward it. The
-         * JPEG itself carries GPS+heading via the EXIF write above for later field
-         * retraining (build_labels_from_exif.py), independent of this UART send. */
         send_msg_home_vector_result();
       }
       printf("Photo take %d\n", shoot->data.nr);
