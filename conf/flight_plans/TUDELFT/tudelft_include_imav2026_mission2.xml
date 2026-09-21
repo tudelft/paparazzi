@@ -114,7 +114,7 @@
     </block>
 
     <!-- nav_survey_polygon_run() returns FALSE after the last line. -->
-    <block name="Run_Survey" group="mission" pre_call="dc_autoshoot = (InsideFire_zone(GetPosX(), GetPosY()) ? DC_AUTOSHOOT_DISTANCE : DC_AUTOSHOOT_STOP)">
+    <block name="Run_Survey" group="mission" pre_call="dc_autoshoot = (InsideFire_zone(GetPosX(), GetPosY()) && GetPosAlt() > GetAltRef() + survey_height - 5? DC_AUTOSHOOT_DISTANCE : DC_AUTOSHOOT_STOP)">
       <call fun="nav_survey_polygon_run()"/>
       <deroute block="Survey_Done"/>
     </block>

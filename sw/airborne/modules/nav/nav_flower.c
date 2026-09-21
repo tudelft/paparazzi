@@ -125,8 +125,8 @@ bool nav_flower_run(void)
     InCircle = false;
   }
 
-  NavVerticalAutoThrottleMode(0); /* No pitch */
-  NavVerticalAltitudeMode(waypoints[Center].a, 0.);
+  // NavVerticalAutoThrottleMode(0); /* No pitch */
+  // NavVerticalAltitudeMode(waypoints[Center].a, 0.);
 
   switch (CFlowerStatus) {
     case Outside:

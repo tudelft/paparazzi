@@ -34,16 +34,17 @@
     <!--<waypoint name="HOME" x="0" y="0" height="2."/>--><!-- LEAVEIN PLACE but it is SET from MAIN flight plan -->
 
     <!-- Moved by the flight plan to the EARcam result; height is the release height. -->
-    <waypoint name="DROP" lat="48.81045" lon="7.85170" height="20.0"/><!-- TODO: Height adjusted for rangefinder 1.5M -->
-    <waypoint name="DROP_START" lat="48.80990" lon="7.85170" height="20.0"/><!-- TODO: Height adjustment based on mission requirements -->
+    <waypoint name="DROP" lat="48.81045" lon="7.85170" height="30.0"/><!-- TODO: Height adjusted for rangefinder 1.5M -->
+    <waypoint name="DROP_START" lat="48.8093124" lon="7.8524046" height="30.0"/><!-- TODO: Height adjustment based on mission requirements -->
+    <waypoint name="DROP_START_FIXED" lat="48.8093124" lon="7.8524046" height="30.0"/><!-- TODO: Height adjustment based on mission requirements -->
     <!-- The given Manequin Research Area MID point of Circle of 25m -->
-    <waypoint name="MRP" lat="48.81050" lon="7.85160"/>
-    <waypoint name="_MRP_EDGE" lat="48.81050" lon="7.85160"/>
+    <waypoint name="MRP" lat="48.81050" lon="7.85160" height="40.0"/>
+    <waypoint name="_MRP_EDGE" lat="48.81050" lon="7.85160" height="40.0"/>
     <!-- Poor Tanguy firefighter with MotionSCOUT, the position to be found and re-positioned by the system -->
     <waypoint name="TANGUY" lat="48.81050" lon="7.85160" height="1.7"/><!-- Zero actually, but in case we make aFP mistake and use this instead of drop -->
     <waypoint name="_TANGUY_EDGE" x="-25.0" y="62.0" height="0."/>
     <!-- USED only for height reference  for the refine listen run MUST BE above treetops -->
-    <waypoint name="REFINE" lat="48.81050" lon="7.85160" height="17"/>
+    <waypoint name="REFINE" lat="48.81050" lon="7.85160" height="40.0"/>
   </waypoints>
 
 
@@ -151,7 +152,7 @@
     <block name="loudspot_wait">
       <exception cond="earcam_result_fresh" deroute="loudspot_apply"/>
       <exception cond="NavBlockTime() @GT 5" deroute="loudspot_apply"/>
-      <circle radius="nav_radius" wp="TANGUY"/>
+      <circle radius="nav_radius" wp="TANGUY" height = "20.0"/>
     </block>
 
     <block name="loudspot_apply">
@@ -190,14 +191,14 @@ extern bool_t compute_alignment(uint8_t w1, uint8_t w2, uint8_t start, uint8_t e
 #define NavDropAligned() Qdr(DegOfRad(nav_drop_qdr_aligned)) -->
 
     <block name="drop_approach">
-      <exception cond="NavApproaching(WP_DROP_START, CARROT)" deroute="drop"/>
-      <go hmode="route" wp="DROP_START"/>
+      <exception cond="NavApproaching(WP_DROP_START_FIXED, CARROT)" deroute="drop"/>
+      <go hmode="route" wp="DROP_START_FIXED"/>
     </block>
     
     <!--TODO Height on Rangefinder 1.5M-->
     <block name="drop" strip_button="Drop" strip_icon="parachute.png">
-      <exception cond="NavApproachingFrom(WP_DROP, WP_DROP_START, 0)" deroute="drop_release"/>
-      <go from="DROP_START" hmode="route" wp="DROP"/>
+      <exception cond="NavApproachingFrom(WP_DROP, WP_DROP_START_FIXED, 0)" deroute="drop_release"/>
+      <go from="DROP_START_FIXED" hmode="route" wp="DROP"/>
     </block>
 
     <block name="drop_release">
