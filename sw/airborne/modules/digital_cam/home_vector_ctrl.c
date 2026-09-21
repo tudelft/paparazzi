@@ -1,28 +1,3 @@
-/*
- * Copyright (C) OpenUAS
- *
- * This file is part of paparazzi.
- *
- * paparazzi is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2, or (at your option)
- * any later version.
- *
- * paparazzi is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with paparazzi; see the file COPYING.  If not, write to
- * the Free Software Foundation, 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
- */
-
-/** @file modules/digital_cam/home_vector_ctrl.c
- *  Visual-homing CNN home-vector following through CATIA over the UART link to MORA.
- */
-
 #include "home_vector_ctrl.h"
 
 #include "modules/digital_cam/uart_cam_ctrl.h"
@@ -47,8 +22,6 @@
 #define HOME_VECTOR_LEG_DISTANCE_M 50.f
 #endif
 
-/** DC_SHOT telemetry for home-vector shots at most this often (0 = every sample); the
- *  UART reply carrying the actual prediction is unaffected and always arrives per shot. */
 #ifndef HOME_VECTOR_REPORT_PERIOD_S
 #define HOME_VECTOR_REPORT_PERIOD_S 1.0f
 #endif
@@ -81,7 +54,6 @@ static bool home_vector_rx_handler(const struct catia_transport *frame)
     result.bin[i] = frame->payload[i];
   }
   if (result.data.status != CATIA_HOME_VECTOR_VALID) {
-    // Keep the last good prediction; only the awaited reply is missing this cycle.
     home_vector_result_fresh = false;
     return true;
   }
@@ -98,13 +70,6 @@ void home_vector_init(void)
   digital_cam_uart_set_rx_handler(home_vector_rx_handler);
 }
 
-/** Rotate the body-frame (forward, right) prediction into world ENU (east, north) using
- * the aircraft's current heading (psi: 0 = North, positive clockwise, standard NED yaw).
- * Derived fresh for Paparazzi's ENU convention -- NOT a port of the Python research
- * pipeline's body_to_world (that one targets a north-up-GeoTIFF-pixel "world frame",
- * x=East/y=South, a different axis convention). Verify against a known heading and a
- * known real-world home direction on the bench before trusting this for a real flight
- * (see the deployment plan's Part 3 verification note). */
 static void body_to_world_enu(float dx_body, float dy_body, float heading_rad,
                               float *east, float *north)
 {
