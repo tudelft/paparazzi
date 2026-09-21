@@ -8,6 +8,7 @@
 #include <limits>
 #include <vector>
 #include "version.h"
+#include "soda_vehicle_postprocess.h"
 
 namespace {
 void print_usage(const char *program)
@@ -155,6 +156,10 @@ int main(int argc, char *argv[])
   }
 
   if (local) std::cerr << "SODA: development-PC mode (--local)" << std::endl;
+  // Every backend's image is checked here, independent of `selected` -- catia's own
+  // "--aicam" selector looks identical whether or not --aicam-detect produced this image,
+  // so the only reliable signal is whatever this image's own EXIF says.
+  soda_process_vehicle_detection(positional[0]);
   if (selected != nullptr) {
     selected->process();
   } else {

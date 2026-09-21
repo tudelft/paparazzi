@@ -32,6 +32,8 @@
 #include <unistd.h>
 
 #include "ai_cam_pipe.h"
+#include "vehicle_detect_pipe.h"
+#include "home_vector_pipe.h"
 #include "camera_speedtest.h"
 #include "ear_cam_pipe.h"
 #include "lwir_cam_pipe.h"
@@ -104,6 +106,8 @@ enum camera_backend_type {
   CAMERA_BACKEND_CHDK,
   CAMERA_BACKEND_LOCAL,
   CAMERA_BACKEND_AI_CAM,
+  CAMERA_BACKEND_AI_CAM_DETECT,
+  CAMERA_BACKEND_AI_CAM_HOME,
   CAMERA_BACKEND_LWIR_CAM
 };
 
@@ -136,6 +140,7 @@ static void handle_received_message(void);
 static void start_shoot_worker(const union dc_shot_union *shoot, uint8_t camera_mask);
 static void handle_targeted_stop(int32_t camera_id);
 static void send_msg_ear_result(const struct ear_loudest_spot *spot);
+static void send_msg_home_vector_result(void);
 static int run_soda(const char *filename, const union dc_shot_union *shoot, int camera_id);
 static void release_worker_slot(void);
 static inline void send_msg_image_buffer(void);
@@ -175,6 +180,15 @@ static bool camera_warned[4];
 #define LWIR_MAX_CONSECUTIVE_FAILURES 3
 static int lwir_consecutive_failures;
 static bool local_capture_only;
+/** True when --aicam-detect was selected: camera id CATIA_CAMERA_AICAM still means "the
+ * AI camera" on the wire (unchanged for the flight controller/NPS), but camera_prepare()
+ * and cameras_deinit() route it to the vehicle-detection backend instead of plain
+ * ai_cam_pipe capture. Plain --aicam behavior is completely unaffected. */
+static bool aicam_detect_enabled;
+/** True when --aicam-home was selected: same wire-compatible routing trick as
+ * aicam_detect_enabled above, but for the visual-homing backend. Mutually exclusive with
+ * aicam_detect_enabled (only one camera backend is selected per CATIA process). */
+static bool aicam_home_enabled;
 static const char *camera_source_image;
 static bool local_bridge_requested;
 static bool local_bridge_owned;
@@ -292,6 +306,8 @@ int main(int argc, char *argv[])
     {"local", no_argument, NULL, 'l'},
     {"chdk", no_argument, NULL, 'c'},
     {"aicam", no_argument, NULL, 'a'},
+    {"aicam-detect", no_argument, NULL, 1002},
+    {"aicam-home", no_argument, NULL, 1003},
     {"lwircam", no_argument, NULL, 'w'},
     {"earcam", no_argument, NULL, 'e'},
     {"earcam-sim", required_argument, NULL, 'E'},
@@ -334,6 +350,20 @@ int main(int argc, char *argv[])
           return 2;
         }
         requested_camera_backend = CAMERA_BACKEND_AI_CAM;
+        break;
+      case 1002:
+        if (requested_camera_backend != CAMERA_BACKEND_UNSELECTED) {
+          fprintf(stderr, "CATIA:\tonly one camera backend may be selected\n");
+          return 2;
+        }
+        requested_camera_backend = CAMERA_BACKEND_AI_CAM_DETECT;
+        break;
+      case 1003:
+        if (requested_camera_backend != CAMERA_BACKEND_UNSELECTED) {
+          fprintf(stderr, "CATIA:\tonly one camera backend may be selected\n");
+          return 2;
+        }
+        requested_camera_backend = CAMERA_BACKEND_AI_CAM_HOME;
         break;
       case 'w':
         if (requested_camera_backend != CAMERA_BACKEND_UNSELECTED) {
@@ -506,9 +536,13 @@ int main(int argc, char *argv[])
   switch (selected_camera_backend) {
     case CAMERA_BACKEND_CHDK: optical_camera_id = CATIA_CAMERA_CHDK; break;
     case CAMERA_BACKEND_AI_CAM: optical_camera_id = CATIA_CAMERA_AICAM; break;
+    case CAMERA_BACKEND_AI_CAM_DETECT: optical_camera_id = CATIA_CAMERA_AICAM; break;
+    case CAMERA_BACKEND_AI_CAM_HOME: optical_camera_id = CATIA_CAMERA_AICAM; break;
     case CAMERA_BACKEND_LWIR_CAM: optical_camera_id = CATIA_CAMERA_LWIRCAM; break;
     default: optical_camera_id = CATIA_CAMERA_ALL; break;
   }
+  aicam_detect_enabled = selected_camera_backend == CAMERA_BACKEND_AI_CAM_DETECT;
+  aicam_home_enabled = selected_camera_backend == CAMERA_BACKEND_AI_CAM_HOME;
 
   if (speedtest_enabled) {
     const char *photo_root = NULL;
@@ -519,6 +553,8 @@ int main(int argc, char *argv[])
         filename_prefix = 'c';
         break;
       case CAMERA_BACKEND_AI_CAM:
+      case CAMERA_BACKEND_AI_CAM_DETECT:
+      case CAMERA_BACKEND_AI_CAM_HOME:
         photo_root = CATIA_AI_CAM_PHOTO_DIR;
         filename_prefix = 'a';
         break;
@@ -852,14 +888,21 @@ static void *handle_msg_shoot(void *ptr)
 
   /* Only the captures hold the camera slot. EXIF and SODA for optical images run
    * after it is released, so the next shot can capture meanwhile. LWIR is finished
-   * inside the slot because its geolocation reads the backend's last-capture state. */
+   * inside the slot because its geolocation reads the backend's last-capture state;
+   * --aicam-detect has the same hazard (vehicle_detect_pipe's last-detection state is
+   * likewise a single static slot, not part of `image`), so it is finished inside too.
+   * --aicam-home has the identical hazard (home_vector_pipe's last-result state), and
+   * additionally must reach send_msg_home_vector_result() before the next shot can
+   * overwrite that slot, so it is finished inside the capture slot as well. */
   struct captured_image images[CATIA_CAMERA_LWIRCAM];
   int image_count_ready = 0;
   for (int camera_id = CATIA_CAMERA_CHDK; camera_id <= CATIA_CAMERA_LWIRCAM && keep_running; ++camera_id) {
     if ((job->camera_mask & (1U << (camera_id - 1))) != 0 && camera_prepare(camera_id) == 0) {
       struct captured_image *image = &images[image_count_ready];
       if (!capture_image(&job->shot, image)) continue;
-      if (image->camera_id == CATIA_CAMERA_LWIRCAM) finish_image(&job->shot, image);
+      bool finish_in_slot = image->camera_id == CATIA_CAMERA_LWIRCAM
+        || (image->camera_id == CATIA_CAMERA_AICAM && (aicam_detect_enabled || aicam_home_enabled));
+      if (finish_in_slot) finish_image(&job->shot, image);
       else ++image_count_ready;
     }
   }
@@ -949,6 +992,23 @@ static void finish_image(const union dc_shot_union *shoot, struct captured_image
             fprintf(stderr, "CATIA-%d:\tfailed to record hotspot analysis failure\n", shoot->data.nr);
           }
         }
+      } else if (image->camera_id == CATIA_CAMERA_AICAM && aicam_detect_enabled) {
+        /** The detection result (if any) was already produced by vehicle_detect_pipe_shoot()
+         * as part of this same capture, unlike LWIR's separate post-capture geolocate() pass;
+         * just format and record it, mirroring image_exif_write_hotspots()'s convention. */
+        char detection_summary[256];
+        vehicle_detect_pipe_last_detection_summary(detection_summary, sizeof(detection_summary));
+        if (image_exif_write_vehicle_detections(filename, detection_summary) != 0) {
+          fprintf(stderr, "CATIA-%d:\tfailed to record vehicle detection result\n", shoot->data.nr);
+        } else if (debug_enabled) {
+          printf("CATIA-%d DEBUG:\tvehicle detection: %s\n", shoot->data.nr, detection_summary);
+        }
+        /** Copy after the EXIF write above (not from vehicle_detect_pipe_shoot()) so the
+         * duplicate in detections/ carries the same flight + detection metadata as the
+         * original, not just the raw frame. No-op when nothing was detected. */
+        vehicle_detect_pipe_save_detection_copy(filename);
+      } else if (image->camera_id == CATIA_CAMERA_AICAM && aicam_home_enabled) {
+        send_msg_home_vector_result();
       }
       printf("Photo take %d\n", shoot->data.nr);
     } else {
@@ -1093,6 +1153,8 @@ static int camera_prepare(int camera_id)
       return -1;
   }
   if (!keep_running) return -1;
+  if (camera_id == CATIA_CAMERA_AICAM && aicam_detect_enabled) type = CAMERA_BACKEND_AI_CAM_DETECT;
+  if (camera_id == CATIA_CAMERA_AICAM && aicam_home_enabled) type = CAMERA_BACKEND_AI_CAM_HOME;
   if (local_capture_only) type = CAMERA_BACKEND_LOCAL;
   if (camera_backend_select(type, test_capture_enabled) != 0) return -1;
   optical_camera_id = camera_id;
@@ -1140,6 +1202,8 @@ static void cameras_deinit(void)
         case CATIA_CAMERA_AICAM: type = CAMERA_BACKEND_AI_CAM; break;
         case CATIA_CAMERA_LWIRCAM: type = CAMERA_BACKEND_LWIR_CAM; break;
       }
+      if (camera_id == CATIA_CAMERA_AICAM && aicam_detect_enabled) type = CAMERA_BACKEND_AI_CAM_DETECT;
+      if (camera_id == CATIA_CAMERA_AICAM && aicam_home_enabled) type = CAMERA_BACKEND_AI_CAM_HOME;
     }
     if (camera_backend_select(type, test_capture_enabled) == 0) camera.deinit();
     camera_initialized[camera_id] = false;
@@ -1261,6 +1325,28 @@ static void send_msg_ear_result(const struct ear_loudest_spot *spot)
   }
 }
 
+/** Unlike send_msg_ear_result() (sent once per explicit solve), this runs after every
+ * --aicam-home shot: the visual-homing CNN predicts a fresh body-frame direction on every
+ * frame, and the flight controller's HOME waypoint should track it continuously. */
+static void send_msg_home_vector_result(void)
+{
+  float dx = 0.f, dy = 0.f, dist = 0.f;
+  bool valid = home_vector_pipe_last_result(&dx, &dy, &dist);
+
+  union catia_home_vector_result_union result;
+  memset(&result, 0, sizeof(result));
+  result.data.status = valid ? CATIA_HOME_VECTOR_VALID : CATIA_HOME_VECTOR_INVALID;
+  if (valid) {
+    result.data.dx_scaled = (int32_t)llround((double)dx * 10000.0);
+    result.data.dy_scaled = (int32_t)llround((double)dy * 10000.0);
+    result.data.dist_mm = (int32_t)llround((double)dist * 1000.0);
+  }
+
+  if (serial_tx_send(CATIA_HOME_VECTOR_RESULT, result.bin, sizeof(result.bin)) != 0) {
+    fprintf(stderr, "CATIA:\thome vector result UART send failed: %s\n", strerror(errno));
+  }
+}
+
 static int run_soda(const char *filename, const union dc_shot_union *shoot, int camera_id)
 {
   const char *soda_application = camera_id == CATIA_CAMERA_CHDK && !test_capture_enabled ? SODA : CATIA_SODA;
@@ -1378,13 +1464,15 @@ static inline void send_msg_status(void)
 static void print_usage(const char *program)
 {
   puts(CATIA_BUILD_VERSION);
-  printf("Usage: %s [--serial DEVICE | --local] [--chdk | --aicam | --lwircam] [--earcam] [--test] [OPTIONS]\n", program);
-  printf("       %s (--chdk | --aicam | --lwircam) --speedtest\n", program);
+  printf("Usage: %s [--serial DEVICE | --local] [--chdk | --aicam | --aicam-detect | --aicam-home | --lwircam] [--earcam] [--test] [OPTIONS]\n", program);
+  printf("       %s (--chdk | --aicam | --aicam-detect | --aicam-home | --lwircam) --speedtest\n", program);
   printf("  --serial DEVICE   serial endpoint (default: %s)\n", CATIA_SERIAL_DEVICE);
   printf("  --local           create local serial bridge %s <-> %s\n",
          CATIA_LOCAL_SIM_DEVICE, CATIA_LOCAL_APP_DEVICE);
   printf("  --chdk            use the CHDK camera backend (default outside local mode)\n");
-  printf("  --aicam           use the AI camera backend\n");
+  printf("  --aicam           use the AI camera backend (plain capture, no detection)\n");
+  printf("  --aicam-detect    use the AI camera backend with on-sensor vehicle detection (camera id 2)\n");
+  printf("  --aicam-home      use the AI camera backend with on-sensor visual-homing inference (camera id 2)\n");
   printf("  --lwircam         use the Tiny 1-C LWIR camera backend\n");
   printf("  --earcam          also run the acoustic earcam backend (camera id 4)\n");
   printf("  --earcam-sim LAT,LON[,DB]  earcam backend with a virtual loudspeaker instead of a microphone\n");
@@ -1422,6 +1510,18 @@ static int camera_backend_select(enum camera_backend_type type, bool test_mode)
     case CAMERA_BACKEND_AI_CAM:
       camera = (struct camera_backend) {
         "aicam", ai_cam_pipe_init, ai_cam_pipe_shoot, ai_cam_pipe_deinit, CATIA_SODA
+      };
+      break;
+    case CAMERA_BACKEND_AI_CAM_DETECT:
+      camera = (struct camera_backend) {
+        "aicam-detect", vehicle_detect_pipe_init, vehicle_detect_pipe_shoot,
+        vehicle_detect_pipe_deinit, CATIA_SODA
+      };
+      break;
+    case CAMERA_BACKEND_AI_CAM_HOME:
+      camera = (struct camera_backend) {
+        "aicam-home", home_vector_pipe_init, home_vector_pipe_shoot,
+        home_vector_pipe_deinit, CATIA_SODA
       };
       break;
     case CAMERA_BACKEND_LWIR_CAM:

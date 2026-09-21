@@ -18,4 +18,5 @@
         "kind": "opam",
         "switch": "default"
     },
+    "cmake.sourceDirectory": "/home/coco-allie-69/paparazzi/sw",
 }

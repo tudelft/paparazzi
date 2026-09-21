@@ -25,13 +25,16 @@ add_executable(gaia ${SRC_FILES})
 target_include_directories(gaia PRIVATE .)
 
 target_compile_options(gaia PRIVATE
-  $<$<CONFIG:Release>:-O2 -DNDEBUG -fdata-sections -ffunction-sections -flto=auto -g0>
+  # -ffat-lto-objects: ld.lld cannot consume GCC's slim (IR-only) LTO
+  # objects, which is what -flto produces by default on toolchains built
+  # with linker-plugin support (as Ubuntu's GCC is). Fat objects carry real
+  # machine code alongside the IR, so lld can link them directly without
+  # the plugin.
+  $<$<CONFIG:Release>:-O2 -DNDEBUG -fdata-sections -ffunction-sections -flto=auto -ffat-lto-objects -g0>
 )
 target_link_options(gaia PRIVATE
   $<$<CONFIG:Release>:-Wl,--gc-sections -Wl,-O1 -Wl,-s -flto=auto>
 )
-
-set_target_properties(gaia PROPERTIES INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
 
 find_program(STRIP_EXECUTABLE strip)
 if(STRIP_EXECUTABLE)

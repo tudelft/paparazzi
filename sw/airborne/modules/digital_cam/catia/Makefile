@@ -10,6 +10,7 @@ OUTPUT_SUFFIX ?=
 CROSS_COMPILE ?= aarch64-linux-gnu-
 MORA_INSTALL_DIR ?= /home/air/digital_cam
 MORA_PHOTO_DIR ?= /home/air/Pictures
+MORA_VEHICLE_DETECT_PHOTO_DIR ?= /home/air/Pictures
 MORA_DEBUG_DIR ?= /home/air/usher_debug_data
 ARM64_SYSROOT ?=
 ARM64_PKG_CONFIG_LIBDIR ?= $(ARM64_SYSROOT)/usr/lib/aarch64-linux-gnu/pkgconfig:$(ARM64_SYSROOT)/usr/share/pkgconfig
@@ -23,6 +24,12 @@ CATIA_SODA ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/soda
 CATIA_LOCAL_PHOTO_DIR ?= ../Pictures
 CATIA_AI_CAM_PHOTO_DIR ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/photos
 CATIA_AI_CAM_COMMAND ?= rpicam-still
+CATIA_VEHICLE_DETECT_COMMAND ?= $(MORA_INSTALL_DIR)/vehicle_detect_server.py
+CATIA_VEHICLE_DETECT_MODEL ?= $(MORA_INSTALL_DIR)/models/vehicle/network.rpk
+CATIA_VEHICLE_DETECT_LABELS ?= $(MORA_INSTALL_DIR)/models/vehicle/labels.txt
+CATIA_VEHICLE_DETECT_PHOTO_DIR ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/photos
+CATIA_HOME_VECTOR_COMMAND ?= $(MORA_INSTALL_DIR)/home_vector_server.py
+CATIA_HOME_VECTOR_MODEL ?= $(MORA_INSTALL_DIR)/models/home_vector/network.rpk
 CATIA_LWIR_CAM_PHOTO_DIR ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/photos
 CATIA_LWIR_CAM_COMMAND ?= $(CURDIR)/lwircam-native
 CATIA_CHDK_PHOTO_DIR ?= $(PAPARAZZI_HOME)/sw/airborne/modules/digital_cam/catia/photos
@@ -51,6 +58,12 @@ CFLAGS = $(OPTFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined \
 	-DCATIA_LOCAL_PHOTO_DIR='"$(CATIA_LOCAL_PHOTO_DIR)"' \
 	-DCATIA_AI_CAM_PHOTO_DIR='"$(CATIA_AI_CAM_PHOTO_DIR)"' \
 	-DCATIA_AI_CAM_COMMAND='"$(CATIA_AI_CAM_COMMAND)"' \
+	-DCATIA_VEHICLE_DETECT_COMMAND='"$(CATIA_VEHICLE_DETECT_COMMAND)"' \
+	-DCATIA_VEHICLE_DETECT_MODEL='"$(CATIA_VEHICLE_DETECT_MODEL)"' \
+	-DCATIA_VEHICLE_DETECT_LABELS='"$(CATIA_VEHICLE_DETECT_LABELS)"' \
+	-DCATIA_VEHICLE_DETECT_PHOTO_DIR='"$(CATIA_VEHICLE_DETECT_PHOTO_DIR)"' \
+	-DCATIA_HOME_VECTOR_COMMAND='"$(CATIA_HOME_VECTOR_COMMAND)"' \
+	-DCATIA_HOME_VECTOR_MODEL='"$(CATIA_HOME_VECTOR_MODEL)"' \
 	-DCATIA_LWIR_CAM_PHOTO_DIR='"$(CATIA_LWIR_CAM_PHOTO_DIR)"' \
 	-DCATIA_LWIR_CAM_COMMAND='"$(CATIA_LWIR_CAM_COMMAND)"' \
 	-DCATIA_CHDK_PHOTO_DIR='"$(CATIA_CHDK_PHOTO_DIR)"' \
@@ -63,12 +76,14 @@ CFLAGS = $(OPTFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined \
 	-Dnear_horizon_roll_deg=$(NEAR_HORIZON_ROLL_DEG) \
 	-Dnear_horizon_pitch_deg=$(NEAR_HORIZON_PITCH_DEG) \
 	-Dnear_horizon_combined_tilt_deg=$(NEAR_HORIZON_COMBINED_TILT_DEG)
-CXXFLAGS = $(OPTFLAGS) -Wall -Wextra -Werror
+CXXFLAGS = $(OPTFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined
 VENDOR_CFLAGS = $(OPTFLAGS) -w
 DEPFLAGS = -MMD -MP
 LDFLAGS += -static
 LDLIBS = -lpthread -lm
 CFILES = ai_cam_pipe.c \
+	 vehicle_detect_pipe.c \
+	 home_vector_pipe.c \
 	 camera_speedtest.c \
 	 ear_cam_pipe.c \
 	 ear_heatmap.c \
@@ -119,6 +134,7 @@ arm64:
 	  CATIA_SODA='$(MORA_INSTALL_DIR)/soda' \
 	  CATIA_LOCAL_PHOTO_DIR='$(MORA_PHOTO_DIR)' \
 	  CATIA_AI_CAM_PHOTO_DIR='$(MORA_PHOTO_DIR)' \
+	  CATIA_VEHICLE_DETECT_PHOTO_DIR='$(MORA_VEHICLE_DETECT_PHOTO_DIR)' \
 	  CATIA_LWIR_CAM_PHOTO_DIR='$(MORA_PHOTO_DIR)' \
 	  CATIA_LWIR_CAM_COMMAND='$(MORA_INSTALL_DIR)/lwircam' \
 	  CATIA_CHDK_PHOTO_DIR='$(MORA_PHOTO_DIR)' \
@@ -161,6 +177,12 @@ $(CONFIG_STAMP): FORCE
 	  'CATIA_LOCAL_PHOTO_DIR=$(CATIA_LOCAL_PHOTO_DIR)' \
 	  'CATIA_AI_CAM_PHOTO_DIR=$(CATIA_AI_CAM_PHOTO_DIR)' \
 	  'CATIA_AI_CAM_COMMAND=$(CATIA_AI_CAM_COMMAND)' \
+	  'CATIA_VEHICLE_DETECT_COMMAND=$(CATIA_VEHICLE_DETECT_COMMAND)' \
+	  'CATIA_VEHICLE_DETECT_MODEL=$(CATIA_VEHICLE_DETECT_MODEL)' \
+	  'CATIA_VEHICLE_DETECT_LABELS=$(CATIA_VEHICLE_DETECT_LABELS)' \
+	  'CATIA_VEHICLE_DETECT_PHOTO_DIR=$(CATIA_VEHICLE_DETECT_PHOTO_DIR)' \
+	  'CATIA_HOME_VECTOR_COMMAND=$(CATIA_HOME_VECTOR_COMMAND)' \
+	  'CATIA_HOME_VECTOR_MODEL=$(CATIA_HOME_VECTOR_MODEL)' \
 	  'CATIA_LWIR_CAM_PHOTO_DIR=$(CATIA_LWIR_CAM_PHOTO_DIR)' \
 	  'CATIA_LWIR_CAM_COMMAND=$(CATIA_LWIR_CAM_COMMAND)' \
 	  'CATIA_CHDK_PHOTO_DIR=$(CATIA_CHDK_PHOTO_DIR)' \
@@ -176,8 +198,10 @@ $(CONFIG_STAMP): FORCE
 	@cmp -s $@.tmp $@ || cp $@.tmp $@
 	@rm -f $@.tmp
 
-$(SODA_OUTPUT): soda.cpp version.h $(CONFIG_STAMP)
-	$(CXX) $(CPPFLAGS) $(LDFLAGS) $(CXXFLAGS) soda.cpp -o $@
+$(SODA_OUTPUT): soda.cpp soda_vehicle_postprocess.cpp soda_vehicle_postprocess.h version.h path_utils.h \
+		$(LIBEXIF_OBJECTS) $(LIBJPEG_OBJECTS) $(CONFIG_STAMP)
+	$(CXX) $(CPPFLAGS) $(LDFLAGS) $(CXXFLAGS) soda.cpp soda_vehicle_postprocess.cpp \
+	  $(LIBEXIF_OBJECTS) $(LIBJPEG_OBJECTS) -o $@ $(LDLIBS)
 
 # Ground-side: re-render an earlogs/*.csv session into the heatmap JPEG + .geo sidecar.
 ear_heatmap_replay: $(BUILD_DIR)/project/ear_heatmap_replay.o $(BUILD_DIR)/project/ear_cam_pipe.o \

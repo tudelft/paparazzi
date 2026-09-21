@@ -165,13 +165,17 @@ foreach(app plotter logplotter play)
     )
     target_include_directories(${app} PRIVATE logalizer ground_segment)
     target_compile_options(${app} PRIVATE
-        $<$<CONFIG:Release>:-O2 -DNDEBUG -fdata-sections -ffunction-sections -flto=auto -g0>
+        # -ffat-lto-objects: ld.lld cannot consume GCC's slim (IR-only) LTO
+        # objects, which is what -flto produces by default on toolchains
+        # built with linker-plugin support (as Ubuntu's GCC is). Fat objects
+        # carry real machine code alongside the IR, so lld can link them
+        # directly without the plugin.
+        $<$<CONFIG:Release>:-O2 -DNDEBUG -fdata-sections -ffunction-sections -flto=auto -ffat-lto-objects -g0>
     )
     target_link_options(${app} PRIVATE
         $<$<CONFIG:Release>:-Wl,--gc-sections -Wl,-O1 -Wl,-s -flto=auto>
     )
     set_target_properties(${app} PROPERTIES
-        INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE
         # Emit the executable beside its sources (e.g. sw/logalizer/play).
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/logalizer"
     )
