@@ -9,6 +9,21 @@
 
 <!-- ******************************* WAYPOINTS ***************************** -->
   <waypoints>
+    <!-- Launch / land infrastructure. AF is where the final glide STARTS,
+         TD where it touches down. TD is the centre of the official
+         "Precision landing Fixedwing zone" (5 x 20 m box, long axis
+         353/173 deg); the final is flown SOUTHBOUND (173 deg): AF 200 m
+         north of TD at 20 m AGL (~5.7 deg glide). AF is 15 m inside the west
+         fence, so Land AF-TD uses a NEGATIVE radius (baseleg circle east of
+         AF). For wind, drag AF round TD in the GCS. -->
+    <waypoint name="CLIMB" x="-13.193" y="276.124"/>
+    <!-- height, not alt: 20 m above the main plan's ground_alt. -->
+    <waypoint name="AF" x="-34.464" y="292.028" height="20."/>
+    <waypoint name="_BASELEG" x="-4.723" y="295.562"/>
+    <!-- height="0": on the ground, otherwise final climbs from AF to TD. -->
+    <waypoint name="TD" x="-10.839" y="93.428" height="0"/>
+    <waypoint name="STDBY" x="63.237" y="381.329"/>
+  
     <!-- ALL waypoints for SECTORS are defined in the SW, NW, NE, SE -->
 
     <!-- Fixed-wing launch point (48.8086670N 7.8517466E, origin of the MS plans), inside Takeoff_Landing_zone_Fixedwing.
@@ -228,11 +243,17 @@
     <!-- <include name="Testing" procedure="tudelft_include_imav2026_testing.xml"/> -->
 
 <!-- ************** SAFETY ****************************-->
-    <!-- <include name="Safety" procedure="tudelft_include_imav2026_safety.xml"/> -->
+
+    <include name="Common" procedure="tudelft_include_imav2026_common.xml"/>
 <!-- ************** MISSSION 1 ****************************-->   
-    <include name="Mission" procedure="tudelft_include_imav2026_mission1.xml"/>
+    <include name="Mission1" procedure="tudelft_include_imav2026_mission1.xml">
+      <with from="Common.Land_AF_TD" to="Common.Land_AF_TD"/>
+    </include>
 <!-- ************** MISSSION 2 ****************************-->
-    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission2.xml"/> -->
+    <include name="Mission2" procedure="tudelft_include_imav2026_mission2.xml">
+      <with from="Common.Land_AF_TD" to="Common.Land_AF_TD"/>
+      <with from="Common.land" to="Common.land"/>
+    </include>
 <!-- ************** MISSSION 3 ****************************-->
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission3.xml"/> -->
 <!-- ************** MISSSION 4 ****************************-->
@@ -256,7 +277,7 @@
 
     <!-- Hard GeoFence -->
     <!-- TODO Maybe ADD aditional exception with 2 sec timer here just to be sure to avoid position GPS spikes or some other jitter issues -->
-  <exception cond="((!InsideGeofence(GetPosX(), GetPosY()))) @AND gps_has_been_good()" deroute="GeoFence"/>
+  <exception cond="((!InsideGeofence(GetPosX(), GetPosY()))) @AND gps_has_been_good() @AND nav_block > IndexOfBlock('Common.Holding_point')" deroute="Common.GeoFence"/>
 
     <!-- Failure of Autopilot -->
     <!-- FTD will failsafe if no commands arrive during 100ms -->
@@ -275,22 +296,14 @@
     -->
 
     <!-- Case of loss of GPS AND loss of datalink -->
-    <exception cond="RCLost() @AND datalink_time @GT 180 @AND !(nav_block ==IndexOfBlock('Mission.land')) @AND !(nav_block ==IndexOfBlock('Mission.final')) @AND !(nav_block ==IndexOfBlock('Mission.flare'))" deroute="Mission.Land_AF_TD"/>
-    <exception cond="!GpsFixValid()" deroute="GeoFence"/>
+    <exception cond="RCLost() @AND datalink_time @GT 180 @AND !(nav_block ==IndexOfBlock('Common.land')) @AND !(nav_block ==IndexOfBlock('Common.final')) @AND !(nav_block ==IndexOfBlock('Common.flare'))" deroute="Common.Land_AF_TD"/>
+    <exception cond="!GpsFixValid()" deroute="Common.GeoFence"/>
 
   </exceptions>
 
   <blocks>
     <block name="Boot">
-      <deroute block="Mission.Wait_GPS"/>
-    </block>
-    <block name="GeoFence">
-      <!-- <call_once fun="NavKillThrottle()"/> -->
-      <set value="1" var="autopilot.kill_throttle"/>
-      <go wp="HOME"/>
-    </block>
-    <block name="RecoverFromGeoFence">
-    <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()" wp="STDBY"/>
+      <deroute block="Common.Wait_GPS"/>
     </block>
   </blocks>
 
