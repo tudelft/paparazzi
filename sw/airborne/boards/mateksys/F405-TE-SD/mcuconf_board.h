@@ -45,7 +45,9 @@
 #define STM32_PLS                           STM32_PLS_LEV0
 #define STM32_BKPRAM_ENABLE                 FALSE
 #define STM32_HSI_ENABLED                   TRUE
+#ifndef STM32_LSI_ENABLED
 #define STM32_LSI_ENABLED                   FALSE
+#endif
 #define STM32_HSE_ENABLED                   TRUE
 #define STM32_LSE_ENABLED                   FALSE
 #define STM32_CLOCK48_REQUIRED              TRUE

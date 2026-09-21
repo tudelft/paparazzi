@@ -46,6 +46,7 @@
     <!--configure name="CH_OPT" value="0 -g -ggdb3"/-->
 
     <target name="ap" board="matek_f405_te_sd">
+      <module name="watchdog"/>
       <!-- <configure name="USE_SMART_BUILD" value="yes"/> -->
       <!--<define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>-->
       <define name="DEBUG" value="FALSE"/><!--Set to TRUE for debug output -->

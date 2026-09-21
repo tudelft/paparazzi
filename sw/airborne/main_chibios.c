@@ -56,6 +56,10 @@
 
 #include "generated/modules.h"
 
+#if USE_AP_WATCHDOG
+#include "modules/core/watchdog.h"
+#endif
+
 #ifndef THD_WORKING_AREA_MAIN
 #define THD_WORKING_AREA_MAIN 8192
 #endif
@@ -124,10 +128,17 @@ static void thd_ap(void *arg)
   (void) arg;
   chRegSetThreadName("AP");
 
+#if USE_AP_WATCHDOG
+  watchdog_start();
+#endif
+
   while (!chThdShouldTerminateX()) {
     systime_t t = chVTGetSystemTime();
     Call(periodic());
     Call(event());
+#if USE_AP_WATCHDOG
+    watchdog_feed();
+#endif
     // The sleep time is computed to have a polling interval of
     // 1e6 / CH_CFG_ST_FREQUENCY. If time is passed, thanks to the
     // "Windowed" sleep function, the execution is not blocked until

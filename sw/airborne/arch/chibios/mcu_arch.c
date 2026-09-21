@@ -41,6 +41,10 @@
 
 #include "mcu_periph/ram_arch.h"
 
+#if USE_AP_WATCHDOG
+#include "modules/core/watchdog.h"
+#endif
+
 #if defined(STM32H7XX)
 typedef struct {
   uint32_t              *init_text_area;
@@ -154,6 +158,10 @@ static void mcu_set_rtcbackup(uint32_t val);
  */
 void mcu_arch_init(void)
 {
+#if USE_AP_WATCHDOG
+  watchdog_capture_reset_cause();
+#endif
+
   /*
    * System initializations.
    * - HAL initialization, this also initializes the configured device drivers

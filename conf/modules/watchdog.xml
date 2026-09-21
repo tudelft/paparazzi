@@ -1,0 +1,46 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="watchdog" dir="core" task="actuators">
+  <doc>
+    <description>
+      Opt-in STM32F4 ChibiOS AP hang watchdog. Bench validation is required
+      before flight: a reset is not an in-flight recovery strategy.
+
+      main_chibios starts IWDG after application initialization. The actuator
+      task supplies a heartbeat; only completion of the AP periodic and event
+      pass consumes it and reloads IWDG. No timer, interrupt or separate thread
+      feeds the watchdog. It does not verify sensor freshness or control validity.
+
+      The nominal timeout is 2000 ms at the nominal LSI frequency. Actual reset
+      timing varies with the MCU's LSI tolerance. Cold-start initialization is
+      not covered. IWDG cannot be stopped once started. Shutdown, sleep, firmware
+      upload and debugger behavior must be checked on the real board.
+
+      DEBUG_VECT named watchdog reports x = RCC reset flags shifted right 24
+      bits (bit 5 is IWDG), y = watchdog started (0 or 1), z = nominal timeout
+      in ms. Flags are captured before halInit, then cleared for the next boot.
+      A bootloader may modify those flags before the application sees them.
+
+      This module does not restore mission state or change throttle/arming
+      policy. Hardware outputs during reset and bootloader execution are not
+      controlled by this module. Hard-fault recovery is not supported together
+      with this module. See doc/watchdog_adam.md for bench acceptance checks.
+    </description>
+    <define name="WATCHDOG_TIMEOUT_MS" value="2000" description="Nominal IWDG timeout in ms (250 to 8192 at 32 kHz LSI)"/>
+  </doc>
+  <dep>
+    <depends>system_core</depends>
+  </dep>
+  <header>
+    <file name="watchdog.h"/>
+  </header>
+  <init fun="watchdog_init()"/>
+  <periodic fun="watchdog_periodic()"/>
+  <makefile target="ap" firmware="fixedwing">
+    <define name="USE_AP_WATCHDOG" value="1"/>
+    <define name="HAL_USE_WDG" value="TRUE"/>
+    <define name="STM32_WDG_USE_IWDG" value="TRUE"/>
+    <define name="STM32_LSI_ENABLED" value="TRUE"/>
+    <file_arch name="watchdog.c"/>
+  </makefile>
+</module>
