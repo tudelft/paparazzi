@@ -660,12 +660,23 @@ void digital_cam_uart_event(void)
           break;
 #endif
         case CATIA_STATUS:
+          /* A valid checksum only proves transport integrity. Require the complete
+           * fixed-layout status before copying, otherwise stale parser-buffer bytes
+           * beyond a short frame could become flight-controller state. */
+          if (catia_protocol.payload_len != CATIA_STATUS_MSG_SIZE) {
+            break;
+          }
           for (int i = 0; i < CATIA_STATUS_MSG_SIZE; i++) {
             catia_status_msg.bin[i] = catia_protocol.payload[i];
           }
           digital_cam_uart_status = catia_status_msg.data.shots;
           break;
         case CATIA_PAYLOAD:
+          /* Thumbnail packets have one fixed wire size. Reject both short and long
+           * variants so this fixed-size copy only consumes bytes from the current frame. */
+          if (catia_protocol.payload_len != CATIA_PAYLOAD_MSG_SIZE) {
+            break;
+          }
           for (int i = 0; i < CATIA_PAYLOAD_MSG_SIZE; i++) {
             thumbs[thumb_pointer][i] = catia_protocol.payload[i];
           }
