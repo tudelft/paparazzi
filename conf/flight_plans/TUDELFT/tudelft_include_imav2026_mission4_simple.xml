@@ -83,6 +83,7 @@
 
     <block name="find_loudspot_scan">
       <call_once fun="nav_flower_setup(WP_MRP, WP__MRP_EDGE)"/>
+      <!-- warning: 50 seconds no throttle... how does it recover height? -->
       <call break="true" fun="nav_flower_run()" until="NavBlockTime() @GT 50"/>
       <deroute block="find_loudspot_finish"/>
     </block>
