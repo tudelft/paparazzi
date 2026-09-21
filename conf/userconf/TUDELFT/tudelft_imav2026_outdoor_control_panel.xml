@@ -109,7 +109,7 @@
     <session name="Local PC CATIA mock test">
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
-        <arg flag="-a" constant="Adam"/>
+        <arg flag="-a" constant="@AIRCRAFT"/>
       </program>
       <program name="Data Link">
         <arg flag="-udp"/>
@@ -130,7 +130,7 @@
     <session name="MORA Camera Test">
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
-        <arg flag="-a" constant="Easystar_3"/>
+        <arg flag="-a" constant="@AIRCRAFT"/>
       </program>
       <program name="Data Link">
         <arg flag="-udp"/>
@@ -154,7 +154,7 @@
     <session name="Remote2Catia">
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
-        <arg flag="-a" constant="Easystar_3"/>
+        <arg flag="-a" constant="@AIRCRAFT"/>
       </program>
       <program name="Data Link">
         <arg flag="-udp"/>
@@ -174,7 +174,7 @@
     <session name="SIM IMAV2026 Outdoor Competition">
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
-        <arg flag="-a" constant="Easystar_3"/>
+        <arg flag="-a" constant="@AIRCRAFT"/>
       </program>
       <program name="Data Link">
         <arg flag="-udp"/>
@@ -196,7 +196,7 @@
     <session name="SIM Test Drop">
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
-        <arg flag="-a" constant="Easystar_3"/>
+        <arg flag="-a" constant="@AIRCRAFT"/>
       </program>
       <program name="Data Link">
         <arg flag="-udp"/>
@@ -218,7 +218,7 @@
     <session name="SIM test ES3">
       <program name="Simulator">
         <arg flag="-t" constant="sim"/>
-        <arg flag="-a" constant="Easystar_3"/>
+        <arg flag="-a" constant="@AIRCRAFT"/>
       </program>
       <program name="Data Link">
         <arg flag="-udp"/>
@@ -242,7 +242,7 @@
     <session name="Sim IMAV2026 Outdoor Competition">
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
-        <arg flag="-a" constant="Easystar_3"/>
+        <arg flag="-a" constant="@AIRCRAFT"/>
       </program>
       <program name="Data Link">
         <arg flag="-udp"/>
@@ -265,7 +265,7 @@
     <session name="Simulate IMAV2026 outdoor competition">
       <program name="Simulator">
         <arg flag="-t" constant="nps"/>
-        <arg flag="-a" constant="Adam"/>
+        <arg flag="-a" constant="@AIRCRAFT"/>
       </program>
       <program name="Data Link">
         <arg flag="-udp"/>

@@ -23,4 +23,10 @@ for name in catia soda lwircam earcam; do
   grep -Fq "$root/$name-arm64 test@mock:/home/air/digital_cam/.deploy.TEST1234/$name" "$DEPLOY_TEST_LOG"
 done
 ! grep '^rsync ' "$DEPLOY_TEST_LOG" | grep -q -- '-native'
+for path in \
+  vehicle_detect_server.py \
+  labels.txt \
+  network.rpk; do
+  grep -Fq "$root/./$path" "$DEPLOY_TEST_LOG"
+done
 printf 'ARM64 deployment upload mapping tests passed\n'
