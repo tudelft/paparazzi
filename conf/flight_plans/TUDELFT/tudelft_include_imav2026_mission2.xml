@@ -57,7 +57,7 @@
   <waypoints>
     <!-- Launch / climb / hold. HOME is the main plan's fixed-wing launch point. -->
     <waypoint name="CLIMB" x="35.077" y="293.862" height="80."/>
-    <waypoint name="_STDBY" x="15.077" y="353.862" height="80."/>
+    <waypoint name="STDBY" x="15.077" y="353.862" height="80."/>
 
     <!-- Landing, same as Mission 1: TD is the centre of the official
          "Precision landing Fixedwing zone", final flown SOUTHBOUND from AF
@@ -159,7 +159,7 @@
     <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="home">
       <call_once fun="dc_stop()"/>
       <set var="v_ctl_auto_airspeed_setpoint" value="survey_airspeed"/>
-      <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()+survey_height" wp="_STDBY"/>
+      <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()+survey_height" wp="STDBY"/>
     </block>
 
     <!-- ── Landing ──────────────────────────────────────────────────────── -->

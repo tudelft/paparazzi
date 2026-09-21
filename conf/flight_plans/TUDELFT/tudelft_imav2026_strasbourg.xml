@@ -288,7 +288,7 @@
       <go wp="HOME"/>
     </block>
     <block name="RecoverFromGeoFence">
-    <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()" wp="_STDBY"/>
+    <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()" wp="STDBY"/>
     </block>
   </blocks>
 

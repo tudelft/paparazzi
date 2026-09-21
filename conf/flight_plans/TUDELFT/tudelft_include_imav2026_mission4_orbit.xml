@@ -1151,7 +1151,7 @@ static inline float mission1_holding_delay(void) { return 5; }
     <waypoint name="_BASELEG" x="1.077" y="331.462"/>
     <waypoint height="0" name="TD" x="-14.973" y="128.183"/>
     <waypoint name="_HERE" x="-24.923" y="233.862"/>
-    <waypoint name="_STDBY" x="63.237" y="381.329"/>
+    <waypoint name="STDBY" x="63.237" y="381.329"/>
     <waypoint name="SEARCH_CENTER" lat="48.810232" lon="7.851804" height="45."/>
     <waypoint name="TRUE_SOUND_SOURCE" x="-25.123" y="416.162"/>
     <waypoint name="DROP_POINT" x="-24.923" y="233.862"/>
@@ -1306,7 +1306,7 @@ static inline float mission1_holding_delay(void) { return 5; }
       <set var="v_ctl_auto_airspeed_setpoint" value="12."/>
       <set var="v_ctl_max_climb" value="V_CTL_ALTITUDE_MAX_CLIMB"/>
       <while cond="TRUE">
-        <go approaching_time="0" height="70." wp="_STDBY"/>
+        <go approaching_time="0" height="70." wp="STDBY"/>
       </while>
     </block>
 

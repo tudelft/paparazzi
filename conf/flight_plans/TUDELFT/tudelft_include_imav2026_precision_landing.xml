@@ -122,7 +122,7 @@
     <block key="Ctrl+a" name="wait360" strip_button="Wait360" strip_icon="home.png" group="home">
       <call_once fun="dc_stop()"/>
       <set var="v_ctl_auto_airspeed_setpoint" value="mapping_airspeed"/>
-      <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()+mapping_height" wp="_STDBY"/>
+      <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()+mapping_height" wp="STDBY"/>
     </block>
   </blocks>
 </procedure>
