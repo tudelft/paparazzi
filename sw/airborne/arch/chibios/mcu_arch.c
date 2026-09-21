@@ -67,41 +67,6 @@ static void mpuConfigureNonCachedRam(void);
 #endif
 IN_BCKP_SECTION(volatile bool hard_fault);
 
-/*
- * Set hard fault handlers to trigger a soft reset
- * This will set a flag that can be tested at startup
- */
-
-CH_IRQ_HANDLER(HardFault_Handler)
-{
-  hard_fault = true;
-  mcu_reboot(MCU_REBOOT_FAST);
-}
-
-CH_IRQ_HANDLER(NMI_Handler)
-{
-  hard_fault = true;
-  mcu_reboot(MCU_REBOOT_FAST);
-}
-
-CH_IRQ_HANDLER(MemManage_Handler)
-{
-  hard_fault = true;
-  mcu_reboot(MCU_REBOOT_FAST);
-}
-
-CH_IRQ_HANDLER(BusFault_Handler)
-{
-  hard_fault = true;
-  mcu_reboot(MCU_REBOOT_FAST);
-}
-
-CH_IRQ_HANDLER(UsageFault_Handler)
-{
-  hard_fault = true;
-  mcu_reboot(MCU_REBOOT_FAST);
-}
-
 bool recovering_from_hard_fault;
 
 // select correct register
@@ -132,6 +97,34 @@ bool recovering_from_hard_fault;
 
 #endif /* USE_HARD_FAULT_RECOVERY */
 
+/** Reset from fault context without acquiring RTOS locks. */
+void mcu_fault_reboot(void)
+{
+#if USE_HARD_FAULT_RECOVERY
+  hard_fault = true;
+#endif
+  mcu_reboot(MCU_REBOOT_FAST);
+}
+
+/* A single set of handlers also supports existing recovery-mode users. */
+#if USE_HARD_FAULT_RECOVERY || CHIBIOS_REBOOT_ON_FAULT
+CH_IRQ_HANDLER(HardFault_Handler) { mcu_fault_reboot(); }
+CH_IRQ_HANDLER(NMI_Handler) { mcu_fault_reboot(); }
+CH_IRQ_HANDLER(MemManage_Handler) { mcu_fault_reboot(); }
+CH_IRQ_HANDLER(BusFault_Handler) { mcu_fault_reboot(); }
+CH_IRQ_HANDLER(UsageFault_Handler) { mcu_fault_reboot(); }
+#endif
+
+/* chSysHalt calls this with interrupts disabled. Other aircraft retain the
+ * default halt behaviour unless they explicitly opt into rebooting. */
+void mcu_chibios_halt(const char *reason)
+{
+  (void)reason;
+#if CHIBIOS_REBOOT_ON_FAULT
+  mcu_fault_reboot();
+#endif
+}
+
 /**
  * @brief RTC backup register values
  */
@@ -149,11 +142,64 @@ static void mcu_deep_sleep(void);
 static void mcu_set_rtcbackup(uint32_t val);
 #endif
 
+#if CHIBIOS_USE_WATCHDOG
+#if !defined(STM32F4XX)
+#error "CHIBIOS_USE_WATCHDOG currently supports STM32F4 only"
+#endif
+#ifndef CHIBIOS_WATCHDOG_TIMEOUT_MS
+#define CHIBIOS_WATCHDOG_TIMEOUT_MS 1000
+#endif
+/* F4 IWDG: nominal 32 kHz LSI, prescaler 64, 12-bit reload register.
+ * Actual expiry varies with LSI tolerance. This is not a precision timer. */
+#define MCU_WATCHDOG_TICKS (CHIBIOS_WATCHDOG_TIMEOUT_MS / 2)
+#if MCU_WATCHDOG_TICKS < 1 || MCU_WATCHDOG_TICKS > 4096
+#error "Watchdog timeout must be between 2 and 8192 ms"
+#endif
+#if !defined(USE_RTC_BACKUP)
+#error "Watchdog fast restart requires USE_RTC_BACKUP and a compatible bootloader"
+#endif
+
+bool mcu_watchdog_reset;
+static systime_t watchdog_last_tick;
+
+void mcu_watchdog_start(void)
+{
+  /* Arm the bootloader bypass before an asynchronous watchdog reset. */
+  mcu_set_rtcbackup(RTC_BOOT_FAST);
+  watchdog_last_tick = chVTGetSystemTimeX();
+  IWDG->KR = 0xCCCC; /* Start; also forces the independent LSI oscillator on. */
+  IWDG->KR = 0x5555; /* Unlock PR/RLR writes. */
+  IWDG->PR = 4;      /* Divide by 64. */
+  IWDG->RLR = MCU_WATCHDOG_TICKS - 1;
+  /* Do not refresh while waiting: a hardware/configuration failure must reset. */
+  while (IWDG->SR != 0) {}
+  IWDG->KR = 0xAAAA;
+}
+
+void mcu_watchdog_periodic(void)
+{
+  /* Called ONLY after both AP periodic and event processing return. Requiring
+   * tick progress also catches a stopped scheduler clock with a spinning AP. */
+  systime_t now = chVTGetSystemTimeX();
+  if (now != watchdog_last_tick) {
+    watchdog_last_tick = now;
+    IWDG->KR = 0xAAAA;
+  }
+}
+#endif /* CHIBIOS_USE_WATCHDOG */
+
 /**
  * @brief Initialize the specific archittecture functions
  */
 void mcu_arch_init(void)
 {
+#if CHIBIOS_USE_WATCHDOG
+  /* Capture before recovery code clears reset flags. Visible through SWD. */
+  mcu_watchdog_reset = (RCC->CSR & RCC_CSR_IWDGRSTF) != 0;
+#if !USE_HARD_FAULT_RECOVERY
+  RCC->CSR |= RCC_CSR_RMVF;
+#endif
+#endif
   /*
    * System initializations.
    * - HAL initialization, this also initializes the configured device drivers
@@ -189,6 +235,11 @@ void mcu_arch_init(void)
     recovering_from_hard_fault = true;
     hard_fault = false;
   }
+#if CHIBIOS_USE_WATCHDOG
+  if (mcu_watchdog_reset) {
+    recovering_from_hard_fault = true;
+  }
+#endif
   // *MANDATORY* clear of rcc bits
   __RCC_RESET_REGISTER = __RCC_RESET_REMOVE_FLAG;
   // end of reset bit probing
@@ -291,15 +342,16 @@ static void mcu_deep_sleep(void)
  */
 static void mcu_set_rtcbackup(uint32_t val) {
 #if !defined(STM32F1)
-  if ((RCC->BDCR & RCC_BDCR_RTCEN) == 0) {
-    RCC->BDCR |= STM32_RTCSEL;
-    RCC->BDCR |= RCC_BDCR_RTCEN;
-  }
 #ifdef PWR_CR_DBP
   PWR->CR |= PWR_CR_DBP;
 #else
   PWR->CR1 |= PWR_CR1_DBP;
 #endif
+  if ((RCC->BDCR & RCC_BDCR_RTCEN) == 0) {
+    RCC->BDCR |= STM32_RTCSEL;
+    RCC->BDCR |= RCC_BDCR_RTCEN;
+  }
+
 #endif
 
 #if defined(STM32F1)

@@ -35,6 +35,13 @@
 #include <hal.h>
 
 extern void mcu_arch_init(void);
+#if CHIBIOS_USE_WATCHDOG
+extern bool mcu_watchdog_reset;
+extern void mcu_watchdog_start(void);
+extern void mcu_watchdog_periodic(void);
+#endif
+extern void mcu_fault_reboot(void);
+extern void mcu_chibios_halt(const char *reason);
 
 #if USE_HARD_FAULT_RECOVERY
 extern bool recovering_from_hard_fault;

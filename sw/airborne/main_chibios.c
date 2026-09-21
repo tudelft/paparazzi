@@ -123,11 +123,18 @@ static void thd_ap(void *arg)
 {
   (void) arg;
   chRegSetThreadName("AP");
+#if CHIBIOS_USE_WATCHDOG
+  /* Start after module initialization; no IRQ or unrelated thread feeds it. */
+  mcu_watchdog_start();
+#endif
 
   while (!chThdShouldTerminateX()) {
     systime_t t = chVTGetSystemTime();
     Call(periodic());
     Call(event());
+#if CHIBIOS_USE_WATCHDOG
+    mcu_watchdog_periodic();
+#endif
     // The sleep time is computed to have a polling interval of
     // 1e6 / CH_CFG_ST_FREQUENCY. If time is passed, thanks to the
     // "Windowed" sleep function, the execution is not blocked until
@@ -148,11 +155,18 @@ static void thd_recovery(void *arg)
 {
   (void) arg;
   chRegSetThreadName("RECOVERY");
+#if CHIBIOS_USE_WATCHDOG
+  /* Start after module initialization; no IRQ or unrelated thread feeds it. */
+  mcu_watchdog_start();
+#endif
 
   while (!chThdShouldTerminateX()) {
     systime_t t = chVTGetSystemTime();
     main_recovery_periodic();
     main_recovery_event();
+#if CHIBIOS_USE_WATCHDOG
+    mcu_watchdog_periodic();
+#endif
     // The sleep time is computed to have a polling interval of
     // 1e6 / CH_CFG_ST_FREQUENCY. If time is passed, thanks to the
     // "Windowed" sleep function, the execution is not blocked until
