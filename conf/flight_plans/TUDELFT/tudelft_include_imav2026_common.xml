@@ -1,0 +1,77 @@
+<!DOCTYPE procedure SYSTEM "../flight_plan.dtd">
+
+<procedure>
+<blocks>
+    <!-- ── Pre-flight ───────────────────────────────────────────────────── -->
+
+    <block name="Boot" strip_button="Boot">
+      <deroute block="Wait_GPS"/>
+    </block>
+
+    <block name="Wait_GPS" strip_button="Wait_GPS">
+      <!-- NOTE: CHECK MISSION-SPECIFIC CAMERAS BEFORE TAKEOFF -->
+      <!-- <call_once fun="uart_cam_ctrl_set_camera_mask(CATIA_CAMERA_MASK_AICAM)"/> -->
+      <set value="1" var="autopilot.kill_throttle"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+
+    <block name="Geo_init" strip_button="Geo_init">
+      <while cond="LessThan(NavBlockTime(), 5)"/>
+      <!-- <call_once fun="NavSetGroundReferenceHere()"/> -->
+    </block>
+
+    <block name="Holding_point" strip_button="Holding_point">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <!-- exception cond="NavBlockTime() @GT holding_delay" deroute="Takeoff"/> -->
+      <attitude roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+
+    <block name="GeoFence" strip_button="GeoFence">
+      <!-- <call_once fun="NavKillThrottle()"/> -->
+      <set value="1" var="autopilot.kill_throttle"/>
+      <go wp="HOME"/>
+    </block>
+    <block name="RecoverFromGeoFence" strip_button="RecoverFromGeoFence">
+      <set value="0" var="autopilot.kill_throttle"/>
+      <go wp="HOME"/>
+      <!-- <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()" wp="STDBY"/> -->
+    </block>
+
+    <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="home">
+      <call_once fun="dc_stop()"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="10.0"/>
+      <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()+50.0" wp="STDBY"/>
+    </block>
+
+
+     <!-- ── Landing ──────────────────────────────────────────────────────── -->
+    <!-- Negative radius: baseleg circle east of AF, away from the west fence. -->
+    <block name="Land_AF_TD" strip_button="Land_AF_TD" strip_icon="land-left.png" group="land">
+      <call_once fun="dc_stop()"/>
+      <set value="-DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
+      <deroute block="land"/>
+    </block>
+
+    <block name="land" strip_button="land">
+      <call_once fun="nav_compute_baseleg(WP_AF, WP_TD, WP__BASELEG, nav_radius)"/>
+      <circle radius="nav_radius" until="NavCircleCount() @GT 0.5" wp="_BASELEG"/>
+      <circle radius="nav_radius" until="NavQdrCloseTo(DegOfRad(baseleg_out_qdr)-(nav_radius/fabs(nav_radius))*10) @AND (10 @GT fabs(GetPosAlt() - WaypointAlt(WP__BASELEG)))" wp="_BASELEG"/>
+      <deroute block="final"/>
+    </block>
+
+    <block name="final" strip_button="final">
+      <!-- Glide AF -> TD; below 10 m AGL go to flare (motor killed). -->
+      <exception cond="GetAltRef() + 10 @GT GetPosAlt()" deroute="flare"/>
+      <go from="AF" hmode="route" vmode="glide" wp="TD"/>
+    </block>
+
+    <block name="flare" strip_button="flare">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <go approaching_time="0" from="AF" hmode="route" throttle="0.0" vmode="throttle" wp="TD"/>
+      <attitude roll="0.0" throttle="0.0" until="FALSE" vmode="throttle"/>
+    </block>
+
+
+
+</blocks>
+</procedure>
