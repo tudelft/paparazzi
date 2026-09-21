@@ -230,14 +230,14 @@
 <!-- ************** SAFETY ****************************-->
     <!-- <include name="Safety" procedure="tudelft_include_imav2026_safety.xml"/> -->
 <!-- ************** MISSSION 1 ****************************-->   
-    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission1.xml"/> -->
+    <include name="Mission" procedure="tudelft_include_imav2026_mission1.xml"/>
 <!-- ************** MISSSION 2 ****************************-->
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission2.xml"/> -->
 <!-- ************** MISSSION 3 ****************************-->
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission3.xml"/> -->
 <!-- ************** MISSSION 4 ****************************-->
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4.xml"/> -->
-    <include name="Mission" procedure="tudelft_include_imav2026_mission4_simple.xml"/>
+    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4_simple.xml"/> -->
 
   </includes>
 
@@ -281,14 +281,14 @@
 
   <blocks>
     <block name="Boot">
-      <deroute block="Mission.Wait GPS"/>
+      <deroute block="Mission.Wait_GPS"/>
     </block>
     <block name="GeoFence">
       <call_once fun="NavKillThrottle()"/>
       <go wp="HOME"/>
     </block>
     <block name="RecoverFromGeoFence">
-    <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()" wp="STDBY"/>
+    <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()" wp="_STDBY"/>
     </block>
   </blocks>
 
