@@ -66,7 +66,7 @@
     <waypoint name="_BASELEG" x="-4.723" y="295.562"/>
     <!-- height="0": on the ground, otherwise final climbs from AF to TD. -->
     <waypoint name="TD" x="-10.839" y="93.428" height="0"/>
-    <waypoint name="_STDBY" x="63.237" y="381.329"/>
+    <waypoint name="STDBY" x="63.237" y="381.329"/>
   </waypoints>
 
   <variables>
@@ -173,7 +173,7 @@
     <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="home">
       <call_once fun="dc_stop()"/>
       <set var="v_ctl_auto_airspeed_setpoint" value="mapping_airspeed"/>
-      <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()+mapping_height" wp="_STDBY"/>
+      <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()+mapping_height" wp="STDBY"/>
     </block>
 
     <!-- ── Landing ──────────────────────────────────────────────────────── -->
