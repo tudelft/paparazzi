@@ -124,8 +124,8 @@
       <deroute block="Run_Area2"/>
     </block>
     <block name="Run_Area2" group="mission" pre_call="dc_autoshoot = (InsideMapping_area_2(GetPosX(), GetPosY()) && GetPosAlt() > GetAltRef() + mapping_height - 5 ? DC_AUTOSHOOT_DISTANCE : DC_AUTOSHOOT_STOP)">
-      <!--exception cond="PolySurveySweepBackNum @GT 0" deroute="Mapping_Done"/>
-      <call fun="nav_survey_poly_osam_run()"/> -->
+      <exception cond="PolySurveySweepBackNum @GT 0" deroute="Mapping_Done"/>
+      <call fun="nav_survey_poly_osam_run()"/>
     </block>
 
     <block name="Mapping_Done" group="mission">
