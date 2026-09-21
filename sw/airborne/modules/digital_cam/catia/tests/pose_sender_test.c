@@ -100,6 +100,21 @@ static struct catia_transport parse_transmitted(void)
   return transport;
 }
 
+static void receive_frame(uint8_t message, const uint8_t *payload, size_t length)
+{
+  /* Build a checksum-valid frame so rejection tests the FC message contract rather
+   * than being satisfied earlier by the parser's checksum validation. */
+  transmitted_size = 0;
+  CatiaHeader(message, length);
+  for (size_t index = 0; index < length; ++index) CatiaPutUint8(payload[index]);
+  CatiaTrailer();
+  incoming_size = transmitted_size;
+  incoming_index = 0;
+  for (size_t index = 0; index < incoming_size; ++index) incoming[index] = transmitted[index];
+  transmitted_size = 0;
+  digital_cam_uart_event();
+}
+
 static void request_clock(uint32_t low, uint32_t high, size_t length)
 {
   union catia_clock_request_union token = {.data = {low, high}};
@@ -120,6 +135,31 @@ int main(void)
   assert(digital_cam_uart_camera_mask == EXPECTED_CAMERA_MASK);
 #endif
   digital_cam_uart_init();
+  /* Cover every payload size representable by CATIA's one-byte total length. Only
+   * the protocol-defined fixed sizes may mutate status or thumbnail storage. */
+  uint8_t hostile_payload[250];
+  for (size_t index = 0; index < sizeof(hostile_payload); ++index) hostile_payload[index] = (uint8_t)(index + 1);
+  for (size_t length = 0; length <= sizeof(hostile_payload); ++length) {
+    if (length == CATIA_STATUS_MSG_SIZE) continue;
+    digital_cam_uart_status = 1234;
+    receive_frame(CATIA_STATUS, hostile_payload, length);
+    assert(digital_cam_uart_status == 1234);
+  }
+  union catia_status_union status = {.data = {.shots = 321}};
+  receive_frame(CATIA_STATUS, status.bin, sizeof(status.bin));
+  assert(digital_cam_uart_status == 321);
+
+  for (size_t length = 0; length <= sizeof(hostile_payload); ++length) {
+    if (length == CATIA_PAYLOAD_MSG_SIZE) continue;
+    for (size_t index = 0; index < THUMB_MSG_SIZE; ++index) thumbs[0][index] = 0;
+    receive_frame(CATIA_PAYLOAD, hostile_payload, length);
+    for (size_t index = 0; index < THUMB_MSG_SIZE; ++index) assert(thumbs[0][index] == 0);
+  }
+  uint8_t payload[CATIA_PAYLOAD_MSG_SIZE];
+  for (size_t index = 0; index < sizeof(payload); ++index) payload[index] = (uint8_t)(index + 1);
+  receive_frame(CATIA_PAYLOAD, payload, sizeof(payload));
+  for (size_t index = 0; index < sizeof(payload); ++index) assert(thumbs[0][index] == payload[index]);
+
   clock_value = UINT32_MAX;
   digital_cam_uart_periodic();
   assert(periodic_calls == 1 && dc_photo_nr == 20 && position_reports == 0);

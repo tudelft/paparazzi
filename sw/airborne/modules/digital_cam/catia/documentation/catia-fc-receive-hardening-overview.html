@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CATIA Flight-Controller Receive Hardening</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 15mm 16mm 17mm;
+      @bottom-left {
+        content: "Paparazzi UAV | CATIA technical note";
+        color: #687078;
+        font: 8pt "DejaVu Sans", sans-serif;
+      }
+      @bottom-right {
+        content: "Page " counter(page) " of " counter(pages);
+        color: #687078;
+        font: 8pt "DejaVu Sans", sans-serif;
+      }
+    }
+
+    :root {
+      --ink: #182127;
+      --muted: #5c6870;
+      --paper: #ffffff;
+      --line: #ccd5d9;
+      --navy: #12384a;
+      --teal: #087f76;
+      --teal-soft: #e5f3f1;
+      --amber: #b36200;
+      --amber-soft: #fff2dc;
+      --red: #a1342a;
+      --red-soft: #fae8e5;
+      --green: #34734b;
+      --green-soft: #e7f2e9;
+      --code: #eef2f3;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      background: #dce2e4;
+      color: var(--ink);
+      font-family: "DejaVu Sans", sans-serif;
+      font-size: 10pt;
+      line-height: 1.42;
+    }
+
+    body {
+      background: var(--paper);
+      margin: 0 auto;
+      max-width: 210mm;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    p { margin-bottom: 3mm; }
+    strong { color: var(--navy); }
+
+    h1 {
+      color: #fff;
+      font-family: "DejaVu Serif", serif;
+      font-size: 27pt;
+      font-weight: 700;
+      line-height: 1.08;
+      margin: 0 0 5mm;
+      max-width: 155mm;
+    }
+
+    h2 {
+      border-bottom: 1.5pt solid var(--teal);
+      color: var(--navy);
+      font-family: "DejaVu Serif", serif;
+      font-size: 17pt;
+      line-height: 1.2;
+      margin: 8mm 0 4mm;
+      padding-bottom: 1.5mm;
+      break-after: avoid;
+    }
+
+    h3 {
+      color: var(--navy);
+      font-size: 11pt;
+      line-height: 1.25;
+      margin: 5mm 0 2mm;
+      break-after: avoid;
+    }
+
+    code {
+      background: var(--code);
+      border-radius: 2px;
+      font-family: "DejaVu Sans Mono", monospace;
+      font-size: 8.5pt;
+      padding: 0.2mm 1mm;
+    }
+
+    .cover {
+      background: var(--navy);
+      color: #fff;
+      margin: -15mm -16mm 9mm;
+      min-height: 90mm;
+      padding: 18mm 16mm 14mm;
+      position: relative;
+    }
+
+    .cover::after {
+      background: var(--teal);
+      bottom: 0;
+      content: "";
+      height: 4mm;
+      left: 0;
+      position: absolute;
+      right: 0;
+    }
+
+    .eyebrow {
+      color: #9ed8d2;
+      font-size: 8.5pt;
+      font-weight: 700;
+      letter-spacing: 1.4px;
+      margin-bottom: 8mm;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      color: #d8e9ed;
+      font-size: 12pt;
+      line-height: 1.45;
+      margin-bottom: 9mm;
+      max-width: 160mm;
+    }
+
+    .meta {
+      color: #b8d0d6;
+      display: flex;
+      font-size: 8.5pt;
+      gap: 9mm;
+    }
+
+    .lead {
+      color: #34444c;
+      font-family: "DejaVu Serif", serif;
+      font-size: 12pt;
+      line-height: 1.55;
+      margin: 0 0 6mm;
+    }
+
+    .summary-grid {
+      display: grid;
+      gap: 3mm;
+      grid-template-columns: repeat(3, 1fr);
+      margin: 4mm 0 7mm;
+    }
+
+    .metric {
+      border-top: 3pt solid var(--teal);
+      background: #f3f7f7;
+      min-height: 25mm;
+      padding: 4mm;
+    }
+
+    .metric .number {
+      color: var(--navy);
+      display: block;
+      font-family: "DejaVu Serif", serif;
+      font-size: 20pt;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 2mm;
+    }
+
+    .metric .label { color: var(--muted); font-size: 8.5pt; }
+
+    .flow {
+      align-items: stretch;
+      display: grid;
+      gap: 2mm;
+      grid-template-columns: 1fr 8mm 1.25fr 8mm 1.3fr 8mm 1fr;
+      margin: 4mm 0 6mm;
+    }
+
+    .flow-box {
+      align-items: center;
+      background: #f4f7f8;
+      border: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 27mm;
+      padding: 3mm;
+      text-align: center;
+    }
+
+    .flow-box b { color: var(--navy); display: block; margin-bottom: 1mm; }
+    .flow-box span { color: var(--muted); font-size: 8pt; }
+    .flow-box.guard { background: var(--teal-soft); border-color: #79b7b1; }
+    .arrow { align-items: center; color: var(--teal); display: flex; font-size: 18pt; justify-content: center; }
+
+    .callout {
+      border-left: 4pt solid var(--amber);
+      background: var(--amber-soft);
+      margin: 4mm 0;
+      padding: 3.5mm 4mm;
+      break-inside: avoid;
+    }
+
+    .callout.proven { background: var(--green-soft); border-color: var(--green); }
+    .callout.limit { background: var(--red-soft); border-color: var(--red); }
+    .callout p:last-child { margin-bottom: 0; }
+
+    .change {
+      border: 1px solid var(--line);
+      margin: 0 0 4mm;
+      padding: 4mm;
+      break-inside: avoid;
+    }
+
+    .change-head {
+      align-items: baseline;
+      display: flex;
+      gap: 3mm;
+      justify-content: space-between;
+      margin-bottom: 2mm;
+    }
+
+    .change-head h3 { margin: 0; }
+    .file { color: var(--muted); font-family: "DejaVu Sans Mono", monospace; font-size: 7.5pt; }
+
+    .before-after {
+      display: grid;
+      gap: 3mm;
+      grid-template-columns: 1fr 1fr;
+      margin-top: 3mm;
+    }
+
+    .before, .after { min-height: 22mm; padding: 3mm; }
+    .before { background: var(--red-soft); }
+    .after { background: var(--green-soft); }
+    .tag { display: block; font-size: 7.5pt; font-weight: 700; letter-spacing: 0.8px; margin-bottom: 1.5mm; text-transform: uppercase; }
+    .before .tag { color: var(--red); }
+    .after .tag { color: var(--green); }
+
+    table {
+      border-collapse: collapse;
+      font-size: 8.3pt;
+      margin: 4mm 0 6mm;
+      width: 100%;
+    }
+
+    th {
+      background: var(--navy);
+      color: #fff;
+      font-weight: 700;
+      padding: 2.5mm;
+      text-align: left;
+    }
+
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 2.5mm;
+      vertical-align: top;
+    }
+
+    tr { break-inside: avoid; }
+    tbody tr:nth-child(even) { background: #f5f7f8; }
+    .pass { color: var(--green); font-weight: 700; }
+    .partial { color: var(--amber); font-weight: 700; }
+
+    ul { margin: 2mm 0 4mm; padding-left: 5mm; }
+    li { margin-bottom: 1.5mm; }
+
+    .sequence {
+      border-left: 2pt solid var(--line);
+      margin: 4mm 0 6mm 3mm;
+      padding-left: 6mm;
+    }
+
+    .sequence-item { margin-bottom: 4mm; position: relative; break-inside: avoid; }
+    .sequence-item::before {
+      background: var(--teal);
+      border: 2pt solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 0 1pt var(--teal);
+      content: "";
+      height: 3mm;
+      left: -8.1mm;
+      position: absolute;
+      top: 1mm;
+      width: 3mm;
+    }
+
+    .page-break { break-before: page; }
+
+    .footer-note {
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 8pt;
+      margin-top: 8mm;
+      padding-top: 3mm;
+    }
+
+    @media screen {
+      body { box-shadow: 0 2mm 8mm rgba(0, 0, 0, 0.18); padding: 15mm 16mm 17mm; }
+    }
+
+    @media print {
+      html, body { background: #fff; max-width: none; }
+      body { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <header class="cover">
+    <div class="eyebrow">Paparazzi UAV / CATIA Technical Note</div>
+    <h1>Flight-Controller Receive Hardening</h1>
+    <p class="subtitle">What changed in the CATIA UART receive path, why it matters on the F4 autopilot, how it was tested, and what remains unproven.</p>
+    <div class="meta">
+      <span>System: Adam F4 and Adam NPS</span>
+      <span>Date: 21 September 2026</span>
+      <span>Status: Implemented and validated locally</span>
+    </div>
+  </header>
+
+  <p class="lead">The patch closes two concrete failure mechanisms: an invalid frame length could underflow inside the shared CATIA parser, and fixed-layout FC handlers could consume a checksum-valid frame with the wrong payload size. Validation demonstrates that malformed lengths are now rejected without changing autopilot camera state.</p>
+
+  <div class="summary-grid">
+    <div class="metric"><span class="number">4</span><span class="label">focused source and test files changed</span></div>
+    <div class="metric"><span class="number">0..250</span><span class="label">payload lengths exercised for both fixed-layout replies</span></div>
+    <div class="metric"><span class="number">4</span><span class="label">simulated camera cycles completed without stopping NPS</span></div>
+  </div>
+
+  <div class="callout proven">
+    <p><strong>Result in one sentence:</strong> malformed CATIA status and image-payload frames can no longer make the FC copy data unless their payload length exactly matches the message contract.</p>
+  </div>
+
+  <h2>System Boundary</h2>
+  <p>CATIA runs on the MORA companion computer. The Paparazzi digital-camera module runs on the F4 flight controller, or inside NPS during local simulation. Both environments compile the same parser and FC dispatch implementation.</p>
+
+  <div class="flow">
+    <div class="flow-box"><b>UART bytes</b><span>From CATIA on MORA</span></div>
+    <div class="arrow">&rarr;</div>
+    <div class="flow-box guard"><b>Shared parser</b><span>Minimum frame size and checksum</span></div>
+    <div class="arrow">&rarr;</div>
+    <div class="flow-box guard"><b>FC dispatcher</b><span>Message ID and exact payload size</span></div>
+    <div class="arrow">&rarr;</div>
+    <div class="flow-box"><b>FC state</b><span>Status or 70-byte buffer</span></div>
+  </div>
+
+  <p>CATIA frames contain an STX marker, total length, message ID, payload, and two checksum bytes. The minimum legal total size is therefore five bytes. A valid checksum proves that bytes arrived consistently; it does <strong>not</strong> prove that a message has the correct semantic size.</p>
+
+  <div class="callout">
+    <p><strong>SODA is downstream of capture.</strong> CATIA starts SODA after image capture and EXIF processing. SODA does not directly transmit UART or UDP replies to the FC. The immediate ordinary UART response after accepting a shot is CATIA status.</p>
+  </div>
+
+  <div class="page-break"></div>
+  <h2>Failure Mechanisms and Fixes</h2>
+
+  <article class="change">
+    <div class="change-head">
+      <h3>1. Reject impossible frame lengths before subtraction</h3>
+      <span class="file">catia/protocol.c</span>
+    </div>
+    <p>The parser previously calculated <code>payload_len = length - 5</code> without first proving that <code>length</code> was at least five. Because the value is unsigned, lengths zero through four could wrap into a large apparent payload and poison frame synchronization.</p>
+    <div class="before-after">
+      <div class="before"><span class="tag">Before</span>Impossible length accepted; unsigned subtraction could wrap; later UART bytes could be consumed as a bogus payload.</div>
+      <div class="after"><span class="tag">After</span>Any length below <code>CatiaSizeOf(0)</code> is rejected before arithmetic; the parser error count increments and its state resets.</div>
+    </div>
+  </article>
+
+  <article class="change">
+    <div class="change-head">
+      <h3>2. Enforce the status message contract</h3>
+      <span class="file">uart_cam_ctrl.c</span>
+    </div>
+    <p><code>CATIA_STATUS</code> has an eight-byte fixed layout. The FC handler previously copied that fixed layout after checking only the message ID. It now requires <code>payload_len == CATIA_STATUS_MSG_SIZE</code> before changing <code>digital_cam_uart_status</code>.</p>
+    <div class="before-after">
+      <div class="before"><span class="tag">Before</span>A short but checksum-valid status frame could cause bytes beyond the received payload to enter FC status state.</div>
+      <div class="after"><span class="tag">After</span>Every non-eight-byte status frame is ignored; only the exact protocol layout can mutate status state.</div>
+    </div>
+  </article>
+
+  <article class="change">
+    <div class="change-head">
+      <h3>3. Enforce the 70-byte payload contract</h3>
+      <span class="file">uart_cam_ctrl.c</span>
+    </div>
+    <p><code>CATIA_PAYLOAD</code> carries exactly 70 bytes. The FC handler now requires <code>payload_len == CATIA_PAYLOAD_MSG_SIZE</code> before copying into thumbnail storage.</p>
+    <div class="before-after">
+      <div class="before"><span class="tag">Before</span>The handler always copied 70 bytes, even when the current frame declared a smaller or larger payload.</div>
+      <div class="after"><span class="tag">After</span>Wrong-sized frames leave thumbnail storage untouched; an exact 70-byte frame is still accepted.</div>
+    </div>
+  </article>
+
+  <h2>Why These Boundaries</h2>
+  <ul>
+    <li><strong>The parser owns framing.</strong> Rejecting an impossible total length there prevents bad arithmetic and protects every parser user.</li>
+    <li><strong>The consumer owns message meaning.</strong> Exact status and payload sizes belong in the FC dispatcher because it knows each fixed-layout contract.</li>
+    <li><strong>Checks are layered.</strong> Framing and checksum validation cannot replace message-specific validation.</li>
+    <li><strong>Behavior remains compatible.</strong> Correctly encoded eight-byte status and 70-byte payload messages follow the original path unchanged.</li>
+  </ul>
+
+  <div class="page-break"></div>
+  <h2>Regression-Test Structure</h2>
+
+  <article class="change">
+    <div class="change-head">
+      <h3>Parser boundary tests</h3>
+      <span class="file">catia/tests/pose_protocol_test.c</span>
+    </div>
+    <p>The test sends every impossible total-frame length from zero through four. Each case must be rejected, return the state machine to its initial state, and increment the parser error count.</p>
+  </article>
+
+  <article class="change">
+    <div class="change-head">
+      <h3>Actual FC dispatch tests</h3>
+      <span class="file">catia/tests/pose_sender_test.c</span>
+    </div>
+    <p>A new helper constructs complete CATIA frames with valid checksums and feeds them byte by byte through <code>digital_cam_uart_event()</code>. This tests the production FC implementation rather than a duplicate model.</p>
+    <div class="sequence">
+      <div class="sequence-item"><strong>Status rejection:</strong> every representable payload length from 0 through 250, except eight, must leave FC status unchanged.</div>
+      <div class="sequence-item"><strong>Status acceptance:</strong> an exact eight-byte frame must update the tested shot count to 321.</div>
+      <div class="sequence-item"><strong>Payload rejection:</strong> every representable payload length from 0 through 250, except 70, must leave thumbnail storage unchanged.</div>
+      <div class="sequence-item"><strong>Payload acceptance:</strong> an exact 70-byte frame must be copied byte for byte.</div>
+    </div>
+  </article>
+
+  <h2>Validation Evidence</h2>
+  <table>
+    <thead>
+      <tr><th>Validation</th><th>What it demonstrates</th><th>Result</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>CATIA host test variants</td><td>Parser and real FC event-path regression cases execute successfully.</td><td class="pass">Passed</td></tr>
+      <tr><td>ASan and UBSan</td><td>Exhaustive hostile-length execution produced no detected memory or undefined-behavior fault.</td><td class="pass">Passed</td></tr>
+      <tr><td>Adam <code>ap.compile</code></td><td>The hardened code compiles for the embedded F4 autopilot target.</td><td class="pass">Passed</td></tr>
+      <tr><td>Adam <code>nps.compile</code></td><td>The same autopilot receive implementation compiles in the simulator.</td><td class="pass">Passed</td></tr>
+      <tr><td>Four-shot local integration</td><td>NPS sent four AI-camera triggers; CATIA captured four mock images, wrote EXIF, ran SODA, and returned status without stopping NPS.</td><td class="pass">Passed</td></tr>
+      <tr><td>Live 70-byte telemetry round trip</td><td>The direct handler is exhaustively tested, but the optional live buffer request was not observed in the integration run.</td><td class="partial">Not observed</td></tr>
+    </tbody>
+  </table>
+
+  <h2>What the Result Means</h2>
+  <div class="callout proven">
+    <p><strong>Demonstrated:</strong> the most concrete FC-side malformed-frame hazards found in this investigation are removed. Correct frames remain accepted, wrong-sized frames are ignored, both target builds pass, and repeated local camera activity did not stop the simulated autopilot.</p>
+  </div>
+
+  <div class="callout limit">
+    <p><strong>Not demonstrated:</strong> this does not prove that either defect caused the physical F4 failure. The aircraft and MORA hardware were unavailable, no reset-cause registers or hard-fault dump were captured, and the complete live 70-byte thumbnail telemetry path was not exercised end to end.</p>
+  </div>
+
+  <h3>Recommended hardware follow-up</h3>
+  <ol>
+    <li>Repeat the shot sequence on the bench with the aircraft disarmed.</li>
+    <li>Record F4 reset-cause flags and any hard-fault state before normal startup clears them.</li>
+    <li>Capture both UART directions, including declared frame lengths and checksums.</li>
+    <li>Exercise the optional 70-byte buffer request and verify the returned frame end to end.</li>
+    <li>Compare behavior with and without SODA processing while keeping CATIA status traffic identical.</li>
+  </ol>
+
+  <p class="footer-note">Source checkout: <code>~/paparazzi</code> resolves to <code>~/develop/allthings_paparazzi/paparazzi_main/</code>; these are the same repository. This note describes the focused modifications in <code>protocol.c</code>, <code>uart_cam_ctrl.c</code>, <code>pose_protocol_test.c</code>, and <code>pose_sender_test.c</code>.</p>
+</body>
+</html>

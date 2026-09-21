@@ -50,7 +50,13 @@ void parse_catia(struct catia_transport *t, uint8_t c)
         t->error++;
         goto error;
       }
-      t->payload_len = c - 5; /* Counting STX, LENGTH and CRC1 and CRC2 */
+      /* A CATIA frame always includes STX, length, message ID, and two CRC bytes.
+       * Reject shorter declarations before subtracting that overhead: payload_len is
+       * unsigned, so accepting them would wrap it and consume later frames as payload. */
+      if (c < CatiaSizeOf(0)) {
+        goto error;
+      }
+      t->payload_len = c - 5;
       t->ck_a = t->ck_b = c;
       t->status++;
       t->payload_idx = 0;

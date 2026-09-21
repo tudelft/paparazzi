@@ -32,6 +32,15 @@ static struct catia_transport transmit(const union catia_pose_sample_union *samp
 
 int main(void)
 {
+  /* Length includes all five framing bytes. Exercise every value that would make
+   * the parser's unsigned payload-length subtraction wrap and desynchronize it. */
+  for (uint8_t length = 0; length < CatiaSizeOf(0); ++length) {
+    struct catia_transport malformed = {0};
+    parse_catia(&malformed, STX);
+    parse_catia(&malformed, length);
+    assert(!malformed.msg_received && malformed.status == 0 && malformed.error == 1);
+  }
+
   union catia_pose_sample_union sample = {0};
   sample.data.sequence = 0x01020304;
   sample.data.sample_begin_us = UINT32_MAX - 10;
