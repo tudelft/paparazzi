@@ -142,11 +142,64 @@ static void mcu_deep_sleep(void);
 static void mcu_set_rtcbackup(uint32_t val);
 #endif
 
+#if CHIBIOS_USE_WATCHDOG
+#if !defined(STM32F4XX)
+#error "CHIBIOS_USE_WATCHDOG currently supports STM32F4 only"
+#endif
+#ifndef CHIBIOS_WATCHDOG_TIMEOUT_MS
+#define CHIBIOS_WATCHDOG_TIMEOUT_MS 1000
+#endif
+/* F4 IWDG: nominal 32 kHz LSI, prescaler 64, 12-bit reload register.
+ * Actual expiry varies with LSI tolerance. This is not a precision timer. */
+#define MCU_WATCHDOG_TICKS (CHIBIOS_WATCHDOG_TIMEOUT_MS / 2)
+#if MCU_WATCHDOG_TICKS < 1 || MCU_WATCHDOG_TICKS > 4096
+#error "Watchdog timeout must be between 2 and 8192 ms"
+#endif
+#if !defined(USE_RTC_BACKUP)
+#error "Watchdog fast restart requires USE_RTC_BACKUP and a compatible bootloader"
+#endif
+
+bool mcu_watchdog_reset;
+static systime_t watchdog_last_tick;
+
+void mcu_watchdog_start(void)
+{
+  /* Arm the bootloader bypass before an asynchronous watchdog reset. */
+  mcu_set_rtcbackup(RTC_BOOT_FAST);
+  watchdog_last_tick = chVTGetSystemTimeX();
+  IWDG->KR = 0xCCCC; /* Start; also forces the independent LSI oscillator on. */
+  IWDG->KR = 0x5555; /* Unlock PR/RLR writes. */
+  IWDG->PR = 4;      /* Divide by 64. */
+  IWDG->RLR = MCU_WATCHDOG_TICKS - 1;
+  /* Do not refresh while waiting: a hardware/configuration failure must reset. */
+  while (IWDG->SR != 0) {}
+  IWDG->KR = 0xAAAA;
+}
+
+void mcu_watchdog_periodic(void)
+{
+  /* Called ONLY after both AP periodic and event processing return. Requiring
+   * tick progress also catches a stopped scheduler clock with a spinning AP. */
+  systime_t now = chVTGetSystemTimeX();
+  if (now != watchdog_last_tick) {
+    watchdog_last_tick = now;
+    IWDG->KR = 0xAAAA;
+  }
+}
+#endif /* CHIBIOS_USE_WATCHDOG */
+
 /**
  * @brief Initialize the specific archittecture functions
  */
 void mcu_arch_init(void)
 {
+#if CHIBIOS_USE_WATCHDOG
+  /* Capture before recovery code clears reset flags. Visible through SWD. */
+  mcu_watchdog_reset = (RCC->CSR & RCC_CSR_IWDGRSTF) != 0;
+#if !USE_HARD_FAULT_RECOVERY
+  RCC->CSR |= RCC_CSR_RMVF;
+#endif
+#endif
   /*
    * System initializations.
    * - HAL initialization, this also initializes the configured device drivers
@@ -182,6 +235,11 @@ void mcu_arch_init(void)
     recovering_from_hard_fault = true;
     hard_fault = false;
   }
+#if CHIBIOS_USE_WATCHDOG
+  if (mcu_watchdog_reset) {
+    recovering_from_hard_fault = true;
+  }
+#endif
   // *MANDATORY* clear of rcc bits
   __RCC_RESET_REGISTER = __RCC_RESET_REMOVE_FLAG;
   // end of reset bit probing

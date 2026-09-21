@@ -46,10 +46,13 @@
     <!--configure name="CH_OPT" value="0 -g -ggdb3"/-->
 
     <target name="ap" board="matek_f405_te_sd">
-      <!-- Fault/RTOS-halt bench recovery; silent deadlocks still need a watchdog.
+      <!-- Fault/RTOS-halt reboot plus independent watchdog for silent deadlocks.
            Fast boot requires a bootloader that honors RTC_BOOT_FAST. -->
       <define name="CHIBIOS_REBOOT_ON_FAULT" value="TRUE"/>
       <define name="USE_RTC_BACKUP" value="TRUE"/>
+      <!-- Nominal 1 s timeout after AP startup; refreshed only by AP progress. -->
+      <define name="CHIBIOS_USE_WATCHDOG" value="TRUE"/>
+      <define name="CHIBIOS_WATCHDOG_TIMEOUT_MS" value="1000"/>
       <!-- <configure name="USE_SMART_BUILD" value="yes"/> -->
       <!--<define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>-->
       <define name="DEBUG" value="FALSE"/><!--Set to TRUE for debug output -->
