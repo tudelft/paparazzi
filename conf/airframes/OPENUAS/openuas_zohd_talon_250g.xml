@@ -52,6 +52,7 @@
       <!--<define name="USE_PERIODIC_TELEMETRY_REPORT" value="TRUE"/> -->
 
       <configure name="CPU_LED" value="1"/><!-- Multicolor -->
+      <define name="USE_RTC_BACKUP" value="TRUE"/>
       <!--<configure name="SYS_TIME_LED" value="2"/>-->
       <!--<configure name="AHRS_ALIGNER_LED" value="none"/>-->
 
