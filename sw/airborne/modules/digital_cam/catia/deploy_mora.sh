@@ -71,7 +71,12 @@ rsync --archive --human-readable --info=progress2 --chmod=F644 \
   "$SCRIPT_DIR/mock_image_01.jpg" \
   "$SCRIPT_DIR/lwircam/mock_lwir_01.jpg" \
   "$SCRIPT_DIR/99-tiny1c.rules" "$SCRIPT_DIR/catia.service" \
+  "$SCRIPT_DIR/vehicle_detect_server.py" \
   "$SCRIPT_DIR/deploy_mora_remote.sh" \
+  "$MORA_SSH_TARGET:$stage/"
+rsync --archive --human-readable --info=progress2 --chmod=F644 --relative \
+  "$SCRIPT_DIR/./labels.txt" \
+  "$SCRIPT_DIR/./network.rpk" \
   "$MORA_SSH_TARGET:$stage/"
 
 echo "MORA CATIA: validating and activating staged release"

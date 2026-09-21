@@ -19,7 +19,10 @@ fi
 exec 9>"$install_dir/.deploy.lock"
 flock -n 9 || { echo 'Another CATIA deployment is in progress' >&2; exit 1; }
 
-files=(catia soda lwircam earcam mock_image_01.jpg mock_lwir_01.jpg catia.service 99-tiny1c.rules)
+files=(catia soda lwircam earcam mock_image_01.jpg mock_lwir_01.jpg catia.service 99-tiny1c.rules
+  vehicle_detect_server.py
+  labels.txt
+  network.rpk)
 destinations=()
 for name in "${files[@]}"; do destinations+=("$install_dir/$name"); done
 destinations+=("$system_dir/systemd/system/catia.service" "$system_dir/udev/rules.d/99-tiny1c.rules")
@@ -104,11 +107,14 @@ else
   [[ $result -eq 1 ]] || exit "$result"
 fi
 changed=true
-mkdir -p "$install_dir/photos" "$install_dir/earlogs" "${HOME:-/home/air}/Pictures" "${HOME:-/home/air}/usher_debug_data"
+mkdir -p "$install_dir/photos" "$install_dir/earlogs" "${HOME:-/home/air}/Pictures" "${HOME:-/home/air}/usher_debug_data" \
+  "$install_dir/models/vehicle"
 for name in catia soda lwircam earcam; do install -m 0755 "$stage/$name" "$install_dir/$name"; done
-for name in mock_image_01.jpg mock_lwir_01.jpg catia.service 99-tiny1c.rules; do
+for name in mock_image_01.jpg mock_lwir_01.jpg catia.service 99-tiny1c.rules vehicle_detect_server.py; do
   install -m 0644 "$stage/$name" "$install_dir/$name"
 done
+install -m 0644 "$stage/labels.txt" "$install_dir/models/vehicle/labels.txt"
+install -m 0644 "$stage/network.rpk" "$install_dir/models/vehicle/network.rpk"
 sudo -n install -m 0644 "$stage/catia.service" "$system_dir/systemd/system/catia.service"
 sudo -n install -m 0644 "$stage/99-tiny1c.rules" "$system_dir/udev/rules.d/99-tiny1c.rules"
 sudo -n systemd-analyze verify "$system_dir/systemd/system/catia.service"
