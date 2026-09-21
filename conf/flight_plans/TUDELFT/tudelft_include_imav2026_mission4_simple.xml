@@ -33,19 +33,6 @@
   <waypoints>
     <!--<waypoint name="HOME" x="0" y="0" height="2."/>--><!-- LEAVEIN PLACE but it is SET from MAIN flight plan -->
 
-    <waypoint name="STDBY" x="20." y="80." height="50."/><!-- UNused in the current flight plan -->
-    <waypoint name="CLIMB" lat="48.8089501" lon="7.8517956" height="50."/>
-
-    <waypoint name="AF" lat="48.8078099" lon="7.8518863" alt="158."/><!-- TODO: Better Dynamical Positioning n Height  -->
-    <waypoint name="TD" lat="48.8074036" lon="7.8519650" alt="139."/><!-- TODO: Better Dynamical Positioning n Height-->
-
-    <!-- ORGANIZATION Landing Fixedwing zone -->   
-    <!-- Landing Fixedwing zone : 48.807761°N 7.851868°E -->
-    <!-- Landing Fixedwing zone : 48.807767°N 7.851934°E -->
-    <!-- <waypoint name="XAF" lat="48.807761" lon="7.851868" alt="158."/> -->
-    <!-- <waypoint name="XTD" lat="48.807767" lon="7.851934" alt="139."/> -->
-
-    <waypoint name="_BASELEG" x="56." y="367."/>
     <!-- Moved by the flight plan to the EARcam result; height is the release height. -->
     <waypoint name="DROP" lat="48.81045" lon="7.85170" height="20.0"/><!-- TODO: Height adjusted for rangefinder 1.5M -->
     <waypoint name="DROP_START" lat="48.80990" lon="7.85170" height="20.0"/><!-- TODO: Height adjustment based on mission requirements -->
@@ -60,26 +47,7 @@
   </waypoints>
 
 
-  <exceptions>
-    <exception cond="radio_control_get(RADIO_AUX1) @GT MAX_PPRZ - 1" deroute="forced_crash"/>
-  </exceptions>
-
   <blocks>
-    <block name="Wait GPS">
-      <set value="1" var="autopilot.kill_throttle"/>
-      <call_once fun="DropClose()"/>
-      <while cond="!GpsFixValid()"/>
-    </block>
-
-    <block name="Geo init">
-      <while cond="LessThan(NavBlockTime(), 10)"/>
-      <call_once fun="NavSetGroundReferenceHere()"/>
-    </block>
-
-    <block name="Holding point">
-      <set value="1" var="autopilot.kill_throttle"/>
-      <attitude roll="0" throttle="0" vmode="throttle"/>
-    </block>
 
     <!-- <attitude roll="0" throttle="0" vmode="throttle"/>--> <!-- To disable wriggly Actuators in Auto2, and throttle to 0 just in case -->
     <!-- If you have an RC transmitter backup, one must have the TX at least switched on once. This check can be disabled if everything works 100% in Auto2 and you have no TX -->
@@ -89,7 +57,7 @@
       <exception cond="ThrottleHigh()" deroute="Takeoff"/>
     </block> -->
     
-    <block name="Takeoff" strip_icon="takeoff.png" strip_button="Takeoff (wp CLIMB)">
+    <block name="Takeoff Mission 4" strip_icon="takeoff.png" strip_button="Takeoff M4">
       <set var="autopilot.kill_throttle" value="0"/>
       <set var="autopilot.flight_time" value="0"/>
       <set var="autopilot.launch" value="1"/>
@@ -234,7 +202,7 @@ extern bool_t compute_alignment(uint8_t w1, uint8_t w2, uint8_t start, uint8_t e
 
     <block name="drop_release">
       <call_once fun="DropOpen()"/>
-      <deroute block="land"/>
+      <deroute block="Common.land"/>
     </block>
 
     <!-- 
@@ -252,33 +220,10 @@ extern bool_t compute_alignment(uint8_t w1, uint8_t w2, uint8_t start, uint8_t e
       </block> -->
 
     <!-- TODO: Make it NON circle and mind tree hight-->
-    <block name="land" strip_button="Land" strip_icon="land-right.png">
-      <call_once fun="nav_compute_baseleg(WP_AF, WP_TD, WP__BASELEG, nav_radius)"/>
-      <circle radius="nav_radius" until="NavCircleCount() @GT 0.5" wp="_BASELEG"/>
-      <circle radius="nav_radius" until="And(NavQdrCloseTo(DegOfRad(baseleg_out_qdr)-(nav_radius/fabs(nav_radius))*10), 10 @GT fabs(GetPosAlt() - WaypointAlt(WP__BASELEG)))" wp="_BASELEG"/>
-      <deroute block="final"/>
-    </block>
-
-    <block name="final">
-      <exception cond="GetAltRef() + 10 @GT GetPosAlt()" deroute="flare"/>
-      <go from="AF" hmode="route" vmode="glide" wp="TD"/>
-    </block>
-
-    <!-- Stays there forever -->
-    <block name="flare">
-      <go approaching_time="0" from="AF" hmode="route" throttle="0.0" vmode="throttle" wp="TD"/>
-      <attitude roll="0.0" throttle="0.0" until="FALSE" vmode="throttle"/>
-    </block>
-
+    
     <!-- Manual emergency action: AUX1 at maximum disables normal guidance and
          commands a steep fixed-wing attitude with the motor stopped. -->
-    <block name="forced_crash">
-      <set var="h_ctl_disabled" value="TRUE"/>
-      <set var="v_ctl_throttle_setpoint" value="0"/>
-      <set var="h_ctl_aileron_setpoint" value="MAX_PPRZ/2"/>
-      <set var="h_ctl_elevator_setpoint" value="MAX_PPRZ/2"/>
-    </block>
-
+    
   </blocks>
 </procedure>
 <!-- </flight_plan> -->

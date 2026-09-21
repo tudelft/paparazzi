@@ -258,7 +258,9 @@
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission3.xml"/> -->
 <!-- ************** MISSSION 4 ****************************-->
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4.xml"/> -->
-    <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4_simple.xml"/> -->
+    <include name="Mission4" procedure="tudelft_include_imav2026_mission4_simple.xml">
+      <with from="Common.land" to="Common.land"/>
+    </include>
 
   </includes>
 
