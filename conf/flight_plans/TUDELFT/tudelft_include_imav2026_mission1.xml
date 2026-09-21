@@ -99,7 +99,7 @@
 
     <block name="Holding_point">
       <set value="1" var="autopilot.kill_throttle"/>
-      <exception cond="NavBlockTime() @GT holding_delay" deroute="Takeoff"/>
+      <!-- exception cond="NavBlockTime() @GT holding_delay" deroute="Takeoff"/> -->
       <attitude roll="0" throttle="0" vmode="throttle" until="FALSE"/>
     </block>
 
