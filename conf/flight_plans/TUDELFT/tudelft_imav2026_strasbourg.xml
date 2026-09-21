@@ -275,7 +275,8 @@
     -->
 
     <!-- Case of loss of GPS AND loss of datalink -->
-    <!-- <exception cond="And(datalink_time @GT 10, !GpsFixValid())" deroute="DatalinkAndGpsFailure"/> -->
+    <exception cond="RCLost() @AND datalink_time @GT 180 @AND !(nav_block ==IndexOfBlock('Mission.land')) @AND !(nav_block ==IndexOfBlock('Mission.final')) @AND !(nav_block ==IndexOfBlock('Mission.flare'))" deroute="Mission.Land_AF_TD"/>
+    <exception cond="!GpsFixValid()" deroute="GeoFence"/>
 
   </exceptions>
 
