@@ -16,13 +16,14 @@
     <!-- Launch / land infrastructure. AF is where the final glide STARTS,
          TD where it touches down. TD is the centre of the official
          "Precision landing Fixedwing zone" (5 x 20 m box, long axis
-         353/173 deg); the final is flown SOUTHBOUND (173 deg): AF 200 m
-         north of TD at 20 m AGL (~5.7 deg glide). AF is 15 m inside the west
-         fence, so Land AF-TD uses a NEGATIVE radius (baseleg circle east of
-         AF). For wind, drag AF round TD in the GCS. -->
+         353/173 deg); the final is flown SOUTHBOUND (~177 deg): AF 237 m
+         north of TD at 30 m AGL (~7.2 deg glide). AF sits east of the
+         M4_OW trees and south of M4_OE, so the final and the baseleg circle
+         clear the tree sectors. Land AF-TD uses a NEGATIVE radius (baseleg
+         circle east of AF). For wind, drag AF round TD in the GCS. -->
     <waypoint name="CLIMB" x="-13.193" y="276.124"/>
-    <!-- height, not alt: 20 m above the main plan's ground_alt. -->
-    <waypoint name="AF" x="-34.464" y="292.028" height="20."/>
+    <!-- height, not alt: 30 m above the main plan's ground_alt. -->
+    <waypoint name="AF" x="-22.0" y="330.0" height="30."/>
     <waypoint name="_BASELEG" x="-4.723" y="295.562"/>
     <!-- height="0": on the ground, otherwise final climbs from AF to TD. -->
     <waypoint name="TD" x="-10.839" y="93.428" height="0"/>
@@ -364,8 +365,8 @@
     </block>
 
     <block name="final" strip_button="final">
-      <!-- Glide AF -> TD; below 10 m AGL go to flare (motor killed). -->
-      <exception cond="GetAltRef() + 10 @GT GetPosAlt()" deroute="flare"/>
+      <!-- Glide AF -> TD; below 5 m AGL go to flare (motor killed). -->
+      <exception cond="GetAltRef() + 5 @GT GetPosAlt()" deroute="flare"/>
       <go from="AF" hmode="route" vmode="glide" wp="TD"/>
     </block>
 
