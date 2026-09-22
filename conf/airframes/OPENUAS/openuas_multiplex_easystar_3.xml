@@ -987,6 +987,7 @@
         <item name="pic" type="text">Enter the PIC</item>
         <item name="gcs" type="text">Enter the GCS op</item>
         <item name="inspection">Inspect airframe and c.g.</item>
+        <item name="payload">Check Connection to rPi</item>
         <item name="RPAS Battery">Check the RPAS and Laptop battery</item>
         <item name="RC Battery">Check the RC battery</item>
         <item name="tail connection">Check elevator is connected</item>
