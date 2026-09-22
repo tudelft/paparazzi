@@ -26,9 +26,10 @@
   
     <!-- ALL waypoints for SECTORS are defined in the SW, NW, NE, SE -->
 
-    <!-- Fixed-wing launch point (48.8086670N 7.8517466E, origin of the MS plans), inside Takeoff_Landing_zone_Fixedwing.
+    <!-- Default fixed-wing launch point (~48.806567N 7.851807E), ~28 m inside the south fence.
+         The Mission 1/2 takeoff blocks snap HOME to the actual launch spot.
          Defined here only: included procedures must not define HOME. -->
-    <waypoint name="HOME" x="-24.0" y="233.0"/>
+    <waypoint name="HOME" x="-24.0" y="0.0"/>
 
     <!-- Used for out of missionboundary tests -->
     <waypoint name="TESTTOOFAR" x="-48." y="537."/>
