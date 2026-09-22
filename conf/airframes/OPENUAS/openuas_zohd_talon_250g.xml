@@ -966,4 +966,16 @@
   <!-- TODO: NOT YET Calibrated, so you MUST change that file! -->
   <!-- <include href="conf/airframes/OPENUAS/diff/mag_calib_$AC_ID.xml"/> -->
 
+    <checklist>
+        <item name="pic" type="text">Enter the PIC</item>
+        <item name="gcs" type="text">Enter the GCS op</item>
+        <item name="inspection">Inspect airframe and c.g.</item>
+        <item name="RPAS Battery">Check the RPAS and Laptop battery</item>
+        <item name="RC Battery">Check the RC battery</item>
+        <item name="attitude">Check heading auto1</item>
+        <item name="airspeed">Airspeed test</item>
+        <item name="takeoff location">Go inside GeoFence and Holding point</item>
+    </checklist>
+
+
 </airframe>
