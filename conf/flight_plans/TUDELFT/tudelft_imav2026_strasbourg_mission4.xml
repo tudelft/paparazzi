@@ -2,7 +2,7 @@
 <!-- This is the Flightplan of team TU Delft MAVlab for use in the
      IMAV2026 Outdoor Challenge of 2026 in Strasbourg
 
-     MISSION 4 ONLY (Easystar_3): Common + the Mission 4 orbit (EARcam search,
+     MISSION 4 ONLY (Easystar_3), standalone: Common's blocks inlined + the Mission 4 orbit (EARcam search,
      nav_drop low release). Same site, waypoints, sectors and safety as
      tudelft_imav2026_strasbourg.xml (Adam, Missions 1 and 2); keep the two in step.
 
@@ -33,6 +33,11 @@
     <!-- Fixed-wing launch point (48.8086670N 7.8517466E, origin of the MS plans), inside Takeoff_Landing_zone_Fixedwing.
          Defined here only: included procedures must not define HOME. -->
     <waypoint name="HOME" x="-24.0" y="233.0"/>
+
+    <!-- Default takeoff start (~48.806567N 7.851807E), ~28 m inside the south fence.
+         The Mission 4 takeoff block snaps it to the actual launch spot and
+         climbs along TAKEOFF_POINT -> CLIMB. -->
+    <waypoint name="TAKEOFF_POINT" x="-24.0" y="0.0"/>
 
     <!-- Used for out of missionboundary tests -->
     <waypoint name="TESTTOOFAR" x="-48." y="537."/>
@@ -235,7 +240,7 @@
 
   <modules>
     <module name="digital_cam_earcam"/>
-    <!-- Mission 4 orbit: onboard wind for the drop run-in (Measure_Wind, wind_circle_upwind_course) -->
+    <!-- Mission 4 orbit: wind_circle_upwind_course() in Drop_Setup (no wind circle flown, so it falls back to the ground course) -->
     <module name="wind_circle"/>
   </modules>
 
@@ -250,11 +255,11 @@
 
 <!-- ************** SAFETY ****************************-->
 
-    <include name="Common" procedure="tudelft_include_imav2026_common.xml"/>
+    <!-- Common's blocks are in <blocks> below (standalone plan), not included. -->
 <!-- ************** MISSSION 4 ****************************-->
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4.xml"/> -->
     <include name="Mission4" procedure="tudelft_include_imav2026_mission4_orbit.xml">
-      <with from="Common.Land_AF_TD" to="Common.Land_AF_TD"/>
+      <with from="Land_AF_TD" to="Land_AF_TD"/>
     </include>
 
   </includes>
@@ -274,7 +279,7 @@
 
     <!-- Hard GeoFence -->
     <!-- TODO Maybe ADD aditional exception with 2 sec timer here just to be sure to avoid position GPS spikes or some other jitter issues -->
-  <exception cond="((!InsideGeofence(GetPosX(), GetPosY()))) @AND gps_has_been_good() @AND nav_block > IndexOfBlock('Common.Holding_point')" deroute="Common.GeoFence"/>
+  <exception cond="((!InsideGeofence(GetPosX(), GetPosY()))) @AND gps_has_been_good() @AND nav_block > IndexOfBlock('Holding_point')" deroute="GeoFence"/>
 
     <!-- Failure of Autopilot -->
     <!-- FTD will failsafe if no commands arrive during 100ms -->
@@ -293,14 +298,81 @@
     -->
 
     <!-- Case of loss of GPS AND loss of datalink -->
-    <exception cond="RCLost() @AND datalink_time @GT 180 @AND !(nav_block ==IndexOfBlock('Common.land')) @AND !(nav_block ==IndexOfBlock('Common.final')) @AND !(nav_block ==IndexOfBlock('Common.flare'))" deroute="Common.Land_AF_TD"/>
-    <exception cond="!GpsFixValid()" deroute="Common.GeoFence"/>
+    <exception cond="RCLost() @AND datalink_time @GT 180 @AND !(nav_block ==IndexOfBlock('land')) @AND !(nav_block ==IndexOfBlock('final')) @AND !(nav_block ==IndexOfBlock('flare'))" deroute="Land_AF_TD"/>
+    <exception cond="!GpsFixValid()" deroute="GeoFence"/>
 
   </exceptions>
 
+  <!-- Standalone: the pre-flight, safety and landing blocks of tudelft_include_imav2026_common.xml
+       live here, so Mission 4 does not depend on the Common include shared with Missions 1 and 2. -->
   <blocks>
-    <block name="Boot">
-      <deroute block="Common.Wait_GPS"/>
+    <!-- ── Pre-flight ───────────────────────────────────────────────────── -->
+
+    <block name="Boot" strip_button="Boot">
+      <deroute block="Wait_GPS"/>
+    </block>
+
+    <block name="Wait_GPS" strip_button="Wait_GPS">
+      <!-- NOTE: CHECK MISSION-SPECIFIC CAMERAS BEFORE TAKEOFF -->
+      <!-- <call_once fun="uart_cam_ctrl_set_camera_mask(CATIA_CAMERA_MASK_AICAM)"/> -->
+      <set value="1" var="autopilot.kill_throttle"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+
+    <block name="Geo_init" strip_button="Geo_init">
+      <while cond="LessThan(NavBlockTime(), 5)"/>
+      <!-- <call_once fun="NavSetGroundReferenceHere()"/> -->
+    </block>
+
+    <block name="Holding_point" strip_button="Holding_point">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <!-- exception cond="NavBlockTime() @GT holding_delay" deroute="Takeoff"/> -->
+      <attitude roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+
+    <block name="GeoFence" strip_button="GeoFence">
+      <!-- <call_once fun="NavKillThrottle()"/> -->
+      <set value="1" var="autopilot.kill_throttle"/>
+      <go wp="HOME"/>
+    </block>
+    <block name="RecoverFromGeoFence" strip_button="RecoverFromGeoFence">
+      <set value="0" var="autopilot.kill_throttle"/>
+      <go wp="HOME"/>
+      <!-- <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()" wp="STDBY"/> -->
+    </block>
+
+    <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="home">
+      <call_once fun="dc_stop()"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="10.0"/>
+      <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()+50.0" wp="STDBY"/>
+    </block>
+
+
+    <!-- ── Landing ──────────────────────────────────────────────────────── -->
+    <!-- Negative radius: baseleg circle east of AF, away from the west fence. -->
+    <block name="Land_AF_TD" strip_button="Land_AF_TD" strip_icon="land-left.png" group="land">
+      <call_once fun="dc_stop()"/>
+      <set value="-DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
+      <deroute block="land"/>
+    </block>
+
+    <block name="land" strip_button="land">
+      <call_once fun="nav_compute_baseleg(WP_AF, WP_TD, WP__BASELEG, nav_radius)"/>
+      <circle radius="nav_radius" until="NavCircleCount() @GT 0.5" wp="_BASELEG"/>
+      <circle radius="nav_radius" until="NavQdrCloseTo(DegOfRad(baseleg_out_qdr)-(nav_radius/fabs(nav_radius))*10) @AND (10 @GT fabs(GetPosAlt() - WaypointAlt(WP__BASELEG)))" wp="_BASELEG"/>
+      <deroute block="final"/>
+    </block>
+
+    <block name="final" strip_button="final">
+      <!-- Glide AF -> TD; below 10 m AGL go to flare (motor killed). -->
+      <exception cond="GetAltRef() + 10 @GT GetPosAlt()" deroute="flare"/>
+      <go from="AF" hmode="route" vmode="glide" wp="TD"/>
+    </block>
+
+    <block name="flare" strip_button="flare">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <go approaching_time="0" from="AF" hmode="route" throttle="0.0" vmode="throttle" wp="TD"/>
+      <attitude roll="0.0" throttle="0.0" until="FALSE" vmode="throttle"/>
     </block>
   </blocks>
 

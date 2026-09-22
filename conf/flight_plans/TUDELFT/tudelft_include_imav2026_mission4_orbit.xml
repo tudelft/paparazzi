@@ -1,13 +1,13 @@
 <!DOCTYPE procedure SYSTEM "../flight_plan.dtd">
 <!--
   IMAV 2026 Mission 4 (orbit) - dead man search and first-aid kit drop, on EARcam.
-  Included from tudelft_imav2026_strasbourg.xml:
+  Included from tudelft_imav2026_strasbourg_mission4.xml:
 
     <include name="Mission4" procedure="tudelft_include_imav2026_mission4_orbit.xml">
-      <with from="Common.Land_AF_TD" to="Common.Land_AF_TD"/>
+      <with from="Land_AF_TD" to="Land_AF_TD"/>
     </include>
 
-  Landing is Common's; the procedure reaches it through that reroute.
+  Landing (Land_AF_TD) is in the main plan; the procedure reaches it through that reroute.
 
   Search: low-throttle listening arcs on an orbit round SEARCH_CENTER. EARcam
   (CATIA on MORA) samples only on those arcs (earcam_listen) and returns the
@@ -20,424 +20,13 @@
   The waypoint names START and RELEASE are required by nav_drop.
 -->
 <procedure>
-  <header>
-#include "autopilot.h"
-#include "firmwares/fixedwing/guidance/energy_ctrl.h"
-/* Quoted include, and NO angle brackets, ampersands or comparison operators
-   anywhere in this header - not even inside a C comment, and not even
-   correctly escaped. Xml-light (the OCaml parser the paparazzi generators
-   use) fails outright on a raw angle bracket in element text: this file
-   passed 'xmllint --valid' and still died with Xml_error until some arrows
-   in these comments were reworded. Downstream, gen_aircraft does not
-   re-escape header text on output, so even a properly escaped entity
-   round-trips back out unescaped and corrupts the generated flight_plan.xml.
-   So: signbit() on a subtraction does the comparisons, '!=' does the loop
-   bounds, nested ifs replace logical and (a logical OR is spelled with two
-   pipes and is safe; a logical AND needs the forbidden character, so it is
-   written as nested ifs instead), and a 1-element array replaces taking an
-   address. Inherited from mission4_strasbourg.xml. */
-#include "modules/datalink/datalink.h"
-#include "modules/core/abi.h"
-#include "mcu_periph/sys_time.h"
-#include "modules/gps/gps.h"
-#include "modules/nav/common_flight_plan.h"
-#include "modules/nav/nav_drop.h"
-#include "modules/meteo/wind_circle.h"
-#include "modules/digital_cam/earcam_ctrl.h"
-
-/* ===================================================================
-   SITE MODEL. The tree sectors below and the main plan's Geofence sector
-   are generated into Inside* tests further down in the generated
-   flight_plan.h, so they are forward declared here. The two tests are the obstacle callbacks for
-   earcam_place_run_in_lane and earcam_place_climbout.
-   =================================================================== */
-#ifndef FBW
-static inline bool InsideM4_OW(float _x, float _y);
-static inline bool InsideM4_OE(float _x, float _y);
-static inline bool InsideM4_ON(float _x, float _y);
-static inline bool InsideGeofence(float _x, float _y);
-
-/* Trees, or outside the geofence: both are places the low run-in corridor
-   may not touch. Logical OR only - see the header note on operators. */
-static bool m4_obstacle(float x, float y) __attribute__((unused));
-static bool m4_obstacle(float x, float y)
-{
-  return InsideM4_OW(x, y) || InsideM4_OE(x, y) || InsideM4_ON(x, y) || !InsideGeofence(x, y);
-}
-static bool m4_outside_fence(float x, float y) __attribute__((unused));
-static bool m4_outside_fence(float x, float y)
-{
-  return !InsideGeofence(x, y);
-}
-#endif
-
-/* Run-in lane: course flown over the target (deg, from north), max tilt
-   and tilt step tried, corridor half width kept clear of the sectors, and
-   the side (+1 right, east over the meadow) of the base turn circle. */
-#define M4_LANE_COURSE_DEG 0.f
-#define M4_LANE_MAX_TILT_DEG 20.f
-#define M4_LANE_TILT_STEP_DEG 2.f
-#define M4_RUN_IN_M 300.f
-#define M4_LANE_MARGIN_M 8.f
-#define M4_DROPTURN_SIDE 1.f
-/* Climb-out straight ahead past the target, then the exit circle. */
-#define M4_CLIMBOUT_MAX_M 120.f
-#define M4_CLIMBOUT_MIN_M 40.f
-#define M4_CLIMBOUT_RATE_MPS 3.0f
-#define M4_CLIMBOUT_AIRSPEED_MPS 11.f
-#define M4_EXIT_TURN_RADIUS_M 30.f
-/* The exit circle stays this far inside the geofence: turn-entry overshoot
-   plus tailwind, GPS error and the fence's own accuracy. */
-#define M4_FENCE_MARGIN_M 40.f
-/* Above this height nothing at the site can be hit. The orbit flies here. */
-#define M4_SAFE_HEIGHT_M 45.f
-/* Below this height inside an obstacle sector = emergency climb. */
-#define M4_ESCAPE_HEIGHT_M 25.f
-
-/* Payload hatch closed (AUTO2: S_HATCH follows COMMAND_HATCH, AUTO1: the RC
-   switch). It is opened by nav_drop_shoot() through earcam_drop_shoot(). */
-#define DropClose() ({ commands[COMMAND_HATCH] = SERVO_HATCH_CLOSED; })
-#define DropOpen() ({ commands[COMMAND_HATCH] = SERVO_HATCH_OPEN; })
-
-/* ===================================================================
-   LOW-THROTTLE LISTENING, FROM THE FLIGHT PLAN ALONE
-
-   The energy controller's throttle is nominal + climb increment x climb
-   setpoint + airspeed P + energy P + two bank terms, and its integrator
-   rewrites nominal every control step. On a listening arc every term but
-   nominal is zeroed and nominal is set to listen_throttle (3-10 %), so the
-   propeller turns slowly at a fixed, quiet setting instead of stopping.
-
-   The terms are saved when an arc starts and restored when it ends,
-   integrator state included, so power comes back where it was.
-
-   Safety net: the request must be renewed at least every
-   MISSION4_QUIET_HOLD_S (mission4_quiet_on, every nav cycle). A GPS Abi
-   callback restores the gains once the request is stale. GPS arrives in
-   every autopilot mode, so this also covers HOME mode (geofence breach, RC
-   loss), which runs nav_home() instead of the flight plan and would
-   otherwise leave the gains at zero. The global exception
-   mission4_quiet_guard() does the same from every flight-plan block, in
-   case GPS stops. A gain changed from the GCS during an arc is overwritten
-   when the arc ends.
-
-   The arc also sets earcam_listen, so EARcam samples only on the arcs,
-   earcam_quiet_delay_s after the propeller slowed down. The gains and
-   earcam_listen are also restored as soon as nav_block is no longer the
-   block that started the arc; mission4_quiet_guard() is a global
-   exception, so on a deroute that happens before the new block's first
-   stage.
-   =================================================================== */
-#define MISSION4_QUIET_HOLD_S 0.3f
-#define MISSION4_QUIET_NGAINS 8
-
-static float mission4_quiet_saved[MISSION4_QUIET_NGAINS];
-static bool mission4_quiet_active = FALSE;
-static float mission4_quiet_until = 0.0f;
-static uint8_t mission4_quiet_block = 0;
-
-static inline void mission4_quiet_off(void)
-{
-  if (!mission4_quiet_active) { return; }
-  v_ctl_auto_throttle_nominal_cruise_throttle = mission4_quiet_saved[0];
-  v_ctl_auto_throttle_climb_throttle_increment = mission4_quiet_saved[1];
-  v_ctl_auto_throttle_of_airspeed_pgain = mission4_quiet_saved[2];
-  v_ctl_auto_throttle_of_airspeed_igain = mission4_quiet_saved[3];
-  v_ctl_energy_total_pgain = mission4_quiet_saved[4];
-  v_ctl_energy_total_igain = mission4_quiet_saved[5];
-  v_ctl_energy_bank_throttle_gain = mission4_quiet_saved[6];
-  v_ctl_energy_bank_washout_gain = mission4_quiet_saved[7];
-  earcam_listen = FALSE;
-  mission4_quiet_active = FALSE;
-}
-
-static inline void mission4_quiet_on(float listen_thr)
-{
-  if (!mission4_quiet_active) {
-    mission4_quiet_saved[0] = v_ctl_auto_throttle_nominal_cruise_throttle;
-    mission4_quiet_saved[1] = v_ctl_auto_throttle_climb_throttle_increment;
-    mission4_quiet_saved[2] = v_ctl_auto_throttle_of_airspeed_pgain;
-    mission4_quiet_saved[3] = v_ctl_auto_throttle_of_airspeed_igain;
-    mission4_quiet_saved[4] = v_ctl_energy_total_pgain;
-    mission4_quiet_saved[5] = v_ctl_energy_total_igain;
-    mission4_quiet_saved[6] = v_ctl_energy_bank_throttle_gain;
-    mission4_quiet_saved[7] = v_ctl_energy_bank_washout_gain;
-    v_ctl_auto_throttle_nominal_cruise_throttle = listen_thr;
-    v_ctl_auto_throttle_climb_throttle_increment = 0.f;
-    v_ctl_auto_throttle_of_airspeed_pgain = 0.f;
-    v_ctl_auto_throttle_of_airspeed_igain = 0.f;
-    v_ctl_energy_total_pgain = 0.f;
-    v_ctl_energy_total_igain = 0.f;
-    v_ctl_energy_bank_throttle_gain = 0.f;
-    v_ctl_energy_bank_washout_gain = 0.f;
-    mission4_quiet_block = nav_block;
-    earcam_listen = TRUE;
-    mission4_quiet_active = TRUE;
-  }
-  mission4_quiet_until = get_sys_time_float() + MISSION4_QUIET_HOLD_S;
-}
-
-static inline void mission4_quiet_check(void)
-{
-  if (mission4_quiet_active) {
-    if (!signbit(get_sys_time_float() - mission4_quiet_until)) { mission4_quiet_off(); }
-    else if (nav_block != mission4_quiet_block) { mission4_quiet_off(); }
-  }
-}
-
-/* EARcam listening session: sampling runs from earcam_start() in
-   Orbit_Begin until the plan leaves Orbit_Search by ANY route (normal
-   hand-over, escape exception, GeoFence, a GCS button). Then it is stopped,
-   so nothing is recorded outside the search. earcam_listen goes back to
-   its default (TRUE) for other plans. */
-static bool mission4_ear_on = FALSE;
-static uint8_t mission4_ear_block = 0;
-
-static inline void mission4_listen_stop(void)
-{
-  if (!mission4_ear_on) { return; }
-  earcam_stop();
-  earcam_listen = TRUE;
-  mission4_ear_on = FALSE;
-}
-
-static inline void mission4_listen_check(void)
-{
-  if (mission4_ear_on) {
-    if (nav_block != mission4_ear_block) { mission4_listen_stop(); }
-  }
-}
-
-static abi_event mission4_gps_ev[1];
-
-static void mission4_quiet_gps_cb(uint8_t sender_id __attribute__((unused)),
-                                  uint32_t stamp __attribute__((unused)),
-                                  struct GpsState *gps_s __attribute__((unused)))
-{
-  mission4_quiet_check();
-  mission4_listen_check();
-}
-
-static inline void mission4_quiet_init(void)
-{
-  AbiBindMsgGPS(ABI_BROADCAST, mission4_gps_ev, mission4_quiet_gps_cb);
-}
-
-/* The Abi binding, once only: binding the same event twice links it into
-   its own list. Called from Orbit_Begin, which can be flown more than once. */
-static bool mission4_bound = FALSE;
-static inline void mission4_init_once(void)
-{
-  if (mission4_bound) { return; }
-  mission4_quiet_init();
-  mission4_bound = TRUE;
-}
-
-/* Side-effecting condition for the global exception: always false. */
-static inline bool mission4_quiet_guard(void)
-{
-  mission4_quiet_check();
-  mission4_listen_check();
-  return FALSE;
-}
-
-/* ===================================================================
-   ORBIT SEARCH
-
-   A circle of MISSION4_ORBIT_R round the organisers' point, cycling
-   MISSION4_ORBIT_QUIET_M of low-throttle descent and MISSION4_ORBIT_POWER_M
-   of powered climb-back. Listening ends after orbit_arcs listening arcs
-   (8: about 150 s, every bearing heard from 4-5 arcs), or at
-   MISSION4_ORBIT_MAX_S if the arcs cannot start. An arc only starts, and
-   only continues, within MISSION4_LISTEN_RADIUS_M of SEARCH_CENTER: the
-   alarm is within 25 m of it, so nothing is listened to further out.
-   25 m at 10 m/s is about 22 deg of bank, below the airframe's declared
-   MIN_CIRCLE_RADIUS of 30 m.
-
-   Distance round the orbit is integrated from ground speed in the block's
-   pre_call, so the cycle does not depend on how the circle was joined. It
-   starts powered, which gives the aircraft 50 m to settle onto the circle.
-   EARcam samples on the arcs; the plan requests its result once listening
-   is done.
-   =================================================================== */
-#define MISSION4_ORBIT_R 25.0f
-#define MISSION4_ORBIT_QUIET_M 110.0f
-#define MISSION4_ORBIT_POWER_M 50.0f
-#define MISSION4_ORBIT_SPINDOWN 1.5f
-#define MISSION4_ORBIT_AIRSPEED 10.0f
-#define MISSION4_CRUISE_THR 0.16f
-#define MISSION4_LISTEN_RADIUS_M 40.0f
-#define MISSION4_ORBIT_MAX_S 300.0f
-
-static float mission4_orbit_t0 = 0.0f;
-static float mission4_orbit_last_t = -1.0f;
-static float mission4_orbit_dist = 0.0f;
-static float mission4_orbit_run = 0.0f;
-static bool mission4_orbit_quiet = FALSE;
-static bool mission4_orbit_done = FALSE;
-static uint8_t mission4_arcs_done = 0;
-
-/* Sweep: each listening arc starts MISSION4_ORBIT_STEP_DEG further round
-   than the last, whatever the climb rate, so the arcs cover every bearing
-   (an arc hears about 218 deg; all bearings are heard after 5 arcs). Left
-   to the climb-back alone the shift could shrink to ~7 deg and leave a
-   sector unheard for the whole search. */
-#define MISSION4_ORBIT_STEP_DEG 40.0f
-#define MISSION4_ORBIT_START_WINDOW_DEG 20.0f
-#define MISSION4_PI 3.14159265f
-
-static float mission4_orbit_cx = 0.0f;
-static float mission4_orbit_cy = 0.0f;
-static float mission4_orbit_target = 0.0f;
-static bool mission4_orbit_target_set = FALSE;
-
-/* Bearing of the aircraft from the orbit centre: radians, clockwise from
-   north, in [0, 2 pi). */
-static inline float mission4_orbit_bearing(void)
-{
-  float b = atan2f(GetPosX() - mission4_orbit_cx, GetPosY() - mission4_orbit_cy);
-  return fmodf(b + 2.0f * MISSION4_PI, 2.0f * MISSION4_PI);
-}
-
-/* Within MISSION4_LISTEN_RADIUS_M of the orbit centre. */
-static inline bool mission4_in_listen_zone(void)
-{
-  float dx = GetPosX() - mission4_orbit_cx;
-  float dy = GetPosY() - mission4_orbit_cy;
-  return signbit(dx * dx + dy * dy - MISSION4_LISTEN_RADIUS_M * MISSION4_LISTEN_RADIUS_M);
-}
-
-/* True when a listening arc may start here: at the planned start bearing,
-   or up to MISSION4_ORBIT_START_WINDOW_DEG past it. If the aircraft is
-   already further past, the plan steps on to the next start bearing ahead
-   of it instead of waiting a whole lap. The first arc starts wherever the
-   aircraft is and fixes the sequence. The circle is flown clockwise
-   (positive radius), so bearings increase. */
-static inline bool mission4_orbit_at_start_bearing(void)
-{
-  float brg = mission4_orbit_bearing();
-  float step = MISSION4_ORBIT_STEP_DEG * MISSION4_PI / 180.0f;
-  float win = MISSION4_ORBIT_START_WINDOW_DEG * MISSION4_PI / 180.0f;
-  if (!mission4_orbit_target_set) {
-    mission4_orbit_target = brg;
-    mission4_orbit_target_set = TRUE;
-  }
-  /* Signed angle the aircraft is past the target, in [-pi, pi). */
-  float d = fmodf(brg - mission4_orbit_target + 5.0f * MISSION4_PI, 2.0f * MISSION4_PI) - MISSION4_PI;
-  uint8_t guard = 0;
-  while (!signbit(d - win)) {
-    mission4_orbit_target = fmodf(mission4_orbit_target + step, 2.0f * MISSION4_PI);
-    d = fmodf(brg - mission4_orbit_target + 5.0f * MISSION4_PI, 2.0f * MISSION4_PI) - MISSION4_PI;
-    guard++;
-    if (guard == 12) { break; }
-  }
-  if (signbit(d)) { return FALSE; }
-  if (!signbit(d - win)) { return FALSE; }
-  mission4_orbit_target = fmodf(mission4_orbit_target + step, 2.0f * MISSION4_PI);
-  return TRUE;
-}
-
-static inline void mission4_orbit_reset(uint8_t centre_wp, uint8_t drop_wp)
-{
-  mission4_quiet_off();
-  mission4_orbit_t0 = get_sys_time_float();
-  mission4_orbit_last_t = -1.0f;
-  mission4_orbit_dist = 0.0f;
-  mission4_orbit_run = 0.0f;
-  mission4_orbit_quiet = FALSE;
-  mission4_orbit_done = FALSE;
-  mission4_arcs_done = 0;
-  mission4_orbit_cx = waypoints[centre_wp].x;
-  mission4_orbit_cy = waypoints[centre_wp].y;
-  mission4_orbit_target_set = FALSE;
-  waypoints[drop_wp].x = waypoints[centre_wp].x;
-  waypoints[drop_wp].y = waypoints[centre_wp].y;
-}
-
-/* Orbit Search pre_call: owns the quiet/powered cycle for n_arcs arcs,
-   then powers up and sets mission4_orbit_done, which hands over to the
-   EARcam result blocks.
-
-   A listening arc only starts once the climb-back has actually reached
-   height (within MISSION4_ORBIT_REGAIN_TOL), and ends early if the glide
-   reaches floor_m. A fixed 50 m of power is not enough on its own: the
-   climb is capped near 2 m/s, so it regained ~9 m per cycle against
-   ~10.5 m lost, and a SITL flight ratcheted from 45 m down to 20 m over
-   nine arcs - under the floor, which only limits the COMMANDED height and
-   cannot stop a glide with the motor off. */
-#define MISSION4_ORBIT_REGAIN_TOL 1.0f
-static inline void mission4_orbit_update(float n_arcs, float height, float floor_m, float listen_thr)
-{
-  float now = get_sys_time_float();
-  v_ctl_auto_airspeed_setpoint = MISSION4_ORBIT_AIRSPEED;
-  if (mission4_orbit_done) { return; }
-  mission4_ear_on = TRUE;
-  mission4_ear_block = nav_block;
-
-  /* Listening ends after n_arcs completed arcs, or at MISSION4_ORBIT_MAX_S. */
-  bool listen_done = FALSE;
-  if (!mission4_orbit_quiet) {
-    if (!signbit((float)mission4_arcs_done - n_arcs)) { listen_done = TRUE; }
-  }
-  if (!signbit(now - mission4_orbit_t0 - MISSION4_ORBIT_MAX_S)) { listen_done = TRUE; }
-  if (listen_done) {
-    mission4_quiet_off();
-    mission4_orbit_quiet = FALSE;
-    mission4_orbit_done = TRUE;
-    return;
-  }
-
-  float dt = now - mission4_orbit_last_t;
-  if (signbit(mission4_orbit_last_t)) { dt = 0.0f; }
-  if (!signbit(dt - 0.5f)) { dt = 0.0f; }
-  mission4_orbit_last_t = now;
-  float ds = stateGetHorizontalSpeedNorm_f() * dt;
-  mission4_orbit_dist += ds;
-
-  float h = GetPosAlt() - GetAltRef();
-  if (mission4_orbit_quiet) {
-    mission4_orbit_run += ds;
-    if (!signbit(mission4_orbit_dist - MISSION4_ORBIT_QUIET_M) || signbit(h - floor_m) || !mission4_in_listen_zone()) {
-      mission4_orbit_quiet = FALSE;
-      mission4_orbit_dist = 0.0f;
-      mission4_arcs_done++;
-      mission4_quiet_off();
-    } else {
-      mission4_quiet_on(listen_thr);
-    }
-  } else if (!signbit(mission4_orbit_dist - MISSION4_ORBIT_POWER_M)) {
-    if (!signbit(h - height + MISSION4_ORBIT_REGAIN_TOL)) {
-      if (mission4_in_listen_zone()) {
-        if (mission4_orbit_at_start_bearing()) {
-          mission4_orbit_quiet = TRUE;
-          mission4_orbit_dist = 0.0f;
-          mission4_orbit_run = 0.0f;
-          mission4_quiet_on(listen_thr);
-        }
-      }
-    }
-  }
-}
-
-/* Level at the orbit height when powered; the natural glide line on a
-   listening arc, where commanding level flight would only fight a motor
-   that is off. Floored so a lagging climb-back cannot ratchet it down. */
-static inline float mission4_orbit_alt(float height, float floor_m)
-{
-  if (!mission4_orbit_quiet) { return GetAltRef() + height; }
-  float h = height - mission4_orbit_run / (float)V_CTL_GLIDE_RATIO;
-  if (signbit(h - floor_m)) { h = floor_m; }
-  return GetAltRef() + h;
-}
-  </header>
-
   <waypoints>
     <waypoint name="SEARCH_CENTER" lat="48.810232" lon="7.851804" height="45."/>
     <!-- Simulator reference only: put the CATIA earcam-sim source at this position. -->
     <waypoint name="TRUE_SOUND_SOURCE" x="-25.123" y="416.162" height="0."/>
     <!-- Release geometry, laid out in Drop_Setup / Drop_Approach:
            DROP_POINT = EARcam result at GROUND level (height 0 = ground reference for the fall height).
-           START      = M4_RUN_IN_M before DROP_POINT on the run-in course; the glide starts at approach_height.
+           START      = ORBIT_DROP_RUN_IN_M before DROP_POINT on the run-in course; the glide starts at approach_height.
            _LEVEL     = level-off point level_distance before RELEASE at the release height.
            RELEASE    = where the hatch opens, computed by nav_drop every cycle.
            _DROPTURN  = base turn circle centre beside START.
@@ -516,19 +105,22 @@ static inline float mission4_orbit_alt(float height, float floor_m)
 
   <exceptions>
     <!-- Low inside a tree sector: climb away. Only in this plan's own blocks (Start_Mission4_Orbit
-         to Drop_Decide), so never during Common's landing, and not in the go-around/exit themselves. -->
-    <exception cond="m4_obstacle(GetPosX(), GetPosY()) @AND (M4_ESCAPE_HEIGHT_M @GT GetPosHeight()) @AND (nav_block @GEQ IndexOfBlock('Start_Mission4_Orbit')) @AND (IndexOfBlock('Drop_Decide') @GEQ nav_block) @AND !(nav_block == IndexOfBlock('Drop_Go_Around')) @AND !(nav_block == IndexOfBlock('Drop_Exit')) @AND !(nav_block == IndexOfBlock('Climb_Over_Search'))" deroute="Drop_Go_Around"/>
+         to Drop_Decide), so never during the main plan's landing, and not in the go-around/exit themselves. -->
+    <exception cond="orbit_drop_obstacle(GetPosX(), GetPosY()) @AND (ORBIT_DROP_ESCAPE_HEIGHT_M @GT GetPosHeight()) @AND (nav_block @GEQ IndexOfBlock('Start_Mission4_Orbit')) @AND (IndexOfBlock('Drop_Decide') @GEQ nav_block) @AND !(nav_block == IndexOfBlock('Drop_Go_Around')) @AND !(nav_block == IndexOfBlock('Drop_Exit')) @AND !(nav_block == IndexOfBlock('Climb_Over_Search'))" deroute="Drop_Go_Around"/>
     <!-- Always false: runs the listening and EARcam safety nets every cycle, so the deroute is never taken. -->
-    <exception cond="mission4_quiet_guard()" deroute="Common.Land_AF_TD"/>
+    <exception cond="quiet_listen_guard()" deroute="Land_AF_TD"/>
   </exceptions>
 
   <blocks>
+    <!-- TAKEOFF_POINT is snapped to the launch spot (plane still in hand), then the
+         climb holds the fixed line TAKEOFF_POINT -> CLIMB. -->
     <block key="t" name="Takeoff Mission4" strip_button="Takeoff M4" strip_icon="takeoff.png" group="home">
       <exception cond="GetPosAlt() @GT GetAltRef() + 25" deroute="Start_Mission4_Orbit"/>
+      <call_once fun="NavSetWaypointHere(WP_TAKEOFF_POINT)"/>
       <set value="0" var="autopilot.kill_throttle"/>
       <set value="1" var="autopilot.launch"/>
       <set value="0" var="autopilot.flight_time"/>
-      <attitude roll="0" throttle="0.99" pitch="25" vmode="throttle" until="GetPosAlt() @GT GetAltRef() + 25"/>
+      <go from="TAKEOFF_POINT" hmode="route" wp="CLIMB" throttle="1.0" vmode="throttle" pitch="15" until="GetPosAlt() @GT GetAltRef() + 25"/>
       <deroute block="Start_Mission4_Orbit"/>
     </block>
 
@@ -540,29 +132,16 @@ static inline float mission4_orbit_alt(float height, float floor_m)
     </block>
 
     <block name="Climb_to_Orbit_Height" group="mission">
-      <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="MISSION4_CRUISE_THR"/>
-      <set var="v_ctl_auto_airspeed_setpoint" value="MISSION4_ORBIT_AIRSPEED"/>
-      <exception cond="GetPosAlt() @GT GetAltRef() + orbit_height - 2.0" deroute="Measure_Wind"/>
+      <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="ORBIT_SEARCH_CRUISE_THR"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="ORBIT_SEARCH_AIRSPEED"/>
+      <exception cond="GetPosAlt() @GT GetAltRef() + orbit_height - 2.0" deroute="Orbit_Begin"/>
       <circle climb="2.0" radius="DEFAULT_CIRCLE_RADIUS" vmode="climb" wp="SEARCH_CENTER"/>
     </block>
 
-    <!-- One circle at mission height, motor on, constant airspeed: wind_circle fits the
-         GPS ground speed vectors and publishes the wind to the state (used by the drop).
-         One lap at 40 m / 10 m/s is about 25 s; no fit after 70 s -> go on with the
-         last known wind. -->
-    <block name="Measure_Wind" group="mission">
-      <call_once fun="wind_circle_start()"/>
-      <exception cond="wind_circle.ready @AND (NavBlockTime() @GT 25)" deroute="Orbit_Begin"/>
-      <exception cond="NavBlockTime() @GT 70" deroute="Orbit_Begin"/>
-      <circle alt="GetAltRef() + orbit_height" radius="DEFAULT_CIRCLE_RADIUS" wp="SEARCH_CENTER"/>
-    </block>
-
     <block name="Orbit_Begin" group="mission">
-      <call_once fun="wind_circle_stop()"/>
-      <call_once fun="mission4_init_once()"/>
-      <call_once fun="DropClose()"/>
+      <call_once fun="orbit_drop_hatch_close()"/>
       <call_once fun="DownlinkSendWpNr(WP_TRUE_SOUND_SOURCE)"/>
-      <call_once fun="mission4_orbit_reset(WP_SEARCH_CENTER, WP_DROP_POINT)"/>
+      <call_once fun="orbit_search_reset(WP_SEARCH_CENTER, WP_DROP_POINT)"/>
       <!-- EARcam samples only on the listening arcs (earcam_listen), after earcam_quiet_delay_s -->
       <set var="earcam_quiet_only" value="FALSE"/>
       <set var="earcam_listen" value="FALSE"/>
@@ -570,10 +149,10 @@ static inline float mission4_orbit_alt(float height, float floor_m)
       <deroute block="Orbit_Search"/>
     </block>
 
-    <block name="Orbit_Search" group="mission" pre_call="mission4_orbit_update(orbit_arcs, orbit_height, orbit_floor, listen_throttle)">
+    <block name="Orbit_Search" group="mission" pre_call="orbit_search_update(orbit_arcs, orbit_height, orbit_floor, listen_throttle)">
       <exception cond="sound_detected" deroute="Drop_Setup"/>
-      <exception cond="mission4_orbit_done" deroute="Orbit_Finish"/>
-      <circle radius="MISSION4_ORBIT_R" vmode="alt" alt="mission4_orbit_alt(orbit_height, orbit_floor)" wp="SEARCH_CENTER"/>
+      <exception cond="orbit_search_done" deroute="Orbit_Finish"/>
+      <circle radius="ORBIT_SEARCH_RADIUS" vmode="alt" alt="orbit_search_alt(orbit_height, orbit_floor)" wp="SEARCH_CENTER"/>
     </block>
 
     <!-- Final EARcam result: MORA fuses all samples. Block exceptions are evaluated
@@ -581,22 +160,22 @@ static inline float mission4_orbit_alt(float height, float floor_m)
          reply flag itself: request here, wait in the next block. -->
     <block name="Orbit_Finish" group="mission">
       <set var="earcam_result_fresh" value="FALSE"/>
-      <call_once fun="mission4_listen_stop()"/>
+      <call_once fun="quiet_listen_session_stop()"/>
       <deroute block="Orbit_Wait"/>
     </block>
 
     <block name="Orbit_Wait" group="mission">
       <exception cond="earcam_result_fresh" deroute="Orbit_Decide"/>
       <exception cond="NavBlockTime() @GT 5" deroute="Orbit_Decide"/>
-      <circle radius="MISSION4_ORBIT_R" vmode="alt" alt="GetAltRef() + orbit_height" wp="SEARCH_CENTER"/>
+      <circle radius="ORBIT_SEARCH_RADIUS" vmode="alt" alt="GetAltRef() + orbit_height" wp="SEARCH_CENTER"/>
     </block>
 
     <!-- EARcam gave a result: DROP_POINT = the loudest spot, moved into the 25 m circle
          round SEARCH_CENTER if it lies outside (the nearest circle point, which is also the
          loudest point inside it), then the drop. No result at all: nothing to drop on, land. -->
     <block name="Orbit_Decide" group="mission">
-      <exception cond="!earcam_result_valid" deroute="Common.Land_AF_TD"/>
-      <exception cond="earcam_result_to_waypoint_in_circle(WP_DROP_POINT, WP_SEARCH_CENTER, 25)" deroute="Common.Land_AF_TD"/>
+      <exception cond="!earcam_result_valid" deroute="Land_AF_TD"/>
+      <exception cond="earcam_result_to_waypoint_in_circle(WP_DROP_POINT, WP_SEARCH_CENTER, 25)" deroute="Land_AF_TD"/>
       <call_once fun="DownlinkSendWpNr(WP_DROP_POINT)"/>
       <set var="sound_detected" value="TRUE"/>
       <deroute block="Drop_Setup"/>
@@ -607,14 +186,14 @@ static inline float mission4_orbit_alt(float height, float floor_m)
     </block>
 
 
-    <!-- Run-in lane (EARcam): START M4_RUN_IN_M before DROP_POINT on the lane course,
-         tilted up to M4_LANE_MAX_TILT_DEG while a corridor M4_LANE_MARGIN_M either side is
+    <!-- Run-in lane (EARcam): START ORBIT_DROP_RUN_IN_M before DROP_POINT on the lane course,
+         tilted up to ORBIT_DROP_LANE_MAX_TILT_DEG while a corridor ORBIT_DROP_LANE_MARGIN_M either side is
          clear of the tree sectors and inside the fence; ties go towards the wind. -->
     <block name="Drop_Setup" group="mission">
       <set var="drop_approaches" value="drop_approaches + 1"/>
       <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="0.16"/>
-      <call_once fun="DropClose()"/>
-      <call_once fun="earcam_place_run_in_lane(WP_START, WP_DROP_POINT, M4_RUN_IN_M, M4_CLIMBOUT_MAX_M, M4_LANE_MARGIN_M, M4_LANE_COURSE_DEG, M4_LANE_MAX_TILT_DEG, M4_LANE_TILT_STEP_DEG, wind_circle_upwind_course(), m4_obstacle)"/>
+      <call_once fun="orbit_drop_hatch_close()"/>
+      <call_once fun="earcam_place_run_in_lane(WP_START, WP_DROP_POINT, ORBIT_DROP_RUN_IN_M, ORBIT_DROP_CLIMBOUT_MAX_M, ORBIT_DROP_LANE_MARGIN_M, ORBIT_DROP_LANE_COURSE_DEG, ORBIT_DROP_LANE_MAX_TILT_DEG, ORBIT_DROP_LANE_TILT_STEP_DEG, wind_circle_upwind_course(), orbit_drop_obstacle)"/>
       <deroute block="Drop_Approach"/>
     </block>
 
@@ -624,14 +203,14 @@ static inline float mission4_orbit_alt(float height, float floor_m)
     <block name="Drop_Approach" group="mission">
       <exception cond="!earcam_run_in_clear" deroute="Drop_No_Corridor"/>
       <call_once fun="nav_move_waypoint_enu(WP_START, WaypointX(WP_START), WaypointY(WP_START), WaypointAlt(WP_DROP_POINT) + approach_height)"/>
-      <call_once fun="nav_drop_compute_approach(WP_DROP_POINT, WP_START, WP__DROPTURN, WP__CLIMBOUT, M4_DROPTURN_SIDE * fabsf(nav_radius))"/>
-      <call_once fun="earcam_place_climbout(WP_START, WP_DROP_POINT, WP__CLIMBOUT, WP__EXIT, M4_CLIMBOUT_MAX_M, M4_CLIMBOUT_MIN_M, M4_EXIT_TURN_RADIUS_M, M4_FENCE_MARGIN_M, M4_DROPTURN_SIDE, WaypointAlt(WP_DROP_POINT) + M4_SAFE_HEIGHT_M, m4_outside_fence)"/>
+      <call_once fun="nav_drop_compute_approach(WP_DROP_POINT, WP_START, WP__DROPTURN, WP__CLIMBOUT, ORBIT_DROP_DROPTURN_SIDE * fabsf(nav_radius))"/>
+      <call_once fun="earcam_place_climbout(WP_START, WP_DROP_POINT, WP__CLIMBOUT, WP__EXIT, ORBIT_DROP_CLIMBOUT_MAX_M, ORBIT_DROP_CLIMBOUT_MIN_M, ORBIT_DROP_EXIT_TURN_RADIUS_M, ORBIT_DROP_FENCE_MARGIN_M, ORBIT_DROP_DROPTURN_SIDE, WaypointAlt(WP_DROP_POINT) + ORBIT_DROP_SAFE_HEIGHT_M, orbit_drop_outside_fence)"/>
       <call_once fun="earcam_drop_level_point(WP_START, WP_RELEASE, WP_DROP_POINT, WP__LEVEL, level_distance)"/>
       <set var="drop_laid_out" value="TRUE"/>
       <call_once fun="DownlinkSendWpNr(WP_START)"/>
       <call_once fun="DownlinkSendWpNr(WP__CLIMBOUT)"/>
       <set var="v_ctl_auto_airspeed_setpoint" value="12."/>
-      <circle radius="M4_DROPTURN_SIDE * fabsf(nav_radius)" until="NavQdrCloseTo(DegOfRad(nav_drop_start_qdr)-15) @AND (5 @GT fabsf(GetPosAlt() - WaypointAlt(WP_START)))" wp="_DROPTURN"/>
+      <circle radius="ORBIT_DROP_DROPTURN_SIDE * fabsf(nav_radius)" until="NavQdrCloseTo(DegOfRad(nav_drop_start_qdr)-15) @AND (5 @GT fabsf(GetPosAlt() - WaypointAlt(WP_START)))" wp="_DROPTURN"/>
       <deroute block="Drop_Glide"/>
     </block>
 
@@ -639,7 +218,7 @@ static inline float mission4_orbit_alt(float height, float floor_m)
          only on an internal error). Rangefinder too low: go around. -->
     <block name="Drop_Glide" group="mission">
       <exception cond="earcam_drop_too_low(WP_DROP_POINT)" deroute="Drop_Go_Around"/>
-      <exception cond="nav_drop_update_release(WP_DROP_POINT)" deroute="Common.Land_AF_TD"/>
+      <exception cond="nav_drop_update_release(WP_DROP_POINT)" deroute="Land_AF_TD"/>
       <set var="v_ctl_auto_airspeed_setpoint" value="10."/>
       <go approaching_time="1" from="START" hmode="route" vmode="glide" wp="_LEVEL"/>
       <deroute block="Drop_Final"/>
@@ -650,7 +229,7 @@ static inline float mission4_orbit_alt(float height, float floor_m)
          too high, the go finishes and it is a miss. -->
     <block name="Drop_Final" group="mission">
       <exception cond="earcam_drop_too_low(WP_DROP_POINT)" deroute="Drop_Go_Around"/>
-      <exception cond="nav_drop_update_release(WP_DROP_POINT)" deroute="Common.Land_AF_TD"/>
+      <exception cond="nav_drop_update_release(WP_DROP_POINT)" deroute="Land_AF_TD"/>
       <exception cond="NavApproachingFrom(WP_RELEASE, WP__LEVEL, 0) @AND (earcam_drop_shoot(WP_DROP_POINT) == 0)" deroute="Drop_Release"/>
       <go approaching_time="0" from="_LEVEL" hmode="route" wp="RELEASE" vmode="alt" alt="earcam_drop_altitude(WP_DROP_POINT)"/>
       <deroute block="Drop_Missed"/>
@@ -660,16 +239,16 @@ static inline float mission4_orbit_alt(float height, float floor_m)
       <call_once fun="earcam_drop_mark_impact(WP_DROP_POINT, WP_RELEASE, WP__IMPACT)"/>
       <call_once fun="DownlinkSendWpNr(WP__IMPACT)"/>
       <call_once fun="DownlinkSendWpNr(WP_RELEASE)"/>
-      <set var="v_ctl_auto_airspeed_setpoint" value="M4_CLIMBOUT_AIRSPEED_MPS"/>
-      <set var="v_ctl_max_climb" value="M4_CLIMBOUT_RATE_MPS"/>
-      <go approaching_time="0" from="RELEASE" hmode="route" wp="_CLIMBOUT" vmode="climb" climb="M4_CLIMBOUT_RATE_MPS"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="ORBIT_DROP_CLIMBOUT_AIRSPEED_MPS"/>
+      <set var="v_ctl_max_climb" value="ORBIT_DROP_CLIMBOUT_RATE_MPS"/>
+      <go approaching_time="0" from="RELEASE" hmode="route" wp="_CLIMBOUT" vmode="climb" climb="ORBIT_DROP_CLIMBOUT_RATE_MPS"/>
       <deroute block="Drop_Exit"/>
     </block>
 
     <block name="Drop_Missed" group="mission">
-      <set var="v_ctl_auto_airspeed_setpoint" value="M4_CLIMBOUT_AIRSPEED_MPS"/>
-      <set var="v_ctl_max_climb" value="M4_CLIMBOUT_RATE_MPS"/>
-      <go approaching_time="0" from="RELEASE" hmode="route" wp="_CLIMBOUT" vmode="climb" climb="M4_CLIMBOUT_RATE_MPS"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="ORBIT_DROP_CLIMBOUT_AIRSPEED_MPS"/>
+      <set var="v_ctl_max_climb" value="ORBIT_DROP_CLIMBOUT_RATE_MPS"/>
+      <go approaching_time="0" from="RELEASE" hmode="route" wp="_CLIMBOUT" vmode="climb" climb="ORBIT_DROP_CLIMBOUT_RATE_MPS"/>
       <deroute block="Drop_Exit"/>
     </block>
 
@@ -677,9 +256,9 @@ static inline float mission4_orbit_alt(float height, float floor_m)
       <exception cond="!drop_laid_out" deroute="Climb_Over_Search"/>
       <call_once fun="autopilot_set_kill_throttle(false)"/>
       <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="0.16"/>
-      <set var="v_ctl_auto_airspeed_setpoint" value="M4_CLIMBOUT_AIRSPEED_MPS"/>
-      <set var="v_ctl_max_climb" value="M4_CLIMBOUT_RATE_MPS"/>
-      <go approaching_time="0" wp="_CLIMBOUT" vmode="climb" climb="M4_CLIMBOUT_RATE_MPS"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="ORBIT_DROP_CLIMBOUT_AIRSPEED_MPS"/>
+      <set var="v_ctl_max_climb" value="ORBIT_DROP_CLIMBOUT_RATE_MPS"/>
+      <go approaching_time="0" wp="_CLIMBOUT" vmode="climb" climb="ORBIT_DROP_CLIMBOUT_RATE_MPS"/>
       <deroute block="Drop_Exit"/>
     </block>
 
@@ -688,19 +267,19 @@ static inline float mission4_orbit_alt(float height, float floor_m)
     <block name="Climb_Over_Search" group="mission">
       <call_once fun="autopilot_set_kill_throttle(false)"/>
       <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="0.16"/>
-      <set var="v_ctl_auto_airspeed_setpoint" value="M4_CLIMBOUT_AIRSPEED_MPS"/>
-      <set var="v_ctl_max_climb" value="M4_CLIMBOUT_RATE_MPS"/>
-      <circle radius="DEFAULT_CIRCLE_RADIUS" until="GetPosHeight() @GT M4_SAFE_HEIGHT_M - 5" vmode="climb" climb="M4_CLIMBOUT_RATE_MPS" wp="SEARCH_CENTER"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="ORBIT_DROP_CLIMBOUT_AIRSPEED_MPS"/>
+      <set var="v_ctl_max_climb" value="ORBIT_DROP_CLIMBOUT_RATE_MPS"/>
+      <circle radius="DEFAULT_CIRCLE_RADIUS" until="GetPosHeight() @GT ORBIT_DROP_SAFE_HEIGHT_M - 5" vmode="climb" climb="ORBIT_DROP_CLIMBOUT_RATE_MPS" wp="SEARCH_CENTER"/>
       <set var="v_ctl_max_climb" value="V_CTL_ALTITUDE_MAX_CLIMB"/>
-      <deroute block="Common.Land_AF_TD"/>
+      <deroute block="Land_AF_TD"/>
     </block>
 
     <block name="Drop_Exit" group="mission">
-      <call_once fun="DropClose()"/>
-      <set var="v_ctl_max_climb" value="M4_CLIMBOUT_RATE_MPS"/>
-      <set var="v_ctl_auto_airspeed_setpoint" value="M4_CLIMBOUT_AIRSPEED_MPS"/>
-      <circle radius="M4_DROPTURN_SIDE * M4_EXIT_TURN_RADIUS_M"
-              until="GetPosHeight() @GT M4_SAFE_HEIGHT_M - 5" vmode="climb" climb="M4_CLIMBOUT_RATE_MPS" wp="_EXIT"/>
+      <call_once fun="orbit_drop_hatch_close()"/>
+      <set var="v_ctl_max_climb" value="ORBIT_DROP_CLIMBOUT_RATE_MPS"/>
+      <set var="v_ctl_auto_airspeed_setpoint" value="ORBIT_DROP_CLIMBOUT_AIRSPEED_MPS"/>
+      <circle radius="ORBIT_DROP_DROPTURN_SIDE * ORBIT_DROP_EXIT_TURN_RADIUS_M"
+              until="GetPosHeight() @GT ORBIT_DROP_SAFE_HEIGHT_M - 5" vmode="climb" climb="ORBIT_DROP_CLIMBOUT_RATE_MPS" wp="_EXIT"/>
       <set var="v_ctl_max_climb" value="V_CTL_ALTITUDE_MAX_CLIMB"/>
       <deroute block="Drop_Decide"/>
     </block>
@@ -708,13 +287,13 @@ static inline float mission4_orbit_alt(float height, float floor_m)
     <block name="Drop_No_Corridor" group="mission">
       <set var="v_ctl_auto_throttle_nominal_cruise_throttle" value="0.16"/>
       <set var="v_ctl_auto_airspeed_setpoint" value="12."/>
-      <exception cond="NavCircleCount() @GT 1.0" deroute="Common.Land_AF_TD"/>
-      <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()+M4_SAFE_HEIGHT_M" wp="SEARCH_CENTER"/>
+      <exception cond="NavCircleCount() @GT 1.0" deroute="Land_AF_TD"/>
+      <circle radius="DEFAULT_CIRCLE_RADIUS" vmode="alt" alt="GetAltRef()+ORBIT_DROP_SAFE_HEIGHT_M" wp="SEARCH_CENTER"/>
     </block>
 
     <block name="Drop_Decide" group="mission">
-      <exception cond="earcam_drop_released" deroute="Common.Land_AF_TD"/>
-      <deroute block="Common.Land_AF_TD"/>
+      <exception cond="earcam_drop_released" deroute="Land_AF_TD"/>
+      <deroute block="Land_AF_TD"/>
     </block>
   </blocks>
 </procedure>
