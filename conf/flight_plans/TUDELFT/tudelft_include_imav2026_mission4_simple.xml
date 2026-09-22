@@ -204,7 +204,7 @@ extern bool_t compute_alignment(uint8_t w1, uint8_t w2, uint8_t start, uint8_t e
 
     <block name="drop_release">
       <call_once fun="DropOpen()"/>
-      <deroute block="Common.land"/>
+      <deroute block="Common.Land_AF_TD"/>
     </block>
 
     <!-- 

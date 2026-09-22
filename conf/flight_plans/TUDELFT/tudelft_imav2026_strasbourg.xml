@@ -258,14 +258,14 @@
 <!-- ************** MISSSION 2 ****************************-->
     <include name="Mission2" procedure="tudelft_include_imav2026_mission2.xml">
       <with from="Common.Land_AF_TD" to="Common.Land_AF_TD"/>
-      <with from="Common.land" to="Common.land"/>
+      <with from="Common.Land_AF_TD" to="Common.Land_AF_TD"/>
     </include>
 <!-- ************** MISSSION 3 ****************************-->
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission3.xml"/> -->
 <!-- ************** MISSSION 4 ****************************-->
     <!-- <include name="Mission" procedure="tudelft_include_imav2026_mission4.xml"/> -->
     <include name="Mission4" procedure="tudelft_include_imav2026_mission4_simple.xml">
-      <with from="Common.land" to="Common.land"/>
+      <with from="Common.Land_AF_TD" to="Common.Land_AF_TD"/>
     </include>
 
   </includes>
