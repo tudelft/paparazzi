@@ -57,15 +57,13 @@
       <exception cond="ThrottleHigh()" deroute="Takeoff"/>
     </block> -->
     
-    <!-- HOME is snapped to the launch spot (plane still in hand), then the
-         climb holds the fixed line HOME -> CLIMB. -->
     <block name="Takeoff Mission 4" strip_icon="takeoff.png" strip_button="Takeoff M4">
-      <exception cond="GetPosAlt() @GT GetAltRef()+25" deroute="go_find_tanguy_and_rescue"/>
-      <call_once fun="NavSetWaypointHere(WP_HOME)"/>
       <set var="autopilot.kill_throttle" value="0"/>
       <set var="autopilot.flight_time" value="0"/>
       <set var="autopilot.launch" value="1"/>
-      <go from="HOME" hmode="route" wp="CLIMB" throttle="1.0" vmode="throttle" pitch="15" until="GetPosAlt() @GT GetAltRef() + 25"/>
+      <exception cond="GetPosAlt() @GT GetAltRef()+25" deroute="go_find_tanguy_and_rescue"/>
+      <call_once fun="NavSetWaypointHere(WP_TAKEOFF_POINT)"/>
+      <go from="TAKEOFF_POINT" hmode="route" wp="CLIMB" throttle="1.0" vmode="throttle" pitch="15" until="GetPosAlt() @GT GetAltRef() + 25"/>
     </block>
 
     <!-- <block name="Standby" strip_button="Standby" strip_icon="home.png">

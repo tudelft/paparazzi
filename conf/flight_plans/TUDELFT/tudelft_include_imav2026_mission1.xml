@@ -82,15 +82,15 @@
     </block>
 
     <!-- ── Launch ───────────────────────────────────────────────────────── -->
-    <!-- HOME is snapped to the launch spot (plane still in hand), then the
-         climb holds the fixed line HOME -> _MA1, where Area 1 starts. -->
+    <!-- TAKEOFF_POINT is snapped to the launch spot (plane still in hand), then the
+         climb holds the fixed line TAKEOFF_POINT -> CLIMB. -->
     <block key="t" name="Takeoff Mission1" strip_button="Takeoff M1" strip_icon="takeoff.png" group="home">
       <exception cond="GetPosAlt() @GT GetAltRef() + 25" deroute="Survey_Area1_Left"/>
-      <call_once fun="NavSetWaypointHere(WP_HOME)"/>
+      <call_once fun="NavSetWaypointHere(WP_TAKEOFF_POINT)"/>
       <set value="0" var="autopilot.kill_throttle"/>
       <set value="1" var="autopilot.launch"/>
       <set value="0" var="autopilot.flight_time"/>
-      <go from="HOME" hmode="route" wp="CLIMB" throttle="1.0" vmode="throttle" pitch="15" until="GetPosAlt() @GT GetAltRef() + 25"/>
+      <go from="TAKEOFF_POINT" hmode="route" wp="CLIMB" throttle="1.0" vmode="throttle" pitch="15" until="GetPosAlt() @GT GetAltRef() + 25"/>
       <deroute block="Survey_Area1_Left"/>
     </block>
 
