@@ -5,6 +5,7 @@
 #define ai_cam_pipe_shoot test_ai_shoot
 #define ai_cam_pipe_deinit test_ai_deinit
 #define lwir_cam_pipe_init test_lwir_init
+#define lwir_cam_pipe_init_cancelable test_lwir_init_cancelable
 #define lwir_cam_pipe_shoot test_lwir_shoot
 #define lwir_cam_pipe_deinit test_lwir_deinit
 #define lwir_cam_pipe_geolocate test_geolocate
@@ -20,17 +21,27 @@
 static const char *fixture;
 static unsigned captures[5], inits[5], failures;
 static unsigned soda_calls[5];
-static bool fail_chdk, fail_ai, fail_lwir;
+static bool fail_chdk, fail_ai, fail_lwir, fail_lwir_capture, fail_ear;
 static int32_t capture_numbers[128];
 static size_t capture_count;
 static pthread_mutex_t gate_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t gate_cond = PTHREAD_COND_INITIALIZER;
 static bool hold_capture;
+static bool hold_lwir_capture;
+static bool lwir_capture_waiting;
+static int hold_ai_postprocess_number = -1;
+static bool ai_postprocess_waiting;
+static int last_lwir_capture_number = -1;
 
 int test_chdk_init(void) { ++inits[1]; return fail_chdk ? -1 : 0; }
 int test_ai_init(const char *source) { (void)source; ++inits[2]; return 0; }
 int test_lwir_init(const char *source) { (void)source; ++inits[3]; return fail_lwir ? -1 : 0; }
-int test_ear_init(const char *source) { (void)source; ++inits[4]; return 0; }
+int test_lwir_init_cancelable(const char *source, const volatile sig_atomic_t *keep_running)
+{
+  assert(keep_running != NULL);
+  return test_lwir_init(source);
+}
+int test_ear_init(const char *source) { (void)source; ++inits[4]; return fail_ear ? -1 : 0; }
 void test_chdk_deinit(void) {}
 void test_ai_deinit(void) {}
 void test_lwir_deinit(void) {}
@@ -50,12 +61,21 @@ static void copy_fixture(const char *filename)
 static int capture(char *filename, size_t size, int number, int camera_id)
 {
   pthread_mutex_lock(&gate_mutex);
-  while (hold_capture) pthread_cond_wait(&gate_cond, &gate_mutex);
-  pthread_mutex_unlock(&gate_mutex);
+  if (camera_id == CATIA_CAMERA_LWIRCAM && hold_lwir_capture) {
+    lwir_capture_waiting = true;
+    pthread_cond_broadcast(&gate_cond);
+  }
+  while (hold_capture || (camera_id == CATIA_CAMERA_LWIRCAM && hold_lwir_capture)) {
+    pthread_cond_wait(&gate_cond, &gate_mutex);
+  }
   ++captures[camera_id];
+  if (camera_id == CATIA_CAMERA_LWIRCAM) last_lwir_capture_number = number;
   assert(capture_count < sizeof(capture_numbers) / sizeof(capture_numbers[0]));
   capture_numbers[capture_count++] = number;
+  pthread_cond_broadcast(&gate_cond);
+  pthread_mutex_unlock(&gate_mutex);
   if (camera_id == 2 && fail_ai) { ++failures; return -1; }
+  if (camera_id == 3 && fail_lwir_capture) { ++failures; return -1; }
   int length = snprintf(filename, size, "photos/%c%06d.jpg", camera_id == 2 ? 'a' : 'l', number);
   assert(length > 0 && (size_t)length < size);
   copy_fixture(filename);
@@ -86,10 +106,22 @@ int test_spawn(pid_t *pid, const char *file, const posix_spawn_file_actions_t *a
   if (strcmp(arguments[12], "--aicam") == 0) camera_id = 2;
   if (strcmp(arguments[12], "--lwircam") == 0) camera_id = 3;
   assert(camera_id != 0);
+  pthread_mutex_lock(&gate_mutex);
+  if (camera_id == CATIA_CAMERA_AICAM && hold_ai_postprocess_number >= 0) {
+    char held_image[32];
+    assert(snprintf(held_image, sizeof(held_image), "a%06d.jpg",
+                    hold_ai_postprocess_number) > 0);
+    if (strstr(arguments[1], held_image) != NULL) {
+      ai_postprocess_waiting = true;
+      pthread_cond_broadcast(&gate_cond);
+      while (hold_ai_postprocess_number >= 0) pthread_cond_wait(&gate_cond, &gate_mutex);
+    }
+  }
+  ++soda_calls[camera_id];
+  pthread_mutex_unlock(&gate_mutex);
   const char prefixes[] = " cal";
   assert(arguments[1][7] == prefixes[camera_id]);
   assert(access(arguments[1], R_OK) == 0);
-  ++soda_calls[camera_id];
   char *const child_arguments[] = {"true", NULL};
   return posix_spawn(pid, "/usr/bin/true", actions, attributes, child_arguments, environment);
 }
@@ -117,6 +149,16 @@ static void wait_captures(void)
   pthread_mutex_unlock(&mut);
 }
 
+static void wait_lwir_state(bool initialized)
+{
+  pthread_mutex_lock(&mut);
+  while (camera_initialized[CATIA_CAMERA_LWIRCAM] != initialized
+         || (!initialized && !camera_unavailable[CATIA_CAMERA_LWIRCAM])) {
+    pthread_cond_wait(&workers_finished, &mut);
+  }
+  pthread_mutex_unlock(&mut);
+}
+
 int main(int argc, char **argv)
 {
   assert(argc == 2);
@@ -125,6 +167,7 @@ int main(int argc, char **argv)
   int uart[2];
   assert(socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, uart) == 0);
   assert(serial_tx_start(uart[0]) == 0);
+  lwir_async_recovery_enabled = false;
 
   send_shot(CATIA_SHOOT_MASK, 0, 1, false);
   send_shot(CATIA_SHOOT_MASK, 256, 1, false);
@@ -171,31 +214,120 @@ int main(int argc, char **argv)
   assert(camera_initialized[CATIA_CAMERA_AICAM]);
   assert(inits[CATIA_CAMERA_AICAM] == ai_initializations + 1);
 
-  // A truly-unavailable LWIR camera must be warned about and, only after several
-  // consecutive failures (real hardware can drop and recover within seconds, so one
-  // bad attempt must not permanently lose it), skipped on later shots without being
-  // retried (with its slow persistent-server spawn) on every one; other selected
-  // cameras must keep capturing throughout.
+  // Live LWIR initialization is asynchronous: a missing Tiny1-C cannot delay the
+  // ordered AIcam lane, retries are rate-limited, and a reconnect becomes READY
+  // without restarting CATIA.
   cameras_deinit();
+  lwir_async_recovery_enabled = true;
   fail_lwir = true;
   unsigned lwir_inits_before = inits[CATIA_CAMERA_LWIRCAM];
   unsigned ai_captures_before = captures[CATIA_CAMERA_AICAM];
-  for (int number = 11; number < 11 + LWIR_MAX_CONSECUTIVE_FAILURES; ++number) {
-    send_shot(CATIA_SHOOT_MASK, 6, number, false); // AICAM + LWIR
-    wait_captures();
-  }
-  assert(inits[CATIA_CAMERA_LWIRCAM] == lwir_inits_before + LWIR_MAX_CONSECUTIVE_FAILURES);
+  unsigned ear_captures_before = captures[CATIA_CAMERA_EARCAM];
+  send_shot(CATIA_SHOOT_MASK,
+            CATIA_CAMERA_MASK_AICAM | CATIA_CAMERA_MASK_LWIR | CATIA_CAMERA_MASK_EAR,
+            11, false);
+  wait_captures();
+  wait_lwir_state(false);
+  assert(inits[CATIA_CAMERA_LWIRCAM] == lwir_inits_before + 1);
   assert(camera_unavailable[CATIA_CAMERA_LWIRCAM]);
   assert(!camera_initialized[CATIA_CAMERA_LWIRCAM]);
-  assert(captures[CATIA_CAMERA_AICAM] == ai_captures_before + LWIR_MAX_CONSECUTIVE_FAILURES);
-  send_shot(CATIA_SHOOT_MASK, 6, 20, false);
+  assert(captures[CATIA_CAMERA_AICAM] == ai_captures_before + 1);
+  assert(captures[CATIA_CAMERA_EARCAM] == ear_captures_before + 1);
+  send_shot(CATIA_SHOOT_MASK,
+            CATIA_CAMERA_MASK_AICAM | CATIA_CAMERA_MASK_LWIR | CATIA_CAMERA_MASK_EAR,
+            20, false);
   wait_captures();
-  assert(inits[CATIA_CAMERA_LWIRCAM] == lwir_inits_before + LWIR_MAX_CONSECUTIVE_FAILURES);
-  assert(captures[CATIA_CAMERA_AICAM] == ai_captures_before + LWIR_MAX_CONSECUTIVE_FAILURES + 1);
-  puts("LWIR camera unavailable: warned and skipped only after repeated failures; AICAM keeps shooting");
+  assert(inits[CATIA_CAMERA_LWIRCAM] == lwir_inits_before + 1);
+  assert(captures[CATIA_CAMERA_AICAM] == ai_captures_before + 2);
+  assert(captures[CATIA_CAMERA_EARCAM] == ear_captures_before + 2);
+  assert(camera_unavailable[CATIA_CAMERA_LWIRCAM]);
   fail_lwir = false;
-  camera_unavailable[CATIA_CAMERA_LWIRCAM] = false;
+  pthread_mutex_lock(&mut);
+  lwir_retry_after_us = 0;
+  pthread_mutex_unlock(&mut);
+  wait_lwir_state(true);
+  assert(!camera_unavailable[CATIA_CAMERA_LWIRCAM]);
+  assert(camera_initialized[CATIA_CAMERA_LWIRCAM]);
+  assert(captures[CATIA_CAMERA_LWIRCAM] == 7);
+  send_shot(CATIA_SHOOT_MASK,
+            CATIA_CAMERA_MASK_AICAM | CATIA_CAMERA_MASK_LWIR | CATIA_CAMERA_MASK_EAR,
+            21, false);
+  wait_captures();
+  assert(captures[CATIA_CAMERA_LWIRCAM] == 8);
+  puts("LWIR camera unavailable: AIcam and EARcam continue, then LWIR recovers after cooldown");
+
+  unsigned lwir_before_ordering = captures[CATIA_CAMERA_LWIRCAM];
+  uint64_t ordering_skips_before = lwir_busy_skipped_count;
+  hold_ai_postprocess_number = 22;
+  ai_postprocess_waiting = false;
+  send_shot(CATIA_SHOOT_MASK, CATIA_CAMERA_MASK_AICAM | CATIA_CAMERA_MASK_LWIR, 22, false);
+  pthread_mutex_lock(&gate_mutex);
+  while (!ai_postprocess_waiting) pthread_cond_wait(&gate_cond, &gate_mutex);
+  pthread_mutex_unlock(&gate_mutex);
+  send_shot(CATIA_SHOOT_MASK, CATIA_CAMERA_MASK_AICAM | CATIA_CAMERA_MASK_LWIR, 23, false);
+  pthread_mutex_lock(&mut);
+  while (lwir_busy_skipped_count == ordering_skips_before) {
+    pthread_cond_wait(&workers_finished, &mut);
+  }
+  pthread_mutex_unlock(&mut);
+  pthread_mutex_lock(&gate_mutex);
+  hold_ai_postprocess_number = -1;
+  pthread_cond_broadcast(&gate_cond);
+  pthread_mutex_unlock(&gate_mutex);
+  wait_captures();
+  assert(captures[CATIA_CAMERA_LWIRCAM] == lwir_before_ordering + 1);
+  assert(last_lwir_capture_number == 22);
+  puts("LWIR trigger ordering: an earlier reserved thermal request cannot be overtaken");
+
+  unsigned ai_before_busy_lwir = captures[CATIA_CAMERA_AICAM];
+  unsigned lwir_before_busy_lwir = captures[CATIA_CAMERA_LWIRCAM];
+  uint64_t busy_skips_before = lwir_busy_skipped_count;
+  hold_lwir_capture = true;
+  lwir_capture_waiting = false;
+  send_shot(CATIA_SHOOT_MASK, CATIA_CAMERA_MASK_AICAM | CATIA_CAMERA_MASK_LWIR, 23, false);
+  pthread_mutex_lock(&gate_mutex);
+  while (!lwir_capture_waiting) pthread_cond_wait(&gate_cond, &gate_mutex);
+  pthread_mutex_unlock(&gate_mutex);
+  send_shot(CATIA_SHOOT_MASK, CATIA_CAMERA_MASK_AICAM | CATIA_CAMERA_MASK_LWIR, 24, false);
+  pthread_mutex_lock(&gate_mutex);
+  while (captures[CATIA_CAMERA_AICAM] < ai_before_busy_lwir + 2) {
+    pthread_cond_wait(&gate_cond, &gate_mutex);
+  }
+  pthread_mutex_unlock(&gate_mutex);
+  pthread_mutex_lock(&mut);
+  while (lwir_busy_skipped_count == busy_skips_before) {
+    pthread_cond_wait(&workers_finished, &mut);
+  }
+  pthread_mutex_unlock(&mut);
+  pthread_mutex_lock(&gate_mutex);
+  hold_lwir_capture = false;
+  pthread_cond_broadcast(&gate_cond);
+  pthread_mutex_unlock(&gate_mutex);
+  wait_captures();
+  assert(captures[CATIA_CAMERA_LWIRCAM] == lwir_before_busy_lwir + 1);
+  puts("Busy LWIR lane: following AIcam shot completes without waiting or queueing LWIR");
+
+  fail_lwir_capture = true;
+  unsigned lwir_before_capture_failure = captures[CATIA_CAMERA_LWIRCAM];
+  send_shot(CATIA_SHOOT_MASK, CATIA_CAMERA_MASK_AICAM | CATIA_CAMERA_MASK_LWIR, 25, false);
+  wait_captures();
+  wait_lwir_state(false);
+  assert(camera_unavailable[CATIA_CAMERA_LWIRCAM]);
+  assert(!camera_initialized[CATIA_CAMERA_LWIRCAM]);
+  fail_lwir_capture = false;
+  send_shot(CATIA_SHOOT_MASK, CATIA_CAMERA_MASK_AICAM | CATIA_CAMERA_MASK_LWIR, 26, false);
+  wait_captures();
+  assert(captures[CATIA_CAMERA_LWIRCAM] == lwir_before_capture_failure + 1);
+  pthread_mutex_lock(&mut);
+  lwir_retry_after_us = 0;
+  pthread_mutex_unlock(&mut);
+  wait_lwir_state(true);
+  send_shot(CATIA_SHOOT_MASK, CATIA_CAMERA_MASK_AICAM | CATIA_CAMERA_MASK_LWIR, 28, false);
+  wait_captures();
+  assert(captures[CATIA_CAMERA_LWIRCAM] == lwir_before_capture_failure + 2);
+  puts("LWIR capture failure: backoff, AIcam isolation, and asynchronous recovery passed");
   cameras_deinit();
+  lwir_async_recovery_enabled = false;
 
   const struct {
     uint8_t mask;
@@ -203,6 +335,7 @@ int main(int argc, char **argv)
   } examples[] = {
     {0x01, {1, 0, 0, 0}},
     {0x03, {1, 1, 0, 0}},
+    {CATIA_CAMERA_MASK_AICAM | CATIA_CAMERA_MASK_LWIR, {0, 1, 1, 0}},
     {0x07, {1, 1, 1, 0}},
     {0x0F, {1, 1, 1, 1}},
     {0x05, {1, 0, 1, 0}},
@@ -218,7 +351,26 @@ int main(int argc, char **argv)
       assert(captures[camera_index + 1] == before[camera_index] + examples[example].selected[camera_index]);
     }
   }
-  puts("Exact masks 00000001, 00000011, 00000111, 00001111 and 00000101 passed");
+  puts("Exact masks 00000001, 00000011, 00000110, 00000111, 00001111 and 00000101 passed");
+
+  /* An optional microphone failure must not suppress either optical camera from
+   * the same default AIcam + LWIRcam + EARcam command. */
+  earcam_active = false;
+  earcam_unavailable = false;
+  fail_ear = true;
+  unsigned ai_before_missing_ear = captures[CATIA_CAMERA_AICAM];
+  unsigned lwir_before_missing_ear = captures[CATIA_CAMERA_LWIRCAM];
+  unsigned ear_before_missing_ear = captures[CATIA_CAMERA_EARCAM];
+  send_shot(CATIA_SHOOT_MASK,
+            CATIA_CAMERA_MASK_AICAM | CATIA_CAMERA_MASK_LWIR | CATIA_CAMERA_MASK_EAR,
+            110, false);
+  wait_captures();
+  assert(captures[CATIA_CAMERA_AICAM] == ai_before_missing_ear + 1);
+  assert(captures[CATIA_CAMERA_LWIRCAM] == lwir_before_missing_ear + 1);
+  assert(captures[CATIA_CAMERA_EARCAM] == ear_before_missing_ear);
+  assert(!earcam_active && earcam_unavailable);
+  fail_ear = false;
+  earcam_unavailable = false;
 
   size_t first_queued = capture_count;
   pthread_mutex_lock(&gate_mutex);

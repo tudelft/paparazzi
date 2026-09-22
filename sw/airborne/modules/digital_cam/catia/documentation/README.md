@@ -60,8 +60,8 @@ or copy this manual. It does not remove photos or EARcam logs.
 The supplied service starts **LWIRcam and EARcam**, with EARcam band
 `2400,3200` Hz. It does not enable AIcam or CHDK. Review `catia.service` before
 deploying; deployment replaces the main unit, while existing systemd drop-ins
-can still override it. The default service requires the Tiny 1-C and a working
-`/dev/serial0` for startup. A missing microphone is reported but is not fatal.
+can still override it. The default service requires a working `/dev/serial0`;
+a missing Tiny 1-C or microphone is reported but does not prevent startup.
 
 ### 2. Prepare the PC and board once
 
@@ -600,10 +600,10 @@ ssh -t air@theatre \
    'exec /home/air/digital_cam/catia --lwircam --debug'
 ```
 
-Trigger `DC_SHOOT` again. CATIA starts the deployed `lwircam` executable in
-one-shot mode, waits for a usable thermal frame, and writes a numbered JPEG as
-`/home/air/Pictures/lNNNNNN.jpg`. CATIA then inserts the same flight
-EXIF metadata used by the other camera backends and invokes SODA.
+Trigger `DC_SHOOT` again. CATIA's recovery worker starts the deployed `lwircam`
+capture server, which waits for stable thermal frames and remains open between
+shots. A request writes `/home/air/Pictures/lNNNNNN.jpg`; CATIA then inserts the
+same flight EXIF metadata used by the other camera backends and invokes SODA.
 
 A successful capture includes these diagnostics:
 
@@ -1324,10 +1324,12 @@ The normal FC photo number advances once per trigger, not once per selected came
 Mask 0 sends no shot and does not advance that number. It does not finalize an
 existing EARcam session: use the existing EARcam stop/solve command for that.
 
-Optical jobs run in arrival order, with at most eight pending/active jobs. Within
-a job, CHDK, AIcam, and LWIR capture and processing run sequentially. A full queue
-rejects the new optical job with a log message; there is no unbounded backlog.
-EARcam samples are recorded on receipt independently of optical work. These are
+Optical jobs run in arrival order, with at most eight pending/active jobs. CHDK
+and AIcam use that ordered lane. An LWIR request reserves its separate single-owner
+lane before the ordered ticket advances, so a later trigger cannot overtake it;
+later thermal requests are dropped while that lane is busy, without delaying their
+AIcam work. A full job queue rejects the new job with a log message; there is no
+unbounded backlog. EARcam samples are recorded on receipt independently. These are
 **not simultaneous or exposure-synchronized captures**: startup, capture, queued
 work and analysis add latency. Existing pose metadata still describes the trigger.
 Choosing a mask does not alter autoshoot cadence; choose a sustainable rate for
@@ -1416,22 +1418,23 @@ them.
 
 ### Raspberry Pi AI camera
 
-`ai_cam_pipe_shoot()` uses `posix_spawnp()` to execute `rpicam-still` with a
-fixed argument list. **`rpicam-still` is the component that captures and JPEG
-encodes the image.** The native build writes `catia/photos/a%06d.jpg`; MORA
-deployment writes `/home/air/Pictures/a%06d.jpg`.
+The AI backend normally keeps one `rpicam-still` process open in signal mode.
+`ai_cam_pipe_shoot()` requests a JPEG from that process; if it fails, the current
+shot falls back to a bounded one-shot process and persistent mode is retried later.
+**`rpicam-still` is the component that captures and JPEG encodes the image.** The
+native build writes `catia/photos/a%06d.jpg`; MORA deployment writes
+`/home/air/Pictures/a%06d.jpg`.
 
 ### Tiny 1-C LWIR camera
 
-`lwir_cam_pipe_shoot()` uses `posix_spawn()` to execute the configured LWIR
-LWIRcam with `--capture --output <filename>`. The application owns USB acquisition,
-startup-frame rejection, YUYV-to-RGB conversion, and initial JPEG encoding.
-The native build writes `catia/photos/l%06d.jpg`; MORA deployment writes
-`/home/air/Pictures/l%06d.jpg`. Post-capture hotspot geolocation is
-requested from that **same already-running** process over its existing stdin/stdout
-pipe (a `GEO:<path>` line), not by spawning a second LWIRcam per shot; a fresh
-process is spawned only as a fallback when no persistent server is running
-(`--test`/mock captures).
+The LWIR backend starts one configured `lwircam --capture-server` process. Each
+`lwir_cam_pipe_shoot()` sends a `CAPTURE:<number>` request over its pipe; the server
+owns USB acquisition, startup-frame rejection, YUYV-to-RGB conversion, and JPEG
+encoding. The native build writes `catia/photos/l%06d.jpg`; MORA deployment writes
+`/home/air/Pictures/l%06d.jpg`. Post-capture hotspot geolocation is requested from
+that **same already-running** process with `GEO:<path>`. Standalone child processes
+are reserved for explicit mock-image or offline geolocation operations, not live
+capture recovery.
 
 ### CHDK camera
 
@@ -2249,7 +2252,7 @@ The selected backend is initialized once. Initialization is timed and reported
 separately, then one untimed warm-up photo is taken before ten sequential timed
 photos. Each call uses the normal backend's quality settings, timeout, JPEG/file
 validation, and recovery behavior; notably, LWIR exercises the persistent warm
-capture server and its one bounded restart retry. The test aborts on the first
+capture server without an inline respawn retry. The test aborts on the first
 failed or invalid image and returns nonzero rather than averaging a failure away.
 `SIGINT`/`SIGTERM` stops after the current bounded backend call and always runs
 backend cleanup.
@@ -2288,16 +2291,12 @@ samples remain there for focus, exposure, motion-blur, and thermal-quality revie
 The private directory plus CATIA's exclusive ownership prevents replacement of
 normal mission images.
 
-One behavior is not a flag because it always applies: at every startup (outside
-`--test`/`--local`), CATIA briefly opens the LWIR sensor, waits past its
-power-on "wiggly" image, and closes it again, before printing `Started OK`.
-The Tiny1-C only shows that unstable image once, right after power-on, not on
-every later open; probing it once here, while still on the ground, means
-neither the first in-flight LWIR shot nor a later runtime camera-mask switch
-to LWIR ever has to wait it out. Nothing is saved by the probe, and a missing
-or failed sensor does not stop CATIA from starting or running its other
-backends. See [LWIRcam's `--warmup`](#sub-application-parameters) for the
-underlying mechanism.
+The persistent LWIR capture server opens the Tiny1-C stream and qualifies stable
+frames before reporting ready. CATIA starts this server asynchronously when LWIR
+is its selected backend, so a missing or slow thermal camera cannot delay CATIA's
+UART readiness or its other cameras. `lwircam --warmup` remains available as a
+standalone bench command but is not run separately by CATIA; opening and closing
+the sensor immediately before opening it again caused unnecessary USB churn.
 
 ### Missing-Camera Resilience
 
@@ -2310,17 +2309,18 @@ captured and saved normally.
 The strategy is **warn once, not on every shot**:
 
 - **LWIR** has the most expensive failure mode, since its init spawns a
-  persistent server and can take up to 30 seconds to give up. The startup
-  probe above already catches most absences before any shot is requested.
-  Real MORA hardware has shown the Tiny1-C's USB connection can drop and
-  recover on its own within a few seconds, so one failed attempt does not
-  immediately give up: LWIR is marked unavailable for the rest of that CATIA
-  run only after `LWIR_MAX_CONSECUTIVE_FAILURES` (3) consecutive failures,
-  whether from the startup probe or a shot's own attempt. A success at any
-  point resets that count. Once the threshold is reached, later shots skip
-  LWIR immediately instead of repeating the slow attempt. Restart CATIA (its
-  systemd unit does this automatically on a crash) to try again after
-  reconnecting the sensor.
+   persistent server and can take up to 30 seconds. Initialization and recovery
+   therefore run outside the ordered CHDK/AICam capture lane. A failed init,
+   capture, or geolocation request enters a 30-second backoff; requested LWIR
+   shots are skipped during that interval while the other selected cameras keep
+   running. The background supervisor retries every 30 seconds until the camera
+   returns or CATIA stops. A successful retry restores thermal captures
+   automatically, without restarting CATIA or waiting for another shot trigger.
+   Only one LWIR operation can own the camera; if a previous thermal capture is
+   still active, an overlapping thermal request is dropped rather than queued,
+   while the matching AICam request proceeds. Startup checks CATIA's shutdown flag
+   at short intervals, and an unresponsive child is terminated and reaped within
+   bounded grace periods.
 - **CHDK and AICam** have a cheap, fast init, so CATIA keeps retrying them on
   every shot that selects them; this lets a transient issue (for example a
   camera reconnected mid-flight) recover on its own. Only the first failure in
@@ -2334,34 +2334,21 @@ The strategy is **warn once, not on every shot**:
 
 ### LWIR Mid-Flight Stream Recovery
 
-`camera_initialized` only records that the persistent LWIR server was started
-successfully; it does not mean the server is still alive right now. On real
-MORA hardware, the Tiny1-C's USB connection can briefly re-enumerate on its
-own while otherwise idle between shots (observed in the kernel log as a plain
-`USB disconnect` immediately followed by re-enumeration as a new device,
-unrelated to power/undervoltage). The already-running server's stream then
-silently stops delivering frames; it notices this itself and exits once its
-frame-freshness deadline elapses, closing its pipe.
+Real MORA hardware has shown repeated Tiny1-C USB resets and disconnects. The
+persistent helper detects a stale stream using a six-second frame deadline. CATIA
+then closes its pipes, terminates the helper with bounded `SIGTERM`/`SIGKILL`
+escalation, and enters backoff. Pipe replies use one absolute deadline, so a
+child emitting partial or junk output cannot keep an operation alive forever.
+Repeated signal interruptions do not extend that deadline. Startup also observes
+CATIA's shutdown flag in short polling slices, allowing systemd stop requests to
+cancel camera discovery promptly. All helper descriptors are close-on-exec and
+partial setup failures close every created descriptor.
 
-If a shot is requested before or during that detection, `lwir_cam_pipe_shoot()`
-does not simply fail it. It first tries the existing connection; if that write
-or reply fails for any reason, it resets the connection and makes **one bounded
-respawn-and-retry** attempt (a fresh `ir_camera_open()`, which naturally picks
-up the camera under its new USB identity) before giving up on that shot. This
-was verified against a fake server that dies right after answering one request
-(`make -C tests` equivalent: `tests/lwir_shoot_recovery_test.sh`) and against
-the real mid-air-style disconnect on MORA: the shot that hit the dead
-connection recovered and still produced a photo, without needing to wait for
-the next trigger.
-
-To keep this bounded, an active request's own wait for a stable frame is capped
-at 6 seconds (`kRequestFrameTimeoutSeconds` in `lwircam/lwircam.cpp`), separate
-from the general 20-second ceiling used only during the initial camera open. A
-shot that still fails after the retry is handled the same way as any other
-LWIR failure: `camera_initialized` is cleared, and the *next* shot's own
-`camera_prepare()` either succeeds (transient issue resolved) or, if the sensor
-is genuinely gone, is what engages the sticky "not available this run" state
-described above.
+Recovery policy has one owner: `lwir_cam_pipe_shoot()` reports failure and clears
+stale process state; CATIA decides when to restart asynchronously. This is covered
+by `tests/lwir_shoot_recovery_test.sh`, `tests/lwir_timeout_test.sh`,
+`tests/lwir_startup_cancel_test.sh`, and the failure/reconnect, trigger-order,
+and busy-lane cases in `tests/camera_mask_test.sh`.
 
 In every case, the per-shot fallback message ("camera requested but not
 active") is `--debug`-only, not a routine stderr line.
@@ -2426,8 +2413,8 @@ Three changes were made, all behavior-preserving and covered by tests:
    internal buffer (`status_buffer[512]`) and only calls `poll()`/`read()`
    again once that buffer is exhausted, parsing lines out of memory the rest
    of the time — typically 1-3 syscalls per reply instead of 100+. The exact
-   same line parsing and the same "sliding" timeout behavior (reset whenever
-   new data arrives) are preserved; the buffer is reset whenever the
+   same line parsing is preserved, while one absolute deadline now bounds the
+   whole reply even if data or signals arrive continuously. The buffer is reset whenever the
    persistent server is stopped so no stale bytes can leak into a later
    respawned connection. Covered by `tests/capture_timing_test.c`'s new
    cross-call buffering test plus all existing LWIR pipe tests.
@@ -2485,7 +2472,7 @@ normally only configure CATIA. Run them directly for bench work and analysis.
 | `--capture-server` | Keep the stream warm, read output paths from stdin | The sensor needs warm-up and stable frames; reusing one process is what makes ~4 s shot intervals possible |
 | `--bare` | Compatibility flag | Capture is already unfiltered; retained so existing commands keep working |
 | `--native-raw` | Save `FILE.raw` instead of embedding temperatures in the JPEG | What CATIA's `--lwir-raw` selects; keeps the exact combined sensor frame for calibration evidence |
-| `--warmup` | Open the camera, wait past its power-on "wiggly" image, then close it; saves nothing | What CATIA runs unconditionally at startup; also usable standalone on the bench |
+| `--warmup` | Open the camera, wait past its power-on "wiggly" image, then close it; saves nothing | Standalone bench diagnostic; CATIA's persistent server performs its own stable-frame qualification |
 | `--geolocate FILE` | Write hotspot GPS and temperature into an existing shot's EXIF | The single detection pass that produces the mission result; separate so a photo can be re-analyzed later with a better calibration |
 | `--calibration FILE` | Camera YAML for `--geolocate`, or for `--capture-server` to also answer `GEO:FILE` requests on its existing stdin pipe | Same purpose as CATIA's `--lwir-calibration`; letting the running server do this analysis avoids spawning a new LWIRcam process for every shot |
 | `--mock-image FILE` / `--mock-layer FILE` | Process a JPEG with a synthetic temperature layer | Hardware-free testing of detection and EXIF handling |
@@ -2545,10 +2532,8 @@ order:
 This is the intended behavior, not a bug: see
 [Missing-Camera Resilience](#missing-camera-resilience). Check the log once,
 near where that camera was first requested, for its one-time
-`not available; continuing without it` (or, for LWIR, the startup probe's
-`LWIR sensor not accessible or warmup failed`) message. Re-run with `--debug`
-if you need to confirm every subsequent shot is still skipping it silently
-rather than failing in some other way.
+`not available; continuing without it` message. Re-run with `--debug` to see
+LWIR backoff, recovery-in-progress, and busy-lane skips.
 
 Enable the same diagnostics for a non-local command by adding `--debug`:
 

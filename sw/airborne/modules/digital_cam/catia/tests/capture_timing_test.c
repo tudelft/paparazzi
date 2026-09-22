@@ -10,7 +10,7 @@ static void check_response(const char *response, double expected)
   capture_server_output = descriptors[0];
   capture_delay_s = -1;
   capture_times = (struct capture_timing){0};
-  assert(read_server_status("LWIR_SERVER_OK", 100) == 0);
+  assert(read_server_status("LWIR_SERVER_OK", 100, NULL) == 0);
   assert(lwir_cam_pipe_capture_delay() == expected);
   close(descriptors[0]);
   capture_server_output = -1;
@@ -57,8 +57,8 @@ int main(void)
   assert(write(descriptors[1], combined, strlen(combined)) == (ssize_t)strlen(combined));
   close(descriptors[1]);
   capture_server_output = descriptors[0];
-  assert(read_server_status("LWIR_SERVER_READY", 100) == 0);
-  assert(read_server_status("EXTRA_LINE", 100) == 0);
+  assert(read_server_status("LWIR_SERVER_READY", 100, NULL) == 0);
+  assert(read_server_status("EXTRA_LINE", 100, NULL) == 0);
   close(descriptors[0]);
   capture_server_output = -1;
   status_buffer_size = status_buffer_pos = 0;

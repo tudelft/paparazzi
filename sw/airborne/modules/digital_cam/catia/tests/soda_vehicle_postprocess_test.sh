@@ -2,6 +2,7 @@
 set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+workspace=$(cd "$root/../../../../.." && pwd)
 output=$(mktemp -d /tmp/catia-soda-vehicle-postprocess.XXXXXX)
 trap 'rm -rf "$output"' EXIT
 
@@ -10,7 +11,7 @@ trap 'rm -rf "$output"' EXIT
 make -s -C "$root" soda catia
 
 gcc -std=gnu11 -Wall -Wextra -Werror -Wno-expansion-to-defined \
-  -I"$root" -I/home/coco-allie-69/paparazzi/sw/ext -I/home/coco-allie-69/paparazzi/sw/ext/libexif \
+  -I"$root" -I"$workspace/sw/ext" -I"$workspace/sw/ext/libexif" \
   -DNO_VERBOSE_TAG_DATA -DNO_VERBOSE_TAG_STRINGS \
   "$root/tests/fixtures/make_vehicle_exif_fixture.c" \
   "$root"/.build/project/image_exif.o "$root"/.build/libexif/*.o \
@@ -18,8 +19,8 @@ gcc -std=gnu11 -Wall -Wextra -Werror -Wno-expansion-to-defined \
 
 # --- Unit tests for the internal crop-box/EXIF-parsing helpers ---
 g++ -std=c++14 -Wall -Wextra -Werror -Wno-expansion-to-defined \
-  -I"$root" -I/home/coco-allie-69/paparazzi/sw/ext -I/home/coco-allie-69/paparazzi/sw/ext/libexif \
-  -I/home/coco-allie-69/paparazzi/sw/ext/opencv_bebop/opencv/3rdparty/libjpeg \
+  -I"$root" -I"$workspace/sw/ext" -I"$workspace/sw/ext/libexif" \
+  -I"$workspace/sw/ext/opencv_bebop/opencv/3rdparty/libjpeg" \
   -DNO_VERBOSE_TAG_DATA -DNO_VERBOSE_TAG_STRINGS \
   "$root/tests/soda_vehicle_postprocess_test.cpp" \
   "$root"/.build/libexif/*.o "$root"/.build/libjpeg/*.o \

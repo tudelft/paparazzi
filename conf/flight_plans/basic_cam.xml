@@ -53,7 +53,9 @@
       <circle radius="nav_radius" wp="STDBY"/>
     </block>
     <block name="Oval 1-2" strip_button="Oval (wp 1-2)" strip_icon="oval.png" group="base_pattern">
-      <call_once fun="uart_cam_ctrl_set_camera_mask(CATIA_CAMERA_MASK_AICAM)"/>
+       <!-- One CATIA_SHOOT_MASK command gives AIcam, LWIRcam, and EARcam the same
+         shot number. A missing microphone does not suppress either optical camera. -->
+       <call_once fun="uart_cam_ctrl_set_camera_mask(CATIA_CAMERA_MASK_AICAM | CATIA_CAMERA_MASK_LWIR | CATIA_CAMERA_MASK_EAR)"/>
       <call_once fun="dc_send_command(DC_SHOOT)"/>
       <set value="DC_AUTOSHOOT_PERIODIC" var="dc_autoshoot"/>
       <oval p1="1" p2="2" radius="nav_radius"/>

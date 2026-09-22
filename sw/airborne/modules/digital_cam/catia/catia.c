@@ -64,6 +64,10 @@
 #define EVENT_LOOP_TIMEOUT_MS 1000
 #define SODA_SHUTDOWN_GRACE_MS 2000
 #define SODA_WAIT_INTERVAL_US 10000
+#ifndef LWIR_RETRY_COOLDOWN_US
+#define LWIR_RETRY_COOLDOWN_US 30000000U
+#endif
+#define LWIR_RETRY_POLL_US 100000
 
 #ifndef CATIA_SERIAL_DEVICE
 #define CATIA_SERIAL_DEVICE "/dev/ttySAC0"
@@ -134,11 +138,13 @@ struct captured_image {
 };
 
 static void *handle_msg_shoot(void *ptr);
-static bool capture_image(const union dc_shot_union *shoot, struct captured_image *image);
+static bool capture_image(const union dc_shot_union *shoot, struct captured_image *image,
+                          int camera_id, const struct camera_backend *backend);
 static void finish_image(const union dc_shot_union *shoot, struct captured_image *image);
 static void handle_received_message(void);
 static void start_shoot_worker(const union dc_shot_union *shoot, uint8_t camera_mask);
 static void handle_targeted_stop(int32_t camera_id);
+static bool ensure_earcam_active(void);
 static void send_msg_ear_result(const struct ear_loudest_spot *spot);
 static void send_msg_home_vector_result(void);
 static int run_soda(const char *filename, const union dc_shot_union *shoot, int camera_id);
@@ -155,6 +161,8 @@ static void notify_systemd_ready(void);
 static int move_file(const char *source, const char *destination);
 static int camera_backend_select(enum camera_backend_type type, bool test_mode);
 static int camera_prepare(int camera_id);
+static bool lwir_ready_or_start_recovery(void);
+static void lwir_mark_backoff(void);
 static void cameras_deinit(void);
 static int local_backend_shoot(char *filename, size_t filename_size, int image_number);
 static int chdk_backend_init(const char *source_image);
@@ -163,6 +171,7 @@ static int chdk_backend_shoot(char *filename, size_t filename_size, int image_nu
 static volatile int is_shooting, image_idx, image_count, shooting_count, shooting_thread_count;
 static char image_buffer[MAX_IMAGE_BUFFERS][IMAGE_SIZE];
 static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t lwir_camera_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t camera_available = PTHREAD_COND_INITIALIZER;
 static pthread_cond_t workers_finished = PTHREAD_COND_INITIALIZER;
 static uint64_t next_job_ticket, next_capture_ticket;
@@ -172,13 +181,12 @@ static struct camera_backend camera;
 static bool camera_initialized[4];
 static bool camera_unavailable[4];
 static bool camera_warned[4];
-/** Real MORA hardware has shown the Tiny1-C USB connection can drop and recover within
- * a few seconds on its own (unrelated to CATIA). Requiring several consecutive failures,
- * not just one, before treating LWIR as unavailable for the rest of the run avoids a
- * single badly-timed probe or shot permanently losing the camera for an otherwise-healthy
- * flight. */
-#define LWIR_MAX_CONSECUTIVE_FAILURES 3
-static int lwir_consecutive_failures;
+/** Tiny1-C server startup can take tens of seconds. Recovery runs outside the ordered
+ * optical capture lane and is rate-limited so a broken USB link cannot stall AIcam. */
+static uint64_t lwir_retry_after_us;
+static bool lwir_recovery_in_progress;
+static bool lwir_async_recovery_enabled = true;
+static uint64_t lwir_busy_skipped_count;
 static bool local_capture_only;
 /** True when --aicam-detect was selected: camera id CATIA_CAMERA_AICAM still means "the
  * AI camera" on the wire (unchanged for the flight controller/NPS), but camera_prepare()
@@ -644,13 +652,7 @@ int main(int argc, char *argv[])
   local_capture_only = selected_camera_backend == CAMERA_BACKEND_LOCAL && !test_mode;
   camera_initialized[optical_camera_id] = test_mode || local_capture_only;
   if (earcam_requested) {
-    if (ear_cam_pipe_init(NULL) != 0) {
-      cameras_deinit();
-      stop_local_serial_bridge();
-      return 1;
-    }
-    earcam_active = true;
-    printf("CATIA:\tacoustic backend: earcam\n");
+    ensure_earcam_active();
   }
   int ret = serial_init(serial_device);
   if (ret < 0) {
@@ -685,24 +687,12 @@ int main(int argc, char *argv[])
   shooting_count = 0;
   shooting_thread_count = 0;
 
-  // The Tiny1-C shows a short unstable ("wiggly") image right after power-on, once per
-  // power-on, whether or not LWIR ends up used for a shot. Probing it once here, while
-  // still on the ground, lets that transient pass in advance: the actual capture (whether
-  // LWIR is the default backend or only selected later through a runtime camera mask)
-  // then opens an already-past-that-transient sensor. The probe opens the camera, waits,
-  // and closes it again; it saves nothing and does not touch the active backend selection.
-  // Failure here is not fatal: CATIA continues normally either way.
-  if (!test_mode && !local_mode) {
-    printf("CATIA:\tprobing the LWIR sensor once to clear its power-on \"wiggly\" image\n");
-    if (lwir_cam_pipe_warmup() != 0) {
-      fprintf(stderr, "CATIA:\tLWIR sensor not accessible or warmup failed; will still try on the first shot\n");
-      ++lwir_consecutive_failures;
-    }
-  }
-
   puts(CATIA_BUILD_VERSION);
   printf("Started OK\n");
   notify_systemd_ready();
+  if (!test_mode && !local_mode && selected_camera_backend == CAMERA_BACKEND_LWIR_CAM) {
+    lwir_ready_or_start_recovery();
+  }
   if (debug_enabled) {
     next_debug_heartbeat = time(NULL) + DEBUG_HEARTBEAT_SECONDS;
     printf("CATIA DEBUG:\twaiting for CATIA camera messages on %s\n", serial_device);
@@ -806,7 +796,7 @@ int main(int argc, char *argv[])
   close(fd);
   pthread_mutex_lock(&mut);
   pthread_cond_broadcast(&camera_available);
-  while (shooting_thread_count > 0) {
+  while (shooting_thread_count > 0 || lwir_recovery_in_progress) {
     pthread_cond_wait(&workers_finished, &mut);
   }
   pthread_mutex_unlock(&mut);
@@ -894,16 +884,37 @@ static void *handle_msg_shoot(void *ptr)
    * --aicam-home has the identical hazard (home_vector_pipe's last-result state), and
    * additionally must reach send_msg_home_vector_result() before the next shot can
    * overwrite that slot, so it is finished inside the capture slot as well. */
+  const bool separate_lwir = lwir_async_recovery_enabled
+      && !test_capture_enabled && !local_capture_only;
   struct captured_image images[CATIA_CAMERA_LWIRCAM];
   int image_count_ready = 0;
-  for (int camera_id = CATIA_CAMERA_CHDK; camera_id <= CATIA_CAMERA_LWIRCAM && keep_running; ++camera_id) {
+  const int ordered_camera_max = separate_lwir ? CATIA_CAMERA_AICAM : CATIA_CAMERA_LWIRCAM;
+  for (int camera_id = CATIA_CAMERA_CHDK; camera_id <= ordered_camera_max && keep_running; ++camera_id) {
     if ((job->camera_mask & (1U << (camera_id - 1))) != 0 && camera_prepare(camera_id) == 0) {
       struct captured_image *image = &images[image_count_ready];
-      if (!capture_image(&job->shot, image)) continue;
+      if (!capture_image(&job->shot, image, camera_id, &camera)) continue;
       bool finish_in_slot = image->camera_id == CATIA_CAMERA_LWIRCAM
         || (image->camera_id == CATIA_CAMERA_AICAM && (aicam_detect_enabled || aicam_home_enabled));
       if (finish_in_slot) finish_image(&job->shot, image);
       else ++image_count_ready;
+    }
+  }
+
+  /** Reserve LWIR before advancing the ordered ticket. A later trigger can then only
+   * skip a busy lane, never overtake this trigger and steal its thermal capture. */
+  bool lwir_lane_reserved = false;
+  if (separate_lwir && keep_running
+      && (job->camera_mask & CATIA_CAMERA_MASK_LWIR) != 0) {
+    lwir_lane_reserved = pthread_mutex_trylock(&lwir_camera_mutex) == 0;
+    if (!lwir_lane_reserved) {
+      pthread_mutex_lock(&mut);
+      ++lwir_busy_skipped_count;
+      pthread_cond_broadcast(&workers_finished);
+      pthread_mutex_unlock(&mut);
+      if (debug_enabled) {
+        printf("CATIA-%d DEBUG:\tprevious LWIR operation still active; shot skipped\n",
+               job->shot.data.nr);
+      }
     }
   }
 
@@ -915,30 +926,49 @@ static void *handle_msg_shoot(void *ptr)
   for (int index = 0; index < image_count_ready; ++index) {
     finish_image(&job->shot, &images[index]);
   }
+  if (lwir_lane_reserved) {
+    if (lwir_ready_or_start_recovery()) {
+      const struct camera_backend lwir_backend = {
+        "lwircam", lwir_cam_pipe_init, lwir_cam_pipe_shoot,
+        lwir_cam_pipe_deinit, CATIA_SODA
+      };
+      struct captured_image lwir_image;
+      if (capture_image(&job->shot, &lwir_image, CATIA_CAMERA_LWIRCAM, &lwir_backend)) {
+        finish_image(&job->shot, &lwir_image);
+      }
+      lwir_ready_or_start_recovery();
+    } else if (debug_enabled) {
+      printf("CATIA-%d DEBUG:\tLWIR unavailable or recovery in progress; shot skipped\n",
+             job->shot.data.nr);
+    }
+    pthread_mutex_unlock(&lwir_camera_mutex);
+  }
   release_worker_slot();
   free(job);
   return NULL;
 }
 
 /** Capture into `image`; true when a file is ready for finish_image(). */
-static bool capture_image(const union dc_shot_union *shoot, struct captured_image *image)
+static bool capture_image(const union dc_shot_union *shoot, struct captured_image *image,
+                          int camera_id, const struct camera_backend *backend)
 {
   char *filename = image->filename;
   filename[0] = '\0';
-  image->camera_id = optical_camera_id;
+  image->camera_id = camera_id;
   printf("CATIA-%d:\tShooting: start\n", shoot->data.nr);
   if (debug_enabled) {
     if (test_capture_enabled) {
       printf("CATIA-%d DEBUG:\trequesting test image for selected %s backend\n",
-             shoot->data.nr, camera.name);
+             shoot->data.nr, backend->name);
     } else {
-      printf("CATIA-%d DEBUG:\trequesting image from %s backend\n", shoot->data.nr, camera.name);
+      printf("CATIA-%d DEBUG:\trequesting image from %s backend\n", shoot->data.nr, backend->name);
     }
   }
-  if (camera.shoot(filename, sizeof(image->filename), shoot->data.nr) != 0) {
-    fprintf(stderr, "CATIA-%d:\t%s camera capture failed\n", shoot->data.nr, camera.name);
-    camera.deinit();
-    camera_initialized[optical_camera_id] = false;
+  if (backend->shoot(filename, sizeof(image->filename), shoot->data.nr) != 0) {
+    fprintf(stderr, "CATIA-%d:\t%s camera capture failed\n", shoot->data.nr, backend->name);
+    backend->deinit();
+    if (camera_id == CATIA_CAMERA_LWIRCAM) lwir_mark_backoff();
+    else camera_initialized[camera_id] = false;
     filename[0] = '\0';
   }
   printf("CATIA-%d:\tShooting: got image %s\n", shoot->data.nr, filename);
@@ -956,7 +986,7 @@ static bool capture_image(const union dc_shot_union *shoot, struct captured_imag
     }
   }
   if (filename[0] != '\0' && test_capture_enabled
-      && optical_camera_id == CATIA_CAMERA_LWIRCAM
+      && camera_id == CATIA_CAMERA_LWIRCAM
       && lwir_cam_pipe_process_mock(filename) != 0) {
     fprintf(stderr, "CATIA-%d:\tLWIR mock processing failed\n", shoot->data.nr);
     filename[0] = '\0';
@@ -988,6 +1018,7 @@ static void finish_image(const union dc_shot_union *shoot, struct captured_image
           }
         } else if (lwir_cam_pipe_geolocate(filename) != 0) {
           fprintf(stderr, "CATIA-%d:\tLWIR hotspot geolocation failed; photo retained\n", shoot->data.nr);
+          lwir_mark_backoff();
           if (image_exif_write_hotspots(filename, "status=analysis_failed; coordinates_omitted=true") != 0) {
             fprintf(stderr, "CATIA-%d:\tfailed to record hotspot analysis failure\n", shoot->data.nr);
           }
@@ -1107,13 +1138,7 @@ static void handle_received_message(void)
            shoot->data.course / ANGLE_BFP_SCALE * RAD_TO_DEG);
 
     bool wants_ear = (camera_mask & CATIA_CAMERA_MASK_EAR) != 0;
-    if (wants_ear && !earcam_active && !earcam_unavailable) {
-      earcam_active = ear_cam_pipe_init(NULL) == 0;
-      if (!earcam_active) {
-        earcam_unavailable = true;
-        fprintf(stderr, "CATIA:\tEARcam not available; continuing without it for this run\n");
-      }
-    }
+    if (wants_ear) ensure_earcam_active();
     if (wants_ear && earcam_active) {
       // Geotagging is a memory copy; do it inline so no worker slot is consumed.
       if (ear_cam_pipe_record(shoot) == 0 && debug_enabled) {
@@ -1140,6 +1165,21 @@ static void handle_received_message(void)
   }
 }
 
+/** Start EARcam when available without making an optional microphone a CATIA dependency. */
+static bool ensure_earcam_active(void)
+{
+  if (earcam_active) return true;
+  if (earcam_unavailable) return false;
+  if (ear_cam_pipe_init(NULL) != 0) {
+    earcam_unavailable = true;
+    fprintf(stderr, "CATIA:\tEARcam not available; AIcam and LWIRcam remain active\n");
+    return false;
+  }
+  earcam_active = true;
+  printf("CATIA:\tacoustic backend: earcam\n");
+  return true;
+}
+
 static int camera_prepare(int camera_id)
 {
   enum camera_backend_type type;
@@ -1160,21 +1200,14 @@ static int camera_prepare(int camera_id)
   optical_camera_id = camera_id;
   if (camera_initialized[camera_id]) return 0;
   if (camera_id == CATIA_CAMERA_LWIRCAM && camera_unavailable[camera_id]) {
-    /** LWIR's init can block for tens of seconds spawning its persistent server; once it
-     * has failed LWIR_MAX_CONSECUTIVE_FAILURES times in a row, skip retrying every shot so
-     * other selected cameras are not delayed by it. Cheaper backends below still retry
-     * every time so a transient failure can recover. */
-    if (debug_enabled) {
-      printf("CATIA DEBUG:\tLWIR camera remains unavailable this run\n");
-    }
-    return -1;
+    uint64_t now_us = monotonic_time_us();
+    if (now_us == 0 || now_us < lwir_retry_after_us) return -1;
+    camera_unavailable[camera_id] = false;
+    printf("CATIA:\tretrying LWIR camera after unavailable cooldown\n");
   }
   if (camera.init(camera_source_image) != 0) {
     camera.deinit();
-    if (camera_id == CATIA_CAMERA_LWIRCAM
-        && ++lwir_consecutive_failures >= LWIR_MAX_CONSECUTIVE_FAILURES) {
-      camera_unavailable[camera_id] = true;
-    }
+    if (camera_id == CATIA_CAMERA_LWIRCAM) lwir_mark_backoff();
     if (!camera_warned[camera_id]) {
       camera_warned[camera_id] = true;
       fprintf(stderr, "CATIA:\t%s (camera id %d) not available; continuing without it\n",
@@ -1185,10 +1218,115 @@ static int camera_prepare(int camera_id)
     return -1;
   }
   camera_warned[camera_id] = false;
-  if (camera_id == CATIA_CAMERA_LWIRCAM) lwir_consecutive_failures = 0;
+  if (camera_id == CATIA_CAMERA_LWIRCAM) {
+    camera_unavailable[camera_id] = false;
+    lwir_retry_after_us = 0;
+  }
   camera_initialized[camera_id] = true;
   printf("CATIA:\tactive camera backend: %s (id %d)\n", camera.name, optical_camera_id);
   return 0;
+}
+
+static void lwir_mark_backoff(void)
+{
+  uint64_t now_us = monotonic_time_us();
+  pthread_mutex_lock(&mut);
+  camera_initialized[CATIA_CAMERA_LWIRCAM] = false;
+  camera_unavailable[CATIA_CAMERA_LWIRCAM] = true;
+  lwir_retry_after_us = now_us == 0 || now_us > UINT64_MAX - LWIR_RETRY_COOLDOWN_US
+                        ? UINT64_MAX : now_us + LWIR_RETRY_COOLDOWN_US;
+  pthread_mutex_unlock(&mut);
+}
+
+static void *recover_lwir_camera(void *unused)
+{
+  (void)unused;
+  bool retrying = false;
+  while (keep_running) {
+    pthread_mutex_lock(&mut);
+    uint64_t now_us = monotonic_time_us();
+    bool cooling_down = camera_unavailable[CATIA_CAMERA_LWIRCAM]
+                        && (now_us == 0 || now_us < lwir_retry_after_us);
+    pthread_mutex_unlock(&mut);
+    if (cooling_down) {
+      usleep(LWIR_RETRY_POLL_US);
+      continue;
+    }
+    if (retrying) printf("CATIA:\tretrying LWIR camera after unavailable cooldown\n");
+
+    pthread_mutex_lock(&lwir_camera_mutex);
+    if (!keep_running) {
+      pthread_mutex_unlock(&lwir_camera_mutex);
+      break;
+    }
+    int result = lwir_cam_pipe_init_cancelable(NULL, &keep_running);
+    if (result == 0 && !keep_running) {
+      lwir_cam_pipe_deinit();
+      result = -1;
+    }
+    pthread_mutex_unlock(&lwir_camera_mutex);
+
+    pthread_mutex_lock(&mut);
+    if (result == 0) {
+      camera_initialized[CATIA_CAMERA_LWIRCAM] = true;
+      camera_unavailable[CATIA_CAMERA_LWIRCAM] = false;
+      camera_warned[CATIA_CAMERA_LWIRCAM] = false;
+      lwir_retry_after_us = 0;
+      lwir_recovery_in_progress = false;
+      printf("CATIA:\tactive camera backend: lwircam (id %d)\n", CATIA_CAMERA_LWIRCAM);
+      pthread_cond_broadcast(&workers_finished);
+      pthread_mutex_unlock(&mut);
+      return NULL;
+    }
+    camera_initialized[CATIA_CAMERA_LWIRCAM] = false;
+    camera_unavailable[CATIA_CAMERA_LWIRCAM] = true;
+    now_us = monotonic_time_us();
+    lwir_retry_after_us = now_us == 0 || now_us > UINT64_MAX - LWIR_RETRY_COOLDOWN_US
+                          ? UINT64_MAX : now_us + LWIR_RETRY_COOLDOWN_US;
+    if (!camera_warned[CATIA_CAMERA_LWIRCAM]) {
+      camera_warned[CATIA_CAMERA_LWIRCAM] = true;
+      fprintf(stderr, "CATIA:\tlwircam (camera id %d) not available; AIcam remains active\n",
+              CATIA_CAMERA_LWIRCAM);
+    }
+    pthread_cond_broadcast(&workers_finished);
+    pthread_mutex_unlock(&mut);
+    retrying = true;
+  }
+
+  pthread_mutex_lock(&mut);
+  lwir_recovery_in_progress = false;
+  pthread_cond_broadcast(&workers_finished);
+  pthread_mutex_unlock(&mut);
+  return NULL;
+}
+
+static bool lwir_ready_or_start_recovery(void)
+{
+  pthread_mutex_lock(&mut);
+  if (camera_initialized[CATIA_CAMERA_LWIRCAM]) {
+    pthread_mutex_unlock(&mut);
+    return true;
+  }
+  if (!keep_running || lwir_recovery_in_progress) {
+    pthread_mutex_unlock(&mut);
+    return false;
+  }
+  lwir_recovery_in_progress = true;
+  pthread_mutex_unlock(&mut);
+
+  pthread_t recovery_thread;
+  int thread_result = pthread_create(&recovery_thread, NULL, recover_lwir_camera, NULL);
+  if (thread_result != 0) {
+    pthread_mutex_lock(&mut);
+    lwir_recovery_in_progress = false;
+    pthread_cond_broadcast(&workers_finished);
+    pthread_mutex_unlock(&mut);
+    fprintf(stderr, "CATIA:\tfailed to start LWIR recovery: %s\n", strerror(thread_result));
+    lwir_mark_backoff();
+    return false;
+  }
+  pthread_detach(recovery_thread);
+  return false;
 }
 
 static void cameras_deinit(void)
