@@ -5,8 +5,8 @@
       Visual-homing CNN home-vector following through CATIA over the UART link to MORA.
 
       During a homing block the module sends AI-cam-targeted shoot commands through
-      digital_cam_uart at home_vector_period_s; CATIA running with --aicam-home on the
-      MORA companion computer runs each captured frame through the on-sensor IMX500
+      digital_cam_uart at home_vector_period_s; CATIA running on the MORA companion computer 
+      runs each captured frame through the on-sensor IMX500
       visual-homing network and replies with a fresh predicted body-frame direction-to-home
       every shot (CATIA_HOME_VECTOR_RESULT, unlike earcam's CATIA_EAR_RESULT which only
       replies on an explicit solve). This module rotates that body-frame vector into world

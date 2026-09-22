@@ -1325,9 +1325,9 @@ static void send_msg_ear_result(const struct ear_loudest_spot *spot)
   }
 }
 
-/** Unlike send_msg_ear_result() (sent once per explicit solve), this runs after every
- * --aicam-home shot: the visual-homing CNN predicts a fresh body-frame direction on every
- * frame, and the flight controller's HOME waypoint should track it continuously. */
+/** Unlike send_msg_ear_result() (sent once per explicit solve), this runs after every shot: 
+ * the visual-homing CNN predicts a fresh vector on every frame, 
+ * and the flight controller's HOME waypoint tracks itcontinuously. */
 static void send_msg_home_vector_result(void)
 {
   float dx = 0.f, dy = 0.f, dist = 0.f;
