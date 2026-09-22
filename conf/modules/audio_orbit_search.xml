@@ -1,0 +1,69 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="audio_orbit_search" dir="audio">
+  <doc>
+    <description>
+      Acoustic orbit search with EARcam (fixed-wing, energy controller).
+
+      quiet_listen: low-throttle listening arcs. quiet_listen_on(thr) zeroes every
+      energy-controller throttle term but nominal, sets nominal to thr and enables EARcam
+      sampling (earcam_listen); quiet_listen_off() restores the saved gains. The request
+      must be renewed every QUIET_LISTEN_HOLD_S and is dropped when the block changes;
+      a GPS Abi callback and the always-false global exception quiet_listen_guard()
+      enforce this in every mode. quiet_listen_session_hold() keeps the EARcam session
+      open for the current block; leaving it by any route calls earcam_stop().
+
+      orbit_search: circle of ORBIT_SEARCH_RADIUS round a point, cycling
+      ORBIT_SEARCH_QUIET_M of low-throttle descent and ORBIT_SEARCH_POWER_M of powered
+      climb-back, each arc starting ORBIT_SEARCH_STEP_DEG further round. Flight plan:
+      orbit_search_reset(WP_CENTER, WP_DROP), earcam_start(), then a block with
+      pre_call="orbit_search_update(arcs, height, floor, listen_thr)" flying
+      circle radius=ORBIT_SEARCH_RADIUS alt=orbit_search_alt(height, floor), left on
+      orbit_search_done. See tudelft_include_imav2026_mission4_orbit.xml.
+
+      orbit_drop: run-in lane, climb-out and escape heights for the drop (ORBIT_DROP_*),
+      the obstacle callbacks orbit_drop_obstacle (tree sectors M4_OW, M4_OE, M4_ON or
+      outside the Geofence sector) and orbit_drop_outside_fence for
+      earcam_place_run_in_lane and earcam_place_climbout, built only when the active
+      flight plan has those sectors, and orbit_drop_hatch_close/open (COMMAND_HATCH).
+    </description>
+    <define name="QUIET_LISTEN_HOLD_S" value="0.3" unit="s" description="listening request timeout"/>
+    <define name="ORBIT_SEARCH_RADIUS" value="25" unit="m" description="orbit radius"/>
+    <define name="ORBIT_SEARCH_QUIET_M" value="110" unit="m" description="distance of each listening arc"/>
+    <define name="ORBIT_SEARCH_POWER_M" value="50" unit="m" description="minimum powered climb-back between arcs"/>
+    <define name="ORBIT_SEARCH_AIRSPEED" value="10" unit="m/s" description="airspeed setpoint on the orbit"/>
+    <define name="ORBIT_SEARCH_CRUISE_THR" value="0.16" description="nominal cruise throttle for the climb to orbit height"/>
+    <define name="ORBIT_SEARCH_LISTEN_RADIUS_M" value="40" unit="m" description="arcs only within this distance of the centre"/>
+    <define name="ORBIT_SEARCH_MAX_S" value="300" unit="s" description="listening ends at the latest after this time"/>
+    <define name="ORBIT_SEARCH_STEP_DEG" value="40" unit="deg" description="start bearing shift per arc"/>
+    <define name="ORBIT_SEARCH_START_WINDOW_DEG" value="20" unit="deg" description="an arc may start up to this far past its start bearing"/>
+    <define name="ORBIT_SEARCH_REGAIN_TOL" value="1" unit="m" description="climb-back tolerance before an arc starts"/>
+    <define name="ORBIT_DROP_LANE_COURSE_DEG" value="0" unit="deg" description="run-in course over the target, from north"/>
+    <define name="ORBIT_DROP_LANE_MAX_TILT_DEG" value="20" unit="deg" description="largest tilt of the run-in course tried"/>
+    <define name="ORBIT_DROP_LANE_TILT_STEP_DEG" value="2" unit="deg" description="tilt step tried"/>
+    <define name="ORBIT_DROP_RUN_IN_M" value="300" unit="m" description="START distance before the target"/>
+    <define name="ORBIT_DROP_LANE_MARGIN_M" value="8" unit="m" description="corridor half width kept clear of the sectors"/>
+    <define name="ORBIT_DROP_DROPTURN_SIDE" value="1" description="side of the base turn circle (+1 right)"/>
+    <define name="ORBIT_DROP_CLIMBOUT_MAX_M" value="120" unit="m" description="longest straight climb-out past the target"/>
+    <define name="ORBIT_DROP_CLIMBOUT_MIN_M" value="40" unit="m" description="shortest straight climb-out past the target"/>
+    <define name="ORBIT_DROP_CLIMBOUT_RATE_MPS" value="3" unit="m/s" description="climb-out rate"/>
+    <define name="ORBIT_DROP_CLIMBOUT_AIRSPEED_MPS" value="11" unit="m/s" description="climb-out airspeed"/>
+    <define name="ORBIT_DROP_EXIT_TURN_RADIUS_M" value="30" unit="m" description="exit circle radius"/>
+    <define name="ORBIT_DROP_FENCE_MARGIN_M" value="40" unit="m" description="exit circle distance inside the geofence"/>
+    <define name="ORBIT_DROP_SAFE_HEIGHT_M" value="45" unit="m" description="height above which nothing at the site can be hit"/>
+    <define name="ORBIT_DROP_ESCAPE_HEIGHT_M" value="25" unit="m" description="below this inside an obstacle sector: emergency climb"/>
+  </doc>
+  <dep>
+    <depends>digital_cam_earcam,@navigation</depends>
+  </dep>
+  <header>
+    <file name="quiet_listen.h"/>
+    <file name="orbit_search.h"/>
+    <file name="orbit_drop.h"/>
+  </header>
+  <init fun="quiet_listen_init()"/>
+  <makefile target="ap|sim|nps">
+    <file name="quiet_listen.c"/>
+    <file name="orbit_search.c"/>
+    <file name="orbit_drop.c"/>
+  </makefile>
+</module>

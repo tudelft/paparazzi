@@ -393,6 +393,10 @@
       <!-- quiet sampling, leg heights, turn radius and convergence are set per flight plan -->
     </module>
 
+    <!-- IMAV 2026 Mission 4 orbit search (tudelft_include_imav2026_mission4_orbit.xml): low-throttle
+         listening arcs, run-in lane / climb-out geometry, tree-sector obstacles and hatch. -->
+    <module name="audio_orbit_search"/>
+
     <!-- <module name="traffic_info"> -->
       <!-- <define name="TRAFFIC_INFO_USE_MESH" value="TRUE"/> -->
       <!-- <define name="MESH_AUTO_TELEMETRY" value="TRUE"/> -->

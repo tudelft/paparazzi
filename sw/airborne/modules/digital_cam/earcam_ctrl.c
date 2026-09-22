@@ -154,6 +154,7 @@ float earcam_refine_height_min_m = EARCAM_REFINE_HEIGHT_MIN_M;
 bool earcam_quiet_only = EARCAM_QUIET_ONLY;
 float earcam_quiet_delay_s = EARCAM_QUIET_DELAY_S;
 bool earcam_quiet_now = false;
+bool earcam_listen = true;
 
 float earcam_drop_release_agl_m = EARCAM_DROP_RELEASE_AGL_M;
 float earcam_drop_max_agl_m = EARCAM_DROP_MAX_AGL_M;
@@ -166,6 +167,7 @@ static bool sampling_active = false;
 static float last_shot_time = 0.f;
 static float last_report_time = 0.f;
 static float last_motor_time = 0.f;
+static float last_deaf_time = 0.f;
 #if FIXEDWING_FIRMWARE && EARCAM_USE_AGL_DIST
 static float drop_last_agl_time = -1.f;
 static float drop_last_agl_value = 0.f;
@@ -225,13 +227,17 @@ void earcam_init(void)
 void earcam_periodic(void)
 {
   float now = get_sys_time_float();
+  if (!earcam_listen) {
+    last_deaf_time = now;
+  }
+  bool listening = (now - last_deaf_time >= earcam_quiet_delay_s);
 #if FIXEDWING_FIRMWARE
   if (!autopilot_throttle_killed()) {
     last_motor_time = now;
   }
-  earcam_quiet_now = !earcam_quiet_only || (now - last_motor_time >= earcam_quiet_delay_s);
+  earcam_quiet_now = listening && (!earcam_quiet_only || (now - last_motor_time >= earcam_quiet_delay_s));
 #else
-  earcam_quiet_now = true;
+  earcam_quiet_now = listening;
 #endif
   if (!sampling_active || !earcam_quiet_now) {
     return;
