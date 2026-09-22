@@ -18,7 +18,8 @@
          AF). For wind, drag AF round TD in the GCS. -->
     <waypoint name="CLIMB" x="-13.193" y="276.124"/>
     <!-- height, not alt: 20 m above the main plan's ground_alt. -->
-    <waypoint name="AF" x="-34.464" y="292.028" height="20."/>
+    <!-- <waypoint name="AF" x="-34.464" y="292.028" height="30."/> -->
+    <waypoint name="AF" lat="48.8098402" lon="7.8518795" height="30."/>
     <waypoint name="_BASELEG" x="-4.723" y="295.562"/>
     <!-- height="0": on the ground, otherwise final climbs from AF to TD. -->
     <waypoint name="TD" x="-10.839" y="93.428" height="0"/>
