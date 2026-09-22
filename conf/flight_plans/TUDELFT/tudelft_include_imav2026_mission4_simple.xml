@@ -63,8 +63,8 @@
       <set var="autopilot.flight_time" value="0"/>
       <set var="autopilot.launch" value="1"/>
       <exception cond="GetPosAlt() @GT GetAltRef()+25" deroute="go_find_tanguy_and_rescue"/>
-      <attitude pitch="10" roll="0" throttle="1.0" until="MoreThan(NavBlockTime(), 2)" vmode="throttle"/>
-      <go wp="CLIMB"/>
+      <call_once fun="NavSetWaypointHere(WP_TAKEOFF_POINT)"/>
+      <go from="TAKEOFF_POINT" hmode="route" wp="CLIMB" throttle="1.0" vmode="throttle" pitch="15" until="GetPosAlt() @GT GetAltRef() + 25"/>
     </block>
 
     <!-- <block name="Standby" strip_button="Standby" strip_icon="home.png">
