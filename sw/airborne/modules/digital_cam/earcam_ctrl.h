@@ -159,6 +159,10 @@ extern bool earcam_quiet_only;
 extern float earcam_quiet_delay_s;
 /** True when a sample would be taken now (for telemetry/debug). */
 extern bool earcam_quiet_now;
+/** Sampling gate set by the flight plan or another module (default TRUE): samples are
+ *  only taken once it has been TRUE for earcam_quiet_delay_s, e.g. after the propeller
+ *  slowed down on a low-throttle listening arc (modules/audio/quiet_listen). */
+extern bool earcam_listen;
 /** Block pre_call for a star leg: kill the throttle from kill_before_m before the
  *  centre to restore_after_m past it (a short glide over the estimate), motor
  *  otherwise. Fixed-wing only. */
