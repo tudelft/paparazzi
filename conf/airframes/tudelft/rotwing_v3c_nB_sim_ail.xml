@@ -284,6 +284,9 @@
     </checklist>
 
     <section PREFIX="ONELOOP_NB_" NAME="ONELOOP_NB">
+        <define name  = "SPIN_PROT_MAX_RATE"        value = "34.0"/>   <!-- rad/s, fully protected -->
+        <define name  = "SPIN_PROT_START_RATE"      value = "28.0"/>   <!-- rad/s, protection starts -->
+        <define name  = "SPIN_PROT_MAX_CMD"         value = "4800.0"/> <!-- pprz, faulted motors cmd at max rate -->
         <define name  = "POLES_POS_OMEGA_N"         value = "1.2"/>
         <define name  = "POLES_ALT_OMEGA_N"         value = "2.2"/>
         <define name  = "HEADING_MANUAL"            value = "TRUE"/>

@@ -517,6 +517,21 @@ float delta_fault = 1000.0;
 #endif
 PRINT_CONFIG_MSG("%%% DELTA FAULT %%%")
 PRINT_CONFIG_VAR(ONELOOP_NB_DELTA_FAULT)
+// Yaw spin envelope protection (faulted motors): blend the static fault command towards
+// spin_prot_max_cmd as |r| grows from spin_prot_start_rate to spin_prot_max_rate
+#ifndef ONELOOP_NB_SPIN_PROT_MAX_RATE   // Absolute max yaw rate, fully protected [rad/s]
+#define ONELOOP_NB_SPIN_PROT_MAX_RATE 34.0
+#endif
+#ifndef ONELOOP_NB_SPIN_PROT_START_RATE // Yaw rate where protection starts to blend in [rad/s]
+#define ONELOOP_NB_SPIN_PROT_START_RATE 28.0
+#endif
+#ifndef ONELOOP_NB_SPIN_PROT_MAX_CMD    // Command to the faulted motors at max yaw rate [pprz]
+#define ONELOOP_NB_SPIN_PROT_MAX_CMD 4800.0
+#endif
+float spin_prot_max_rate = ONELOOP_NB_SPIN_PROT_MAX_RATE;
+float spin_prot_start_rate = ONELOOP_NB_SPIN_PROT_START_RATE;
+float spin_prot_max_cmd = ONELOOP_NB_SPIN_PROT_MAX_CMD;
+float spin_prot_ratio = 0.0; // 0 = normal static command, 1 = fully protected
 //====================================================================================================================================
 // Error Controller and Reference Model VARIABLES
 //====================================================================================================================================
@@ -2471,6 +2486,22 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
     counter_afc = 0;
   }
   Bound(temp_thrust, 0.0, max_fault_mot);
+  // Yaw spin envelope protection: linearly mix the static command with the max command
+  // depending on how close the (filtered) yaw rate is to the max allowed yaw rate
+  float abs_r = fabsf(oneloop_nB.sta_state.att_d[2]);
+  if (spin_prot_max_rate > spin_prot_start_rate)
+  {
+    spin_prot_ratio = (abs_r - spin_prot_start_rate) / (spin_prot_max_rate - spin_prot_start_rate);
+  }
+  else
+  {
+    spin_prot_ratio = (abs_r >= spin_prot_max_rate) ? 1.0 : 0.0;
+  }
+  Bound(spin_prot_ratio, 0.0, 1.0);
+  // Never let the protection lower the command (less counter torque would spin faster)
+  float spin_prot_cmd = Max(spin_prot_max_cmd, temp_thrust);
+  temp_thrust = (1.0 - spin_prot_ratio) * temp_thrust + spin_prot_ratio * spin_prot_cmd;
+  Bound(temp_thrust, 0.0, MAX_PPRZ);
   if (fault_pitch_motors && !fault_roll_motors && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI))
   {
     andi_u[COMMAND_MOTOR_FRONT] = temp_thrust;
