@@ -525,13 +525,54 @@ PRINT_CONFIG_VAR(ONELOOP_NB_DELTA_FAULT)
 #ifndef ONELOOP_NB_SPIN_PROT_START_RATE // Yaw rate where protection starts to blend in [rad/s]
 #define ONELOOP_NB_SPIN_PROT_START_RATE 28.0
 #endif
-#ifndef ONELOOP_NB_SPIN_PROT_MAX_CMD    // Command to the faulted motors at max yaw rate [pprz]
+#ifndef ONELOOP_NB_SPIN_PROT_MAX_CMD    // Max command to the faulted motors, reached at max yaw rate [pprz]
 #define ONELOOP_NB_SPIN_PROT_MAX_CMD 4800.0
 #endif
 float spin_prot_max_rate = ONELOOP_NB_SPIN_PROT_MAX_RATE;
 float spin_prot_start_rate = ONELOOP_NB_SPIN_PROT_START_RATE;
 float spin_prot_max_cmd = ONELOOP_NB_SPIN_PROT_MAX_CMD;
 float spin_prot_ratio = 0.0; // 0 = normal static command, 1 = fully protected
+// 0 ──── bleed ──── 24 ── hold ── 28 ── envelope + trim rising ── 34 ── fully protected ──▶
+//                release         start                           max
+// Spin trim: slow integrator that raises the static fault command while the envelope is active,
+// so that the equilibrium spin rate is pushed back below spin_prot_start_rate (e.g. battery drop)
+#ifndef ONELOOP_NB_SPIN_TRIM_ON           // Enable the spin trim integrator
+#define ONELOOP_NB_SPIN_TRIM_ON TRUE
+#endif
+#ifndef ONELOOP_NB_SPIN_TRIM_RATE         // Trim increase rate at spin_prot_ratio = 1 [pprz/s]
+#define ONELOOP_NB_SPIN_TRIM_RATE 100.0
+#endif
+#ifndef ONELOOP_NB_SPIN_TRIM_BLEED_RATE   // Trim decrease rate below release rate [pprz/s] (0 = only increase)
+#define ONELOOP_NB_SPIN_TRIM_BLEED_RATE 20.0
+#endif
+#ifndef ONELOOP_NB_SPIN_TRIM_RELEASE_RATE // Yaw rate below which the trim bleeds off [rad/s]
+#define ONELOOP_NB_SPIN_TRIM_RELEASE_RATE 24.0
+#endif
+bool spin_trim_on = ONELOOP_NB_SPIN_TRIM_ON;
+float spin_trim_rate = ONELOOP_NB_SPIN_TRIM_RATE;
+float spin_trim_bleed_rate = ONELOOP_NB_SPIN_TRIM_BLEED_RATE;
+float spin_trim_release_rate = ONELOOP_NB_SPIN_TRIM_RELEASE_RATE;
+float spin_trim = 0.0; // Current trim [pprz]
+#ifndef ONELOOP_NB_SPIN_PROT_MIN_GAP      // Min gap enforced between release < start < max rates [rad/s]
+#define ONELOOP_NB_SPIN_PROT_MIN_GAP 1.0
+#endif
+float spin_prot_min_gap = ONELOOP_NB_SPIN_PROT_MIN_GAP;
+// Compile time checks of the airframe values (same limits are enforced at runtime, see spin_prot_bound_params)
+_Static_assert(ONELOOP_NB_SPIN_PROT_MIN_GAP >= 0.1 && ONELOOP_NB_SPIN_PROT_MIN_GAP <= 10.0,
+               "ONELOOP_NB_SPIN_PROT_MIN_GAP must be in [0.1, 10] rad/s");
+_Static_assert(ONELOOP_NB_SPIN_PROT_MAX_RATE <= 60.0,
+               "ONELOOP_NB_SPIN_PROT_MAX_RATE must be <= 60 rad/s");
+_Static_assert(ONELOOP_NB_SPIN_PROT_START_RATE <= ONELOOP_NB_SPIN_PROT_MAX_RATE - ONELOOP_NB_SPIN_PROT_MIN_GAP,
+               "ONELOOP_NB_SPIN_PROT_START_RATE must be at least SPIN_PROT_MIN_GAP below SPIN_PROT_MAX_RATE");
+_Static_assert(ONELOOP_NB_SPIN_TRIM_RELEASE_RATE >= 0.0 &&
+               ONELOOP_NB_SPIN_TRIM_RELEASE_RATE <= ONELOOP_NB_SPIN_PROT_START_RATE - ONELOOP_NB_SPIN_PROT_MIN_GAP,
+               "ONELOOP_NB_SPIN_TRIM_RELEASE_RATE must be >= 0 and at least SPIN_PROT_MIN_GAP below SPIN_PROT_START_RATE");
+_Static_assert(ONELOOP_NB_SPIN_PROT_MAX_CMD >= 0.0 && ONELOOP_NB_SPIN_PROT_MAX_CMD <= MAX_PPRZ,
+               "ONELOOP_NB_SPIN_PROT_MAX_CMD must be in [0, MAX_PPRZ]");
+_Static_assert(ONELOOP_NB_SPIN_TRIM_RATE >= 0.0 && ONELOOP_NB_SPIN_TRIM_RATE <= 1000.0,
+               "ONELOOP_NB_SPIN_TRIM_RATE must be in [0, 1000] pprz/s");
+_Static_assert(ONELOOP_NB_SPIN_TRIM_BLEED_RATE >= 0.0 && ONELOOP_NB_SPIN_TRIM_BLEED_RATE <= 1000.0,
+               "ONELOOP_NB_SPIN_TRIM_BLEED_RATE must be in [0, 1000] pprz/s");
 //====================================================================================================================================
 // Error Controller and Reference Model VARIABLES
 //====================================================================================================================================
@@ -781,6 +822,20 @@ static void send_oneloop_debug(struct transport_tx *trans, struct link_device *d
 // Functions Definition Section
 //====================================================================================================================================
 // General Mathematical Functions
+/** @brief Enforce valid spin protection / spin trim parameters (they can be changed in flight from the settings).
+ * Order enforced: 0 <= release <= start - gap, start <= max - gap. The max rate is the safety limit and is
+ * never raised to fix an inconsistent setting, the lower rates are pushed down instead.
+ */
+static void spin_prot_bound_params(void)
+{
+  Bound(spin_prot_min_gap, 0.1, 10.0);
+  Bound(spin_prot_max_rate, 2.0 * spin_prot_min_gap, 60.0);
+  Bound(spin_prot_start_rate, spin_prot_min_gap, spin_prot_max_rate - spin_prot_min_gap);
+  Bound(spin_trim_release_rate, 0.0, spin_prot_start_rate - spin_prot_min_gap);
+  Bound(spin_prot_max_cmd, 0.0, MAX_PPRZ);
+  Bound(spin_trim_rate, 0.0, 1000.0);
+  Bound(spin_trim_bleed_rate, 0.0, 1000.0);
+}
 /** @brief Function to make sure that inputs are positive non zero vaues*/
 static float positive_non_zero(float input)
 {
@@ -2465,6 +2520,8 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
   }
   // ======================================================================================================================================================
   // Handle fault static commands
+  // The static fault commands (and the spin trim) are only used by the nB controllers
+  bool nb_ctrl = (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI);
   float temp_thrust = 0.0;
   static int counter_afc = 0;
   float min_fault_mot = 0.0;
@@ -2488,31 +2545,45 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
   Bound(temp_thrust, 0.0, max_fault_mot);
   // Yaw spin envelope protection: linearly mix the static command with the max command
   // depending on how close the (filtered) yaw rate is to the max allowed yaw rate
+  spin_prot_bound_params(); // guarantees spin_prot_max_rate - spin_prot_start_rate >= spin_prot_min_gap > 0
   float abs_r = fabsf(oneloop_nB.sta_state.att_d[2]);
-  if (spin_prot_max_rate > spin_prot_start_rate)
+  spin_prot_ratio = (abs_r - spin_prot_start_rate) / (spin_prot_max_rate - spin_prot_start_rate);
+  Bound(spin_prot_ratio, 0.0, 1.0);
+  // Spin trim: integrate up while the envelope is active, bleed off below the release rate, hold in between.
+  // Only active with a single faulted pair in flight, reset otherwise (and during the auto fault ramp).
+  bool single_fault = nb_ctrl && (fault_pitch_motors != fault_roll_motors);
+  if (spin_trim_on && single_fault && in_flight && !auto_fault_cmd)
   {
-    spin_prot_ratio = (abs_r - spin_prot_start_rate) / (spin_prot_max_rate - spin_prot_start_rate);
+    if (spin_prot_ratio > 0.0 && (temp_thrust + spin_trim) < spin_prot_max_cmd) // anti-windup
+    {
+      spin_trim += spin_trim_rate * spin_prot_ratio / PERIODIC_FREQUENCY;
+    }
+    else if (abs_r < spin_trim_release_rate)
+    {
+      spin_trim -= spin_trim_bleed_rate / PERIODIC_FREQUENCY;
+    }
+    Bound(spin_trim, 0.0, spin_prot_max_cmd);
   }
   else
   {
-    spin_prot_ratio = (abs_r >= spin_prot_max_rate) ? 1.0 : 0.0;
+    spin_trim = 0.0;
   }
-  Bound(spin_prot_ratio, 0.0, 1.0);
-  // Never let the protection lower the command (less counter torque would spin faster)
-  float spin_prot_cmd = Max(spin_prot_max_cmd, temp_thrust);
-  temp_thrust = (1.0 - spin_prot_ratio) * temp_thrust + spin_prot_ratio * spin_prot_cmd;
-  Bound(temp_thrust, 0.0, MAX_PPRZ);
-  if (fault_pitch_motors && !fault_roll_motors && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI))
+  // spin_prot_max_cmd is the single ceiling for the faulted motors: base + trim is cut to it,
+  // and the envelope blends towards it (so the blend can only raise the command)
+  temp_thrust += spin_trim;
+  Bound(temp_thrust, 0.0, spin_prot_max_cmd);
+  temp_thrust = (1.0 - spin_prot_ratio) * temp_thrust + spin_prot_ratio * spin_prot_max_cmd;
+  if (fault_pitch_motors && !fault_roll_motors && nb_ctrl)
   {
     andi_u[COMMAND_MOTOR_FRONT] = temp_thrust;
     andi_u[COMMAND_MOTOR_BACK] = temp_thrust;
   }
-  else if (fault_roll_motors && !fault_pitch_motors && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI))
+  else if (fault_roll_motors && !fault_pitch_motors && nb_ctrl)
   {
     andi_u[COMMAND_MOTOR_RIGHT] = temp_thrust;
     andi_u[COMMAND_MOTOR_LEFT] = temp_thrust;
   }
-  else if (fault_roll_motors && fault_pitch_motors && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI))
+  else if (fault_roll_motors && fault_pitch_motors && nb_ctrl)
   {
     float temp_roll = (float)radio_control_get(RADIO_THROTTLE) - max_fault_mot;
     Bound(temp_roll, 0.0, MAX_PPRZ);
