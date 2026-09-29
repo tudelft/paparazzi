@@ -13,10 +13,22 @@
     <waypoint lat="51.990631" lon="4.376796" name="HOME"/>
     <waypoint name="CLIMB" x="1.9" y="1.0"/>
     <waypoint name="STDBY" lat="51.9906312" lon="4.3767855" alt="2.5"/>
-    <waypoint lat="51.9906267" lon="4.3767782" alt="2.5" name="i1"/>
+    <!-- SMALL SQUARE-->
+    <!-- <waypoint lat="51.9906267" lon="4.3767782" alt="2.5" name="i1"/>
     <waypoint lat="51.9906267" lon="4.3767928" alt="2.5" name="i2"/>
     <waypoint lat="51.9906357" lon="4.3767928" alt="2.5" name="i3"/>
-    <waypoint lat="51.9906357" lon="4.3767782" alt="2.5" name="i4"/>
+    <waypoint lat="51.9906357" lon="4.3767782" alt="2.5" name="i4"/> -->
+    <!-- MEDIUM SQUARE-->
+    <waypoint lat="51.9906222" lon="4.3767709" alt="2.5" name="i1"/>
+    <waypoint lat="51.9906222" lon="4.3768001" alt="2.5" name="i2"/>
+    <waypoint lat="51.9906402" lon="4.3768001" alt="2.5" name="i3"/>
+    <waypoint lat="51.9906402" lon="4.3767709" alt="2.5" name="i4"/>
+    <!-- LARGE SQUARE-->
+    <!-- <waypoint lat="51.9906155" lon="4.3767599" alt="2.5" name="i1"/>
+    <waypoint lat="51.9906155" lon="4.3768111" alt="2.5" name="i2"/>
+    <waypoint lat="51.9906469" lon="4.3768111" alt="2.5" name="i3"/>
+    <waypoint lat="51.9906469" lon="4.3767599" alt="2.5" name="i4"/> -->
+
     <waypoint name="p5" x="0.2" y="0.3"/>
     <waypoint name="TD" x="0.8" y="-1.7"/>
     <waypoint lat="51.9905979" lon="4.3767279" name="CZ1"/>
