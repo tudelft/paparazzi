@@ -321,8 +321,8 @@
         <define name  = "SPIN_PROT_MAX_CMD"         value = "4800.0"/> <!-- pprz, faulted motors cmd at max rate -->
         <define name  = "SPIN_PROT_MIN_GAP"         value = "1.0"/>        <!-- rad/s, min gap release < start < max -->
         <define name  = "SPIN_TRIM_ON"              value = "TRUE"/>       <!-- enable spin trim integrator -->
-        <define name  = "SPIN_TRIM_RATE"            value = "100.0"/>      <!-- pprz/s, trim rise at full envelope -->
-        <define name  = "SPIN_TRIM_BLEED_RATE"      value = "20.0"/>       <!-- pprz/s, trim decay (0 = only increase) -->
+        <define name  = "SPIN_TRIM_RATE"            value = "1000.0"/>     <!-- pprz/s, trim rise at full envelope -->
+        <define name  = "SPIN_TRIM_BLEED_RATE"      value = "1000.0"/>     <!-- pprz/s, trim decay (0 = only increase) -->
         <define name  = "SPIN_TRIM_RELEASE_RATE"    value = "24.0"/>       <!-- rad/s, trim decays below this -->
         <define name  = "POLES_POS_OMEGA_N"         value = "1.2"/>
         <define name  = "POLES_ALT_OMEGA_N"         value = "2.2"/>

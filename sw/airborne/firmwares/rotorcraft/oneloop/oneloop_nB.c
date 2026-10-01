@@ -540,10 +540,10 @@ float spin_prot_ratio = 0.0; // 0 = normal static command, 1 = fully protected
 #define ONELOOP_NB_SPIN_TRIM_ON TRUE
 #endif
 #ifndef ONELOOP_NB_SPIN_TRIM_RATE         // Trim increase rate at spin_prot_ratio = 1 [pprz/s]
-#define ONELOOP_NB_SPIN_TRIM_RATE 100.0
+#define ONELOOP_NB_SPIN_TRIM_RATE 1000.0
 #endif
 #ifndef ONELOOP_NB_SPIN_TRIM_BLEED_RATE   // Trim decrease rate below release rate [pprz/s] (0 = only increase)
-#define ONELOOP_NB_SPIN_TRIM_BLEED_RATE 20.0
+#define ONELOOP_NB_SPIN_TRIM_BLEED_RATE 1000.0
 #endif
 #ifndef ONELOOP_NB_SPIN_TRIM_RELEASE_RATE // Yaw rate below which the trim bleeds off [rad/s]
 #define ONELOOP_NB_SPIN_TRIM_RELEASE_RATE 24.0
