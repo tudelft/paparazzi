@@ -606,26 +606,12 @@ _Static_assert(ONELOOP_NB_SPIN_MAN_TRIM_RATE >= 0.0 && ONELOOP_NB_SPIN_MAN_TRIM_
                "ONELOOP_NB_SPIN_MAN_TRIM_RATE must be in [0, 1000] pprz/s");
 _Static_assert(ONELOOP_NB_SPIN_MAN_DONE_RATE >= 0.1 && ONELOOP_NB_SPIN_MAN_DONE_RATE <= 5.0,
                "ONELOOP_NB_SPIN_MAN_DONE_RATE must be in [0.1, 5] rad/s");
-// nB ANDI state term scheduling on spin rate: the state term is blended in linearly from |r| = state_term_r_off
-// (not used) to |r| = state_term_r_on (fully used). Without spin it causes a slow growing oscillation in nB ANDI.
-#ifndef ONELOOP_NB_STATE_TERM_R_OFF     // |r| below which the state term is not used [rad/s]
-#define ONELOOP_NB_STATE_TERM_R_OFF 6.0
-#endif
-#ifndef ONELOOP_NB_STATE_TERM_R_ON      // |r| above which the state term is fully used [rad/s]
-#define ONELOOP_NB_STATE_TERM_R_ON 10.0
-#endif
-_Static_assert(ONELOOP_NB_STATE_TERM_R_OFF >= 0.0 && ONELOOP_NB_STATE_TERM_R_ON <= 60.0 &&
-               ONELOOP_NB_STATE_TERM_R_ON >= ONELOOP_NB_STATE_TERM_R_OFF + 0.1,
-               "ONELOOP_NB_STATE_TERM_R_OFF/ON must satisfy 0 <= off <= on - 0.1, on <= 60 rad/s");
 // Third gain of the ANDI error controller (roll/pitch and vertical), equal to the hover motors actuator dynamics
 #ifndef ONELOOP_NB_EC_K3                // [rad/s], 22 on the RW3C, 29 on the PlusQuad
 #define ONELOOP_NB_EC_K3 22.0
 #endif
 _Static_assert(ONELOOP_NB_EC_K3 >= 1.0 && ONELOOP_NB_EC_K3 <= 100.0, "ONELOOP_NB_EC_K3 must be in [1, 100] rad/s");
 float ec_k3 = ONELOOP_NB_EC_K3;
-float state_term_r_off = ONELOOP_NB_STATE_TERM_R_OFF;
-float state_term_r_on = ONELOOP_NB_STATE_TERM_R_ON;
-float state_term_gain = 0.0; // Applied fraction of the state term [0, 1]
 enum spin_man_state_t
 {
   SPIN_MAN_IDLE,
@@ -943,9 +929,6 @@ static void spin_prot_bound_params(void)
   Bound(spin_man_done_rate, 0.1, 5.0);
   Bound(spin_man_pair, SPIN_MAN_PAIR_PITCH, SPIN_MAN_PAIR_ROLL);
   spin_man_pitch_dir = (spin_man_pitch_dir >= 0.0) ? 1.0 : -1.0;
-  // nB ANDI state term scheduling (guarantees state_term_r_on - state_term_r_off >= 0.1)
-  Bound(state_term_r_on, 0.1, 60.0);
-  Bound(state_term_r_off, 0.0, state_term_r_on - 0.1);
 }
 /** @brief Stop the spin manoeuvre and clear its GCS triggers (fault flags are left as they are) */
 static void spin_man_reset(void)
@@ -1750,10 +1733,11 @@ void ec_3rd_att(float y_4d[3], float x_des[3], float x_ref[3], float x_d_ref[3],
   BoundAbs(x_2d_fw[2], bounds.att_2d[2] * ec_headroom);
   //  Calculate and bound distrubance --------------------------------------
   float dist[3];
-  fb[0] = fb[0] / k3_e[0];
-  fb[1] = fb[1] / k3_e[1];
-  fb[2] = fb[2] / k3_e[2];
-  float_vect_diff(dist, x_2d, fb, 3); // The Disturbance is THe difference between the measurment and the Model
+  float fb_k3[3]; // local copy: fb is an input and is reused by the caller (nB_EC), do not modify it
+  fb_k3[0] = fb[0] / k3_e[0];
+  fb_k3[1] = fb[1] / k3_e[1];
+  fb_k3[2] = fb[2] / k3_e[2];
+  float_vect_diff(dist, x_2d, fb_k3, 3); // The Disturbance is THe difference between the measurment and the Model
   // Here we can bound the disturbance to avoid too large control efforts
   // Example MAX YAW CONTROL EFFORT: BoundAbs(dist[2], oneloop_nB_yaw_dist_limit);
   // Angular Acceleration Error -------------------------------------------
@@ -2723,11 +2707,8 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
     ec_3rd_att(att_jerk_des, att_des, oneloop_nB.sta_ref.att, oneloop_nB.sta_ref.att_d, oneloop_nB.sta_ref.att_2d, oneloop_nB.sta_ref.att_3d, oneloop_nB.sta_state.att, oneloop_nB.sta_state.att_d, oneloop_nB.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3, sta_bounds, ctrl_effort_model_att);
     // nB_EC(oneloop_nB.sta_nB_state.nB, oneloop_nB.sta_nB_state.nB_d, oneloop_nB.sta_nB_state.nB_2d, oneloop_nB.sta_nB_state.mu_B, k_att_e.k1, k_att_e.k2, k_att_e.k3, ctrl_effort_model_att, nB_jerk_des);
     nB_EC(oneloop_nB.sta_nB_state.nB, oneloop_nB.sta_nB_state.nB_d, nB_2d_FV3, oneloop_nB.sta_nB_state.mu_B, k_att_e.k1, k_att_e.k2, k_att_e.k3, ctrl_effort_model_att, nB_jerk_des);
-    // State term only when spinning fast enough, blended in linearly on the filtered yaw rate
-    state_term_gain = (fabsf(oneloop_nB.sta_state.att_d[2]) - state_term_r_off) / (state_term_r_on - state_term_r_off);
-    Bound(state_term_gain, 0.0, 1.0);
-    nu_stab[0] = nB_jerk_des[0] - state_term_gain * nB_3d_state_filt[0].o[0]; // state_term[0];
-    nu_stab[1] = nB_jerk_des[1] - state_term_gain * nB_3d_state_filt[1].o[0]; // state_term[1];
+    nu_stab[0] = nB_jerk_des[0] - nB_3d_state_filt[0].o[0]; // state_term[0];
+    nu_stab[1] = nB_jerk_des[1] - nB_3d_state_filt[1].o[0]; // state_term[1];
     nu_stab[2] = att_jerk_des[2];
     SpinQuad_overwrite(k_att_e.k3[2], ctrl_effort_model[IDX_ar], &nu_stab[2]);
     break;

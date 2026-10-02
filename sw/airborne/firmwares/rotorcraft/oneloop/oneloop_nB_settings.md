@@ -108,6 +108,45 @@ With the defaults, the \|r\| bands are:
 - **At runtime:** `spin_prot_bound_params()` enforces the same limits every loop, so a bad in-flight setting cannot break anything. **The max rate is never raised to fix a setting.** If a setting breaks the order, the lower rates (start, release) are pushed down instead.
 - **If you change a limit:** it appears in three places (the `_Static_assert`s, `spin_prot_bound_params()` and the settings XML), so update all three.
 
+### Spin transition maneuver (nominal ↔ one pair faulted)
+
+A GCS-triggered maneuver for entering and leaving a single-pair fault spin smoothly, with either the pitch pair (FRONT/BACK) or the roll pair (RIGHT/LEFT). It works in any nB mode.
+
+| Setting | Default | Define | Range | What it does |
+|---|---|---|---|---|
+| `spin_man_up` | OFF | — | OFF/ON | **Spin up.** With no fault active, the yaw-rate reference ramps from the current r towards the middle of the hold band, (release + start)/2. Once \|r\| ≥ `spin_trim_release_rate`, the fault flag of `spin_man_pair` is switched ON automatically and that pair blends to the static command. Clears itself when done. |
+| `spin_man_pair` | PITCH | `SPIN_MAN_PAIR` (0 = pitch, 1 = roll) | PITCH/ROLL | Which pair the spin-up faults. Not used by the spin-down, which un-faults whichever single pair is faulted. |
+| `spin_man_pitch_dir` | POS | `SPIN_MAN_PITCH_DIR` (1.0 / −1.0) | NEG/POS | Sign of r when the pitch pair is faulted (positive on the PlusQuad). The roll pair spins the opposite way. The spin-up ramps in this direction, so the spin never has to reverse when the fault engages. |
+| `spin_man_down` | OFF | — | OFF/ON | **Spin down.** With exactly one pair faulted, the trim is raised open-loop (no bleed) until \|r\| < release − gap. Then the fault flag is switched OFF, that pair blends back to the allocator, and the yaw-rate reference starts at the current r and ramps to 0. It ends when \|r\| < `spin_man_done_rate`. Clears itself when done. |
+| `spin_man_ramp_rate` | 2.0 rad/s² | `SPIN_MAN_RAMP_RATE` | 0.1 – 10 | Yaw-rate reference ramp, for both spin-up and stopping. |
+| `spin_man_blend_time` | 1.0 s | `SPIN_MAN_BLEND_TIME` | 0.1 – 5 | Time over which FRONT/BACK blend between allocator and static command (no kick). |
+| `spin_man_trim_rate` | 300 pprz/s | `SPIN_MAN_TRIM_RATE` | 0 – 1000 | Open-loop trim rise while slowing down. |
+| `spin_man_done_rate` | 0.5 rad/s | `SPIN_MAN_DONE_RATE` | 0.1 – 5 | \|r\| below which the spin counts as stopped, and normal heading hold takes over. |
+
+**During any phase:**
+- the sticks command **N/E** instead of body axes;
+- the yaw stick is ignored;
+- the desired heading follows the actual heading.
+
+**Spin direction:** `spin_man_pitch_dir` for the pitch pair, the opposite for the roll pair.
+
+**Aborting:**
+
+| Flag cleared during | What happens |
+|---|---|
+| Spin-up ramp | The spin is ramped back to 0 without faulting |
+| Slow-down phase | Stops; the drone stays faulted and the normal trim takes over |
+| Either blend | The blend always completes |
+| Final ramp to 0 | Ignored. This is the safe way out |
+
+**Reset:** a mode change, landing, or leaving an nB mode resets the maneuver.
+
+**A trigger is rejected (cleared) when its precondition isn't met:**
+- `spin_man_up` needs no fault flag set;
+- `spin_man_down` needs exactly one of `fault_pitch_motors` / `fault_roll_motors` set.
+
+**Heading after any fault:** whenever a fault flag is ON in an nB mode, `psi_des` follows the actual heading, so turning a fault OFF (by hand or by the maneuver) never causes a heading jump.
+
 ### Manual (half-loop) and position control
 
 | Setting | Default | Define | Range | What it does |
@@ -117,6 +156,7 @@ With the defaults, the \|r\| bands are:
 | `k_P` | 1.8 | — | 0.1 – 5 | Velocity error → acceleration gain. The acceleration command is limited to 0.6 g (≈ 31° tilt). |
 | `k_I` | 0.4 | — | 0 – 1 | Velocity error integral gain. The integral is clamped (±0.4) and **is not reset when you change mode**. |
 | `k_D` | 0.2 | — | 0.1 – 5 | Derivative term, computed on the filtered measurement. |
+| `ec_k3` | 22 (PlusQuad: 29) | `EC_K3` | 1 – 100 rad/s | Third gain of the ANDI error controller, for roll/pitch (and vertical in NAV). It must equal the hover motors' actuator dynamics (`ACT_DYN`): then ANDI's actuator inversion cancels and nB ANDI commands the same motor inputs as nB INDI. Only ANDI and nB ANDI use it; INDI uses 1. |
 | `max_phi` | 30° (PQ: 45°, RW3C: 5°) | `MAX_PHI` | 2 – 30 (rad setting shown in deg) | Scales the roll stick when it commands attitude, and limits the roll angle computed from the acceleration command. **It does not limit the tilt in the nB modes.** There the limit is the 0.6 g cap above. |
 | `max_theta` | 30° (PQ: 45°, RW3C: 5°) | `MAX_THETA` | 2 – 30 | Same as `max_phi`, for pitch. |
 | `oneloop_nB_Z_hold` | OFF | — | OFF/ON | Auto modes: the sticks set roll/pitch while altitude stays automatic. **It only works in MODULE (CTRL_ANDI).** In the nB modes the sticks are ignored. |
@@ -182,8 +222,8 @@ Leave these alone. Changing them in flight does nothing. The code line numbers a
 | Setting | Why |
 |---|---|
 | `pdot/qdot/rdot/ax/ay/az_LP_freq` | Overwritten with `oneloop_nB_filt_cutoff` every loop. Use that setting instead. |
-| `p_att_e.*` | The pitch/roll gains are hard-coded right after they are computed (`k1 = 4.19, k2 = 10.01, k3 = 22`). |
-| `p_pos_e.*`, `p_alt_e.*`, `p_alt_rm.*` | The gains they produce are never used. Position is controlled by the k_K/P/I/D PID, and the vertical gain is hard-coded. |
+| `p_att_e.*` | The pitch/roll gains are hard-coded right after they are computed (`k1 = 4.19, k2 = 10.01`; `k3` is the `ec_k3` setting). |
+| `p_pos_e.*`, `p_alt_e.*`, `p_alt_rm.*` | The gains they produce are never used. Position is controlled by the k_K/P/I/D PID, and the vertical k3 is also `ec_k3`. |
 | `p_pos_rm.*` | Only overwrites `nav_hybrid_pos_gain`, which the controller does not use. |
 | `*_rm.p3` | Overwritten every loop with `omega_n · zeta`. |
 | `max_bank` | Only copied to `nav_hybrid_max_bank`. It does not limit the tilt. |
@@ -209,7 +249,7 @@ So `drop_roll` actually drops the pitch-driven channel, and `drop_pitch` drops t
 |---|---|---|---|---|
 | pitch (F/B) | ON | quad | `aq` (roll moment from R/L) | OK — **PlusQuad and RW3C quad case** |
 | pitch (F/B) | ON | forward | `ap` | OK |
-| roll (R/L) | ON | **quad** | `aq` | **Wrong: the remaining F/B give pitch only, so the allocator tracks a channel it cannot control. Avoid this.** |
+| roll (R/L) | ON | quad | `ap` (pitch from F/B) | OK (fixed: it used to keep `aq`, a channel the remaining F/B cannot control) |
 | roll (R/L) | ON | forward | `ap` (pitch from F/B) | OK, ailerons not used |
 | pitch (F/B) | OFF | quad | `aq` | OK |
 | pitch (F/B) | OFF | forward | `ap` + `aq` (ailerons for roll) | OK (RW3C_nB) |
@@ -244,7 +284,14 @@ FRONT and BACK get the static command. The drone spins, and RIGHT/LEFT keep cont
 5. To end the test, turn **`fault_pitch_motors` OFF** at a safe altitude:
    - all four motors go back to the allocator, and yaw control returns while the drone is still spinning fast;
    - the stick frame switches back from NED to body.
-   - Be ready for a yaw transient.
+   - The heading target is the current heading, so there is no heading jump, but the controller will brake a fast spin abruptly. Be ready for a yaw transient, or use `spin_man_down` instead.
+
+### Alternative: use the spin transition maneuver
+Instead of steps 3 and 5, hover in an nB mode and:
+- set **`spin_man_up` ON** to spin up and fault the pitch motors automatically;
+- later, set **`spin_man_down` ON** to slow down, un-fault, and stop the spin.
+
+Both clear themselves when finished. If the healthy quad cannot reach `spin_trim_release_rate` (yaw has the lowest allocation priority), the spin-up waits at the highest rate it can reach. Clear `spin_man_up` to abort it.
 
 ### Optional: automatic test ramp
 With the fault ON, set `auto_fault_cmd` ON. The faulted motors ramp from `max_fault_mot` down to 0 over 30 s, to find the spin rate at which control is lost. The trim is off during the ramp. The envelope still acts, so the spin cannot go past `spin_prot_max_rate`.
@@ -279,18 +326,17 @@ In forward flight, roll can only come from the ailerons. The static fault comman
 1. **First** get the skew above 70° in an nB mode, and keep it well away from 70°:
    - Use FORWARD (`nB_NAV_INDI`) or NAV, where the wing follows the airspeed schedule.
    - Or, in the manual nB modes, use `rotwing_state.force_skew` with `sp_skew_angle`.
-2. Set **`fault_ailerons` OFF**. The ailerons then keep controlling roll, and the allocator tracks both channels. It is also the safe choice if the skew dips below 70°: with ailerons OFF, the quad case for faulted roll motors is correct. With ailerons ON it falls into the wrong case in the table above.
+2. Set **`fault_ailerons` OFF**. The ailerons then keep controlling roll, and the allocator tracks both channels. If the skew dips below 70°, both settings fall into a correct quad case.
 3. Turn **`fault_roll_motors` ON**. RIGHT/LEFT get the static command, and FRONT/BACK give pitch.
 4. Watch \|r\| and `spin_trim`. The envelope and trim work the same as in quad.
 5. Turn **`fault_roll_motors` OFF** **before** the wing rotates back to hover. Then set `fault_ailerons` back ON.
 
-**Order rule for Part B:** skew above 70° first, fault ON second; fault OFF first, transition back second. Never have `fault_roll_motors` ON with `fault_ailerons` ON while in quad.
+**Order rule for Part B:** skew above 70° first, fault ON second; fault OFF first, transition back second.
 
 ---
 
 ## Known issues (not fixed yet)
 
-- **Faulted roll motors in quad with `fault_ailerons` ON** are allocated wrongly: the case is a copy of the pitch-fault case. See the table in [Which axes are kept](#which-axes-are-kept-during-a-fault).
 - **aD weight stays dropped:** after the "both pairs faulted, forward" case, the aD weight stays at 0 until the no-fault case is reached again.
 - **No hysteresis** at the 70° skew threshold, so the allocation case can switch back and forth near 70°.
 - **Comments don't match the code** in two allocation cases (roll fault in quad without ailerons; both pairs in forward). The comment on `ONELOOP_NB_DEBUG_MODE` is also inverted.

@@ -296,8 +296,6 @@
         <define name  = "SPIN_MAN_DONE_RATE"        value = "0.5"/>        <!-- rad/s, spin considered stopped -->
         <define name  = "SPIN_MAN_PAIR"             value = "0"/>          <!-- 0 = fault pitch (F/B), 1 = fault roll (R/L) -->
         <define name  = "SPIN_MAN_PITCH_DIR"        value = "1.0"/>        <!-- sign of r with pitch motors faulted (roll: opposite) -->
-        <define name  = "STATE_TERM_R_OFF"          value = "6.0"/>        <!-- rad/s, nB ANDI state term off below -->
-        <define name  = "STATE_TERM_R_ON"           value = "10.0"/>       <!-- rad/s, nB ANDI state term fully on above -->
         <define name  = "EC_K3"                     value = "22.0"/>       <!-- rad/s, ANDI EC third gain = hover motors actuator dynamics -->
         <define name  = "POLES_POS_OMEGA_N"         value = "1.2"/>
         <define name  = "POLES_ALT_OMEGA_N"         value = "2.2"/>
