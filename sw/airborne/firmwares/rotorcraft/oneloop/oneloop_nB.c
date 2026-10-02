@@ -606,6 +606,26 @@ _Static_assert(ONELOOP_NB_SPIN_MAN_TRIM_RATE >= 0.0 && ONELOOP_NB_SPIN_MAN_TRIM_
                "ONELOOP_NB_SPIN_MAN_TRIM_RATE must be in [0, 1000] pprz/s");
 _Static_assert(ONELOOP_NB_SPIN_MAN_DONE_RATE >= 0.1 && ONELOOP_NB_SPIN_MAN_DONE_RATE <= 5.0,
                "ONELOOP_NB_SPIN_MAN_DONE_RATE must be in [0.1, 5] rad/s");
+// nB ANDI state term scheduling on spin rate: the state term is blended in linearly from |r| = state_term_r_off
+// (not used) to |r| = state_term_r_on (fully used). Without spin it causes a slow growing oscillation in nB ANDI.
+#ifndef ONELOOP_NB_STATE_TERM_R_OFF     // |r| below which the state term is not used [rad/s]
+#define ONELOOP_NB_STATE_TERM_R_OFF 6.0
+#endif
+#ifndef ONELOOP_NB_STATE_TERM_R_ON      // |r| above which the state term is fully used [rad/s]
+#define ONELOOP_NB_STATE_TERM_R_ON 10.0
+#endif
+_Static_assert(ONELOOP_NB_STATE_TERM_R_OFF >= 0.0 && ONELOOP_NB_STATE_TERM_R_ON <= 60.0 &&
+               ONELOOP_NB_STATE_TERM_R_ON >= ONELOOP_NB_STATE_TERM_R_OFF + 0.1,
+               "ONELOOP_NB_STATE_TERM_R_OFF/ON must satisfy 0 <= off <= on - 0.1, on <= 60 rad/s");
+// Third gain of the ANDI error controller (roll/pitch and vertical), equal to the hover motors actuator dynamics
+#ifndef ONELOOP_NB_EC_K3                // [rad/s], 22 on the RW3C, 29 on the PlusQuad
+#define ONELOOP_NB_EC_K3 22.0
+#endif
+_Static_assert(ONELOOP_NB_EC_K3 >= 1.0 && ONELOOP_NB_EC_K3 <= 100.0, "ONELOOP_NB_EC_K3 must be in [1, 100] rad/s");
+float ec_k3 = ONELOOP_NB_EC_K3;
+float state_term_r_off = ONELOOP_NB_STATE_TERM_R_OFF;
+float state_term_r_on = ONELOOP_NB_STATE_TERM_R_ON;
+float state_term_gain = 0.0; // Applied fraction of the state term [0, 1]
 enum spin_man_state_t
 {
   SPIN_MAN_IDLE,
@@ -923,6 +943,9 @@ static void spin_prot_bound_params(void)
   Bound(spin_man_done_rate, 0.1, 5.0);
   Bound(spin_man_pair, SPIN_MAN_PAIR_PITCH, SPIN_MAN_PAIR_ROLL);
   spin_man_pitch_dir = (spin_man_pitch_dir >= 0.0) ? 1.0 : -1.0;
+  // nB ANDI state term scheduling (guarantees state_term_r_on - state_term_r_off >= 0.1)
+  Bound(state_term_r_on, 0.1, 60.0);
+  Bound(state_term_r_off, 0.0, state_term_r_on - 0.1);
 }
 /** @brief Stop the spin manoeuvre and clear its GCS triggers (fault flags are left as they are) */
 static void spin_man_reset(void)
@@ -1861,9 +1884,11 @@ void init_controller_gains(void)
   k_att_rm.k3[2] = k_rm_3_3_f(p_head_rm.omega_n, p_head_rm.zeta, p_head_rm.p3);
 
   // Temporary overrirde of gains
+  // The third gain equals the actuator dynamics of the hover motors, set per airframe (ONELOOP_NB_EC_K3)
+  Bound(ec_k3, 1.0, 100.0);
   k_att_e.k1[0] = 4.19;
   k_att_e.k2[0] = 10.01;
-  k_att_e.k3[0] = 22.0;
+  k_att_e.k3[0] = ec_k3;
   k_att_e.k1[1] = k_att_e.k1[0];
   k_att_e.k2[1] = k_att_e.k2[0];
   k_att_e.k3[1] = k_att_e.k3[0];
@@ -1906,7 +1931,7 @@ void init_controller_gains(void)
   /*Altitude Loop*/
   k_pos_e.k1[2] = k_rm_1_3_f(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3); // 0.595;
   k_pos_e.k2[2] = k_rm_2_3_f(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3); // 1.190;
-  k_pos_e.k3[2] = 22;                                                    // k_rm_3_3_f(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3); //2.380;
+  k_pos_e.k3[2] = ec_k3;                                                 // k_rm_3_3_f(p_alt_e.omega_n, p_alt_e.zeta, p_alt_e.p3); //2.380;
 
   k_pos_rm.k1[2] = k_rm_1_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3); // 0.595;
   k_pos_rm.k2[2] = k_rm_2_3_f(p_alt_rm.omega_n, p_alt_rm.zeta, p_alt_rm.p3); // 1.190;
@@ -2698,8 +2723,11 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
     ec_3rd_att(att_jerk_des, att_des, oneloop_nB.sta_ref.att, oneloop_nB.sta_ref.att_d, oneloop_nB.sta_ref.att_2d, oneloop_nB.sta_ref.att_3d, oneloop_nB.sta_state.att, oneloop_nB.sta_state.att_d, oneloop_nB.sta_state.att_2d, k_att_e.k1, k_att_e.k2, k_att_e.k3, sta_bounds, ctrl_effort_model_att);
     // nB_EC(oneloop_nB.sta_nB_state.nB, oneloop_nB.sta_nB_state.nB_d, oneloop_nB.sta_nB_state.nB_2d, oneloop_nB.sta_nB_state.mu_B, k_att_e.k1, k_att_e.k2, k_att_e.k3, ctrl_effort_model_att, nB_jerk_des);
     nB_EC(oneloop_nB.sta_nB_state.nB, oneloop_nB.sta_nB_state.nB_d, nB_2d_FV3, oneloop_nB.sta_nB_state.mu_B, k_att_e.k1, k_att_e.k2, k_att_e.k3, ctrl_effort_model_att, nB_jerk_des);
-    nu_stab[0] = nB_jerk_des[0] - nB_3d_state_filt[0].o[0]; // state_term[0];
-    nu_stab[1] = nB_jerk_des[1] - nB_3d_state_filt[1].o[0]; // state_term[1];
+    // State term only when spinning fast enough, blended in linearly on the filtered yaw rate
+    state_term_gain = (fabsf(oneloop_nB.sta_state.att_d[2]) - state_term_r_off) / (state_term_r_on - state_term_r_off);
+    Bound(state_term_gain, 0.0, 1.0);
+    nu_stab[0] = nB_jerk_des[0] - state_term_gain * nB_3d_state_filt[0].o[0]; // state_term[0];
+    nu_stab[1] = nB_jerk_des[1] - state_term_gain * nB_3d_state_filt[1].o[0]; // state_term[1];
     nu_stab[2] = att_jerk_des[2];
     SpinQuad_overwrite(k_att_e.k3[2], ctrl_effort_model[IDX_ar], &nu_stab[2]);
     break;

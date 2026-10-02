@@ -28,6 +28,14 @@
       <dl_setting var="spin_trim_bleed_rate"   min="0.0" step="1.0"    max="1000.0"     shortname="spin_trim_bleed_rate"/>
       <dl_setting var="spin_trim_release_rate" min="0.0" step="0.1"    max="60.0"       shortname="spin_trim_release_rate" unit="rad/s"/>
       <dl_setting var="spin_trim"              min="0.0" step="10.0"   max="9600.0"     shortname="spin_trim"/>
+      <dl_setting var="spin_man_up"            min="0"   step="1"      max="1"          values="OFF|ON" shortname="spin_man_up"/>
+      <dl_setting var="spin_man_down"          min="0"   step="1"      max="1"          values="OFF|ON" shortname="spin_man_down"/>
+      <dl_setting var="spin_man_pair"          min="0"   step="1"      max="1"          values="PITCH|ROLL" shortname="spin_man_pair"/>
+      <dl_setting var="spin_man_pitch_dir"     min="-1"  step="2"      max="1"          values="NEG|POS" shortname="spin_man_pitch_dir"/>
+      <dl_setting var="spin_man_ramp_rate"     min="0.1" step="0.1"    max="10.0"       shortname="spin_man_ramp_rate"/>
+      <dl_setting var="spin_man_blend_time"    min="0.1" step="0.1"    max="5.0"        shortname="spin_man_blend_time" unit="s"/>
+      <dl_setting var="spin_man_trim_rate"     min="0.0" step="10.0"   max="1000.0"     shortname="spin_man_trim_rate"/>
+      <dl_setting var="spin_man_done_rate"     min="0.1" step="0.1"    max="5.0"        shortname="spin_man_done_rate" unit="rad/s"/>
       <dl_setting var="SpinQuadRate"       min="-10.0"   step="0.01"  max="10.0"     shortname="SpinQuadRate"/>
       <dl_setting var="fault_pitch_motors" min="0"       step="1"     max="1"     values="OFF|ON" shortname="fault_pitch_motors"/>
       <dl_setting var="fault_roll_motors"  min="0"       step="1"     max="1"     values="OFF|ON" shortname="fault_roll_motors"/>
@@ -36,7 +44,10 @@
       <dl_setting var="k_P"                min="0.1"     step="0.01"  max="5"     shortname="P Gain Pos"/>
       <dl_setting var="k_I"                min="0.0"     step="0.0001"  max="1.0" shortname="I Gain Pos"/>
       <dl_setting var="k_D"                min="0.1"     step="0.01"  max="5"     shortname="D Gain Pos"/>
+      <dl_setting var="ec_k3"                  min="1.0" step="0.1"    max="100.0"      shortname="ec_k3" unit="rad/s"/>
       <dl_setting var="state_compensation_on"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="state_compensation_on"/>
+      <dl_setting var="state_term_r_off"       min="0.0" step="0.1"    max="60.0"       shortname="state_term_r_off" unit="rad/s"/>
+      <dl_setting var="state_term_r_on"        min="0.1" step="0.1"    max="60.0"       shortname="state_term_r_on" unit="rad/s"/>
       <dl_setting var="drop_yaw"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="drop_yaw"/> 
       <dl_setting var="LP.p.freq_set"      min="0.5"     step="0.1"   max="20"    shortname="p_LP_freq"/>
       <dl_setting var="LP.q.freq_set"      min="0.5"     step="0.1"   max="20"    shortname="q_LP_freq"/>

@@ -194,6 +194,15 @@
         <define name  = "SPIN_TRIM_RATE"            value = "1000.0"/>     <!-- pprz/s, trim rise at full envelope -->
         <define name  = "SPIN_TRIM_BLEED_RATE"      value = "1000.0"/>     <!-- pprz/s, trim decay (0 = only increase) -->
         <define name  = "SPIN_TRIM_RELEASE_RATE"    value = "24.0"/>       <!-- rad/s, trim decays below this -->
+        <define name  = "SPIN_MAN_RAMP_RATE"        value = "2.0"/>        <!-- rad/s2, manoeuvre yaw rate ramp -->
+        <define name  = "SPIN_MAN_BLEND_TIME"       value = "1.0"/>        <!-- s, pitch motors blend time -->
+        <define name  = "SPIN_MAN_TRIM_RATE"        value = "300.0"/>      <!-- pprz/s, open loop trim rise when slowing down -->
+        <define name  = "SPIN_MAN_DONE_RATE"        value = "0.5"/>        <!-- rad/s, spin considered stopped -->
+        <define name  = "SPIN_MAN_PAIR"             value = "0"/>          <!-- 0 = fault pitch (F/B), 1 = fault roll (R/L) -->
+        <define name  = "SPIN_MAN_PITCH_DIR"        value = "1.0"/>        <!-- sign of r with pitch motors faulted (roll: opposite) -->
+        <define name  = "STATE_TERM_R_OFF"          value = "6.0"/>        <!-- rad/s, nB ANDI state term off below -->
+        <define name  = "STATE_TERM_R_ON"           value = "10.0"/>       <!-- rad/s, nB ANDI state term fully on above -->
+        <define name  = "EC_K3"                     value = "29.0"/>       <!-- rad/s, ANDI EC third gain = hover motors actuator dynamics -->
         <define name  = "DELTA_FAULT"               value = "2600.0"/>
         <define name  = "SLOW_POLE"                 value = "29.0"/>
         <define name  = "SIMPLE_QUAD"               value = "TRUE"/>
