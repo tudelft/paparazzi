@@ -60,7 +60,6 @@
 struct FloatQuat ins_ext_vision_rot;
 #endif
 
-float opti_delay = 1.0/80.0;
 /** Data for telemetry and LTP origin.
  */
 struct InsExtPose {
@@ -259,10 +258,6 @@ void ins_ext_pose_msg_update(uint8_t *buf)
 #endif
 
   float_eulers_of_quat(&orient_eulers, &orient);
-
-  orient_eulers.psi += stateGetBodyRates_f()->r * opti_delay;
-  NormRadAngle(orient_eulers.psi);
-
 
   ins_ext_pose.ev_time       = get_sys_time_usec();
   ENU_OF_TO_NED(ins_ext_pose.ev_pos, enu_pos);

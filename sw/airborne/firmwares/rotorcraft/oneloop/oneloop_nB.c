@@ -573,6 +573,63 @@ _Static_assert(ONELOOP_NB_SPIN_TRIM_RATE >= 0.0 && ONELOOP_NB_SPIN_TRIM_RATE <= 
                "ONELOOP_NB_SPIN_TRIM_RATE must be in [0, 1000] pprz/s");
 _Static_assert(ONELOOP_NB_SPIN_TRIM_BLEED_RATE >= 0.0 && ONELOOP_NB_SPIN_TRIM_BLEED_RATE <= 1000.0,
                "ONELOOP_NB_SPIN_TRIM_BLEED_RATE must be in [0, 1000] pprz/s");
+// Spin transition manoeuvre: nominal <-> pitch motors faulted, triggered from the GCS
+#ifndef ONELOOP_NB_SPIN_MAN_RAMP_RATE   // Yaw rate reference ramp [rad/s^2]
+#define ONELOOP_NB_SPIN_MAN_RAMP_RATE 2.0
+#endif
+#ifndef ONELOOP_NB_SPIN_MAN_BLEND_TIME  // Blend time of the pitch motors between allocator and static cmd [s]
+#define ONELOOP_NB_SPIN_MAN_BLEND_TIME 1.0
+#endif
+#ifndef ONELOOP_NB_SPIN_MAN_TRIM_RATE   // Open loop trim increase while slowing down [pprz/s]
+#define ONELOOP_NB_SPIN_MAN_TRIM_RATE 300.0
+#endif
+#ifndef ONELOOP_NB_SPIN_MAN_DONE_RATE   // |r| below which the spin is considered stopped [rad/s]
+#define ONELOOP_NB_SPIN_MAN_DONE_RATE 0.5
+#endif
+#define SPIN_MAN_PAIR_PITCH 0
+#define SPIN_MAN_PAIR_ROLL  1
+#ifndef ONELOOP_NB_SPIN_MAN_PAIR        // Pair faulted by the spin up: 0 = pitch (FRONT/BACK), 1 = roll (RIGHT/LEFT)
+#define ONELOOP_NB_SPIN_MAN_PAIR SPIN_MAN_PAIR_PITCH
+#endif
+#ifndef ONELOOP_NB_SPIN_MAN_PITCH_DIR   // Sign of r when the pitch motors are faulted (+1/-1), roll fault spins opposite
+#define ONELOOP_NB_SPIN_MAN_PITCH_DIR 1.0
+#endif
+_Static_assert(ONELOOP_NB_SPIN_MAN_PAIR == SPIN_MAN_PAIR_PITCH || ONELOOP_NB_SPIN_MAN_PAIR == SPIN_MAN_PAIR_ROLL,
+               "ONELOOP_NB_SPIN_MAN_PAIR must be 0 (pitch) or 1 (roll)");
+_Static_assert(ONELOOP_NB_SPIN_MAN_PITCH_DIR == 1.0 || ONELOOP_NB_SPIN_MAN_PITCH_DIR == -1.0,
+               "ONELOOP_NB_SPIN_MAN_PITCH_DIR must be 1 or -1");
+_Static_assert(ONELOOP_NB_SPIN_MAN_RAMP_RATE >= 0.1 && ONELOOP_NB_SPIN_MAN_RAMP_RATE <= 10.0,
+               "ONELOOP_NB_SPIN_MAN_RAMP_RATE must be in [0.1, 10] rad/s^2");
+_Static_assert(ONELOOP_NB_SPIN_MAN_BLEND_TIME >= 0.1 && ONELOOP_NB_SPIN_MAN_BLEND_TIME <= 5.0,
+               "ONELOOP_NB_SPIN_MAN_BLEND_TIME must be in [0.1, 5] s");
+_Static_assert(ONELOOP_NB_SPIN_MAN_TRIM_RATE >= 0.0 && ONELOOP_NB_SPIN_MAN_TRIM_RATE <= 1000.0,
+               "ONELOOP_NB_SPIN_MAN_TRIM_RATE must be in [0, 1000] pprz/s");
+_Static_assert(ONELOOP_NB_SPIN_MAN_DONE_RATE >= 0.1 && ONELOOP_NB_SPIN_MAN_DONE_RATE <= 5.0,
+               "ONELOOP_NB_SPIN_MAN_DONE_RATE must be in [0.1, 5] rad/s");
+enum spin_man_state_t
+{
+  SPIN_MAN_IDLE,
+  SPIN_MAN_UP_RAMP,    // no fault, yaw rate ref ramps up until |r| >= release rate, then fault spin_man_pair
+  SPIN_MAN_UP_BLEND,   // pair faulted, blend from allocator cmd to static cmd
+  SPIN_MAN_DOWN_SLOW,  // single pair faulted, open loop trim increase until |r| < release - gap
+  SPIN_MAN_DOWN_BLEND, // no fault, blend from static cmd to allocator cmd, yaw rate ref ramps to 0
+  SPIN_MAN_DOWN_RAMP   // no fault, yaw rate ref ramps to 0 until the spin is stopped
+};
+bool spin_man_up = false;   // GCS trigger: spin up, then fault spin_man_pair (clears itself)
+bool spin_man_down = false; // GCS trigger: slow down, unfault the faulted pair, stop the spin (clears itself)
+uint8_t spin_man_pair = ONELOOP_NB_SPIN_MAN_PAIR;
+float spin_man_pitch_dir = ONELOOP_NB_SPIN_MAN_PITCH_DIR;
+float spin_man_ramp_rate = ONELOOP_NB_SPIN_MAN_RAMP_RATE;
+float spin_man_blend_time = ONELOOP_NB_SPIN_MAN_BLEND_TIME;
+float spin_man_trim_rate = ONELOOP_NB_SPIN_MAN_TRIM_RATE;
+float spin_man_done_rate = ONELOOP_NB_SPIN_MAN_DONE_RATE;
+uint8_t spin_man_state = SPIN_MAN_IDLE;
+float spin_man_r_ref = 0.0;                   // Yaw rate reference [rad/s]
+static float spin_man_dir = 1.0;                       // Spin direction (sign of r once the pair is faulted)
+static float spin_man_alpha = 1.0;                     // Blend factor: 0 = held cmd, 1 = new source
+static uint8_t spin_man_mot[2] = {COMMAND_MOTOR_FRONT, COMMAND_MOTOR_BACK}; // Motors of the pair being blended
+static float spin_man_u_hold[2] = {0.0, 0.0};          // Cmd of spin_man_mot captured at the transition
+static float spin_man_u_last[ANDI_NUM_ACT] = {0.0};    // Cmd of all motors applied in the previous loop
 //====================================================================================================================================
 // Error Controller and Reference Model VARIABLES
 //====================================================================================================================================
@@ -794,6 +851,30 @@ static void debug_vect(struct transport_tx *trans, struct link_device *dev, char
 }
 static void send_oneloop_debug(struct transport_tx *trans, struct link_device *dev)
 {
+  // Spin transition manoeuvre debug vector
+  float temp_debug_vect[20];
+  temp_debug_vect[0] = (float)spin_man_state;          // 0 IDLE, 1 UP_RAMP, 2 UP_BLEND, 3 DOWN_SLOW, 4 DOWN_BLEND, 5 DOWN_RAMP
+  temp_debug_vect[1] = spin_man_r_ref;                 // Yaw rate reference of the manoeuvre [rad/s]
+  temp_debug_vect[2] = oneloop_nB.sta_state.att_d[2];  // Filtered yaw rate (used by manoeuvre and spin protection) [rad/s]
+  temp_debug_vect[3] = LP.r.meas;                      // Raw yaw rate [rad/s]
+  temp_debug_vect[4] = SQ_r;                           // Yaw rate reference actually tracked [rad/s]
+  temp_debug_vect[5] = nu[IDX_ar];                     // Yaw pseudo control
+  temp_debug_vect[6] = spin_man_alpha;                 // Blend factor (0 = held cmd, 1 = new source)
+  temp_debug_vect[7] = spin_man_u_hold[0];             // Held cmd at the transition, first motor of the pair
+  temp_debug_vect[8] = spin_man_u_hold[1];             // Held cmd at the transition, second motor of the pair
+  temp_debug_vect[9] = andi_u[COMMAND_MOTOR_FRONT];    // Motor commands after fault override and blend
+  temp_debug_vect[10] = andi_u[COMMAND_MOTOR_RIGHT];
+  temp_debug_vect[11] = andi_u[COMMAND_MOTOR_BACK];
+  temp_debug_vect[12] = andi_u[COMMAND_MOTOR_LEFT];
+  temp_debug_vect[13] = spin_trim;                     // Spin trim [pprz]
+  temp_debug_vect[14] = spin_prot_ratio;               // Spin envelope ratio [0, 1]
+  temp_debug_vect[15] = (float)fault_pitch_motors + 2.0 * (float)fault_roll_motors; // 0 none, 1 pitch, 2 roll, 3 both
+  temp_debug_vect[16] = (float)spin_man_up + 2.0 * (float)spin_man_down;            // Triggers: 1 up, 2 down
+  temp_debug_vect[17] = eulers_zxy.psi;                // Actual heading [rad]
+  temp_debug_vect[18] = psi_des_rad;                   // Desired heading [rad]
+  temp_debug_vect[19] = (float)radio_control_get(RADIO_THROTTLE); // Throttle stick (static cmd = throttle - delta_fault)
+  debug_vect(trans, dev, "APF", temp_debug_vect, 20);
+  /* Previous debug vector ("APF"), kept for reference
   float temp_debug_vect[20];
   temp_debug_vect[0] = temp_acc_des[0]; // LP.p.meas;
   temp_debug_vect[1] = temp_acc_des[1]; // LP.q.meas;
@@ -816,6 +897,7 @@ static void send_oneloop_debug(struct transport_tx *trans, struct link_device *d
   temp_debug_vect[18] = debug_state[2];
   temp_debug_vect[19] = auto_fault_cmd;
   debug_vect(trans, dev, "APF", temp_debug_vect, 20);
+  */
 }
 #endif
 //====================================================================================================================================
@@ -835,6 +917,145 @@ static void spin_prot_bound_params(void)
   Bound(spin_prot_max_cmd, 0.0, MAX_PPRZ);
   Bound(spin_trim_rate, 0.0, 1000.0);
   Bound(spin_trim_bleed_rate, 0.0, 1000.0);
+  Bound(spin_man_ramp_rate, 0.1, 10.0);
+  Bound(spin_man_blend_time, 0.1, 5.0);
+  Bound(spin_man_trim_rate, 0.0, 1000.0);
+  Bound(spin_man_done_rate, 0.1, 5.0);
+  Bound(spin_man_pair, SPIN_MAN_PAIR_PITCH, SPIN_MAN_PAIR_ROLL);
+  spin_man_pitch_dir = (spin_man_pitch_dir >= 0.0) ? 1.0 : -1.0;
+}
+/** @brief Stop the spin manoeuvre and clear its GCS triggers (fault flags are left as they are) */
+static void spin_man_reset(void)
+{
+  spin_man_state = SPIN_MAN_IDLE;
+  spin_man_up = false;
+  spin_man_down = false;
+  spin_man_alpha = 1.0;
+}
+/** @brief Select the motors of a pair (pitch: FRONT/BACK, roll: RIGHT/LEFT) for the blend */
+static void spin_man_set_pair(uint8_t pair)
+{
+  spin_man_mot[0] = (pair == SPIN_MAN_PAIR_ROLL) ? COMMAND_MOTOR_RIGHT : COMMAND_MOTOR_FRONT;
+  spin_man_mot[1] = (pair == SPIN_MAN_PAIR_ROLL) ? COMMAND_MOTOR_LEFT : COMMAND_MOTOR_BACK;
+}
+/** @brief Start a bumpless transfer of the selected pair from the average of its last applied commands,
+ * so that both motors of the pair are commanded the same during the blend
+ */
+static void spin_man_start_blend(void)
+{
+  float u_avg = 0.5 * (spin_man_u_last[spin_man_mot[0]] + spin_man_u_last[spin_man_mot[1]]);
+  spin_man_u_hold[0] = u_avg;
+  spin_man_u_hold[1] = u_avg;
+  spin_man_alpha = 0.0;
+}
+/** @brief Move the yaw rate reference towards target at spin_man_ramp_rate */
+static void spin_man_ramp_ref(float target)
+{
+  float step = target - spin_man_r_ref;
+  BoundAbs(step, spin_man_ramp_rate * dt_1l);
+  spin_man_r_ref += step;
+}
+/** @brief Yaw rate tracking is used by the manoeuvre (no fault active) */
+static bool spin_man_rate_ctrl(void)
+{
+  return (spin_man_state == SPIN_MAN_UP_RAMP || spin_man_state == SPIN_MAN_DOWN_BLEND ||
+          spin_man_state == SPIN_MAN_DOWN_RAMP);
+}
+/** @brief Spin transition manoeuvre state machine. Sets the fault flags and the yaw rate reference.
+ * Spin up:   UP_RAMP -> (|r| >= release) fault spin_man_pair -> UP_BLEND -> IDLE
+ * Spin down: DOWN_SLOW -> (|r| < release - gap) unfault the faulted pair -> DOWN_BLEND -> DOWN_RAMP -> (|r| < done) IDLE
+ */
+static void spin_man_update(bool in_flight, bool nb_ctrl)
+{
+  if (!in_flight || !nb_ctrl)
+  {
+    spin_man_reset();
+    return;
+  }
+  float r = oneloop_nB.sta_state.att_d[2]; // filtered yaw rate, same as the spin protection
+  float abs_r = fabsf(r);
+  switch (spin_man_state)
+  {
+  case SPIN_MAN_IDLE:
+    if (spin_man_up && !fault_pitch_motors && !fault_roll_motors)
+    {
+      // Spin in the direction the drone naturally spins once the pair is faulted (the pairs spin opposite)
+      spin_man_set_pair(spin_man_pair);
+      spin_man_dir = (spin_man_pair == SPIN_MAN_PAIR_ROLL) ? -spin_man_pitch_dir : spin_man_pitch_dir;
+      spin_man_r_ref = r;
+      spin_man_state = SPIN_MAN_UP_RAMP;
+    }
+    else if (spin_man_down && (fault_pitch_motors != fault_roll_motors))
+    {
+      spin_man_set_pair(fault_roll_motors ? SPIN_MAN_PAIR_ROLL : SPIN_MAN_PAIR_PITCH);
+      spin_man_state = SPIN_MAN_DOWN_SLOW;
+    }
+    else
+    {
+      spin_man_up = false; // reject a trigger whose precondition is not met
+      spin_man_down = false;
+    }
+    break;
+  case SPIN_MAN_UP_RAMP:
+    if (!spin_man_up)
+    {
+      spin_man_state = SPIN_MAN_DOWN_RAMP; // abort: bring the spin back to zero, no fault
+      break;
+    }
+    spin_man_ramp_ref(spin_man_dir * 0.5 * (spin_trim_release_rate + spin_prot_start_rate));
+    if (abs_r >= spin_trim_release_rate)
+    {
+      if (spin_man_pair == SPIN_MAN_PAIR_ROLL)
+      {
+        fault_roll_motors = true;
+      }
+      else
+      {
+        fault_pitch_motors = true;
+      }
+      spin_man_start_blend();
+      spin_man_state = SPIN_MAN_UP_BLEND;
+    }
+    break;
+  case SPIN_MAN_UP_BLEND:
+    if (spin_man_alpha >= 1.0)
+    {
+      spin_man_reset();
+    }
+    break;
+  case SPIN_MAN_DOWN_SLOW:
+    if (!spin_man_down || (fault_pitch_motors == fault_roll_motors))
+    {
+      spin_man_reset(); // abort (or fault flags changed by hand): stay as is, the normal trim logic takes over
+      break;
+    }
+    if (abs_r < spin_trim_release_rate - spin_prot_min_gap)
+    {
+      fault_pitch_motors = false;
+      fault_roll_motors = false;
+      spin_man_r_ref = r; // yaw control resumes with zero rate error
+      spin_man_start_blend();
+      spin_man_state = SPIN_MAN_DOWN_BLEND;
+    }
+    break;
+  case SPIN_MAN_DOWN_BLEND:
+  case SPIN_MAN_DOWN_RAMP:
+    spin_man_ramp_ref(0.0);
+    if (spin_man_state == SPIN_MAN_DOWN_BLEND && spin_man_alpha >= 1.0)
+    {
+      spin_man_state = SPIN_MAN_DOWN_RAMP;
+    }
+    else if (spin_man_state == SPIN_MAN_DOWN_RAMP && spin_man_r_ref == 0.0 && abs_r < spin_man_done_rate)
+    {
+      spin_man_reset();
+    }
+    break;
+  }
+  if (spin_man_alpha < 1.0)
+  {
+    spin_man_alpha += dt_1l / spin_man_blend_time;
+    Bound(spin_man_alpha, 0.0, 1.0);
+  }
 }
 /** @brief Function to make sure that inputs are positive non zero vaues*/
 static float positive_non_zero(float input)
@@ -2085,6 +2306,7 @@ void oneloop_nB_enter(bool half_loop_sp, int ctrl_type)
   init_controller_gains();
   reinit_controller();
   safety_killer_trigger = false;
+  spin_man_reset(); // any mode change aborts the spin manoeuvre
 }
 
 /**
@@ -2155,7 +2377,7 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
       }
     }
 #endif
-    radio_body_ctrl = (!fault_pitch_motors) && (!fault_roll_motors);
+    radio_body_ctrl = (!fault_pitch_motors) && (!fault_roll_motors) && (spin_man_state == SPIN_MAN_IDLE); // N/E sticks while spinning
     if (vel_ctrl_in_manual)
     {
       float x_dot_des[3];
@@ -2197,7 +2419,7 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
     }
     // ======================================================================================================================================================
     // PSI Set desired Yaw rate with stick input
-    if (!SpinQuad)
+    if (!SpinQuad && spin_man_state == SPIN_MAN_IDLE) // yaw stick ignored during the spin manoeuvre
     {
       des_r = (float)(radio_control_get(RADIO_YAW)) / MAX_PPRZ * max_r; // Get yaw rate from stick
       BoundAbs(des_r, max_r);
@@ -2327,6 +2549,14 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
   {
     psi_des_rad = eulers_zxy.psi;
   } // Reset if not flying
+  // Heading is not controlled while spinning (manoeuvre or motor fault in nB): keep the desired heading on the
+  // actual one, so that heading control resumes without a jump (up to 180 deg) when the fault is removed
+  bool nb_ctrl_rm = (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI);
+  if (spin_man_state != SPIN_MAN_IDLE || (nb_ctrl_rm && (fault_pitch_motors || fault_roll_motors)))
+  {
+    psi_des_rad = eulers_zxy.psi;
+    psi_des_deg = DegOfRad(psi_des_rad);
+  }
   eulers_zxy_des.psi = psi_des_rad;
   // ======================================================================================================================================================
   // Set and Save the desired attitude and run the attitude RM
@@ -2418,6 +2648,10 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
       break;
     }
   }
+  // ======================================================================================================================================================
+  // Spin protection / manoeuvre: validate parameters, then run the manoeuvre (it sets fault_pitch_motors)
+  spin_prot_bound_params(); // guarantees spin_prot_max_rate - spin_prot_start_rate >= spin_prot_min_gap > 0
+  spin_man_update(in_flight, (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI));
   // ======================================================================================================================================================
   // Run the Reference Model (RM)
   oneloop_nB_RM(half_loop, PSA_des, in_flight_oneloop);
@@ -2545,14 +2779,19 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
   Bound(temp_thrust, 0.0, max_fault_mot);
   // Yaw spin envelope protection: linearly mix the static command with the max command
   // depending on how close the (filtered) yaw rate is to the max allowed yaw rate
-  spin_prot_bound_params(); // guarantees spin_prot_max_rate - spin_prot_start_rate >= spin_prot_min_gap > 0
-  float abs_r = fabsf(oneloop_nB.sta_state.att_d[2]);
+  float abs_r = fabsf(oneloop_nB.sta_state.att_d[2]); // parameters bounded at the start of oneloop_nB_run
   spin_prot_ratio = (abs_r - spin_prot_start_rate) / (spin_prot_max_rate - spin_prot_start_rate);
   Bound(spin_prot_ratio, 0.0, 1.0);
   // Spin trim: integrate up while the envelope is active, bleed off below the release rate, hold in between.
   // Only active with a single faulted pair in flight, reset otherwise (and during the auto fault ramp).
   bool single_fault = nb_ctrl && (fault_pitch_motors != fault_roll_motors);
-  if (spin_trim_on && single_fault && in_flight && !auto_fault_cmd)
+  if (spin_man_state == SPIN_MAN_DOWN_SLOW)
+  {
+    // Spin manoeuvre slowing down: open loop trim increase, no bleed
+    spin_trim += spin_man_trim_rate / PERIODIC_FREQUENCY;
+    Bound(spin_trim, 0.0, spin_prot_max_cmd);
+  }
+  else if (spin_trim_on && single_fault && in_flight && !auto_fault_cmd)
   {
     if (spin_prot_ratio > 0.0 && (temp_thrust + spin_trim) < spin_prot_max_cmd) // anti-windup
     {
@@ -2591,6 +2830,20 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
     andi_u[COMMAND_MOTOR_BACK] = (float)radio_control_get(RADIO_THROTTLE);
     andi_u[COMMAND_MOTOR_RIGHT] = temp_roll;
     andi_u[COMMAND_MOTOR_LEFT] = temp_roll;
+  }
+  // ======================================================================================================================================================
+  // Spin manoeuvre: bumpless transfer of the selected pair. andi_u already holds the new source
+  // (static fault cmd when faulted, allocator output when not), blend it from the cmd held at the transition
+  if (spin_man_alpha < 1.0)
+  {
+    for (int k = 0; k < 2; k++)
+    {
+      andi_u[spin_man_mot[k]] = (1.0 - spin_man_alpha) * spin_man_u_hold[k] + spin_man_alpha * andi_u[spin_man_mot[k]];
+    }
+  }
+  for (int i = 0; i < ANDI_NUM_ACT; i++)
+  {
+    spin_man_u_last[i] = andi_u[i];
   }
   // ======================================================================================================================================================
   /*Commit the actuator command*/
@@ -3086,12 +3339,14 @@ void set_WLS_settings(void)
   }
   else if (!fault_pitch_motors && fault_roll_motors && fault_ailerons && IN_QUAD && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI))
   {
-    /* FALSE TRUE TRUE, QUAD → 0 1 0, 1 0 1 */
-    WLS_one_p.Wv[IDX_ap] = 0.0;
-    WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
+    /* FALSE TRUE TRUE, QUAD → 1 0 0, 0 1 1 */
+    // Only FRONT/BACK remain and they give pitch moment, which in nB is the IDX_ap row: keep ap, drop aq
+    // (same as the FALSE TRUE FALSE, QUAD case: the ailerons have no effect in quad)
+    WLS_one_p.Wv[IDX_ap] = Wv_backup[IDX_ap];
+    WLS_one_p.Wv[IDX_aq] = 0.0;
     WLS_one_p.Wv[IDX_ar] = 0.0;
-    drop_roll = true;
-    drop_pitch = false;
+    drop_roll = false;
+    drop_pitch = true;
     drop_yaw = true;
   }
   else if (!fault_pitch_motors && fault_roll_motors && fault_ailerons && !IN_QUAD && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI))
@@ -3463,10 +3718,18 @@ void SpinQuad_overwrite(float gain, float ce_model, float *nu_stab_2)
 {
   SQ_r = 0.0;
 
-  if (SpinQuad)
+  if (SpinQuad || spin_man_rate_ctrl())
   {
-    SQ_r = (float)radio_control.values[RADIO_AUX4] / MAX_PPRZ * 40.0;
-    Bound(SQ_r, 0.0, 40.0);
+    if (spin_man_rate_ctrl())
+    {
+      SQ_r = spin_man_r_ref; // signed yaw rate reference of the spin manoeuvre
+      BoundAbs(SQ_r, 40.0);
+    }
+    else
+    {
+      SQ_r = (float)radio_control.values[RADIO_AUX4] / MAX_PPRZ * 40.0;
+      Bound(SQ_r, 0.0, 40.0);
+    }
 
     *nu_stab_2 = (SQ_r - oneloop_nB.sta_state.att_d[2]) * k_att_e.k2[2];
     BoundAbs(*nu_stab_2, sta_bounds.att_2d[2]);
