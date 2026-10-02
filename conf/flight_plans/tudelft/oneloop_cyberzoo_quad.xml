@@ -8,6 +8,7 @@
     #include "modules/radio_control/radio_control.h"
     #include "modules/ahrs/ahrs.h"
     #include "modules/gps/gps.h"
+    #include "firmwares/rotorcraft/oneloop/oneloop_nB.h"
 </header>
   <waypoints>
     <waypoint lat="51.990631" lon="4.376796" name="HOME"/>
@@ -55,6 +56,10 @@
       <corner name="p4"/>
     </sector>
   </sectors>
+  <variables>
+    <!-- TRUE while the spin square demo runs: the shared square ends with the spin down instead of Standby -->
+    <variable var="spin_square" type="bool" init="FALSE"/>
+  </variables>
   <exceptions>
     <!--Soft Geofencing (go back to Standby)-->
     <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosAlt() @GT 20.0) @AND
@@ -112,7 +117,31 @@
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
       <stay wp="STDBY"/>
     </block>
+    <!-- SPIN SQUARE DEMO: spin up and fault spin_man_pair at STDBY, wait 5 s, fly the square, back to STDBY,
+         wait 5 s, spin down and unfault, then stay at STDBY. Only works in an nB mode (NAV or FORWARD),
+         otherwise the manoeuvre is rejected and the drone goes back to Standby.
+         NOTE: the faulted motors' static command comes from the throttle stick, also in NAV. -->
+    <block name="Spin Square">
+      <set value="TRUE" var="spin_square"/>
+      <set value="TRUE" var="spin_man_up"/>
+      <deroute block="spin_up_wait"/>
+    </block>
+    <block name="spin_up_wait">
+      <!-- spin_man_up clears itself when the spin up is done (pair faulted) or rejected/aborted (no fault) -->
+      <exception cond="!spin_man_up @AND (fault_pitch_motors || fault_roll_motors)" deroute="spin_hold"/>
+      <exception cond="!spin_man_up @AND !fault_pitch_motors @AND !fault_roll_motors" deroute="Standby"/>
+      <stay wp="STDBY"/>
+    </block>
+    <block name="spin_hold">
+      <stay wp="STDBY"/>
+      <exception cond="NavBlockTime() @GT 5" deroute="square_i1"/>
+    </block>
+    <!-- NORMAL SQUARE DEMO: the square blocks below are shared with the spin square demo -->
     <block name="Start Square">
+      <set value="FALSE" var="spin_square"/>
+      <deroute block="square_i1"/>
+    </block>
+    <block name="square_i1">
       <stay wp="i1"/>
       <exception cond="NavBlockTime() @GT 5" deroute="go_i2"/>
     </block>
@@ -127,11 +156,27 @@
     <block name="go_i4">
       <stay wp="i4"/>
       <exception cond="NavBlockTime() @GT 5" deroute="return_i1"/>
-    </block>    
+    </block>
     <block name="return_i1">
       <stay wp="i1"/>
-      <exception cond="NavBlockTime() @GT 5" deroute="Standby"/>
-    </block>  
+      <exception cond="(NavBlockTime() @GT 5) @AND spin_square" deroute="spin_back"/>
+      <exception cond="(NavBlockTime() @GT 5) @AND !spin_square" deroute="Standby"/>
+    </block>
+    <!-- SPIN SQUARE DEMO (end): back to STDBY, spin down -->
+    <block name="spin_back">
+      <stay wp="STDBY"/>
+      <exception cond="NavBlockTime() @GT 5" deroute="Spin Down"/>
+    </block>
+    <block name="Spin Down">
+      <set value="FALSE" var="spin_square"/>
+      <set value="TRUE" var="spin_man_down"/>
+      <deroute block="spin_down_wait"/>
+    </block>
+    <block name="spin_down_wait">
+      <!-- spin_man_down clears itself when the spin is stopped (no fault) or when rejected/aborted -->
+      <exception cond="!spin_man_down" deroute="Standby"/>
+      <stay wp="STDBY"/>
+    </block>
     <block name="go_p5">
       <stay wp="p5"/>
     </block>
