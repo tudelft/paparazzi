@@ -331,6 +331,7 @@
         <define name  = "SPIN_MAN_PAIR"             value = "0"/>          <!-- 0 = fault pitch (F/B), 1 = fault roll (R/L) -->
         <define name  = "SPIN_MAN_PITCH_DIR"        value = "1.0"/>        <!-- sign of r with pitch motors faulted (roll: opposite) -->
         <define name  = "EC_K3"                     value = "22.0"/>       <!-- rad/s, ANDI EC third gain = hover motors actuator dynamics -->
+        <define name  = "FAULT_AILERONS"            value = "FALSE"/>      <!-- ailerons usable in nB modes from boot -->
         <define name  = "POLES_POS_OMEGA_N"         value = "1.2"/>
         <define name  = "POLES_ALT_OMEGA_N"         value = "2.2"/>
         <define name  = "HEADING_MANUAL"            value = "TRUE"/>

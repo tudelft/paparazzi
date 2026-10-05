@@ -50,14 +50,14 @@ What this means in practice:
 |---|---|---|---|---|
 | `fault_pitch_motors` | OFF | — | OFF/ON | Faults **FRONT and BACK**. Their effectiveness columns are zeroed, so the allocator stops using them, and they receive the static fault command (see below). Yaw effectiveness of RIGHT/LEFT is also zeroed. |
 | `fault_roll_motors` | OFF | — | OFF/ON | Same for **RIGHT and LEFT**. Yaw effectiveness of FRONT/BACK is zeroed. |
-| `fault_ailerons` | **ON** | — | OFF/ON | On `RW3C_nB` it zeroes the aileron column, so the ailerons are not used. On every airframe it also **selects the allocation case** (see [Which axes are kept](#which-axes-are-kept-during-a-fault)). Leave it ON on the PlusQuad. |
+| `fault_ailerons` | ON (`RW3C_nB`: **OFF**) | `FAULT_AILERONS` | OFF/ON | On `RW3C_nB` it zeroes the aileron column, so the ailerons are not used. On every airframe it also **selects the allocation case** (see [Which axes are kept](#which-axes-are-kept-during-a-fault)). Leave it ON on the PlusQuad. |
 | `delta_fault` | 1000 (PlusQuad: 700) | `DELTA_FAULT` | 0 – 5000 | The static command is `throttle stick − delta_fault`. **Lower `delta_fault` means more command to the faulted motors, which means a slower spin.** |
 | `max_fault_mot` | 3000 | — | 0 – 9600 | Upper limit on `throttle − delta_fault`, and the start value of the auto ramp. Keep it below `spin_prot_max_cmd`, because anything above that ceiling is cut. |
 | `auto_fault_cmd` | OFF | — | OFF/ON | Test ramp: the static command goes from `max_fault_mot` down to 0 over 30 s (both values hard-coded), then switches itself OFF. The spin trim is disabled during the ramp. The envelope stays active. |
 
 **The static fault command follows the throttle stick in every mode, including NAV and FORWARD.** In the nav modes the pilot's throttle stick still sets the faulted motors' command.
 
-**Both pairs faulted:** FRONT/BACK get the raw throttle and RIGHT/LEFT get `throttle − max_fault_mot`. The spin envelope and the spin trim are not applied. With `fault_ailerons` ON (the default), this case also falls into the "no fault" allocation. This mode is not covered by this guide.
+**Both pairs faulted:** not a supported case. It is treated exactly as no fault: no effectiveness is zeroed, no static command is applied, and the allocator keeps its nominal weights. You can switch from one faulted pair to the other directly; while both flags are briefly ON, the drone flies normally.
 
 ### Yaw spin protection (envelope)
 
@@ -176,7 +176,7 @@ These are only compiled when the airframe defines `ROTWING_EFF_SCHED_MP_dFdu`, i
 
 | Setting | Default | Range | What it does |
 |---|---|---|---|
-| `use_push_PID` | OFF | OFF/ON | Pusher velocity control. It forces the thrust direction to level and drives `COMMAND_MOTOR_PUSHER` with a phase-modulated command. |
+| `use_push_PID` | OFF | OFF/ON | Pusher velocity control. It forces the thrust direction to level and drives `COMMAND_MOTOR_PUSHER` with a phase-modulated command. While it is OFF the pusher command is held at 0. |
 | `use_push_Position` | OFF | OFF/ON | Manual modes, with `use_push_PID` ON: the pusher tracks the nav target position instead of the stick. NAV always tracks position. |
 | `max_pusher_cmd` | 7500 | 0 – 9600 | Pusher command limit in the pusher PID. |
 
@@ -317,7 +317,7 @@ In forward flight, roll can only come from the ailerons. The static fault comman
 
 ### Part A — pitch motors faulted in quad
 1. Hover in an nB mode. In the manual nB modes the wing is forced to 0°, so the RW3C is in quad automatically.
-2. Keep `fault_ailerons` **ON**. The ailerons have no effect at low skew anyway, and the servos are forced to 0 below 20°.
+2. Leave `fault_ailerons` as it boots (**OFF** on `RW3C_nB`). Both settings give a correct quad case: the ailerons have no effect at low skew, and the servos are forced to 0 below 20°.
 3. Turn **`fault_pitch_motors` ON**. FRONT/BACK get the static command, and RIGHT/LEFT control the roll-moment channel.
 4. Tune the spin with `delta_fault` as in Guide 1, and watch `spin_trim`.
 5. Turn **`fault_pitch_motors` OFF** before any transition to forward flight.
@@ -326,10 +326,10 @@ In forward flight, roll can only come from the ailerons. The static fault comman
 1. **First** get the skew above 70° in an nB mode, and keep it well away from 70°:
    - Use FORWARD (`nB_NAV_INDI`) or NAV, where the wing follows the airspeed schedule.
    - Or, in the manual nB modes, use `rotwing_state.force_skew` with `sp_skew_angle`.
-2. Set **`fault_ailerons` OFF**. The ailerons then keep controlling roll, and the allocator tracks both channels. If the skew dips below 70°, both settings fall into a correct quad case.
+2. Check that **`fault_ailerons` is OFF** (its boot value on `RW3C_nB`). The ailerons then keep controlling roll, and the allocator tracks both channels. If the skew dips below 70°, both settings fall into a correct quad case.
 3. Turn **`fault_roll_motors` ON**. RIGHT/LEFT get the static command, and FRONT/BACK give pitch.
 4. Watch \|r\| and `spin_trim`. The envelope and trim work the same as in quad.
-5. Turn **`fault_roll_motors` OFF** **before** the wing rotates back to hover. Then set `fault_ailerons` back ON.
+5. Turn **`fault_roll_motors` OFF** **before** the wing rotates back to hover.
 
 **Order rule for Part B:** skew above 70° first, fault ON second; fault OFF first, transition back second.
 
@@ -337,7 +337,7 @@ In forward flight, roll can only come from the ailerons. The static fault comman
 
 ## Known issues (not fixed yet)
 
-- **aD weight stays dropped:** after the "both pairs faulted, forward" case, the aD weight stays at 0 until the no-fault case is reached again.
+- **Allocation weights are reset every loop:** `set_WLS_settings()` starts from the nominal weights each time, so nothing carries over when switching from one faulted pair to the other. The drop flags are applied one loop late (`drop_axis()` runs before `set_WLS_settings()`).
 - **No hysteresis** at the 70° skew threshold, so the allocation case can switch back and forth near 70°.
-- **Comments don't match the code** in two allocation cases (roll fault in quad without ailerons; both pairs in forward). The comment on `ONELOOP_NB_DEBUG_MODE` is also inverted.
+- **Comments don't match the code** in one allocation case (roll fault in quad without ailerons). The comment on `ONELOOP_NB_DEBUG_MODE` is also inverted.
 - **Filters not updated in flight:** `accely_filt` and `airspeed_filt` keep their boot cutoff, and don't follow in-flight changes to `oneloop_nB_filt_cutoff`.

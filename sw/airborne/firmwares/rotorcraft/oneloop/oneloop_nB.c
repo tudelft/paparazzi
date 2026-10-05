@@ -490,7 +490,10 @@ float SpinQuadRate = 0.0;
 bool SpinQuad = false;              // Quadrotor spinning configuration
 bool fault_pitch_motors = false;    // Fault pitch motors
 bool fault_roll_motors = false;     // Fault roll motors
-bool fault_ailerons = true;         // Fault ailerons
+#ifndef ONELOOP_NB_FAULT_AILERONS    // Fault ailerons at boot (FALSE on airframes with ailerons to use them in nB modes)
+#define ONELOOP_NB_FAULT_AILERONS TRUE
+#endif
+bool fault_ailerons = ONELOOP_NB_FAULT_AILERONS; // Fault ailerons
 bool drop_yaw = false;              // Drop the control of the Yaw axis
 bool drop_roll = false;             // Drop the control of the Roll axis
 bool drop_pitch = false;            // Drop the control of the aE axis
@@ -2386,7 +2389,7 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
       }
     }
 #endif
-    radio_body_ctrl = (!fault_pitch_motors) && (!fault_roll_motors) && (spin_man_state == SPIN_MAN_IDLE); // N/E sticks while spinning
+    radio_body_ctrl = (fault_pitch_motors == fault_roll_motors) && (spin_man_state == SPIN_MAN_IDLE); // N/E sticks while spinning (single faulted pair)
     if (vel_ctrl_in_manual)
     {
       float x_dot_des[3];
@@ -2552,6 +2555,12 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
     oneloop_nB.sta_nB_state.nI_des.y = 0.0;
     oneloop_nB.sta_nB_state.nI_des.z = -1.0;
   }
+  else
+  {
+    // Pusher off when not used (nothing else commands it, otherwise it would keep its last value)
+    oneloop_nB.push_nB.push_cmd = 0.0;
+    commands[COMMAND_MOTOR_PUSHER] = 0;
+  }
 #endif
   // ======================================================================================================================================================
   if (!in_flight_oneloop)
@@ -2561,7 +2570,7 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
   // Heading is not controlled while spinning (manoeuvre or motor fault in nB): keep the desired heading on the
   // actual one, so that heading control resumes without a jump (up to 180 deg) when the fault is removed
   bool nb_ctrl_rm = (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI);
-  if (spin_man_state != SPIN_MAN_IDLE || (nb_ctrl_rm && (fault_pitch_motors || fault_roll_motors)))
+  if (spin_man_state != SPIN_MAN_IDLE || (nb_ctrl_rm && (fault_pitch_motors != fault_roll_motors)))
   {
     psi_des_rad = eulers_zxy.psi;
     psi_des_deg = DegOfRad(psi_des_rad);
@@ -2831,15 +2840,7 @@ void oneloop_nB_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des)
     andi_u[COMMAND_MOTOR_RIGHT] = temp_thrust;
     andi_u[COMMAND_MOTOR_LEFT] = temp_thrust;
   }
-  else if (fault_roll_motors && fault_pitch_motors && nb_ctrl)
-  {
-    float temp_roll = (float)radio_control_get(RADIO_THROTTLE) - max_fault_mot;
-    Bound(temp_roll, 0.0, MAX_PPRZ);
-    andi_u[COMMAND_MOTOR_FRONT] = (float)radio_control_get(RADIO_THROTTLE);
-    andi_u[COMMAND_MOTOR_BACK] = (float)radio_control_get(RADIO_THROTTLE);
-    andi_u[COMMAND_MOTOR_RIGHT] = temp_roll;
-    andi_u[COMMAND_MOTOR_LEFT] = temp_roll;
-  }
+  // Both pairs faulted is not a supported case: it is treated as no fault (normal operation)
   // ======================================================================================================================================================
   // Spin manoeuvre: bumpless transfer of the selected pair. andi_u already holds the new source
   // (static fault cmd when faulted, allocator output when not), blend it from the cmd held at the transition
@@ -2962,7 +2963,8 @@ void G1G2_oneloop(int ctrl_type)
       EFF_MAT_G[IDX_aq][j] = temp_aq_j;
     }
     //=========================================================================================================================================================
-    if (fault_pitch_motors)
+    // Only a single faulted pair is supported, both pairs faulted is treated as no fault
+    if (fault_pitch_motors && !fault_roll_motors)
     {
       EFF_MAT_G[IDX_ar][COMMAND_MOTOR_RIGHT] = 0.0;
       EFF_MAT_G[IDX_ar][COMMAND_MOTOR_LEFT] = 0.0;
@@ -2972,7 +2974,7 @@ void G1G2_oneloop(int ctrl_type)
         EFF_MAT_G[i][COMMAND_MOTOR_BACK] = 0.0;
       }
     }
-    if (fault_roll_motors)
+    if (fault_roll_motors && !fault_pitch_motors)
     {
       EFF_MAT_G[IDX_ar][COMMAND_MOTOR_FRONT] = 0.0;
       EFF_MAT_G[IDX_ar][COMMAND_MOTOR_BACK] = 0.0;
@@ -3326,6 +3328,17 @@ void set_WLS_settings(void)
     IN_QUAD = false;
   }
 #endif
+  // Start from the nominal weights every loop, the single fault cases below only override what they change.
+  // This way no weight or drop flag is carried over when switching from one faulted pair to the other.
+  WLS_one_p.Wv[IDX_ap] = Wv_backup[IDX_ap];
+  WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
+  WLS_one_p.Wv[IDX_ar] = Wv_backup[IDX_ar];
+  WLS_one_p.Wv[IDX_aD] = Wv_backup[IDX_aD];
+  drop_roll = false;
+  drop_pitch = false;
+  drop_yaw = false;
+  drop_aD = false;
+  // Only a single faulted pair is supported, both pairs faulted (or no fault) keeps the nominal weights
   if (fault_pitch_motors && !fault_roll_motors && fault_ailerons && IN_QUAD && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI))
   {
     /* TRUE FALSE TRUE, QUAD → 0 1 0, 1 0 1 */
@@ -3407,40 +3420,6 @@ void set_WLS_settings(void)
     drop_roll = false;
     drop_pitch = false;
     drop_yaw = true;
-  }
-  else if (fault_pitch_motors && fault_roll_motors && !fault_ailerons && IN_QUAD && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI))
-  {
-    /* TRUE TRUE FALSE, QUAD → 0 0 0, 1 1 1 */
-    WLS_one_p.Wv[IDX_ap] = 0.0;
-    WLS_one_p.Wv[IDX_aq] = 0.0;
-    WLS_one_p.Wv[IDX_ar] = 0.0;
-    drop_roll = true;
-    drop_pitch = true;
-    drop_yaw = true;
-  }
-  else if (fault_pitch_motors && fault_roll_motors && !fault_ailerons && !IN_QUAD && (oneloop_nB.ctrl_type == CTRL_NB_INDI || oneloop_nB.ctrl_type == CTRL_NB_ANDI))
-  {
-    /* TRUE TRUE FALSE, skew90 → 1 0 0, 0 1 1 */
-    WLS_one_p.Wv[IDX_ap] = 0.0;
-    WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
-    WLS_one_p.Wv[IDX_ar] = 0.0;
-    WLS_one_p.Wv[IDX_aD] = 0.0;
-    drop_roll = true;
-    drop_pitch = false;
-    drop_yaw = true;
-    drop_aD = true;
-  }
-  else
-  {
-    /* any other case → safe default */
-    WLS_one_p.Wv[IDX_ap] = Wv_backup[IDX_ap];
-    WLS_one_p.Wv[IDX_aq] = Wv_backup[IDX_aq];
-    WLS_one_p.Wv[IDX_ar] = Wv_backup[IDX_ar];
-    WLS_one_p.Wv[IDX_aD] = Wv_backup[IDX_aD];
-    drop_roll = false;
-    drop_pitch = false;
-    drop_yaw = false;
-    drop_aD = false;
   }
 }
 //=========================================================================================================================================================
