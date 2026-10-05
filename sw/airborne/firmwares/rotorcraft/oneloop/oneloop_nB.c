@@ -615,6 +615,25 @@ _Static_assert(ONELOOP_NB_SPIN_MAN_DONE_RATE >= 0.1 && ONELOOP_NB_SPIN_MAN_DONE_
 #endif
 _Static_assert(ONELOOP_NB_EC_K3 >= 1.0 && ONELOOP_NB_EC_K3 <= 100.0, "ONELOOP_NB_EC_K3 must be in [1, 100] rad/s");
 float ec_k3 = ONELOOP_NB_EC_K3;
+// Velocity PID limits (manual and NAV): max acceleration setpoint (sets the max tilt of the thrust vector in nB modes,
+// max_phi/max_theta do not limit it there) and max velocity setpoint. RW3C: conservative, PlusQuad: relaxed.
+#ifndef ONELOOP_NB_PID_A_MAX            // Max acceleration setpoint [g] (0.12 g ~ 7 deg tilt, 0.6 g ~ 31 deg tilt)
+#define ONELOOP_NB_PID_A_MAX 0.6
+#endif
+#ifndef ONELOOP_NB_PID_V_MAX_MANUAL     // Max velocity setpoint in manual, also the full stick velocity [m/s]
+#define ONELOOP_NB_PID_V_MAX_MANUAL 3.0
+#endif
+#ifndef ONELOOP_NB_PID_V_MAX_NAV        // Max velocity setpoint in NAV [m/s]
+#define ONELOOP_NB_PID_V_MAX_NAV 3.0
+#endif
+_Static_assert(ONELOOP_NB_PID_A_MAX >= 0.05 && ONELOOP_NB_PID_A_MAX <= 1.0, "ONELOOP_NB_PID_A_MAX must be in [0.05, 1] g");
+_Static_assert(ONELOOP_NB_PID_V_MAX_MANUAL >= 0.1 && ONELOOP_NB_PID_V_MAX_MANUAL <= 10.0,
+               "ONELOOP_NB_PID_V_MAX_MANUAL must be in [0.1, 10] m/s");
+_Static_assert(ONELOOP_NB_PID_V_MAX_NAV >= 0.1 && ONELOOP_NB_PID_V_MAX_NAV <= 10.0,
+               "ONELOOP_NB_PID_V_MAX_NAV must be in [0.1, 10] m/s");
+float pid_a_max = ONELOOP_NB_PID_A_MAX;
+float pid_v_max_manual = ONELOOP_NB_PID_V_MAX_MANUAL;
+float pid_v_max_nav = ONELOOP_NB_PID_V_MAX_NAV;
 enum spin_man_state_t
 {
   SPIN_MAN_IDLE,
@@ -2354,8 +2373,10 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
   oneloop_nB.push_nB.pE_d = pos_des[1];
   oneloop_nB.push_nB.pN = oneloop_nB.gui_state.pos[0];
   oneloop_nB.push_nB.pE = oneloop_nB.gui_state.pos[1];
-  float PID_a_max = 0.6 * 9.81;
-  float PID_v_max = 3.0;
+  Bound(pid_a_max, 0.05, 1.0);
+  Bound(pid_v_max_manual, 0.1, 10.0);
+  Bound(pid_v_max_nav, 0.1, 10.0);
+  float PID_a_max = pid_a_max * 9.81;
   float acc_des[3];
   // Generate reference signals with reference model
   if (half_loop)
@@ -2393,8 +2414,8 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
     if (vel_ctrl_in_manual)
     {
       float x_dot_des[3];
-      x_dot_des[0] = -radio_pitch_cmd / MAX_PPRZ * 3.0; // oneloop_nB.push_nB.max_v_d;
-      x_dot_des[1] = radio_roll_cmd / MAX_PPRZ * 3.0;   // oneloop_nB.push_nB.max_v_d;
+      x_dot_des[0] = -radio_pitch_cmd / MAX_PPRZ * pid_v_max_manual; // oneloop_nB.push_nB.max_v_d;
+      x_dot_des[1] = radio_roll_cmd / MAX_PPRZ * pid_v_max_manual;   // oneloop_nB.push_nB.max_v_d;
       x_dot_des[2] = 0.0;
       if (radio_body_ctrl)
       {
@@ -2406,7 +2427,7 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
         x_dot_des[0] = x_dot_des_NE.x;
         x_dot_des[1] = x_dot_des_NE.y;
       }
-      Vel_PID_ARW(x_dot_des, oneloop_nB.gui_state.vel, k_P, k_I, k_D, acc_des, PID_a_max, PID_v_max);
+      Vel_PID_ARW(x_dot_des, oneloop_nB.gui_state.vel, k_P, k_I, k_D, acc_des, PID_a_max, pid_v_max_manual);
       shape_vector(acc_des);
       eul_of_acc(acc_des, eulers_zxy.psi);
       oneloop_nB.sta_nB_state.nI_des.x = acc_des[0];
@@ -2464,7 +2485,7 @@ void oneloop_nB_RM(bool half_loop, struct FloatVect3 PSA_des, bool in_flight_one
   {
     // ======================================================================================================================================================
     // PID Guidance
-    Pos_KPID_ARW(pos_des, oneloop_nB.gui_state.pos, oneloop_nB.gui_state.vel, k_K, k_P, k_I, k_D, acc_des, PID_a_max, PID_v_max);
+    Pos_KPID_ARW(pos_des, oneloop_nB.gui_state.pos, oneloop_nB.gui_state.vel, k_K, k_P, k_I, k_D, acc_des, PID_a_max, pid_v_max_nav);
     switch (oneloop_nB.ctrl_type)
     {
     case CTRL_ANDI:

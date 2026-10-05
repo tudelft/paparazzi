@@ -151,11 +151,14 @@ A GCS-triggered maneuver for entering and leaving a single-pair fault spin smoot
 
 | Setting | Default | Define | Range | What it does |
 |---|---|---|---|---|
-| `vel_ctrl_in_manual` | ON | — | OFF/ON | Manual modes only. ON: the roll/pitch sticks command a velocity of ±3 m/s, tracked by the k_K/P/I/D PID. OFF: the sticks command attitude directly, scaled by `max_phi`/`max_theta`. |
-| `k_K` | 0.6 | — | 0.1 – 5 | Position error → velocity setpoint gain (NAV, all 3 axes; also the pusher position loop). The velocity setpoint is limited to 3 m/s. |
-| `k_P` | 1.8 | — | 0.1 – 5 | Velocity error → acceleration gain. The acceleration command is limited to 0.6 g (≈ 31° tilt). |
+| `vel_ctrl_in_manual` | ON | — | OFF/ON | Manual modes only. ON: the roll/pitch sticks command a velocity of ±`pid_v_max_manual`, tracked by the k_K/P/I/D PID. OFF: the sticks command attitude directly, scaled by `max_phi`/`max_theta`. |
+| `k_K` | 0.6 | — | 0.1 – 5 | Position error → velocity setpoint gain (NAV, all 3 axes; also the pusher position loop). The velocity setpoint is limited to `pid_v_max_nav`. |
+| `k_P` | 1.8 | — | 0.1 – 5 | Velocity error → acceleration gain. The acceleration command is limited to `pid_a_max`. |
 | `k_I` | 0.4 | — | 0 – 1 | Velocity error integral gain. The integral is clamped (±0.4) and **is not reset when you change mode**. |
 | `k_D` | 0.2 | — | 0.1 – 5 | Derivative term, computed on the filtered measurement. |
+| `pid_a_max` | 0.6 g (RW3C: 0.12 g) | `PID_A_MAX` | 0.05 – 1 g | Max acceleration setpoint of the velocity PID, manual and NAV. **In nB modes this is the tilt limit** of the thrust vector: 0.12 g ≈ 7°, 0.6 g ≈ 31° (`max_phi`/`max_theta` do not apply there). |
+| `pid_v_max_manual` | 3 m/s | `PID_V_MAX_MANUAL` | 0.1 – 10 m/s | Max velocity setpoint in manual, and the velocity at full stick. |
+| `pid_v_max_nav` | 3 m/s (RW3C: 0.5 m/s) | `PID_V_MAX_NAV` | 0.1 – 10 m/s | Max velocity setpoint in NAV (position error × `k_K`, then limited). |
 | `ec_k3` | 22 (PlusQuad: 29) | `EC_K3` | 1 – 100 rad/s | Third gain of the ANDI error controller, for roll/pitch (and vertical in NAV). It must equal the hover motors' actuator dynamics (`ACT_DYN`): then ANDI's actuator inversion cancels and nB ANDI commands the same motor inputs as nB INDI. Only ANDI and nB ANDI use it; INDI uses 1. |
 | `max_phi` | 30° (PQ: 45°, RW3C: 5°) | `MAX_PHI` | 2 – 30 (rad setting shown in deg) | Scales the roll stick when it commands attitude, and limits the roll angle computed from the acceleration command. **It does not limit the tilt in the nB modes.** There the limit is the 0.6 g cap above. |
 | `max_theta` | 30° (PQ: 45°, RW3C: 5°) | `MAX_THETA` | 2 – 30 | Same as `max_phi`, for pitch. |

@@ -44,6 +44,9 @@
       <dl_setting var="k_P"                min="0.1"     step="0.01"  max="5"     shortname="P Gain Pos"/>
       <dl_setting var="k_I"                min="0.0"     step="0.0001"  max="1.0" shortname="I Gain Pos"/>
       <dl_setting var="k_D"                min="0.1"     step="0.01"  max="5"     shortname="D Gain Pos"/>
+      <dl_setting var="pid_a_max"              min="0.05" step="0.01"  max="1.0"        shortname="pid_a_max" unit="g"/>
+      <dl_setting var="pid_v_max_manual"       min="0.1" step="0.1"    max="10.0"       shortname="pid_v_max_manual" unit="m/s"/>
+      <dl_setting var="pid_v_max_nav"          min="0.1" step="0.1"    max="10.0"       shortname="pid_v_max_nav" unit="m/s"/>
       <dl_setting var="ec_k3"                  min="1.0" step="0.1"    max="100.0"      shortname="ec_k3" unit="rad/s"/>
       <dl_setting var="state_compensation_on"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="state_compensation_on"/>
       <dl_setting var="drop_yaw"           min="0"       step="1"     max="1"     values="OFF|ON" shortname="drop_yaw"/> 

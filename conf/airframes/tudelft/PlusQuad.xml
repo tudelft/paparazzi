@@ -220,6 +220,9 @@
         <define name  = "SPIN_MAN_PAIR"             value = "0"/>          <!-- 0 = fault pitch (F/B), 1 = fault roll (R/L) -->
         <define name  = "SPIN_MAN_PITCH_DIR"        value = "1.0"/>        <!-- sign of r with pitch motors faulted (roll: opposite) -->
         <define name  = "EC_K3"                     value = "29.0"/>       <!-- rad/s, ANDI EC third gain = hover motors actuator dynamics -->
+        <define name  = "PID_A_MAX"                 value = "0.6"/>        <!-- g, max acceleration setpoint = max tilt in nB modes -->
+        <define name  = "PID_V_MAX_MANUAL"          value = "3.0"/>        <!-- m/s, max velocity setpoint in manual (full stick) -->
+        <define name  = "PID_V_MAX_NAV"             value = "3.0"/>        <!-- m/s, max velocity setpoint in NAV -->
         <define name  = "DELTA_FAULT"               value = "2600.0"/>
         <define name  = "SLOW_POLE"                 value = "29.0"/>
         <define name  = "SIMPLE_QUAD"               value = "TRUE"/>
