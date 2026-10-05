@@ -313,6 +313,10 @@
         <item name="announce">Announce flight to other airspace users</item>
     </checklist>
 
+    <section name="FLIGHT_PLAN" prefix="FP_">
+        <define name="SQUARE_TIME" value="10.0"/> <!-- s at each square corner (oneloop_cyberzoo_quad), NAV speed limited to 0.5 m/s -->
+    </section>
+
     <section PREFIX="ONELOOP_NB_" NAME="ONELOOP_NB">
         <define name  = "SPIN_PROT_MAX_RATE"        value = "34.0"/>   <!-- rad/s, fully protected -->
         <define name  = "SPIN_PROT_START_RATE"      value = "28.0"/>   <!-- rad/s, protection starts -->
