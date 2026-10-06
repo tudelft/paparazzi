@@ -52,7 +52,7 @@ What this means in practice:
 | `fault_roll_motors` | OFF | — | OFF/ON | Same for **RIGHT and LEFT**. Yaw effectiveness of FRONT/BACK is zeroed. |
 | `fault_ailerons` | ON (`RW3C_nB`: **OFF**) | `FAULT_AILERONS` | OFF/ON | On `RW3C_nB` it zeroes the aileron column, so the ailerons are not used. On every airframe it also **selects the allocation case** (see [Which axes are kept](#which-axes-are-kept-during-a-fault)). Leave it ON on the PlusQuad. |
 | `delta_fault` | 1000 (PlusQuad: 700) | `DELTA_FAULT` | 0 – 5000 | The static command is `throttle stick − delta_fault`. **Lower `delta_fault` means more command to the faulted motors, which means a slower spin.** |
-| `max_fault_mot` | 3000 | — | 0 – 9600 | Upper limit on `throttle − delta_fault`, and the start value of the auto ramp. Keep it below `spin_prot_max_cmd`, because anything above that ceiling is cut. |
+| `max_fault_mot` | 3000 (RW3C: 3300) | `MAX_FAULT_MOT` | 0 – 9600 | Upper limit on `throttle − delta_fault`, and the start value of the auto ramp. Keep it below `spin_prot_max_cmd`, because anything above that ceiling is cut. |
 | `auto_fault_cmd` | OFF | — | OFF/ON | Test ramp: the static command goes from `max_fault_mot` down to 0 over 30 s (both values hard-coded), then switches itself OFF. The spin trim is disabled during the ramp. The envelope stays active. |
 
 **The static fault command follows the throttle stick in every mode, including NAV and FORWARD.** In the nav modes the pilot's throttle stick still sets the faulted motors' command.

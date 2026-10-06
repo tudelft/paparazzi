@@ -306,7 +306,12 @@ static float act_dynamics_d[ANDI_NUM_ACT_TOT]; // Actuator dynamics (first order
 float actuator_state_1l[ANDI_NUM_ACT_TOT];     // Actuator state vector (including virtual actuators)
 float nB_jerk_des[3];
 float SQ_r = 0.0;
-float max_fault_mot = 3000.0;//2300.0;
+#ifndef ONELOOP_NB_MAX_FAULT_MOT // Max static command to the faulted motors (throttle - delta_fault is cut to it) [pprz]
+#define ONELOOP_NB_MAX_FAULT_MOT 3000.0
+#endif
+_Static_assert(ONELOOP_NB_MAX_FAULT_MOT >= 0.0 && ONELOOP_NB_MAX_FAULT_MOT <= 9600.0,
+               "ONELOOP_NB_MAX_FAULT_MOT must be in [0, 9600] pprz");
+float max_fault_mot = ONELOOP_NB_MAX_FAULT_MOT; // 2300.0;
 //====================================================================================================================================
 // STABILIZATION VARIABLES
 //====================================================================================================================================

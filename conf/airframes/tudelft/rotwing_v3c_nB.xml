@@ -336,6 +336,7 @@
         <define name  = "PID_A_MAX"                 value = "0.12"/>       <!-- g, max acceleration setpoint = max tilt in nB modes -->
         <define name  = "PID_V_MAX_MANUAL"          value = "3.0"/>        <!-- m/s, max velocity setpoint in manual (full stick) -->
         <define name  = "PID_V_MAX_NAV"             value = "0.5"/>        <!-- m/s, max velocity setpoint in NAV -->
+        <define name  = "MAX_FAULT_MOT"             value = "3300.0"/>     <!-- pprz, max static command to the faulted motors -->
         <define name  = "POLES_POS_OMEGA_N"         value = "1.2"/>
         <define name  = "POLES_ALT_OMEGA_N"         value = "2.2"/>
         <define name  = "HEADING_MANUAL"            value = "TRUE"/>
