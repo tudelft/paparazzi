@@ -56,8 +56,20 @@
 /** Silence at the end of each note, so repeated notes are heard separately [ms] */
 #define BUZZER_TUNES_GAP_MS 30
 
-/** Note frequencies [Hz], s for sharp, octaves 5 to 7 sound loudest on a piezo */
+/** Note frequencies [Hz], s for sharp, octaves 5 to 7 sound loudest on a piezo (octave 4 is quieter) */
 #define REST 0
+#define C4 262
+#define Cs4 277
+#define D4 294
+#define Ds4 311
+#define E4 330
+#define F4 349
+#define Fs4 370
+#define G4 392
+#define Gs4 415
+#define A4 440
+#define As4 466
+#define B4 494
 #define C5 523
 #define Cs5 554
 #define D5 587
@@ -275,22 +287,17 @@ static const struct buzzer_note tune_william_tell[] = {
 
 /** Star Song */
 static const struct buzzer_note tune_star[] = {
-  {C6, 110}, {REST, 110}, {C6, 110}, {REST, 110}, {C6, 110}, {REST, 110}, {C6, 110}, {B5, 110}, 
-  {REST, 110}, {B5, 110}, {REST, 110}, {B5, 110}, {REST, 110}, {B5, 110}, {C6, 110}, {REST, 110},
-  {C6, 110}, {REST, 110}, {C6, 110}, {REST, 110}, {C6, 110}, {REST, 110}, {C6, 110}, {B5, 110}, 
-  {REST, 110}, {B5, 110}, {REST, 110}, {B5, 110}, {REST, 110}, {B5, 110}, {C6, 110}, {REST, 110},
-  {B5, 110}, {REST, 110}, {B5, 110}, {REST, 110}, {B5, 110}, {REST, 110}, {B5, 110}, {A5, 110}, 
-  {REST, 110}, {A5, 110}, {REST, 110}, {A5, 110}, {REST, 110}, {A5, 110}, {B5, 110}, {REST, 110},
-  {B5, 110}, {REST, 110}, {B5, 110}, {REST, 110}, {B5, 110}, {REST, 110}, {B5, 110}, {A5, 110}, 
-  {REST, 110}, {A5, 110}, {REST, 110}, {A5, 110}, {REST, 110}, {A5, 110}, {B5, 110}, {REST, 110},
-  {C6, 110}, {REST, 110}, {C6, 110}, {REST, 110}, {C6, 110}, {REST, 110}, {C6, 110}, {B5, 110}, 
-  {REST, 110}, {B5, 110}, {REST, 110}, {B5, 110}, {REST, 110}, {B5, 110}, {C6, 110}, {REST, 110},
-  {C6, 110}, {REST, 110}, {C6, 110}, {REST, 110}, {C6, 110}, {REST, 110}, {C6, 110}, {B5, 110}, 
-  {REST, 110}, {B5, 110}, {REST, 110}, {B5, 110}, {REST, 110}, {B5, 110}, {C6, 110}, {REST, 110},
-  {B5, 110}, {REST, 110}, {B5, 110}, {REST, 110}, {B5, 110}, {REST, 110}, {B5, 110}, {A5, 110}, 
-  {REST, 110}, {A5, 110}, {REST, 110}, {A5, 110}, {REST, 110}, {A5, 110}, {B5, 110}, {REST, 110},
-  {B5, 110}, {REST, 110}, {B5, 110}, {REST, 110}, {B5, 110}, {REST, 110}, {B5, 110}, {G5, 220}, 
-  {A5, 220}, {B5, 220}, {C6, 220},
+  {C7, 150}, {REST, 50}, {C7, 150}, {REST, 50}, {C7, 150}, {REST, 150}, {C7, 150}, {REST, 50},
+  {C7, 150}, {REST, 150}, {C7, 80}, {REST, 20}, {C7, 80}, {REST, 20}, {C7, 150}, {REST, 50},
+  {B6, 150}, {REST, 50}, {B6, 150}, {REST, 50}, {B6, 150}, {REST, 150}, {B6, 150}, {REST, 50},
+  {B6, 150}, {REST, 150}, {B6, 150}, {REST, 50}, {B6, 150}, {REST, 50}, {C7, 150}, {REST, 50},
+  {C7, 150}, {REST, 50}, {C7, 150}, {REST, 150}, {C7, 150}, {REST, 50}, {C7, 150}, {REST, 150},
+  {C7, 150}, {REST, 50}, {C7, 150}, {REST, 50}, {B6, 150}, {REST, 50}, {B6, 150}, {REST, 50},
+  {B6, 150}, {REST, 150}, {B6, 150}, {REST, 50}, {B6, 150}, {REST, 150}, {B6, 150}, {REST, 50},
+  {B6, 150}, {REST, 50}, {C7, 150}, {REST, 50}, {C7, 150}, {REST, 50}, {C7, 150}, {REST, 150},
+  {C7, 150}, {REST, 50}, {C7, 150}, {REST, 150}, {C7, 150}, {REST, 50}, {C7, 150}, {REST, 50},
+  {B6, 150}, {REST, 50}, {B6, 150}, {REST, 50}, {B6, 150}, {REST, 150}, {B6, 150}, {REST, 50},
+  {B6, 150}, {REST, 150}, {B6, 150}, {REST, 50}, {B6, 150},
   TUNE_END
 };
 

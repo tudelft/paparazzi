@@ -10,6 +10,8 @@
       BUZZER_AF, BUZZER_PWMD and BUZZER_PWM_CHANNEL.
       On the Cube Orange this is the ALARM pin (TIM2_CH1), on the BUZZER pin (5) of the carrier board USB port.
       Implementation for ChibiOS.
+      To add a melody from an audio file (mp3, wav, ...), sw/tools/buzzer/mp3_to_buzzer.py writes the
+      buzzer_note C array to add to buzzer_tunes.c (needs ffmpeg and numpy, see its --help).
     </description>
     <configure name="BUZZER_TIM" value="TIM2" description="Timer of the buzzer pin"/>
     <define name="BUZZER_TUNES_STARTUP_TUNE" value="BUZZER_TUNES_STARTUP" description="Tune at startup (BUZZER_TUNES_x), BUZZER_TUNES_NONE for silence"/>
