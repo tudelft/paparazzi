@@ -33,7 +33,12 @@
 #include BUZZER_TUNES_ALERT_HEADER
 #endif
 
-/** Tune played when the motors get armed (optional) */
+/** Event tunes (armed and alert tunes) enabled at startup */
+#ifndef BUZZER_TUNES_EVENTS_ON
+#define BUZZER_TUNES_EVENTS_ON TRUE
+#endif
+
+/** Tune played in a loop while the motors are armed (optional), stopped when disarmed */
 #ifdef BUZZER_TUNES_ARMED_TUNE
 #include "autopilot.h"
 #endif
@@ -43,7 +48,7 @@
 #define BUZZER_TUNES_ALERT_TUNE BUZZER_TUNES_NONE
 #endif
 
-/** Tune played once when BUZZER_TUNES_ALERT becomes false */
+/** Tune played once when BUZZER_TUNES_ALERT becomes false (stopped if the motors are disarmed) */
 #ifndef BUZZER_TUNES_ALERT_END_TUNE
 #define BUZZER_TUNES_ALERT_END_TUNE BUZZER_TUNES_NONE
 #endif
@@ -334,12 +339,15 @@ static bool playing = false;
 static uint32_t note_start_ms = 0;                  ///< start time of the note
 static bool note_gap = false;                       ///< in the silent gap at the end of the note
 
+uint8_t buzzer_tunes_events_on = BUZZER_TUNES_EVENTS_ON;
+static bool event_tune = false;                     ///< current tune was started by an event
 #ifdef BUZZER_TUNES_ALERT
 static bool alert_active = false;                   ///< alert condition was true at the last update
 static bool alert_muted = false;                    ///< alert tune stopped from the GCS
 #endif
 #ifdef BUZZER_TUNES_ARMED_TUNE
 static bool motors_were_on = false;
+static bool armed_muted = false;                    ///< armed tune stopped from the GCS
 #endif
 
 static void tune_start(uint8_t tune);
@@ -442,16 +450,45 @@ static void start_next_note(void)
 
 void buzzer_tunes_play(uint8_t tune)
 {
+  // Stop from the GCS silences the event tunes until the next alert or arming
+  if (tune == BUZZER_TUNES_NONE) {
 #ifdef BUZZER_TUNES_ALERT
-  if (tune == BUZZER_TUNES_NONE && alert_active) {
-    alert_muted = true;  // Stop from the GCS silences the alert tune until the next alert
-  }
+    alert_muted = alert_active;
 #endif
+#ifdef BUZZER_TUNES_ARMED_TUNE
+    armed_muted = motors_were_on;
+#endif
+  }
   tune_start(tune);
+}
+
+/** Start a tune from an event */
+static void event_start(uint8_t tune)
+{
+  tune_start(tune);
+  event_tune = (buzzer_tunes_tune != BUZZER_TUNES_NONE);
+}
+
+void buzzer_tunes_set_events(uint8_t on)
+{
+  buzzer_tunes_events_on = on;
+  if (!on && event_tune) {
+    tune_start(BUZZER_TUNES_NONE);
+  }
+  // follow the current state again when enabled
+#ifdef BUZZER_TUNES_ALERT
+  alert_active = false;
+  alert_muted = false;
+#endif
+#ifdef BUZZER_TUNES_ARMED_TUNE
+  motors_were_on = false;
+  armed_muted = false;
+#endif
 }
 
 static void tune_start(uint8_t tune)
 {
+  event_tune = false;
   playing = false;
   tune_notes = NULL;
   rtttl = NULL;
@@ -478,38 +515,49 @@ void buzzer_tunes_init(void)
   buzzer_tunes_play(BUZZER_TUNES_STARTUP_TUNE);
 }
 
-/** Event tunes: armed tune, and alert tune in a loop while the alert condition is true */
-static void buzzer_tunes_events(void)
+/** Event tunes: alert tune in a loop while the alert condition is true,
+ *  armed tune in a loop while the motors are armed
+ */
+static void event_update(void)
 {
+  if (!buzzer_tunes_events_on) {
+    return;
+  }
+  bool in_alert = false;
 #ifdef BUZZER_TUNES_ALERT
   bool alert = BUZZER_TUNES_ALERT;
   if (alert && !alert_active) {
     alert_active = true;
     alert_muted = false;
-    tune_start(BUZZER_TUNES_ALERT_TUNE);
+    event_start(BUZZER_TUNES_ALERT_TUNE);
   } else if (!alert && alert_active) {
     alert_active = false;
-    tune_start(BUZZER_TUNES_ALERT_END_TUNE);
+    event_start(BUZZER_TUNES_ALERT_END_TUNE);
   } else if (alert && !playing && !alert_muted) {
-    tune_start(BUZZER_TUNES_ALERT_TUNE);  // loop
+    event_start(BUZZER_TUNES_ALERT_TUNE);  // loop
   }
+  in_alert = alert_active;
 #endif
 #ifdef BUZZER_TUNES_ARMED_TUNE
   bool motors_on = autopilot_get_motors_on();
-  bool in_alert = false;
-#ifdef BUZZER_TUNES_ALERT
-  in_alert = alert_active;
-#endif
-  if (motors_on && !motors_were_on && !in_alert) {
-    tune_start(BUZZER_TUNES_ARMED_TUNE);
+  if (motors_on && !motors_were_on) {
+    armed_muted = false;
+    if (!in_alert) {
+      event_start(BUZZER_TUNES_ARMED_TUNE);
+    }
+  } else if (!motors_on && motors_were_on && event_tune && !in_alert) {
+    tune_start(BUZZER_TUNES_NONE);  // disarmed: stop the armed (or alert end) tune
+  } else if (motors_on && !in_alert && !playing && !armed_muted) {
+    event_start(BUZZER_TUNES_ARMED_TUNE);  // loop, also after an alert
   }
   motors_were_on = motors_on;
 #endif
+  (void)in_alert;
 }
 
 void buzzer_tunes_periodic(void)
 {
-  buzzer_tunes_events();
+  event_update();
   if (!playing) {
     return;
   }

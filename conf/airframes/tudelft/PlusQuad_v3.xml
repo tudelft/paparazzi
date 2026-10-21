@@ -179,13 +179,14 @@
     </section>
 
     <section name="BUZZER_TUNES" prefix="BUZZER_TUNES_">
-        <!-- Mushroom Song when the motors get armed -->
-        <define name="ARMED_TUNE"     value="BUZZER_TUNES_MUSHROOM"/>
-        <!-- Star Song in a loop while the nB controller has failed motors, Mushroom Song when they recover -->
-        <define name="ALERT"          value="(fault_pitch_motors || fault_roll_motors)"/>
-        <define name="ALERT_HEADER"   value="firmwares/rotorcraft/oneloop/oneloop_nB.h" type="string"/>
-        <define name="ALERT_TUNE"     value="BUZZER_TUNES_STAR"/>
-        <define name="ALERT_END_TUNE" value="BUZZER_TUNES_MUSHROOM"/>
+        <!-- Armed and fault tunes on at startup, FALSE to silence them for an experiment (also "event_tunes" in the GCS) -->
+        <define name="EVENTS_ON"    value="TRUE"/>
+        <!-- Mushroom Song in a loop while the motors are armed -->
+        <define name="ARMED_TUNE"   value="BUZZER_TUNES_MUSHROOM"/>
+        <!-- Star Song in a loop while the nB controller has failed motors -->
+        <define name="ALERT"        value="(fault_pitch_motors || fault_roll_motors)"/>
+        <define name="ALERT_HEADER" value="firmwares/rotorcraft/oneloop/oneloop_nB.h" type="string"/>
+        <define name="ALERT_TUNE"   value="BUZZER_TUNES_STAR"/>
     </section>
 
     <section NAME="MISC">
