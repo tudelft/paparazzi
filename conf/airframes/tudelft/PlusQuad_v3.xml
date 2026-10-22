@@ -179,8 +179,8 @@
     </section>
 
     <section name="BUZZER_TUNES" prefix="BUZZER_TUNES_">
-        <!-- Armed and fault tunes on at startup, FALSE to silence them for an experiment (also "event_tunes" in the GCS) -->
-        <define name="EVENTS_ON"    value="TRUE"/>
+        <!-- Armed and fault tunes off at startup, TRUE to turn them on for an experiment (also "event_tunes" in the GCS) -->
+        <define name="EVENTS_ON"    value="FALSE"/>
         <!-- Mushroom Song in a loop while the motors are armed -->
         <define name="ARMED_TUNE"   value="BUZZER_TUNES_MUSHROOM"/>
         <!-- Star Song in a loop while the nB controller has failed motors -->

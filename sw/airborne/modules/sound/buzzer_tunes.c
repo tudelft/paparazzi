@@ -33,9 +33,9 @@
 #include BUZZER_TUNES_ALERT_HEADER
 #endif
 
-/** Event tunes (armed and alert tunes) enabled at startup */
+/** Event tunes (armed and alert tunes) enabled at startup, off by default */
 #ifndef BUZZER_TUNES_EVENTS_ON
-#define BUZZER_TUNES_EVENTS_ON TRUE
+#define BUZZER_TUNES_EVENTS_ON FALSE
 #endif
 
 /** Tune played in a loop while the motors are armed (optional), stopped when disarmed */

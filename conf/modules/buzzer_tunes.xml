@@ -15,7 +15,7 @@
     </description>
     <configure name="BUZZER_TIM" value="TIM2" description="Timer of the buzzer pin"/>
     <define name="BUZZER_TUNES_STARTUP_TUNE" value="BUZZER_TUNES_STARTUP" description="Tune at startup (BUZZER_TUNES_x), BUZZER_TUNES_NONE for silence"/>
-    <define name="BUZZER_TUNES_EVENTS_ON" value="TRUE" description="Armed and alert tunes enabled at startup (also a GCS setting), FALSE to silence them for an experiment"/>
+    <define name="BUZZER_TUNES_EVENTS_ON" value="FALSE" description="Armed and alert tunes enabled at startup (also a GCS setting), off by default"/>
     <define name="BUZZER_TUNES_ARMED_TUNE" value="BUZZER_TUNES_STARTUP" description="Optional tune played in a loop while the motors are armed, stopped when disarmed"/>
     <define name="BUZZER_TUNES_ALERT" value="electrical.bat_low" description="Optional C condition: while true, BUZZER_TUNES_ALERT_TUNE plays in a loop (Stop from the GCS mutes it until the next alert)"/>
     <define name="BUZZER_TUNES_ALERT_HEADER" value="modules/energy/electrical.h" type="string" description="Header to include for the alert condition"/>
